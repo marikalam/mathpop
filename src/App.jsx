@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import ProfileSwitcher from './ProfileSwitcher.jsx';
+import LevelSwitcher from './LevelSwitcher.jsx';
 import { ChartIcon, CheckIcon, XIcon } from './icons.jsx';
-import { playCorrectChime, playIncorrectBuzz } from './sound.js';
+import { playCorrectChime, playIncorrectBuzz, speakProblem } from './sound.js';
 
-const SESSION_ROUNDS = 5;
-const PROGRESS_KEY = 'mathpop-progress-v1';
+const SESSION_ROUNDS = 10;
+const PROGRESS_KEY = 'mathpop-progress-v2';
 
 const OPERATIONS = {
   multiply: { symbol: '×', label: 'Multiplication', color: '#3B6FEF' },
@@ -25,37 +25,46 @@ function shuffle(list) {
   return copy;
 }
 
-function buildProblem(mode, profile) {
+function buildProblem(mode, level) {
   const op = mode === 'random' ? shuffle(['multiply', 'add', 'subtract'])[0] : mode;
   let a;
   let b;
   if (op === 'multiply') {
-    if (profile === 'maddie') {
+    if (level === 'easy') {
+      a = randInt(2, 9);
+      b = randInt(2, 9);
+    } else if (level === 'medium') {
       a = randInt(2, 9);
       b = randInt(2, 15);
     } else {
-      a = randInt(2, 9);
-      b = randInt(2, 9);
+      a = randInt(2, 12);
+      b = randInt(5, 20);
     }
     if (Math.random() < 0.5) [a, b] = [b, a];
     return { a, b, op, symbol: '×', correct: a * b };
   }
   if (op === 'add') {
-    if (profile === 'maddie') {
+    if (level === 'easy') {
+      a = randInt(2, 20);
+      b = randInt(2, 20);
+    } else if (level === 'medium') {
       a = randInt(10, 50);
       b = randInt(10, 50);
     } else {
-      a = randInt(2, 20);
-      b = randInt(2, 20);
+      a = randInt(20, 99);
+      b = randInt(20, 99);
     }
     return { a, b, op, symbol: '+', correct: a + b };
   }
-  if (profile === 'maddie') {
+  if (level === 'easy') {
+    a = randInt(5, 30);
+    b = randInt(1, Math.min(a, 20));
+  } else if (level === 'medium') {
     a = randInt(20, 99);
     b = randInt(1, Math.min(a, 50));
   } else {
-    a = randInt(5, 30);
-    b = randInt(1, Math.min(a, 20));
+    a = randInt(50, 150);
+    b = randInt(10, Math.min(a, 99));
   }
   return { a, b, op, symbol: '−', correct: a - b };
 }
@@ -111,7 +120,7 @@ function saveProgress(data) {
   }
 }
 
-function AppHeader({ profile, onChangeProfile, onBack, showBack }) {
+function AppHeader({ level, onChangeLevel, onBack, showBack }) {
   return (
     <>
       <div className="brand-row">
@@ -121,17 +130,21 @@ function AppHeader({ profile, onChangeProfile, onBack, showBack }) {
           <span className="pop-purple">o</span>
           <span className="pop-green">p</span>
         </h1>
-        {!showBack && <span className="brand-spacer" />}
+        {!showBack && (
+          <a className="icon-btn" href="https://marikalam.github.io/games/" aria-label="See all games">
+            🎮
+          </a>
+        )}
       </div>
       {showBack ? (
         <div className="nav-row">
           <button className="back-link" onClick={onBack}>
             ← Back
           </button>
-          <ProfileSwitcher profile={profile} onChange={onChangeProfile} />
+          <LevelSwitcher level={level} onChange={onChangeLevel} />
         </div>
       ) : (
-        <ProfileSwitcher profile={profile} onChange={onChangeProfile} />
+        <LevelSwitcher level={level} onChange={onChangeLevel} />
       )}
     </>
   );
@@ -157,7 +170,7 @@ function ProgressDots({ current, total }) {
 
 export default function App() {
   const [view, setView] = useState('home');
-  const [profile, setProfile] = useState('maddie');
+  const [level, setLevel] = useState('medium');
   const [progress, setProgress] = useState(loadProgress);
 
   const [operation, setOperation] = useState('multiply');
@@ -172,7 +185,7 @@ export default function App() {
   }
 
   function startOperation(op) {
-    const first = buildProblem(op, profile);
+    const first = buildProblem(op, level);
     setOperation(op);
     setRoundIndex(0);
     setProblem(first);
@@ -190,11 +203,11 @@ export default function App() {
     if (navigator.vibrate) navigator.vibrate(correct ? 20 : [20, 40, 20]);
 
     setProgress((prev) => {
-      const p = prev[profile] || { total: 0, correct: 0, byOp: {} };
+      const p = prev[level] || { total: 0, correct: 0, byOp: {} };
       const opStats = p.byOp[problem.op] || { total: 0, correct: 0 };
       const next = {
         ...prev,
-        [profile]: {
+        [level]: {
           total: p.total + 1,
           correct: p.correct + (correct ? 1 : 0),
           byOp: {
@@ -214,7 +227,7 @@ export default function App() {
       setView('complete');
       return;
     }
-    const next = buildProblem(operation, profile);
+    const next = buildProblem(operation, level);
     setRoundIndex((r) => r + 1);
     setProblem(next);
     setOptions(buildOptions(next));
@@ -222,7 +235,7 @@ export default function App() {
     setView('question');
   }
 
-  const stats = progress[profile] || { total: 0, correct: 0, byOp: {} };
+  const stats = progress[level] || { total: 0, correct: 0, byOp: {} };
   const accuracy = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
   const modeLabel = operation === 'random' ? 'random mix' : OPERATIONS[operation].label.toLowerCase();
 
@@ -231,7 +244,7 @@ export default function App() {
       <div className="app">
         {view === 'home' && (
           <>
-            <AppHeader profile={profile} onChangeProfile={setProfile} showBack={false} />
+            <AppHeader level={level} onChangeLevel={setLevel} showBack={false} />
             <div className="menu-list">
               <button className="menu-card menu-card-blue" onClick={() => startOperation('multiply')}>
                 <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
@@ -284,12 +297,23 @@ export default function App() {
 
         {view === 'question' && problem && (
           <>
-            <AppHeader profile={profile} onChangeProfile={setProfile} showBack onBack={goHome} />
+            <AppHeader level={level} onChangeLevel={setLevel} showBack onBack={goHome} />
             <ProgressDots current={roundIndex + 1} total={SESSION_ROUNDS} />
             <h2 className="screen-title">What's the answer?</h2>
-            <div className="problem-card" style={{ background: OPERATIONS[problem.op].color }}>
-              {problem.a} {problem.symbol} {problem.b}
-            </div>
+            <button
+              className="problem-card"
+              style={{ background: OPERATIONS[problem.op].color }}
+              onClick={() => speakProblem(problem)}
+              aria-label={`Hear ${problem.a} ${problem.symbol} ${problem.b} read aloud`}
+            >
+              <span className="problem-text">
+                {problem.a} {problem.symbol} {problem.b}
+              </span>
+              <span className="problem-speaker" aria-hidden="true">
+                🔊
+              </span>
+            </button>
+            <p className="screen-sub tap-to-hear">Tap the problem to hear it</p>
             <div className="options-grid">
               {options.map((value) => (
                 <button key={value} className="option-btn" onClick={() => chooseAnswer(value)}>
@@ -302,7 +326,7 @@ export default function App() {
 
         {view === 'feedback' && problem && (
           <>
-            <AppHeader profile={profile} onChangeProfile={setProfile} showBack onBack={goHome} />
+            <AppHeader level={level} onChangeLevel={setLevel} showBack onBack={goHome} />
             <ProgressDots current={roundIndex + 1} total={SESSION_ROUNDS} />
             <div className={`feedback-icon-wrap${answerCorrect ? ' feedback-correct' : ' feedback-incorrect'}`}>
               {answerCorrect && (
@@ -336,7 +360,7 @@ export default function App() {
 
         {view === 'complete' && (
           <>
-            <AppHeader profile={profile} onChangeProfile={setProfile} showBack onBack={goHome} />
+            <AppHeader level={level} onChangeLevel={setLevel} showBack onBack={goHome} />
             <div className="complete-wrap">
               <div className="complete-emoji">🎉</div>
               <h2 className="screen-title">All done!</h2>
@@ -357,7 +381,7 @@ export default function App() {
 
         {view === 'progress' && (
           <>
-            <AppHeader profile={profile} onChangeProfile={setProfile} showBack onBack={goHome} />
+            <AppHeader level={level} onChangeLevel={setLevel} showBack onBack={goHome} />
             <h2 className="screen-title">Progress</h2>
             <div className="stat-tiles">
               <div className="stat-tile">

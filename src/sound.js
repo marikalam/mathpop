@@ -35,3 +35,15 @@ export function playIncorrectBuzz() {
   tone(ctx, 220, now, 0.22, 0.16);
   tone(ctx, 174.61, now + 0.1, 0.28, 0.16);
 }
+
+const OPERATION_WORDS = { '×': 'times', '+': 'plus', '−': 'minus' };
+
+export function speakProblem(problem) {
+  if (!('speechSynthesis' in window)) return;
+  const text = `${problem.a} ${OPERATION_WORDS[problem.symbol]} ${problem.b}`;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 0.85;
+  utterance.pitch = 1.05;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}

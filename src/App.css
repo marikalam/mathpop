@@ -92,12 +92,12 @@ body {
   font-size: 14px;
 }
 
-.profile-switcher {
+.level-switcher {
   position: relative;
   align-self: flex-start;
 }
 
-.profile-pill {
+.level-pill {
   appearance: none;
   border: none;
   cursor: pointer;
@@ -106,34 +106,41 @@ body {
   gap: 8px;
   background: var(--card-bg);
   border-radius: 999px;
-  padding: 6px 12px 6px 6px;
+  padding: 6px 14px 6px 10px;
   box-shadow: var(--shadow-sm);
 }
 
-.profile-pill-text {
+.level-dot {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.level-pill-text {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   line-height: 1.15;
 }
 
-.profile-pill-label {
+.level-pill-label {
   font-size: 10px;
   color: var(--ink-dim);
 }
 
-.profile-pill-name {
+.level-pill-name {
   font-size: 13px;
   font-weight: 700;
   color: var(--ink);
 }
 
-.profile-pill-chevron {
+.level-pill-chevron {
   color: var(--ink-dim);
   font-size: 11px;
 }
 
-.profile-menu {
+.level-menu {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
@@ -145,10 +152,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 160px;
+  min-width: 150px;
 }
 
-.profile-menu-item {
+.level-menu-item {
   appearance: none;
   border: none;
   cursor: pointer;
@@ -165,7 +172,7 @@ body {
   text-align: left;
 }
 
-.profile-menu-item-active {
+.level-menu-item-active {
   background: rgba(59, 111, 239, 0.1);
 }
 
@@ -325,15 +332,40 @@ body {
 }
 
 .problem-card {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  width: 100%;
   border-radius: 24px;
   padding: 36px 20px;
   text-align: center;
   box-shadow: var(--shadow);
   color: #fff;
+  transition: transform 0.06s ease;
+}
+
+.problem-card:active {
+  transform: scale(0.98);
+}
+
+.problem-text {
   font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: clamp(40px, 14vw, 56px);
   letter-spacing: 0.02em;
+}
+
+.problem-speaker {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-size: 20px;
+  opacity: 0.85;
+}
+
+.tap-to-hear {
+  margin-top: -10px;
 }
 
 .options-grid {
