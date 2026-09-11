@@ -309,9 +309,6 @@ export default function App() {
               <span className="problem-text">
                 {problem.a} {problem.symbol} {problem.b}
               </span>
-              <span className="problem-speaker" aria-hidden="true">
-                🔊
-              </span>
             </button>
             <p className="screen-sub tap-to-hear">Tap the problem to hear it</p>
             <div className="options-grid">
