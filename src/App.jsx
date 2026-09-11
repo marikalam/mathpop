@@ -184,6 +184,16 @@ export default function App() {
     setView('home');
   }
 
+  function changeLevel(newLevel) {
+    setLevel(newLevel);
+    if (view === 'question' && problem) {
+      const next = buildProblem(operation, newLevel);
+      setProblem(next);
+      setOptions(buildOptions(next));
+      setChosen(null);
+    }
+  }
+
   function startOperation(op) {
     const first = buildProblem(op, level);
     setOperation(op);
@@ -244,7 +254,7 @@ export default function App() {
       <div className="app">
         {view === 'home' && (
           <>
-            <AppHeader level={level} onChangeLevel={setLevel} showBack={false} />
+            <AppHeader level={level} onChangeLevel={changeLevel} showBack={false} />
             <div className="menu-list">
               <button className="menu-card menu-card-blue" onClick={() => startOperation('multiply')}>
                 <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
@@ -297,7 +307,7 @@ export default function App() {
 
         {view === 'question' && problem && (
           <>
-            <AppHeader level={level} onChangeLevel={setLevel} showBack onBack={goHome} />
+            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
             <ProgressDots current={roundIndex + 1} total={SESSION_ROUNDS} />
             <h2 className="screen-title">What's the answer?</h2>
             <button
@@ -323,7 +333,7 @@ export default function App() {
 
         {view === 'feedback' && problem && (
           <>
-            <AppHeader level={level} onChangeLevel={setLevel} showBack onBack={goHome} />
+            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
             <ProgressDots current={roundIndex + 1} total={SESSION_ROUNDS} />
             <div className={`feedback-icon-wrap${answerCorrect ? ' feedback-correct' : ' feedback-incorrect'}`}>
               {answerCorrect && (
@@ -357,7 +367,7 @@ export default function App() {
 
         {view === 'complete' && (
           <>
-            <AppHeader level={level} onChangeLevel={setLevel} showBack onBack={goHome} />
+            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
             <div className="complete-wrap">
               <div className="complete-emoji">🎉</div>
               <h2 className="screen-title">All done!</h2>
@@ -378,7 +388,7 @@ export default function App() {
 
         {view === 'progress' && (
           <>
-            <AppHeader level={level} onChangeLevel={setLevel} showBack onBack={goHome} />
+            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
             <h2 className="screen-title">Progress</h2>
             <div className="stat-tiles">
               <div className="stat-tile">
