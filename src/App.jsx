@@ -25,10 +25,11 @@ function shuffle(list) {
   return copy;
 }
 
-function buildProblem(operation, profile) {
+function buildProblem(mode, profile) {
+  const op = mode === 'random' ? shuffle(['multiply', 'add', 'subtract'])[0] : mode;
   let a;
   let b;
-  if (operation === 'multiply') {
+  if (op === 'multiply') {
     if (profile === 'maddie') {
       a = randInt(2, 9);
       b = randInt(2, 15);
@@ -37,9 +38,9 @@ function buildProblem(operation, profile) {
       b = randInt(2, 9);
     }
     if (Math.random() < 0.5) [a, b] = [b, a];
-    return { a, b, symbol: '×', correct: a * b };
+    return { a, b, op, symbol: '×', correct: a * b };
   }
-  if (operation === 'add') {
+  if (op === 'add') {
     if (profile === 'maddie') {
       a = randInt(10, 50);
       b = randInt(10, 50);
@@ -47,7 +48,7 @@ function buildProblem(operation, profile) {
       a = randInt(2, 20);
       b = randInt(2, 20);
     }
-    return { a, b, symbol: '+', correct: a + b };
+    return { a, b, op, symbol: '+', correct: a + b };
   }
   if (profile === 'maddie') {
     a = randInt(20, 99);
@@ -56,7 +57,7 @@ function buildProblem(operation, profile) {
     a = randInt(5, 30);
     b = randInt(1, Math.min(a, 20));
   }
-  return { a, b, symbol: '−', correct: a - b };
+  return { a, b, op, symbol: '−', correct: a - b };
 }
 
 function buildOptions(problem) {
@@ -190,7 +191,7 @@ export default function App() {
 
     setProgress((prev) => {
       const p = prev[profile] || { total: 0, correct: 0, byOp: {} };
-      const opStats = p.byOp[operation] || { total: 0, correct: 0 };
+      const opStats = p.byOp[problem.op] || { total: 0, correct: 0 };
       const next = {
         ...prev,
         [profile]: {
@@ -198,7 +199,7 @@ export default function App() {
           correct: p.correct + (correct ? 1 : 0),
           byOp: {
             ...p.byOp,
-            [operation]: { total: opStats.total + 1, correct: opStats.correct + (correct ? 1 : 0) },
+            [problem.op]: { total: opStats.total + 1, correct: opStats.correct + (correct ? 1 : 0) },
           },
         },
       };
@@ -223,7 +224,7 @@ export default function App() {
 
   const stats = progress[profile] || { total: 0, correct: 0, byOp: {} };
   const accuracy = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
-  const opMeta = OPERATIONS[operation];
+  const modeLabel = operation === 'random' ? 'random mix' : OPERATIONS[operation].label.toLowerCase();
 
   return (
     <div className="page">
@@ -259,6 +260,15 @@ export default function App() {
                   <span className="menu-sub">Take it away</span>
                 </span>
               </button>
+              <button className="menu-card menu-card-mixed" onClick={() => startOperation('random')}>
+                <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
+                  <span className="op-symbol">🎲</span>
+                </span>
+                <span className="menu-text">
+                  <span className="menu-title">Random Mix</span>
+                  <span className="menu-sub">A bit of everything</span>
+                </span>
+              </button>
               <button className="menu-card menu-card-amber" onClick={() => setView('progress')}>
                 <span className="icon-badge" style={{ background: '#C9871F' }}>
                   <ChartIcon />
@@ -277,7 +287,7 @@ export default function App() {
             <AppHeader profile={profile} onChangeProfile={setProfile} showBack onBack={goHome} />
             <ProgressDots current={roundIndex + 1} total={SESSION_ROUNDS} />
             <h2 className="screen-title">What's the answer?</h2>
-            <div className="problem-card" style={{ background: opMeta.color }}>
+            <div className="problem-card" style={{ background: OPERATIONS[problem.op].color }}>
               {problem.a} {problem.symbol} {problem.b}
             </div>
             <div className="options-grid">
@@ -313,7 +323,7 @@ export default function App() {
             <p className="screen-sub">
               {answerCorrect ? "That's right!" : `You picked ${chosen}. The correct answer is:`}
             </p>
-            <div className="answer-card" style={{ background: opMeta.color }}>
+            <div className="answer-card" style={{ background: OPERATIONS[problem.op].color }}>
               <div className="answer-equation">
                 {problem.a} {problem.symbol} {problem.b} = {problem.correct}
               </div>
@@ -331,7 +341,7 @@ export default function App() {
               <div className="complete-emoji">🎉</div>
               <h2 className="screen-title">All done!</h2>
               <p className="screen-sub">
-                You went through {SESSION_ROUNDS} {opMeta.label.toLowerCase()} problems.
+                You went through {SESSION_ROUNDS} {modeLabel} problems.
               </p>
               <div className="feedback-actions">
                 <button className="pill-btn-secondary" onClick={goHome}>

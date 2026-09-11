@@ -198,17 +198,23 @@ body {
 .menu-card-purple {
   background: linear-gradient(135deg, #a065e6, #7c3fc4);
 }
+.menu-card-mixed {
+  background: linear-gradient(135deg, #4a7cf5, #38c07f 50%, #a065e6);
+}
 .menu-card-blue .menu-title,
 .menu-card-blue .menu-sub,
 .menu-card-green .menu-title,
 .menu-card-green .menu-sub,
 .menu-card-purple .menu-title,
-.menu-card-purple .menu-sub {
+.menu-card-purple .menu-sub,
+.menu-card-mixed .menu-title,
+.menu-card-mixed .menu-sub {
   color: #fff;
 }
 .menu-card-blue .menu-sub,
 .menu-card-green .menu-sub,
-.menu-card-purple .menu-sub {
+.menu-card-purple .menu-sub,
+.menu-card-mixed .menu-sub {
   opacity: 0.85;
 }
 
