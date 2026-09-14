@@ -131,8 +131,8 @@ function AppHeader({ level, onChangeLevel, onBack, showBack }) {
           <span className="pop-green">p</span>
         </h1>
         {!showBack && (
-          <a className="games-link-btn" href="https://marikalam.github.io/games/">
-            Games
+          <a className="games-link-btn" href="https://marikalam.github.io/apps/">
+            Apps
           </a>
         )}
       </div>
