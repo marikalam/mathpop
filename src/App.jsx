@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import LevelSwitcher from './LevelSwitcher.jsx';
 import { ChartIcon, CheckIcon, XIcon } from './icons.jsx';
-import { playCorrectChime, playIncorrectBuzz, speakProblem } from './sound.js';
+import { playCorrectChime, playIncorrectBuzz, prewarmVoices, speakAnswer, speakProblem, speakResults } from './sound.js';
 
 const SESSION_ROUNDS = 10;
 const PROGRESS_KEY = 'mathpop-progress-v2';
@@ -179,6 +179,19 @@ export default function App() {
   const [options, setOptions] = useState([]);
   const [answerCorrect, setAnswerCorrect] = useState(false);
   const [chosen, setChosen] = useState(null);
+  const [sessionCorrect, setSessionCorrect] = useState(0);
+
+  useEffect(() => {
+    prewarmVoices();
+  }, []);
+
+  useEffect(() => {
+    if (view === 'question' && problem) speakProblem(problem);
+  }, [view, problem]);
+
+  useEffect(() => {
+    if (view === 'complete') speakResults(sessionCorrect, SESSION_ROUNDS);
+  }, [view]);
 
   function goHome() {
     setView('home');
@@ -198,6 +211,7 @@ export default function App() {
     const first = buildProblem(op, level);
     setOperation(op);
     setRoundIndex(0);
+    setSessionCorrect(0);
     setProblem(first);
     setOptions(buildOptions(first));
     setChosen(null);
@@ -208,8 +222,13 @@ export default function App() {
     const correct = value === problem.correct;
     setChosen(value);
     setAnswerCorrect(correct);
-    if (correct) playCorrectChime();
-    else playIncorrectBuzz();
+    speakAnswer(value);
+    if (correct) {
+      playCorrectChime();
+      setSessionCorrect((c) => c + 1);
+    } else {
+      playIncorrectBuzz();
+    }
     if (navigator.vibrate) navigator.vibrate(correct ? 20 : [20, 40, 20]);
 
     setProgress((prev) => {
