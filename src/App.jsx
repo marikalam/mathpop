@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import LevelSwitcher from './LevelSwitcher.jsx';
-import { ChartIcon, CheckIcon, XIcon } from './icons.jsx';
+import { CheckIcon, XIcon } from './icons.jsx';
 import { playFeedbackAndSpeak, prewarmVoices, speakProblem, speakResults } from './sound.js';
 import { SentenceQuestionTemplates } from './types.js';
 
@@ -321,7 +321,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (view === 'question' && problem) speakProblem(problem);
+    if (view === 'question' && problem && problem.type !== 'sentence') speakProblem(problem);
   }, [view, problem]);
 
   useEffect(() => {
@@ -416,8 +416,6 @@ export default function App() {
     setView('question');
   }
 
-  const stats = progress[level] || { total: 0, correct: 0, byOp: {} };
-  const accuracy = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
   const modeLabel =
     operation === 'random' ? 'random mix' : operation === 'sentence' ? 'word problem' : OPERATIONS[operation].label.toLowerCase();
 
@@ -471,15 +469,6 @@ export default function App() {
                 <span className="menu-text">
                   <span className="menu-title">Word Problems</span>
                   <span className="menu-sub">Math in a story</span>
-                </span>
-              </button>
-              <button className="menu-card menu-card-amber" onClick={() => setView('progress')}>
-                <span className="icon-badge" style={{ background: '#C9871F' }}>
-                  <ChartIcon />
-                </span>
-                <span className="menu-text">
-                  <span className="menu-title">Progress</span>
-                  <span className="menu-sub">See your stats</span>
                 </span>
               </button>
             </div>
@@ -720,37 +709,6 @@ export default function App() {
           </>
         )}
 
-        {view === 'progress' && (
-          <>
-            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
-            <h2 className="screen-title">Progress</h2>
-            <div className="stat-tiles">
-              <div className="stat-tile">
-                <div className="stat-number">{stats.total}</div>
-                <div className="stat-label">Problems answered</div>
-              </div>
-              <div className="stat-tile">
-                <div className="stat-number">{accuracy}%</div>
-                <div className="stat-label">Accuracy</div>
-              </div>
-            </div>
-            <div className="screen-sub progress-colors-label">By operation</div>
-            <div className="op-stat-list">
-              {Object.entries(OPERATIONS).map(([key, meta]) => {
-                const s = stats.byOp[key] || { total: 0, correct: 0 };
-                return (
-                  <div key={key} className="op-stat-row">
-                    <span className="op-stat-symbol" style={{ background: meta.color }}>
-                      {meta.symbol}
-                    </span>
-                    <span className="op-stat-label">{meta.label}</span>
-                    <span className="op-stat-count">{s.total} done</span>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
       </div>
     </div>
   );
