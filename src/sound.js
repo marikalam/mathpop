@@ -63,22 +63,28 @@ function loadVoices() {
 
 // The Web Speech API has no true "ChatGPT-style" neural voice - browsers
 // only expose whatever voices the OS ships, for free. This picks the
-// least robotic one actually available: Siri and other Enhanced/Premium
-// system voices sound far more natural than the flat compact defaults,
-// so they're weighted highest.
+// least robotic one actually available. Edge's "Online (Natural)" voices
+// are real cloud neural voices (Azure) and sound best by far; macOS
+// Enhanced/Premium voices are next; flat compact/default voices are last.
 const PREFERRED_NAME_HINTS = [
   'siri',
   'google us english',
   'samantha',
   'ava',
+  'allison',
+  'susan',
   'nicky',
+  'zoe',
+  'noelle',
+  'nathan',
+  'evan',
+  'aaron',
+  'isha',
+  'tom',
   'aria',
   'jenny',
   'victoria',
   'karen',
-  'zoe',
-  'evan',
-  'tom',
 ];
 
 function scoreVoice(voice) {
@@ -86,11 +92,13 @@ function scoreVoice(voice) {
   const isEnglish = voice.lang.toLowerCase().startsWith('en');
   let score = 0;
   if (!isEnglish) score -= 10;
-  if (/natural|premium|enhanced|neural/.test(name)) score += 4;
+  if (/online \(natural\)/.test(name)) score += 6;
+  if (/neural/.test(name)) score += 6;
+  if (/premium|enhanced/.test(name)) score += 4;
   if (name.includes('siri')) score += 3;
   if (PREFERRED_NAME_HINTS.some((hint) => name.includes(hint))) score += 2;
   if (voice.localService === false) score += 1;
-  if (/compact/.test(name)) score -= 2;
+  if (/compact/.test(name)) score -= 3;
   return score;
 }
 
@@ -111,16 +119,28 @@ async function speak(text) {
   if (voice) utterance.voice = voice;
   utterance.rate = 0.98;
   utterance.pitch = 1.0;
+  utterance.volume = 1.0;
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utterance);
 }
 
 export function speakProblem(problem) {
-  speak(`${problem.a} ${OPERATION_WORDS[problem.symbol]} ${problem.b}`);
+  if (problem.type === 'sentence') {
+    speak(problem.text);
+  } else {
+    speak(`${problem.a} ${OPERATION_WORDS[problem.symbol]} ${problem.b}`);
+  }
 }
 
-export function speakAnswer(value) {
-  speak(`You picked ${value}`);
+export function playFeedbackAndSpeak(correct, correctAnswer) {
+  if (correct) {
+    playCorrectChime();
+  } else {
+    playIncorrectBuzz();
+  }
+  setTimeout(() => {
+    speak(`The answer is ${correctAnswer}`);
+  }, 300);
 }
 
 export function speakResults(correct, total) {

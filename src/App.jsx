@@ -1,10 +1,29 @@
 import { useEffect, useState } from 'react';
 import LevelSwitcher from './LevelSwitcher.jsx';
 import { ChartIcon, CheckIcon, XIcon } from './icons.jsx';
-import { playCorrectChime, playIncorrectBuzz, prewarmVoices, speakAnswer, speakProblem, speakResults } from './sound.js';
+import { playFeedbackAndSpeak, prewarmVoices, speakProblem, speakResults } from './sound.js';
+import { SentenceQuestionTemplates } from './types.js';
 
 const SESSION_ROUNDS = 10;
 const PROGRESS_KEY = 'mathpop-progress-v2';
+const SETTINGS_KEY = 'mathpop-settings-v1';
+
+function loadSettings() {
+  try {
+    const saved = localStorage.getItem(SETTINGS_KEY);
+    return saved ? JSON.parse(saved) : { inputMethod: 'type' };
+  } catch {
+    return { inputMethod: 'type' };
+  }
+}
+
+function saveSettings(settings) {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    /* ignore */
+  }
+}
 
 const OPERATIONS = {
   multiply: { symbol: '×', label: 'Multiplication', color: '#3B6FEF' },
@@ -25,14 +44,73 @@ function shuffle(list) {
   return copy;
 }
 
+function buildSentenceQuestion(op, level) {
+  const templates = SentenceQuestionTemplates[op][level];
+  const template = templates[Math.floor(Math.random() * templates.length)];
+  let a, b;
+  if (op === 'multiply') {
+    if (level === 'easy') {
+      a = randInt(1, 3);
+      b = randInt(1, 3);
+    } else if (level === 'medium') {
+      a = randInt(2, 9);
+      b = randInt(2, 15);
+    } else {
+      a = randInt(2, 12);
+      b = randInt(5, 20);
+    }
+  } else if (op === 'add') {
+    if (level === 'easy') {
+      a = randInt(1, 5);
+      b = randInt(1, 5);
+    } else if (level === 'medium') {
+      a = randInt(10, 50);
+      b = randInt(10, 50);
+    } else {
+      a = randInt(20, 99);
+      b = randInt(20, 99);
+    }
+  } else {
+    if (level === 'easy') {
+      a = randInt(2, 10);
+      b = randInt(1, Math.min(a, 5));
+    } else if (level === 'medium') {
+      a = randInt(20, 99);
+      b = randInt(1, Math.min(a, 50));
+    } else {
+      a = randInt(50, 150);
+      b = randInt(10, Math.min(a, 99));
+    }
+  }
+
+  let correct;
+  if (op === 'multiply') correct = a * b;
+  else if (op === 'add') correct = a + b;
+  else correct = a - b;
+
+  return {
+    type: 'sentence',
+    text: template(a, b),
+    op,
+    correct,
+    numbers: [a, b],
+    level,
+  };
+}
+
 function buildProblem(mode, level) {
+  if (mode === 'sentence') {
+    const op = shuffle(['multiply', 'add', 'subtract'])[0];
+    return buildSentenceQuestion(op, level);
+  }
+
   const op = mode === 'random' ? shuffle(['multiply', 'add', 'subtract'])[0] : mode;
   let a;
   let b;
   if (op === 'multiply') {
     if (level === 'easy') {
-      a = randInt(2, 9);
-      b = randInt(2, 9);
+      a = randInt(1, 3);
+      b = randInt(1, 3);
     } else if (level === 'medium') {
       a = randInt(2, 9);
       b = randInt(2, 15);
@@ -45,8 +123,8 @@ function buildProblem(mode, level) {
   }
   if (op === 'add') {
     if (level === 'easy') {
-      a = randInt(2, 20);
-      b = randInt(2, 20);
+      a = randInt(1, 5);
+      b = randInt(1, 5);
     } else if (level === 'medium') {
       a = randInt(10, 50);
       b = randInt(10, 50);
@@ -57,8 +135,8 @@ function buildProblem(mode, level) {
     return { a, b, op, symbol: '+', correct: a + b };
   }
   if (level === 'easy') {
-    a = randInt(5, 30);
-    b = randInt(1, Math.min(a, 20));
+    a = randInt(2, 10);
+    b = randInt(1, Math.min(a, 5));
   } else if (level === 'medium') {
     a = randInt(20, 99);
     b = randInt(1, Math.min(a, 50));
@@ -70,7 +148,45 @@ function buildProblem(mode, level) {
 }
 
 function buildOptions(problem) {
-  const { a, b, symbol, correct } = problem;
+  const { correct } = problem;
+
+  if (problem.type === 'sentence') {
+    const pool = new Set();
+    const add = (v) => {
+      if (Number.isInteger(v) && v >= 0 && v !== correct) pool.add(v);
+    };
+    const [a, b] = problem.numbers;
+
+    if (problem.op === 'multiply') {
+      add(a * (b + 1));
+      add(a * (b - 1));
+      add((a + 1) * b);
+      add((a - 1) * b);
+      add(a + b);
+    } else if (problem.op === 'subtract') {
+      add(a - b + 10);
+      add(a - b - 10);
+      add(a + b);
+      add(a - b + 1);
+      add(a - b - 1);
+    } else {
+      add(a + b + 10);
+      add(a + b - 10);
+      add(Math.abs(a - b));
+      add(a + b + 1);
+      add(a + b - 1);
+    }
+    let distractors = shuffle([...pool]);
+    while (distractors.length < 3) {
+      const candidate = correct + randInt(1, 9) * (Math.random() < 0.5 ? -1 : 1);
+      if (candidate >= 0 && candidate !== correct && !distractors.includes(candidate)) {
+        distractors.push(candidate);
+      }
+    }
+    return shuffle([correct, ...distractors.slice(0, 3)]);
+  }
+
+  const { a, b, symbol } = problem;
   const pool = new Set();
   const add = (v) => {
     if (Number.isInteger(v) && v >= 0 && v !== correct) pool.add(v);
@@ -120,20 +236,36 @@ function saveProgress(data) {
   }
 }
 
-function AppHeader({ level, onChangeLevel, onBack, showBack }) {
+function AppHeader({ level, onChangeLevel, onBack, showBack, onSettings }) {
   return (
     <>
       <div className="brand-row">
-        <h1 className="logo">
-          <span className="ink">Math</span>
-          <span className="pop-blue">P</span>
-          <span className="pop-purple">o</span>
-          <span className="pop-green">p</span>
-        </h1>
+        {showBack ? (
+          <button className="logo-btn" onClick={onBack}>
+            <h1 className="logo">
+              <span className="ink">Math</span>
+              <span className="pop-blue">P</span>
+              <span className="pop-purple">o</span>
+              <span className="pop-green">p</span>
+            </h1>
+          </button>
+        ) : (
+          <h1 className="logo">
+            <span className="ink">Math</span>
+            <span className="pop-blue">P</span>
+            <span className="pop-purple">o</span>
+            <span className="pop-green">p</span>
+          </h1>
+        )}
         {!showBack && (
-          <a className="games-link-btn" href="https://marikalam.github.io/apps/">
-            Apps
-          </a>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="games-link-btn" onClick={onSettings} aria-label="Settings">
+              ⚙️
+            </button>
+            <a className="games-link-btn" href="https://marikalam.github.io/apps/">
+              Apps
+            </a>
+          </div>
         )}
       </div>
       {showBack ? (
@@ -172,6 +304,7 @@ export default function App() {
   const [view, setView] = useState('home');
   const [level, setLevel] = useState('medium');
   const [progress, setProgress] = useState(loadProgress);
+  const [settings, setSettings] = useState(loadSettings);
 
   const [operation, setOperation] = useState('multiply');
   const [roundIndex, setRoundIndex] = useState(0);
@@ -179,7 +312,9 @@ export default function App() {
   const [options, setOptions] = useState([]);
   const [answerCorrect, setAnswerCorrect] = useState(false);
   const [chosen, setChosen] = useState(null);
+  const [typedAnswer, setTypedAnswer] = useState('');
   const [sessionCorrect, setSessionCorrect] = useState(0);
+  const [sessionResults, setSessionResults] = useState({});
 
   useEffect(() => {
     prewarmVoices();
@@ -197,6 +332,12 @@ export default function App() {
     setView('home');
   }
 
+  function updateInputMethod(method) {
+    const newSettings = { ...settings, inputMethod: method };
+    setSettings(newSettings);
+    saveSettings(newSettings);
+  }
+
   function changeLevel(newLevel) {
     setLevel(newLevel);
     if (view === 'question' && problem) {
@@ -212,9 +353,11 @@ export default function App() {
     setOperation(op);
     setRoundIndex(0);
     setSessionCorrect(0);
+    setSessionResults({});
     setProblem(first);
     setOptions(buildOptions(first));
     setChosen(null);
+    setTypedAnswer('');
     setView('question');
   }
 
@@ -222,14 +365,22 @@ export default function App() {
     const correct = value === problem.correct;
     setChosen(value);
     setAnswerCorrect(correct);
-    speakAnswer(value);
+    playFeedbackAndSpeak(correct, problem.correct);
     if (correct) {
-      playCorrectChime();
       setSessionCorrect((c) => c + 1);
-    } else {
-      playIncorrectBuzz();
     }
     if (navigator.vibrate) navigator.vibrate(correct ? 20 : [20, 40, 20]);
+
+    setSessionResults((prev) => {
+      const opStats = prev[problem.op] || { correct: 0, wrong: 0 };
+      return {
+        ...prev,
+        [problem.op]: {
+          correct: opStats.correct + (correct ? 1 : 0),
+          wrong: opStats.wrong + (correct ? 0 : 1),
+        },
+      };
+    });
 
     setProgress((prev) => {
       const p = prev[level] || { total: 0, correct: 0, byOp: {} };
@@ -261,19 +412,21 @@ export default function App() {
     setProblem(next);
     setOptions(buildOptions(next));
     setChosen(null);
+    setTypedAnswer('');
     setView('question');
   }
 
   const stats = progress[level] || { total: 0, correct: 0, byOp: {} };
   const accuracy = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
-  const modeLabel = operation === 'random' ? 'random mix' : OPERATIONS[operation].label.toLowerCase();
+  const modeLabel =
+    operation === 'random' ? 'random mix' : operation === 'sentence' ? 'word problem' : OPERATIONS[operation].label.toLowerCase();
 
   return (
     <div className="page">
       <div className="app">
         {view === 'home' && (
           <>
-            <AppHeader level={level} onChangeLevel={changeLevel} showBack={false} />
+            <AppHeader level={level} onChangeLevel={changeLevel} showBack={false} onSettings={() => setView('settings')} />
             <div className="menu-list">
               <button className="menu-card menu-card-blue" onClick={() => startOperation('multiply')}>
                 <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
@@ -311,6 +464,15 @@ export default function App() {
                   <span className="menu-sub">A bit of everything</span>
                 </span>
               </button>
+              <button className="menu-card menu-card-teal" onClick={() => startOperation('sentence')}>
+                <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
+                  <span className="op-symbol">📖</span>
+                </span>
+                <span className="menu-text">
+                  <span className="menu-title">Word Problems</span>
+                  <span className="menu-sub">Math in a story</span>
+                </span>
+              </button>
               <button className="menu-card menu-card-amber" onClick={() => setView('progress')}>
                 <span className="icon-badge" style={{ background: '#C9871F' }}>
                   <ChartIcon />
@@ -324,6 +486,32 @@ export default function App() {
           </>
         )}
 
+        {view === 'settings' && (
+          <>
+            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
+            <h2 className="screen-title">Settings</h2>
+            <div style={{ padding: '20px', textAlign: 'center' }}>
+              <p className="screen-sub" style={{ marginBottom: '30px' }}>How do you want to answer?</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '300px', margin: '0 auto' }}>
+                <button
+                  className={`pill-btn-${settings.inputMethod === 'type' ? 'primary' : 'secondary'} pill-btn-full`}
+                  onClick={() => updateInputMethod('type')}
+                  style={{ padding: '20px', fontSize: '16px', fontWeight: '600' }}
+                >
+                  {settings.inputMethod === 'type' ? '✓ ' : ''}Type the answer
+                </button>
+                <button
+                  className={`pill-btn-${settings.inputMethod === 'choice' ? 'primary' : 'secondary'} pill-btn-full`}
+                  onClick={() => updateInputMethod('choice')}
+                  style={{ padding: '20px', fontSize: '16px', fontWeight: '600' }}
+                >
+                  {settings.inputMethod === 'choice' ? '✓ ' : ''}Pick from choices
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
         {view === 'question' && problem && (
           <>
             <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
@@ -333,20 +521,120 @@ export default function App() {
               className="problem-card"
               style={{ background: OPERATIONS[problem.op].color }}
               onClick={() => speakProblem(problem)}
-              aria-label={`Hear ${problem.a} ${problem.symbol} ${problem.b} read aloud`}
+              aria-label={problem.type === 'sentence' ? problem.text : `Hear ${problem.a} ${problem.symbol} ${problem.b} read aloud`}
             >
-              <span className="problem-text">
-                {problem.a} {problem.symbol} {problem.b}
+              <span className={problem.type === 'sentence' ? 'problem-text problem-text-sentence' : 'problem-text'}>
+                {problem.type === 'sentence' ? problem.text : `${problem.a} ${problem.symbol} ${problem.b}`}
               </span>
             </button>
             <p className="screen-sub tap-to-hear">Tap the problem to hear it</p>
-            <div className="options-grid">
-              {options.map((value) => (
-                <button key={value} className="option-btn" onClick={() => chooseAnswer(value)}>
-                  {value}
-                </button>
-              ))}
-            </div>
+
+            {settings.inputMethod === 'type' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(59, 111, 239, 0.2) 0%, rgba(47, 174, 107, 0.2) 100%)',
+                  border: '2px solid rgba(255,255,255,0.2)',
+                  borderRadius: '10px',
+                  padding: '12px',
+                  textAlign: 'center',
+                  minHeight: '45px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <span style={{ fontSize: '28px', fontWeight: 'bold', color: '#fff' }}>
+                    {typedAnswer || '0'}
+                  </span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => setTypedAnswer(typedAnswer + num)}
+                      style={{
+                        padding: '12px 8px',
+                        fontSize: '20px',
+                        fontWeight: 'bold',
+                        borderRadius: '10px',
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #5B8FFF 0%, #3B6FEF 100%)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        transition: 'transform 0.1s, box-shadow 0.1s',
+                        boxShadow: '0 4px 12px rgba(59, 111, 239, 0.3)',
+                      }}
+                      onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.95)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(59, 111, 239, 0.3)'; }}
+                      onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 111, 239, 0.3)'; }}
+                      onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.95)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(59, 111, 239, 0.3)'; }}
+                      onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 111, 239, 0.3)'; }}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                  <button
+                    onClick={() => setTypedAnswer(typedAnswer + '0')}
+                    style={{
+                      padding: '12px 8px',
+                      fontSize: '20px',
+                      fontWeight: 'bold',
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #5B8FFF 0%, #3B6FEF 100%)',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      transition: 'transform 0.1s, box-shadow 0.1s',
+                      boxShadow: '0 4px 12px rgba(59, 111, 239, 0.3)',
+                    }}
+                    onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.95)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(59, 111, 239, 0.3)'; }}
+                    onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 111, 239, 0.3)'; }}
+                    onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.95)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(59, 111, 239, 0.3)'; }}
+                    onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 111, 239, 0.3)'; }}
+                  >
+                    0
+                  </button>
+                  <button
+                    onClick={() => setTypedAnswer(typedAnswer.slice(0, -1))}
+                    style={{
+                      padding: '12px 8px',
+                      fontSize: '16px',
+                      fontWeight: 'bold',
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #FF6B6B 0%, #EE5A52 100%)',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      transition: 'transform 0.1s, box-shadow 0.1s',
+                      boxShadow: '0 4px 12px rgba(255, 107, 107, 0.3)',
+                    }}
+                    onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.95)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(255, 107, 107, 0.3)'; }}
+                    onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 107, 0.3)'; }}
+                    onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.95)'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(255, 107, 107, 0.3)'; }}
+                    onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 107, 0.3)'; }}
+                    title="Delete"
+                  >
+                    ←
+                  </button>
+                  <button
+                    className="pill-btn-submit"
+                    onClick={() => typedAnswer && chooseAnswer(parseInt(typedAnswer))}
+                    disabled={!typedAnswer}
+                    style={{ padding: '12px 8px', fontSize: '14px', fontWeight: '600', gridColumn: '3 / 5' }}
+                  >
+                    Submit
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="options-grid">
+                {options.map((value) => (
+                  <button key={value} className="option-btn" onClick={() => chooseAnswer(value)}>
+                    {value}
+                  </button>
+                ))}
+              </div>
+            )}
           </>
         )}
 
@@ -375,12 +663,18 @@ export default function App() {
             </p>
             <div className="answer-card" style={{ background: OPERATIONS[problem.op].color }}>
               <div className="answer-equation">
-                {problem.a} {problem.symbol} {problem.b} = {problem.correct}
+                {problem.type === 'sentence' ? problem.correct : `${problem.a} ${problem.symbol} ${problem.b} = ${problem.correct}`}
               </div>
             </div>
-            <button className="pill-btn-primary pill-btn-full" onClick={nextProblem}>
-              {roundIndex + 1 >= SESSION_ROUNDS ? 'Finish' : 'Next problem'} →
-            </button>
+            {answerCorrect ? (
+              <button className="pill-btn-primary pill-btn-full" onClick={nextProblem}>
+                {roundIndex + 1 >= SESSION_ROUNDS ? 'Finish' : 'Next problem'} →
+              </button>
+            ) : (
+              <button className="pill-btn-primary pill-btn-full" onClick={() => { setChosen(null); setTypedAnswer(''); setView('question'); }}>
+                Try again →
+              </button>
+            )}
           </>
         )}
 
@@ -393,6 +687,27 @@ export default function App() {
               <p className="screen-sub">
                 You went through {SESSION_ROUNDS} {modeLabel} problems.
               </p>
+              <div className="results-score-ring">
+                <span className="results-score-number">{sessionCorrect}</span>
+                <span className="results-score-total">/ {SESSION_ROUNDS}</span>
+              </div>
+              {Object.keys(sessionResults).length > 0 && (
+                <div className="result-breakdown">
+                  <p className="result-label">By operation:</p>
+                  {Object.entries(sessionResults).map(([op, results]) => (
+                    <div key={op} className="result-row">
+                      <span className="result-op-symbol" style={{ background: OPERATIONS[op].color }}>
+                        {OPERATIONS[op].symbol}
+                      </span>
+                      <span className="result-op-name">{OPERATIONS[op].label}</span>
+                      <span className="result-numbers">
+                        <span className="result-correct">✓ {results.correct}</span>
+                        <span className="result-wrong">✗ {results.wrong}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="feedback-actions">
                 <button className="pill-btn-secondary" onClick={goHome}>
                   Home
