@@ -237,6 +237,12 @@ body {
 .menu-card-teal {
   background: linear-gradient(135deg, #1fb6ba, #14898c);
 }
+.menu-card-orange {
+  background: linear-gradient(135deg, #f0954f, #e0793a);
+}
+.menu-card-skills {
+  background: linear-gradient(135deg, #4e8ff7, #8b5cf6 50%, #14b8a6);
+}
 .menu-card-blue .menu-title,
 .menu-card-blue .menu-sub,
 .menu-card-green .menu-title,
@@ -246,15 +252,137 @@ body {
 .menu-card-mixed .menu-title,
 .menu-card-mixed .menu-sub,
 .menu-card-teal .menu-title,
-.menu-card-teal .menu-sub {
+.menu-card-teal .menu-sub,
+.menu-card-orange .menu-title,
+.menu-card-orange .menu-sub,
+.menu-card-skills .menu-title,
+.menu-card-skills .menu-sub {
   color: #fff;
 }
 .menu-card-blue .menu-sub,
 .menu-card-green .menu-sub,
 .menu-card-purple .menu-sub,
 .menu-card-mixed .menu-sub,
-.menu-card-teal .menu-sub {
+.menu-card-teal .menu-sub,
+.menu-card-orange .menu-sub,
+.menu-card-skills .menu-sub {
   opacity: 0.85;
+}
+
+.skill-units {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.skill-unit-title {
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink-dim);
+  margin: 0 0 10px;
+}
+
+.skill-card-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skill-card {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  border-radius: 18px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  color: #fff;
+}
+
+.skill-card-symbol {
+  flex: none;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.skill-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.skill-card-title {
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.skill-card-sub {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.skill-hint {
+  background: #fff7e0;
+  color: #8a6a1f;
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-top: -4px;
+  font-weight: 600;
+}
+
+.compare-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.compare-blank {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 3px dashed rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.stack-problem {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(30px, 10vw, 42px);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.stack-row {
+  padding: 2px 4px;
+}
+
+.stack-row-op {
+  position: relative;
+}
+
+.stack-op {
+  position: absolute;
+  left: -34px;
+}
+
+.stack-rule {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 2px;
+  margin-top: 4px;
 }
 
 .menu-card-amber {
@@ -386,6 +514,12 @@ body {
   font-weight: 700;
   font-size: clamp(40px, 14vw, 56px);
   letter-spacing: 0.02em;
+}
+
+.clock-face {
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.15));
 }
 
 .problem-text-sentence {

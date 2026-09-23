@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import LevelSwitcher from './LevelSwitcher.jsx';
-import { CheckIcon, XIcon } from './icons.jsx';
+import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
 import { playFeedbackAndSpeak, prewarmVoices, speakProblem, speakResults } from './sound.js';
 import { SentenceQuestionTemplates } from './types.js';
+import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 
 const SESSION_ROUNDS = 10;
 const PROGRESS_KEY = 'mathpop-progress-v2';
@@ -29,7 +30,10 @@ const OPERATIONS = {
   multiply: { symbol: '×', label: 'Multiplication', color: '#3B6FEF' },
   add: { symbol: '+', label: 'Addition', color: '#2FAE6B' },
   subtract: { symbol: '−', label: 'Subtraction', color: '#8E4FD6' },
+  clock: { symbol: '🕐', label: 'Clock', color: '#E0793A' },
 };
+
+const ALL_META = { ...OPERATIONS, ...SKILL_META };
 
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -98,10 +102,23 @@ function buildSentenceQuestion(op, level) {
   };
 }
 
+function formatTime(hour, minute) {
+  return `${hour}:${String(minute).padStart(2, '0')}`;
+}
+
+function buildClockProblem(level) {
+  const hour = randInt(1, 12);
+  const minute = level === 'easy' ? 0 : level === 'medium' ? shuffle([0, 15, 30, 45])[0] : randInt(0, 11) * 5;
+  return { type: 'clock', op: 'clock', hour, minute, correct: formatTime(hour, minute), level };
+}
+
 function buildProblem(mode, level) {
   if (mode === 'sentence') {
     const op = shuffle(['multiply', 'add', 'subtract'])[0];
     return buildSentenceQuestion(op, level);
+  }
+  if (mode === 'clock') {
+    return buildClockProblem(level);
   }
 
   const op = mode === 'random' ? shuffle(['multiply', 'add', 'subtract'])[0] : mode;
@@ -186,6 +203,25 @@ function buildOptions(problem) {
     return shuffle([correct, ...distractors.slice(0, 3)]);
   }
 
+  if (problem.type === 'clock') {
+    const { hour, minute, level } = problem;
+    const step = level === 'easy' ? 60 : level === 'medium' ? 15 : 5;
+    const totalMinutes = (hour % 12) * 60 + minute; // 0-719, on a 12-hour wheel
+    const timeAtOffset = (offsetSteps) => {
+      const tm = (((totalMinutes + offsetSteps * step) % 720) + 720) % 720;
+      const h = Math.floor(tm / 60) || 12;
+      return formatTime(h, tm % 60);
+    };
+    const pool = new Set([1, -1, 2, -2, 3, -3].map(timeAtOffset).filter((t) => t !== correct));
+    let distractors = shuffle([...pool]);
+    while (distractors.length < 3) {
+      const randMinute = level === 'easy' ? 0 : level === 'medium' ? shuffle([0, 15, 30, 45])[0] : randInt(0, 11) * 5;
+      const candidate = formatTime(randInt(1, 12), randMinute);
+      if (candidate !== correct && !distractors.includes(candidate)) distractors.push(candidate);
+    }
+    return shuffle([correct, ...distractors.slice(0, 3)]);
+  }
+
   const { a, b, symbol } = problem;
   const pool = new Set();
   const add = (v) => {
@@ -218,6 +254,16 @@ function buildOptions(problem) {
     }
   }
   return shuffle([correct, ...distractors.slice(0, 3)]);
+}
+
+function makeProblem(op, level) {
+  if (isSkillConcept(op)) return buildSkillProblem(op, level);
+  return buildProblem(op, level);
+}
+
+function makeOptions(problem) {
+  if (problem.type === 'skill') return buildSkillOptions(problem);
+  return buildOptions(problem);
 }
 
 function loadProgress() {
@@ -341,21 +387,21 @@ export default function App() {
   function changeLevel(newLevel) {
     setLevel(newLevel);
     if (view === 'question' && problem) {
-      const next = buildProblem(operation, newLevel);
+      const next = makeProblem(operation, newLevel);
       setProblem(next);
-      setOptions(buildOptions(next));
+      setOptions(makeOptions(next));
       setChosen(null);
     }
   }
 
   function startOperation(op) {
-    const first = buildProblem(op, level);
+    const first = makeProblem(op, level);
     setOperation(op);
     setRoundIndex(0);
     setSessionCorrect(0);
     setSessionResults({});
     setProblem(first);
-    setOptions(buildOptions(first));
+    setOptions(makeOptions(first));
     setChosen(null);
     setTypedAnswer('');
     setView('question');
@@ -365,7 +411,7 @@ export default function App() {
     const correct = value === problem.correct;
     setChosen(value);
     setAnswerCorrect(correct);
-    playFeedbackAndSpeak(correct, problem.correct);
+    playFeedbackAndSpeak(correct, problem.speechAnswer ?? problem.correct);
     if (correct) {
       setSessionCorrect((c) => c + 1);
     }
@@ -407,17 +453,22 @@ export default function App() {
       setView('complete');
       return;
     }
-    const next = buildProblem(operation, level);
+    const next = makeProblem(operation, level);
     setRoundIndex((r) => r + 1);
     setProblem(next);
-    setOptions(buildOptions(next));
+    setOptions(makeOptions(next));
     setChosen(null);
     setTypedAnswer('');
     setView('question');
   }
 
-  const modeLabel =
-    operation === 'random' ? 'random mix' : operation === 'sentence' ? 'word problem' : OPERATIONS[operation].label.toLowerCase();
+  const modeLabel = isSkillConcept(operation)
+    ? SKILL_META[operation].label.toLowerCase()
+    : operation === 'random'
+      ? 'random mix'
+      : operation === 'sentence'
+        ? 'word problem'
+        : OPERATIONS[operation].label.toLowerCase();
 
   return (
     <div className="page">
@@ -471,6 +522,57 @@ export default function App() {
                   <span className="menu-sub">Math in a story</span>
                 </span>
               </button>
+              <button className="menu-card menu-card-orange" onClick={() => startOperation('clock')}>
+                <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
+                  <span className="op-symbol">🕐</span>
+                </span>
+                <span className="menu-text">
+                  <span className="menu-title">Tell Time</span>
+                  <span className="menu-sub">Read the clock</span>
+                </span>
+              </button>
+              <button className="menu-card menu-card-skills" onClick={() => setView('skills')}>
+                <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
+                  <span className="op-symbol">🏆</span>
+                </span>
+                <span className="menu-text">
+                  <span className="menu-title">Skill Builders</span>
+                  <span className="menu-sub">2nd-grade math concepts</span>
+                </span>
+              </button>
+            </div>
+          </>
+        )}
+
+        {view === 'skills' && (
+          <>
+            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
+            <h2 className="screen-title">Skill Builders</h2>
+            <p className="screen-sub" style={{ marginBottom: '4px' }}>2nd-grade math concepts, unit by unit</p>
+            <div className="skill-units">
+              {SKILL_UNITS.map((unit) => (
+                <div key={unit.id} className="skill-unit">
+                  <p className="skill-unit-title">
+                    Unit {unit.id}: {unit.title}
+                  </p>
+                  <div className="skill-card-grid">
+                    {unit.concepts.map((concept) => (
+                      <button
+                        key={concept.id}
+                        className="skill-card"
+                        style={{ background: SKILL_META[concept.id].color }}
+                        onClick={() => startOperation(concept.id)}
+                      >
+                        <span className="skill-card-symbol">{SKILL_META[concept.id].symbol}</span>
+                        <span className="skill-card-text">
+                          <span className="skill-card-title">{concept.title}</span>
+                          <span className="skill-card-sub">{concept.sub}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </>
         )}
@@ -505,20 +607,60 @@ export default function App() {
           <>
             <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
             <ProgressDots current={roundIndex + 1} total={SESSION_ROUNDS} />
-            <h2 className="screen-title">What's the answer?</h2>
+            <h2 className="screen-title">
+              {problem.questionTitle || (problem.type === 'clock' ? 'What time is it?' : "What's the answer?")}
+            </h2>
             <button
               className="problem-card"
-              style={{ background: OPERATIONS[problem.op].color }}
+              style={{ background: ALL_META[problem.op].color }}
               onClick={() => speakProblem(problem)}
-              aria-label={problem.type === 'sentence' ? problem.text : `Hear ${problem.a} ${problem.symbol} ${problem.b} read aloud`}
+              aria-label={
+                problem.type === 'sentence'
+                  ? problem.text
+                  : problem.type === 'clock'
+                    ? 'Hear the question read aloud'
+                    : problem.type === 'skill'
+                      ? problem.speech || problem.prompt
+                      : `Hear ${problem.a} ${problem.symbol} ${problem.b} read aloud`
+              }
             >
-              <span className={problem.type === 'sentence' ? 'problem-text problem-text-sentence' : 'problem-text'}>
-                {problem.type === 'sentence' ? problem.text : `${problem.a} ${problem.symbol} ${problem.b}`}
-              </span>
+              {problem.type === 'clock' ? (
+                <ClockFace hour={problem.hour} minute={problem.minute} />
+              ) : problem.type === 'skill' && problem.promptKind === 'compare' ? (
+                <span className="problem-text compare-row">
+                  <span>{problem.compareLeft}</span>
+                  <span className="compare-blank">?</span>
+                  <span>{problem.compareRight}</span>
+                </span>
+              ) : problem.type === 'skill' && problem.promptKind === 'stack' ? (
+                <span className="stack-problem">
+                  <span className="stack-row">{problem.stackTop}</span>
+                  <span className="stack-row stack-row-op">
+                    <span className="stack-op">{problem.stackSymbol}</span>
+                    {problem.stackBottom}
+                  </span>
+                  <span className="stack-rule" />
+                </span>
+              ) : (
+                <span
+                  className={
+                    problem.type === 'sentence' || (problem.type === 'skill' && problem.prompt.length > 24)
+                      ? 'problem-text problem-text-sentence'
+                      : 'problem-text'
+                  }
+                >
+                  {problem.type === 'sentence'
+                    ? problem.text
+                    : problem.type === 'skill'
+                      ? problem.prompt
+                      : `${problem.a} ${problem.symbol} ${problem.b}`}
+                </span>
+              )}
             </button>
+            {problem.type === 'skill' && problem.hint && <p className="screen-sub skill-hint">💡 {problem.hint}</p>}
             <p className="screen-sub tap-to-hear">Tap the problem to hear it</p>
 
-            {settings.inputMethod === 'type' ? (
+            {settings.inputMethod === 'type' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{
                   background: 'linear-gradient(135deg, rgba(59, 111, 239, 0.2) 0%, rgba(47, 174, 107, 0.2) 100%)',
@@ -650,9 +792,13 @@ export default function App() {
             <p className="screen-sub">
               {answerCorrect ? "That's right!" : `You picked ${chosen}. The correct answer is:`}
             </p>
-            <div className="answer-card" style={{ background: OPERATIONS[problem.op].color }}>
+            <div className="answer-card" style={{ background: ALL_META[problem.op].color }}>
               <div className="answer-equation">
-                {problem.type === 'sentence' ? problem.correct : `${problem.a} ${problem.symbol} ${problem.b} = ${problem.correct}`}
+                {problem.type === 'sentence' || problem.type === 'clock'
+                  ? problem.correct
+                  : problem.type === 'skill'
+                    ? problem.answerLabel || problem.correct
+                    : `${problem.a} ${problem.symbol} ${problem.b} = ${problem.correct}`}
               </div>
             </div>
             {answerCorrect ? (
@@ -685,10 +831,10 @@ export default function App() {
                   <p className="result-label">By operation:</p>
                   {Object.entries(sessionResults).map(([op, results]) => (
                     <div key={op} className="result-row">
-                      <span className="result-op-symbol" style={{ background: OPERATIONS[op].color }}>
-                        {OPERATIONS[op].symbol}
+                      <span className="result-op-symbol" style={{ background: ALL_META[op].color }}>
+                        {ALL_META[op].symbol}
                       </span>
-                      <span className="result-op-name">{OPERATIONS[op].label}</span>
+                      <span className="result-op-name">{ALL_META[op].label}</span>
                       <span className="result-numbers">
                         <span className="result-correct">✓ {results.correct}</span>
                         <span className="result-wrong">✗ {results.wrong}</span>

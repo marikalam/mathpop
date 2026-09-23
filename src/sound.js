@@ -127,6 +127,10 @@ async function speak(text) {
 export function speakProblem(problem) {
   if (problem.type === 'sentence') {
     speak(problem.text);
+  } else if (problem.type === 'clock') {
+    speak('What time is it?');
+  } else if (problem.type === 'skill') {
+    speak(problem.speech || problem.prompt);
   } else {
     speak(`${problem.a} ${OPERATION_WORDS[problem.symbol]} ${problem.b}`);
   }
