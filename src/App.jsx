@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import LevelSwitcher from './LevelSwitcher.jsx';
 import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
-import { hasHighQualityVoice, playFeedbackAndSpeak, prewarmVoices, speak, speakProblem, speakResults } from './sound.js';
+import { getVoiceQuality, playFeedbackAndSpeak, prewarmVoices, speak, speakProblem, speakResults } from './sound.js';
 import { SentenceQuestionTemplates } from './types.js';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
@@ -422,11 +422,11 @@ export default function App() {
 
   const [babySession, setBabySession] = useState(loadBabySession);
   const [babyPlayed, setBabyPlayed] = useState(null);
-  const [goodVoice, setGoodVoice] = useState(true);
+  const [voiceQuality, setVoiceQuality] = useState('piper');
 
   useEffect(() => {
     prewarmVoices();
-    hasHighQualityVoice().then(setGoodVoice);
+    getVoiceQuality().then(setVoiceQuality);
   }, []);
 
   useEffect(() => {
@@ -771,7 +771,7 @@ export default function App() {
                   {settings.inputMethod === 'write' ? '✓ ' : ''}Write the answer
                 </button>
               </div>
-              {!goodVoice && voiceUpgradeTip() && (
+              {voiceQuality === 'basic-system' && voiceUpgradeTip() && (
                 <p className="screen-sub voice-tip">{voiceUpgradeTip()}</p>
               )}
             </div>

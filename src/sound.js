@@ -105,26 +105,13 @@ function scoreVoice(voice) {
   return score;
 }
 
-// True once we've resolved to a voice that isn't just the device's flat
-// default (no known-good quality signal matched) — used to nudge the user
-// toward installing a better system voice, since that's the real ceiling
-// on quality for a browser-only, no-server app.
-export async function hasHighQualityVoice() {
-  const voice = await pickVoice();
-  return !!voice && scoreVoice(voice) > 0;
-}
-
 async function pickVoice() {
   const voices = await loadVoices();
   if (voices.length === 0) return null;
   return [...voices].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0];
 }
 
-export function prewarmVoices() {
-  loadVoices();
-}
-
-export async function speak(text) {
+async function speakWithWebSpeechAPI(text) {
   if (!('speechSynthesis' in window)) return;
   const utterance = new SpeechSynthesisUtterance(text);
   const voice = await pickVoice();
@@ -134,6 +121,60 @@ export async function speak(text) {
   utterance.volume = 1.0;
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utterance);
+}
+
+// piper-tts-web pulls in onnxruntime-web (a sizeable WASM runtime), so it's
+// dynamically imported rather than bundled into the main chunk — nobody
+// pays for it until speech is actually requested. The voice model itself
+// (~60MB) downloads once and is cached by the browser after that.
+let piperModulePromise = null;
+function getPiperModule() {
+  if (!piperModulePromise) piperModulePromise = import('./piper.js');
+  return piperModulePromise;
+}
+
+export function prewarmVoices() {
+  loadVoices();
+  getPiperModule()
+    .then((m) => m.loadPiper())
+    .catch(() => {
+      /* Piper couldn't load (unsupported browser, offline on first-ever use, etc.) — speak() falls back to the OS voice */
+    });
+}
+
+// 'piper' | 'good-system' | 'basic-system' — lets the UI explain the voice
+// situation (e.g. only suggest installing a better system voice when we've
+// actually fallen back to one, and it isn't a great one).
+export async function getVoiceQuality() {
+  try {
+    const { loadPiper } = await getPiperModule();
+    await loadPiper();
+    return 'piper';
+  } catch {
+    const voice = await pickVoice();
+    return voice && scoreVoice(voice) > 0 ? 'good-system' : 'basic-system';
+  }
+}
+
+let currentAudio = null;
+
+export async function speak(text) {
+  try {
+    const { synthesizeSpeech } = await getPiperModule();
+    const blob = await synthesizeSpeech(text);
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
+    }
+    const url = URL.createObjectURL(blob);
+    const audioEl = new Audio(url);
+    currentAudio = audioEl;
+    audioEl.addEventListener('ended', () => URL.revokeObjectURL(url));
+    await audioEl.play();
+  } catch (err) {
+    console.warn('Piper TTS unavailable, falling back to the built-in voice', err);
+    speakWithWebSpeechAPI(text);
+  }
 }
 
 export function speakProblem(problem) {
