@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import LevelSwitcher from './LevelSwitcher.jsx';
 import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
-import { playFeedbackAndSpeak, prewarmVoices, speak, speakProblem, speakResults } from './sound.js';
+import { hasHighQualityVoice, playFeedbackAndSpeak, prewarmVoices, speak, speakProblem, speakResults } from './sound.js';
 import { SentenceQuestionTemplates } from './types.js';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
@@ -302,6 +302,26 @@ function problemAnswerText(problem) {
   return `${problem.a} ${problem.symbol} ${problem.b} = ${problem.correct}`;
 }
 
+function voiceUpgradeTip() {
+  const ua = navigator.userAgent || '';
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  const isMac = /Macintosh/.test(ua) && !isIOS;
+  const isWindows = /Windows/.test(ua);
+  const isAndroid = /Android/.test(ua);
+  const isEdge = /Edg\//.test(ua);
+  if (isEdge) return null;
+  if (isIOS || isMac) {
+    return 'Tip: For a more natural voice, go to Settings → Accessibility → Spoken Content → Voices, and download an Enhanced or Premium English voice — MathPop will use it automatically.';
+  }
+  if (isWindows) {
+    return 'Tip: For the best free voice, open MathPop in Microsoft Edge — it comes with a natural-sounding voice built in, no setup needed.';
+  }
+  if (isAndroid) {
+    return 'Tip: For a more natural voice, go to Settings → Accessibility → Text-to-speech output, and install higher-quality voice data.';
+  }
+  return null;
+}
+
 function loadProgress() {
   try {
     return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {};
@@ -402,9 +422,11 @@ export default function App() {
 
   const [babySession, setBabySession] = useState(loadBabySession);
   const [babyPlayed, setBabyPlayed] = useState(null);
+  const [goodVoice, setGoodVoice] = useState(true);
 
   useEffect(() => {
     prewarmVoices();
+    hasHighQualityVoice().then(setGoodVoice);
   }, []);
 
   useEffect(() => {
@@ -749,6 +771,9 @@ export default function App() {
                   {settings.inputMethod === 'write' ? '✓ ' : ''}Write the answer
                 </button>
               </div>
+              {!goodVoice && voiceUpgradeTip() && (
+                <p className="screen-sub voice-tip">{voiceUpgradeTip()}</p>
+              )}
             </div>
           </>
         )}

@@ -89,17 +89,29 @@ const PREFERRED_NAME_HINTS = [
 
 function scoreVoice(voice) {
   const name = voice.name.toLowerCase();
+  const uri = (voice.voiceURI || '').toLowerCase();
+  const text = `${name} ${uri}`;
   const isEnglish = voice.lang.toLowerCase().startsWith('en');
   let score = 0;
   if (!isEnglish) score -= 10;
-  if (/online \(natural\)/.test(name)) score += 6;
-  if (/neural/.test(name)) score += 6;
-  if (/premium|enhanced/.test(name)) score += 4;
-  if (name.includes('siri')) score += 3;
-  if (PREFERRED_NAME_HINTS.some((hint) => name.includes(hint))) score += 2;
-  if (voice.localService === false) score += 1;
-  if (/compact/.test(name)) score -= 3;
+  if (text.includes('online')) score += 3;
+  if (text.includes('natural')) score += 4;
+  if (text.includes('neural')) score += 6;
+  if (/premium|enhanced/.test(text)) score += 4;
+  if (text.includes('siri')) score += 3;
+  if (PREFERRED_NAME_HINTS.some((hint) => text.includes(hint))) score += 2;
+  if (voice.localService === false) score += 2;
+  if (/compact|espeak|robot/.test(text)) score -= 4;
   return score;
+}
+
+// True once we've resolved to a voice that isn't just the device's flat
+// default (no known-good quality signal matched) — used to nudge the user
+// toward installing a better system voice, since that's the real ceiling
+// on quality for a browser-only, no-server app.
+export async function hasHighQualityVoice() {
+  const voice = await pickVoice();
+  return !!voice && scoreVoice(voice) > 0;
 }
 
 async function pickVoice() {
