@@ -112,7 +112,7 @@ export function prewarmVoices() {
   loadVoices();
 }
 
-async function speak(text) {
+export async function speak(text) {
   if (!('speechSynthesis' in window)) return;
   const utterance = new SpeechSynthesisUtterance(text);
   const voice = await pickVoice();

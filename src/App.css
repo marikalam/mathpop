@@ -252,6 +252,9 @@ body {
 .menu-card-skills {
   background: linear-gradient(135deg, #4e8ff7, #8b5cf6 50%, #14b8a6);
 }
+.menu-card-baby {
+  background: linear-gradient(135deg, #ff9ec4, #ffc46b);
+}
 .menu-card-blue .menu-title,
 .menu-card-blue .menu-sub,
 .menu-card-green .menu-title,
@@ -265,7 +268,9 @@ body {
 .menu-card-orange .menu-title,
 .menu-card-orange .menu-sub,
 .menu-card-skills .menu-title,
-.menu-card-skills .menu-sub {
+.menu-card-skills .menu-sub,
+.menu-card-baby .menu-title,
+.menu-card-baby .menu-sub {
   color: #fff;
 }
 .menu-card-blue .menu-sub,
@@ -274,8 +279,81 @@ body {
 .menu-card-mixed .menu-sub,
 .menu-card-teal .menu-sub,
 .menu-card-orange .menu-sub,
-.menu-card-skills .menu-sub {
+.menu-card-skills .menu-sub,
+.menu-card-baby .menu-sub {
   opacity: 0.85;
+}
+
+.baby-counter {
+  align-self: center;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.baby-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.baby-btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  aspect-ratio: 1;
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  color: #fff;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(28px, 8vw, 40px);
+  transition: transform 0.08s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.baby-btn:active {
+  transform: scale(0.95);
+}
+
+.baby-btn-played {
+  animation: pop-bounce 0.38s ease;
+}
+
+@keyframes pop-bounce {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.baby-tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+.baby-tally-chip {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-weight: 700;
+  font-size: 13px;
 }
 
 .skill-units {

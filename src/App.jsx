@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import LevelSwitcher from './LevelSwitcher.jsx';
 import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
-import { playFeedbackAndSpeak, prewarmVoices, speakProblem, speakResults } from './sound.js';
+import { playFeedbackAndSpeak, prewarmVoices, speak, speakProblem, speakResults } from './sound.js';
 import { SentenceQuestionTemplates } from './types.js';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
@@ -9,6 +9,26 @@ import WritePad from './WritePad.jsx';
 const SESSION_ROUNDS = 10;
 const PROGRESS_KEY = 'mathpop-progress-v2';
 const SETTINGS_KEY = 'mathpop-settings-v1';
+const BABY_SESSION_TAPS = 20;
+const BABY_SESSION_KEY = 'mathpop-baby-session-v1';
+const BABY_NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+const BABY_COLORS = ['#3B6FEF', '#2FAE6B', '#8E4FD6', '#E0793A', '#14B8A6', '#EF4444', '#F5A623', '#EC4899', '#4E8FF7', '#A855F7'];
+
+function loadBabySession() {
+  try {
+    return JSON.parse(localStorage.getItem(BABY_SESSION_KEY)) || { taps: 0, counts: {} };
+  } catch {
+    return { taps: 0, counts: {} };
+  }
+}
+
+function saveBabySession(data) {
+  try {
+    localStorage.setItem(BABY_SESSION_KEY, JSON.stringify(data));
+  } catch {
+    /* ignore */
+  }
+}
 
 function loadSettings() {
   try {
@@ -380,6 +400,9 @@ export default function App() {
   const [sessionLog, setSessionLog] = useState([]);
   const [firstAttempt, setFirstAttempt] = useState(true);
 
+  const [babySession, setBabySession] = useState(loadBabySession);
+  const [babyPlayed, setBabyPlayed] = useState(null);
+
   useEffect(() => {
     prewarmVoices();
   }, []);
@@ -398,6 +421,28 @@ export default function App() {
 
   function sessionBack() {
     setView(isSkillConcept(operation) ? 'skills' : 'home');
+  }
+
+  function babyTap(n) {
+    if (babySession.taps >= BABY_SESSION_TAPS) return;
+    speak(String(n));
+    setBabyPlayed(n);
+    if (navigator.vibrate) navigator.vibrate(15);
+    setBabySession((prev) => {
+      const next = {
+        taps: prev.taps + 1,
+        counts: { ...prev.counts, [n]: (prev.counts[n] || 0) + 1 },
+      };
+      saveBabySession(next);
+      return next;
+    });
+  }
+
+  function babyPlayAgain() {
+    const next = { taps: 0, counts: {} };
+    setBabySession(next);
+    saveBabySession(next);
+    setBabyPlayed(null);
   }
 
   function updateInputMethod(method) {
@@ -584,7 +629,61 @@ export default function App() {
                   <span className="menu-sub">2nd-grade math concepts</span>
                 </span>
               </button>
+              <button className="menu-card menu-card-baby" onClick={() => setView('baby')}>
+                <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
+                  <span className="op-symbol">🍼</span>
+                </span>
+                <span className="menu-text">
+                  <span className="menu-title">Baby</span>
+                  <span className="menu-sub">Tap a number, hear it out loud</span>
+                </span>
+              </button>
             </div>
+          </>
+        )}
+
+        {view === 'baby' && (
+          <>
+            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
+            {babySession.taps >= BABY_SESSION_TAPS ? (
+              <div className="complete-wrap">
+                <div className="complete-emoji">🌟</div>
+                <h2 className="screen-title">All done!</h2>
+                <p className="screen-sub">You tapped {BABY_SESSION_TAPS} numbers.</p>
+                <div className="baby-tally">
+                  {BABY_NUMBERS.filter((n) => babySession.counts[n]).map((n) => (
+                    <div key={n} className="baby-tally-chip" style={{ background: BABY_COLORS[n] }}>
+                      {n}: {babySession.counts[n]}
+                    </div>
+                  ))}
+                </div>
+                <div className="feedback-actions">
+                  <button className="pill-btn-primary" onClick={babyPlayAgain}>
+                    Play again →
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h2 className="screen-title">Tap a number!</h2>
+                <div className="baby-counter">
+                  {babySession.taps} / {BABY_SESSION_TAPS}
+                </div>
+                <div className="baby-grid">
+                  {BABY_NUMBERS.map((n) => (
+                    <button
+                      key={n}
+                      className={`baby-btn${babyPlayed === n ? ' baby-btn-played' : ''}`}
+                      style={{ background: BABY_COLORS[n] }}
+                      aria-label={`Say the number ${n}`}
+                      onClick={() => babyTap(n)}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </>
         )}
 
