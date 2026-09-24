@@ -13,9 +13,9 @@ const SETTINGS_KEY = 'mathpop-settings-v1';
 function loadSettings() {
   try {
     const saved = localStorage.getItem(SETTINGS_KEY);
-    return saved ? JSON.parse(saved) : { inputMethod: 'type' };
+    return saved ? JSON.parse(saved) : { inputMethod: 'write' };
   } catch {
-    return { inputMethod: 'type' };
+    return { inputMethod: 'write' };
   }
 }
 
