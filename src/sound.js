@@ -8,6 +8,36 @@ function ensureAudio() {
   return audioCtx;
 }
 
+// Mobile browsers (especially iOS Safari) only allow audio.play() to
+// "just work" when it's called synchronously inside a real user gesture.
+// Piper speech goes through an async pipeline (model load + inference)
+// before it has anything to play, so by the time it's ready the original
+// tap no longer counts — playback gets silently blocked. The fix: reuse
+// one <audio> element and "spend" the very first tap anywhere in the app
+// on a real (silent) play() call, synchronously. Once an element has been
+// successfully played from a real gesture, browsers let that SAME element
+// keep playing programmatically for the rest of the page session — so all
+// later speak() calls, even from timers or effects, go through fine.
+const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+let ttsAudioEl = null;
+let audioUnlocked = false;
+
+function getTtsAudioEl() {
+  if (!ttsAudioEl) ttsAudioEl = new Audio();
+  return ttsAudioEl;
+}
+
+export function unlockAudio() {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  ensureAudio();
+  const el = getTtsAudioEl();
+  el.src = SILENT_WAV;
+  el.play().catch(() => {
+    /* some browsers still refuse a literal silent clip — later real speech will re-attempt */
+  });
+}
+
 function tone(ctx, freq, startTime, duration, peak) {
   const osc = ctx.createOscillator();
   osc.type = 'sine';
@@ -156,21 +186,17 @@ export async function getVoiceQuality() {
   }
 }
 
-let currentAudio = null;
-
 export async function speak(text) {
   try {
     const { synthesizeSpeech } = await getPiperModule();
     const blob = await synthesizeSpeech(text);
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio = null;
-    }
+    const audioEl = getTtsAudioEl();
+    const prevUrl = audioEl.dataset.blobUrl;
     const url = URL.createObjectURL(blob);
-    const audioEl = new Audio(url);
-    currentAudio = audioEl;
-    audioEl.addEventListener('ended', () => URL.revokeObjectURL(url));
+    audioEl.dataset.blobUrl = url;
+    audioEl.src = url;
     await audioEl.play();
+    if (prevUrl) URL.revokeObjectURL(prevUrl);
   } catch (err) {
     console.warn('Piper TTS unavailable, falling back to the built-in voice', err);
     speakWithWebSpeechAPI(text);

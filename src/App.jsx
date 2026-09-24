@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import LevelSwitcher from './LevelSwitcher.jsx';
 import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
-import { getVoiceQuality, playFeedbackAndSpeak, prewarmVoices, speak, speakProblem, speakResults } from './sound.js';
+import { getVoiceQuality, playFeedbackAndSpeak, prewarmVoices, speak, speakProblem, speakResults, unlockAudio } from './sound.js';
 import { SentenceQuestionTemplates } from './types.js';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
@@ -427,6 +427,18 @@ export default function App() {
   useEffect(() => {
     prewarmVoices();
     getVoiceQuality().then(setVoiceQuality);
+
+    // Mobile browsers only allow audio to start playing when it's tied to
+    // a real tap. Speech is generated asynchronously, so by the time it's
+    // ready the tap that triggered it may no longer count — priming a
+    // silent clip on the very first tap anywhere unlocks audio for the
+    // rest of the session.
+    const unlock = () => {
+      unlockAudio();
+      document.removeEventListener('pointerdown', unlock);
+    };
+    document.addEventListener('pointerdown', unlock, { once: true });
+    return () => document.removeEventListener('pointerdown', unlock);
   }, []);
 
   useEffect(() => {
