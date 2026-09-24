@@ -3,7 +3,7 @@ import { loadDigitModel } from './digitModel.js';
 import { recognizeNumber } from './handwriting.js';
 
 const CANVAS_W = 560;
-const CANVAS_H = 170;
+const CANVAS_H = 260;
 
 export default function WritePad({ onSubmit }) {
   const canvasRef = useRef(null);
@@ -99,7 +99,7 @@ export default function WritePad({ onSubmit }) {
         ) : recognizing ? (
           <span className="write-pad-hint">Reading…</span>
         ) : !hasInk ? (
-          <span className="write-pad-hint">Write your answer above</span>
+          <span className="write-pad-hint">Write one number in each box</span>
         ) : recognized && recognized.text ? (
           <span className="write-pad-preview">
             I read: <strong>{recognized.text}</strong>

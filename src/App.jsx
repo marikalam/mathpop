@@ -711,6 +711,7 @@ export default function App() {
             {problem.type === 'skill' && problem.hint && <p className="screen-sub skill-hint">💡 {problem.hint}</p>}
             <p className="screen-sub tap-to-hear">Tap the problem to hear it</p>
 
+            <div className="answer-area">
             {settings.inputMethod === 'write' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
               <WritePad onSubmit={chooseAnswer} />
             ) : settings.inputMethod === 'type' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
@@ -819,6 +820,7 @@ export default function App() {
                 ))}
               </div>
             )}
+            </div>
           </>
         )}
 
