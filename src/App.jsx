@@ -395,6 +395,10 @@ export default function App() {
     setView('home');
   }
 
+  function sessionBack() {
+    setView(isSkillConcept(operation) ? 'skills' : 'home');
+  }
+
   function updateInputMethod(method) {
     const newSettings = { ...settings, inputMethod: method };
     setSettings(newSettings);
@@ -644,7 +648,7 @@ export default function App() {
 
         {view === 'question' && problem && (
           <>
-            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
+            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={sessionBack} />
             <ProgressDots current={roundIndex + 1} total={SESSION_ROUNDS} />
             <h2 className="screen-title">
               {problem.questionTitle || (problem.type === 'clock' ? 'What time is it?' : "What's the answer?")}
@@ -810,7 +814,7 @@ export default function App() {
 
         {view === 'feedback' && problem && (
           <>
-            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
+            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={sessionBack} />
             <ProgressDots current={roundIndex + 1} total={SESSION_ROUNDS} />
             <div className={`feedback-icon-wrap${answerCorrect ? ' feedback-correct' : ' feedback-incorrect'}`}>
               {answerCorrect && (
@@ -848,7 +852,7 @@ export default function App() {
 
         {view === 'complete' && (
           <>
-            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
+            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={sessionBack} />
             <div className="complete-wrap">
               <div className="complete-emoji">🎉</div>
               <h2 className="screen-title">All done!</h2>
