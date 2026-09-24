@@ -5,6 +5,7 @@ import { getVoiceQuality, playFeedbackAndSpeak, prewarmVoices, speak, speakProbl
 import { SentenceQuestionTemplates } from './types.js';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
+import AdditionHelp from './AdditionHelp.jsx';
 
 const SESSION_ROUNDS = 10;
 const PROGRESS_KEY = 'mathpop-progress-v2';
@@ -846,6 +847,11 @@ export default function App() {
             </button>
             {problem.type === 'skill' && problem.hint && <p className="screen-sub skill-hint">💡 {problem.hint}</p>}
             <p className="screen-sub tap-to-hear">Tap the problem to hear it</p>
+            {problem.op === 'add' && problem.type !== 'sentence' && problem.type !== 'skill' && (
+              <button className="help-btn" onClick={() => setView('help')}>
+                🤔 Need help?
+              </button>
+            )}
 
             <div className="answer-area">
             {settings.inputMethod === 'write' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
@@ -957,6 +963,13 @@ export default function App() {
               </div>
             )}
             </div>
+          </>
+        )}
+
+        {view === 'help' && problem && (
+          <>
+            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={() => setView('question')} />
+            <AdditionHelp a={problem.a} b={problem.b} onClose={() => setView('question')} />
           </>
         )}
 
