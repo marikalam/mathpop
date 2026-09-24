@@ -266,6 +266,21 @@ function makeOptions(problem) {
   return buildOptions(problem);
 }
 
+function problemPromptText(problem) {
+  if (problem.type === 'sentence') return problem.text;
+  if (problem.type === 'clock') return 'What time is it?';
+  if (problem.type === 'skill') {
+    return problem.promptKind === 'compare' ? `${problem.compareLeft} ___ ${problem.compareRight}` : problem.prompt;
+  }
+  return `${problem.a} ${problem.symbol} ${problem.b}`;
+}
+
+function problemAnswerText(problem) {
+  if (problem.type === 'sentence' || problem.type === 'clock') return `${problem.correct}`;
+  if (problem.type === 'skill') return problem.answerLabel || `${problem.correct}`;
+  return `${problem.a} ${problem.symbol} ${problem.b} = ${problem.correct}`;
+}
+
 function loadProgress() {
   try {
     return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {};
@@ -361,6 +376,8 @@ export default function App() {
   const [typedAnswer, setTypedAnswer] = useState('');
   const [sessionCorrect, setSessionCorrect] = useState(0);
   const [sessionResults, setSessionResults] = useState({});
+  const [sessionLog, setSessionLog] = useState([]);
+  const [firstAttempt, setFirstAttempt] = useState(true);
 
   useEffect(() => {
     prewarmVoices();
@@ -400,6 +417,8 @@ export default function App() {
     setRoundIndex(0);
     setSessionCorrect(0);
     setSessionResults({});
+    setSessionLog([]);
+    setFirstAttempt(true);
     setProblem(first);
     setOptions(makeOptions(first));
     setChosen(null);
@@ -412,39 +431,58 @@ export default function App() {
     setChosen(value);
     setAnswerCorrect(correct);
     playFeedbackAndSpeak(correct, problem.speechAnswer ?? problem.correct);
-    if (correct) {
-      setSessionCorrect((c) => c + 1);
-    }
     if (navigator.vibrate) navigator.vibrate(correct ? 20 : [20, 40, 20]);
 
-    setSessionResults((prev) => {
-      const opStats = prev[problem.op] || { correct: 0, wrong: 0 };
-      return {
-        ...prev,
-        [problem.op]: {
-          correct: opStats.correct + (correct ? 1 : 0),
-          wrong: opStats.wrong + (correct ? 0 : 1),
-        },
-      };
-    });
+    // Only the first attempt at a problem counts toward the score and log —
+    // "Try again" lets a kid retry for practice without inflating the tally.
+    if (firstAttempt) {
+      if (correct) {
+        setSessionCorrect((c) => c + 1);
+      }
 
-    setProgress((prev) => {
-      const p = prev[level] || { total: 0, correct: 0, byOp: {} };
-      const opStats = p.byOp[problem.op] || { total: 0, correct: 0 };
-      const next = {
-        ...prev,
-        [level]: {
-          total: p.total + 1,
-          correct: p.correct + (correct ? 1 : 0),
-          byOp: {
-            ...p.byOp,
-            [problem.op]: { total: opStats.total + 1, correct: opStats.correct + (correct ? 1 : 0) },
+      setSessionResults((prev) => {
+        const opStats = prev[problem.op] || { correct: 0, wrong: 0 };
+        return {
+          ...prev,
+          [problem.op]: {
+            correct: opStats.correct + (correct ? 1 : 0),
+            wrong: opStats.wrong + (correct ? 0 : 1),
           },
+        };
+      });
+
+      setSessionLog((prev) => [
+        ...prev,
+        {
+          op: problem.op,
+          correct,
+          prompt: problemPromptText(problem),
+          yourAnswer: value,
+          answerText: problemAnswerText(problem),
         },
-      };
-      saveProgress(next);
-      return next;
-    });
+      ]);
+
+      setProgress((prev) => {
+        const p = prev[level] || { total: 0, correct: 0, byOp: {} };
+        const opStats = p.byOp[problem.op] || { total: 0, correct: 0 };
+        const next = {
+          ...prev,
+          [level]: {
+            total: p.total + 1,
+            correct: p.correct + (correct ? 1 : 0),
+            byOp: {
+              ...p.byOp,
+              [problem.op]: { total: opStats.total + 1, correct: opStats.correct + (correct ? 1 : 0) },
+            },
+          },
+        };
+        saveProgress(next);
+        return next;
+      });
+
+      setFirstAttempt(false);
+    }
+
     setView('feedback');
   }
 
@@ -459,6 +497,7 @@ export default function App() {
     setOptions(makeOptions(next));
     setChosen(null);
     setTypedAnswer('');
+    setFirstAttempt(true);
     setView('question');
   }
 
@@ -793,13 +832,7 @@ export default function App() {
               {answerCorrect ? "That's right!" : `You picked ${chosen}. The correct answer is:`}
             </p>
             <div className="answer-card" style={{ background: ALL_META[problem.op].color }}>
-              <div className="answer-equation">
-                {problem.type === 'sentence' || problem.type === 'clock'
-                  ? problem.correct
-                  : problem.type === 'skill'
-                    ? problem.answerLabel || problem.correct
-                    : `${problem.a} ${problem.symbol} ${problem.b} = ${problem.correct}`}
-              </div>
+              <div className="answer-equation">{problemAnswerText(problem)}</div>
             </div>
             {answerCorrect ? (
               <button className="pill-btn-primary pill-btn-full" onClick={nextProblem}>
@@ -843,6 +876,11 @@ export default function App() {
                   ))}
                 </div>
               )}
+              {sessionLog.length > 0 && (
+                <button className="pill-btn-secondary pill-btn-full" onClick={() => setView('review')}>
+                  Review answers
+                </button>
+              )}
               <div className="feedback-actions">
                 <button className="pill-btn-secondary" onClick={goHome}>
                   Home
@@ -851,6 +889,32 @@ export default function App() {
                   Play again →
                 </button>
               </div>
+            </div>
+          </>
+        )}
+
+        {view === 'review' && (
+          <>
+            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={() => setView('complete')} />
+            <h2 className="screen-title">Review Answers</h2>
+            <p className="screen-sub" style={{ marginBottom: '4px' }}>
+              {sessionCorrect} / {sessionLog.length} correct
+            </p>
+            <div className="review-list">
+              {sessionLog.map((entry, i) => (
+                <div key={i} className={`review-row${entry.correct ? ' review-row-correct' : ' review-row-wrong'}`}>
+                  <span className={`review-icon${entry.correct ? ' review-icon-correct' : ' review-icon-wrong'}`}>
+                    {entry.correct ? <CheckIcon /> : <XIcon />}
+                  </span>
+                  <div className="review-body">
+                    <p className="review-prompt">
+                      {i + 1}. {entry.prompt}
+                    </p>
+                    {!entry.correct && <p className="review-your-answer">You answered: {String(entry.yourAnswer)}</p>}
+                    <p className="review-correct-answer">{entry.answerText}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </>
         )}

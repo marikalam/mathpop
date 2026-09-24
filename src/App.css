@@ -911,6 +911,80 @@ body {
   color: #e5484d;
 }
 
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.review-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid transparent;
+}
+
+.review-row-correct {
+  border-left-color: var(--accent-green);
+}
+
+.review-row-wrong {
+  border-left-color: var(--accent-red);
+}
+
+.review-icon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  margin-top: 2px;
+}
+
+.review-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.review-icon-correct {
+  background: var(--accent-green);
+}
+
+.review-icon-wrong {
+  background: var(--accent-red);
+}
+
+.review-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.review-prompt {
+  margin: 0 0 4px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.review-your-answer {
+  margin: 0 0 2px;
+  font-size: 13px;
+  color: var(--accent-red);
+}
+
+.review-correct-answer {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-dim);
+}
+
 .logo-btn {
   appearance: none;
   border: none;
