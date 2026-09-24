@@ -4,6 +4,7 @@ import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
 import { playFeedbackAndSpeak, prewarmVoices, speakProblem, speakResults } from './sound.js';
 import { SentenceQuestionTemplates } from './types.js';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
+import WritePad from './WritePad.jsx';
 
 const SESSION_ROUNDS = 10;
 const PROGRESS_KEY = 'mathpop-progress-v2';
@@ -641,6 +642,13 @@ export default function App() {
                 >
                   {settings.inputMethod === 'choice' ? '✓ ' : ''}Pick from choices
                 </button>
+                <button
+                  className={`pill-btn-${settings.inputMethod === 'write' ? 'primary' : 'secondary'} pill-btn-full`}
+                  onClick={() => updateInputMethod('write')}
+                  style={{ padding: '20px', fontSize: '16px', fontWeight: '600' }}
+                >
+                  {settings.inputMethod === 'write' ? '✓ ' : ''}Write the answer
+                </button>
               </div>
             </div>
           </>
@@ -703,7 +711,9 @@ export default function App() {
             {problem.type === 'skill' && problem.hint && <p className="screen-sub skill-hint">💡 {problem.hint}</p>}
             <p className="screen-sub tap-to-hear">Tap the problem to hear it</p>
 
-            {settings.inputMethod === 'type' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
+            {settings.inputMethod === 'write' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
+              <WritePad onSubmit={chooseAnswer} />
+            ) : settings.inputMethod === 'type' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{
                   background: 'linear-gradient(135deg, rgba(59, 111, 239, 0.2) 0%, rgba(47, 174, 107, 0.2) 100%)',
