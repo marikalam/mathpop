@@ -346,6 +346,7 @@ function AppHeader({ level, onChangeLevel, onBack, showBack, onSettings }) {
         {showBack ? (
           <button className="logo-btn" onClick={onBack}>
             <h1 className="logo">
+              <img className="logo-mark" src={`${import.meta.env.BASE_URL}icon-192.png`} alt="" />
               <span className="ink">Math</span>
               <span className="pop-blue">P</span>
               <span className="pop-purple">o</span>
@@ -354,6 +355,7 @@ function AppHeader({ level, onChangeLevel, onBack, showBack, onSettings }) {
           </button>
         ) : (
           <h1 className="logo">
+            <img className="logo-mark" src={`${import.meta.env.BASE_URL}icon-192.png`} alt="" />
             <span className="ink">Math</span>
             <span className="pop-blue">P</span>
             <span className="pop-purple">o</span>

@@ -83,11 +83,21 @@ body {
 }
 
 .logo {
+  display: flex;
+  align-items: center;
   font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: 26px;
   margin: 0;
   letter-spacing: -0.01em;
+}
+
+.logo-mark {
+  width: 32px;
+  height: 32px;
+  margin-right: 8px;
+  border-radius: 9px;
+  box-shadow: var(--shadow-sm);
 }
 
 .logo .ink {
