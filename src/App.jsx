@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import LevelSwitcher from './LevelSwitcher.jsx';
 import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
-import { getVoiceQuality, playFeedbackAndSpeak, prewarmVoices, speak, speakProblem, speakResults, unlockAudio } from './sound.js';
+import { getVoiceQuality, playFeedbackAndSpeak, prewarmVoices, speakInLanguage, speakProblem, speakResults, unlockAudio } from './sound.js';
 import { SentenceQuestionTemplates } from './types.js';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
@@ -13,6 +13,32 @@ const SETTINGS_KEY = 'mathpop-settings-v1';
 const BABY_SESSION_TAPS = 20;
 const BABY_SESSION_KEY = 'mathpop-baby-session-v1';
 const BABY_NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+// `say` is what the voice is given (kana for Japanese so 4 and 7 come out
+// as よん/なな rather than し/しち); `show` is the small label under the digit.
+const BABY_LANGUAGES = [
+  { key: 'en', label: 'English', lang: 'en-US' },
+  {
+    key: 'ja',
+    label: '日本語',
+    lang: 'ja-JP',
+    say: ['ゼロ', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', 'なな', 'はち', 'きゅう'],
+    show: ['ゼロ', '一', '二', '三', '四', '五', '六', '七', '八', '九'],
+  },
+  {
+    key: 'yue',
+    label: '廣東話',
+    lang: 'zh-HK',
+    say: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'],
+    show: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'],
+  },
+  {
+    key: 'zh',
+    label: '普通话',
+    lang: 'zh-CN',
+    say: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'],
+    show: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'],
+  },
+];
 const BABY_COLORS = ['#3B6FEF', '#2FAE6B', '#8E4FD6', '#E0793A', '#14B8A6', '#EF4444', '#F5A623', '#EC4899', '#4E8FF7', '#A855F7'];
 
 function loadBabySession() {
@@ -460,9 +486,11 @@ export default function App() {
     setView(isSkillConcept(operation) ? 'skills' : 'home');
   }
 
+  const babyLang = BABY_LANGUAGES.find((l) => l.key === settings.babyLang) || BABY_LANGUAGES[0];
+
   function babyTap(n) {
     if (babySession.taps >= BABY_SESSION_TAPS) return;
-    speak(String(n));
+    speakInLanguage(babyLang.say ? babyLang.say[n] : String(n), babyLang.lang);
     setBabyPlayed(n);
     if (navigator.vibrate) navigator.vibrate(15);
     setBabySession((prev) => {
@@ -480,6 +508,12 @@ export default function App() {
     setBabySession(next);
     saveBabySession(next);
     setBabyPlayed(null);
+  }
+
+  function updateBabyLang(key) {
+    const newSettings = { ...settings, babyLang: key };
+    setSettings(newSettings);
+    saveSettings(newSettings);
   }
 
   function updateInputMethod(method) {
@@ -702,7 +736,19 @@ export default function App() {
               </div>
             ) : (
               <>
-                <h2 className="screen-title">Tap a number!</h2>
+                <div className="baby-lang-row" role="radiogroup" aria-label="Language">
+                  {BABY_LANGUAGES.map((l) => (
+                    <button
+                      key={l.key}
+                      role="radio"
+                      aria-checked={l.key === babyLang.key}
+                      className={`baby-lang-btn${l.key === babyLang.key ? ' baby-lang-btn-active' : ''}`}
+                      onClick={() => updateBabyLang(l.key)}
+                    >
+                      {l.label}
+                    </button>
+                  ))}
+                </div>
                 <div className="baby-counter">
                   {babySession.taps} / {BABY_SESSION_TAPS}
                 </div>
@@ -715,7 +761,8 @@ export default function App() {
                       aria-label={`Say the number ${n}`}
                       onClick={() => babyTap(n)}
                     >
-                      {n}
+                      <span className="baby-digit">{n}</span>
+                      {babyLang.show && <span className="baby-word">{babyLang.show[n]}</span>}
                     </button>
                   ))}
                 </div>

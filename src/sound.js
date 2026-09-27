@@ -138,6 +138,47 @@ async function speakWithWebSpeechAPI(text) {
   window.speechSynthesis.speak(utterance);
 }
 
+// Piper only ships an English voice here, so other languages go through
+// the OS voice for that language (iOS/macOS/Android/Windows all include
+// Japanese, Cantonese and Mandarin). Cantonese voices are tagged zh-HK on
+// most platforms, but some use yue.
+async function pickVoiceForLang(lang) {
+  const voices = await loadVoices();
+  const norm = (l) => l.toLowerCase().replace('_', '-');
+  const target = norm(lang);
+  let pool = voices.filter((v) => {
+    const vl = norm(v.lang);
+    if (target === 'zh-hk') return vl === 'zh-hk' || vl.startsWith('yue');
+    return vl === target;
+  });
+  // No mainland Mandarin voice installed — a Taiwan Mandarin voice still
+  // reads the digits correctly.
+  if (pool.length === 0 && target === 'zh-cn') pool = voices.filter((v) => norm(v.lang) === 'zh-tw');
+  if (pool.length === 0) return null;
+  return [...pool].sort((a, b) => scoreVoiceQuality(b) - scoreVoiceQuality(a))[0];
+}
+
+function scoreVoiceQuality(voice) {
+  const text = `${voice.name} ${voice.voiceURI || ''}`.toLowerCase();
+  let score = 0;
+  if (/premium|enhanced|natural|neural|siri/.test(text)) score += 4;
+  if (voice.localService === false) score += 1;
+  if (/compact|espeak/.test(text)) score -= 4;
+  return score;
+}
+
+export async function speakInLanguage(text, lang) {
+  if (!lang || lang.startsWith('en')) return speak(text);
+  if (!('speechSynthesis' in window)) return;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = lang;
+  const voice = await pickVoiceForLang(lang);
+  if (voice) utterance.voice = voice;
+  utterance.rate = 0.9;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}
+
 // piper-tts-web pulls in onnxruntime-web (a sizeable WASM runtime), so it's
 // dynamically imported rather than bundled into the main chunk — nobody
 // pays for it until speech is actually requested. The voice model itself
