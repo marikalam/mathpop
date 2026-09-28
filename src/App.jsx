@@ -10,48 +10,48 @@ import AdditionHelp from './AdditionHelp.jsx';
 const SESSION_ROUNDS = 10;
 const PROGRESS_KEY = 'mathpop-progress-v2';
 const SETTINGS_KEY = 'mathpop-settings-v1';
-const BABY_SESSION_TAPS = 20;
-const BABY_SESSION_KEY = 'mathpop-baby-session-v1';
-const BABY_NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+const EXPLORE_SESSION_TAPS = 20;
+const EXPLORE_SESSION_KEY = 'mathpop-baby-session-v1';
+const EXPLORE_NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 // `say` is what the voice is given (kana for Japanese so 4 and 7 come out
 // as よん/なな rather than し/しち); `show` is the small label under the digit.
-const BABY_LANGUAGES = [
+const EXPLORE_LANGUAGES = [
   { key: 'en', label: 'English', lang: 'en-US' },
   {
     key: 'ja',
     label: '日本語',
     lang: 'ja-JP',
-    say: ['ゼロ', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', 'なな', 'はち', 'きゅう'],
-    show: ['ゼロ', '一', '二', '三', '四', '五', '六', '七', '八', '九'],
+    say: ['ゼロ', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', 'なな', 'はち', 'きゅう', 'じゅう'],
+    show: ['ゼロ', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'],
   },
   {
     key: 'yue',
     label: '廣東話',
     lang: 'zh-HK',
-    say: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'],
-    show: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'],
+    say: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'],
+    show: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'],
   },
   {
     key: 'zh',
     label: '普通话',
     lang: 'zh-CN',
-    say: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'],
-    show: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'],
+    say: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'],
+    show: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'],
   },
 ];
-const BABY_COLORS = ['#3B6FEF', '#2FAE6B', '#8E4FD6', '#E0793A', '#14B8A6', '#EF4444', '#F5A623', '#EC4899', '#4E8FF7', '#A855F7'];
+const EXPLORE_COLORS = ['#3B6FEF', '#2FAE6B', '#8E4FD6', '#E0793A', '#14B8A6', '#EF4444', '#F5A623', '#EC4899', '#4E8FF7', '#A855F7', '#0EA5E9'];
 
-function loadBabySession() {
+function loadExploreSession() {
   try {
-    return JSON.parse(localStorage.getItem(BABY_SESSION_KEY)) || { taps: 0, counts: {} };
+    return JSON.parse(localStorage.getItem(EXPLORE_SESSION_KEY)) || { taps: 0, counts: {} };
   } catch {
     return { taps: 0, counts: {} };
   }
 }
 
-function saveBabySession(data) {
+function saveExploreSession(data) {
   try {
-    localStorage.setItem(BABY_SESSION_KEY, JSON.stringify(data));
+    localStorage.setItem(EXPLORE_SESSION_KEY, JSON.stringify(data));
   } catch {
     /* ignore */
   }
@@ -449,8 +449,8 @@ export default function App() {
   const [sessionLog, setSessionLog] = useState([]);
   const [firstAttempt, setFirstAttempt] = useState(true);
 
-  const [babySession, setBabySession] = useState(loadBabySession);
-  const [babyPlayed, setBabyPlayed] = useState(null);
+  const [exploreSession, setExploreSession] = useState(loadExploreSession);
+  const [explorePlayed, setExplorePlayed] = useState(null);
   const [voiceQuality, setVoiceQuality] = useState('piper');
 
   useEffect(() => {
@@ -486,32 +486,32 @@ export default function App() {
     setView(isSkillConcept(operation) ? 'skills' : 'home');
   }
 
-  const babyLang = BABY_LANGUAGES.find((l) => l.key === settings.babyLang) || BABY_LANGUAGES[0];
+  const exploreLang = EXPLORE_LANGUAGES.find((l) => l.key === settings.exploreLang) || EXPLORE_LANGUAGES[0];
 
-  function babyTap(n) {
-    if (babySession.taps >= BABY_SESSION_TAPS) return;
-    speakInLanguage(babyLang.say ? babyLang.say[n] : String(n), babyLang.lang);
-    setBabyPlayed(n);
+  function exploreTap(n) {
+    if (exploreSession.taps >= EXPLORE_SESSION_TAPS) return;
+    speakInLanguage(exploreLang.say ? exploreLang.say[n] : String(n), exploreLang.lang);
+    setExplorePlayed(n);
     if (navigator.vibrate) navigator.vibrate(15);
-    setBabySession((prev) => {
+    setExploreSession((prev) => {
       const next = {
         taps: prev.taps + 1,
         counts: { ...prev.counts, [n]: (prev.counts[n] || 0) + 1 },
       };
-      saveBabySession(next);
+      saveExploreSession(next);
       return next;
     });
   }
 
-  function babyPlayAgain() {
+  function explorePlayAgain() {
     const next = { taps: 0, counts: {} };
-    setBabySession(next);
-    saveBabySession(next);
-    setBabyPlayed(null);
+    setExploreSession(next);
+    saveExploreSession(next);
+    setExplorePlayed(null);
   }
 
-  function updateBabyLang(key) {
-    const newSettings = { ...settings, babyLang: key };
+  function updateExploreLang(key) {
+    const newSettings = { ...settings, exploreLang: key };
     setSettings(newSettings);
     saveSettings(newSettings);
   }
@@ -700,12 +700,12 @@ export default function App() {
                   <span className="menu-sub">2nd-grade math concepts</span>
                 </span>
               </button>
-              <button className="menu-card menu-card-baby" onClick={() => setView('baby')}>
+              <button className="menu-card menu-card-explore" onClick={() => setView('explore')}>
                 <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
-                  <span className="op-symbol">🍼</span>
+                  <span className="op-symbol">🔢</span>
                 </span>
                 <span className="menu-text">
-                  <span className="menu-title">Baby</span>
+                  <span className="menu-title">Explore Numbers</span>
                   <span className="menu-sub">Tap a number, hear it out loud</span>
                 </span>
               </button>
@@ -713,56 +713,56 @@ export default function App() {
           </>
         )}
 
-        {view === 'baby' && (
+        {view === 'explore' && (
           <>
             <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
-            {babySession.taps >= BABY_SESSION_TAPS ? (
+            {exploreSession.taps >= EXPLORE_SESSION_TAPS ? (
               <div className="complete-wrap">
                 <div className="complete-emoji">🌟</div>
                 <h2 className="screen-title">All done!</h2>
-                <p className="screen-sub">You tapped {BABY_SESSION_TAPS} numbers.</p>
-                <div className="baby-tally">
-                  {BABY_NUMBERS.filter((n) => babySession.counts[n]).map((n) => (
-                    <div key={n} className="baby-tally-chip" style={{ background: BABY_COLORS[n] }}>
-                      {n}: {babySession.counts[n]}
+                <p className="screen-sub">You tapped {EXPLORE_SESSION_TAPS} numbers.</p>
+                <div className="explore-tally">
+                  {EXPLORE_NUMBERS.filter((n) => exploreSession.counts[n]).map((n) => (
+                    <div key={n} className="explore-tally-chip" style={{ background: EXPLORE_COLORS[n] }}>
+                      {n}: {exploreSession.counts[n]}
                     </div>
                   ))}
                 </div>
                 <div className="feedback-actions">
-                  <button className="pill-btn-primary" onClick={babyPlayAgain}>
+                  <button className="pill-btn-primary" onClick={explorePlayAgain}>
                     Play again →
                   </button>
                 </div>
               </div>
             ) : (
               <>
-                <div className="baby-lang-row" role="radiogroup" aria-label="Language">
-                  {BABY_LANGUAGES.map((l) => (
+                <div className="explore-lang-row" role="radiogroup" aria-label="Language">
+                  {EXPLORE_LANGUAGES.map((l) => (
                     <button
                       key={l.key}
                       role="radio"
-                      aria-checked={l.key === babyLang.key}
-                      className={`baby-lang-btn${l.key === babyLang.key ? ' baby-lang-btn-active' : ''}`}
-                      onClick={() => updateBabyLang(l.key)}
+                      aria-checked={l.key === exploreLang.key}
+                      className={`explore-lang-btn${l.key === exploreLang.key ? ' explore-lang-btn-active' : ''}`}
+                      onClick={() => updateExploreLang(l.key)}
                     >
                       {l.label}
                     </button>
                   ))}
                 </div>
-                <div className="baby-counter">
-                  {babySession.taps} / {BABY_SESSION_TAPS}
+                <div className="explore-counter">
+                  {exploreSession.taps} / {EXPLORE_SESSION_TAPS}
                 </div>
-                <div className="baby-grid">
-                  {BABY_NUMBERS.map((n) => (
+                <div className="explore-grid">
+                  {EXPLORE_NUMBERS.map((n) => (
                     <button
                       key={n}
-                      className={`baby-btn${babyPlayed === n ? ' baby-btn-played' : ''}`}
-                      style={{ background: BABY_COLORS[n] }}
+                      className={`explore-btn${n === 10 ? ' explore-btn-wide' : ''}${explorePlayed === n ? ' explore-btn-played' : ''}`}
+                      style={{ background: EXPLORE_COLORS[n] }}
                       aria-label={`Say the number ${n}`}
-                      onClick={() => babyTap(n)}
+                      onClick={() => exploreTap(n)}
                     >
-                      <span className="baby-digit">{n}</span>
-                      {babyLang.show && <span className="baby-word">{babyLang.show[n]}</span>}
+                      <span className="explore-digit">{n}</span>
+                      {exploreLang.show && <span className="explore-word">{exploreLang.show[n]}</span>}
                     </button>
                   ))}
                 </div>

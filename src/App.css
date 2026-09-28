@@ -262,7 +262,7 @@ body {
 .menu-card-skills {
   background: linear-gradient(135deg, #4e8ff7, #8b5cf6 50%, #14b8a6);
 }
-.menu-card-baby {
+.menu-card-explore {
   background: linear-gradient(135deg, #ff9ec4, #ffc46b);
 }
 .menu-card-blue .menu-title,
@@ -279,8 +279,8 @@ body {
 .menu-card-orange .menu-sub,
 .menu-card-skills .menu-title,
 .menu-card-skills .menu-sub,
-.menu-card-baby .menu-title,
-.menu-card-baby .menu-sub {
+.menu-card-explore .menu-title,
+.menu-card-explore .menu-sub {
   color: #fff;
 }
 .menu-card-blue .menu-sub,
@@ -290,11 +290,11 @@ body {
 .menu-card-teal .menu-sub,
 .menu-card-orange .menu-sub,
 .menu-card-skills .menu-sub,
-.menu-card-baby .menu-sub {
+.menu-card-explore .menu-sub {
   opacity: 0.85;
 }
 
-.baby-counter {
+.explore-counter {
   align-self: center;
   font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
@@ -304,23 +304,28 @@ body {
 }
 
 /* Fills whatever height is left under the header so the numbers are as
-   big as the screen allows: 2 columns × 5 rows. */
-.baby-grid {
+   big as the screen allows: 2 columns × 6 rows. */
+.explore-grid {
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(5, 1fr);
+  grid-template-rows: repeat(6, 1fr);
   gap: 10px;
 }
 
-.baby-lang-row {
+/* 10 gets the whole bottom row so the grid stays even. */
+.explore-btn-wide {
+  grid-column: 1 / -1;
+}
+
+.explore-lang-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
 }
 
-.baby-lang-btn {
+.explore-lang-btn {
   appearance: none;
   border: 2px solid transparent;
   cursor: pointer;
@@ -335,12 +340,12 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-.baby-lang-btn-active {
+.explore-lang-btn-active {
   background: var(--accent-blue);
   color: #fff;
 }
 
-.baby-btn {
+.explore-btn {
   appearance: none;
   border: none;
   cursor: pointer;
@@ -359,20 +364,20 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-.baby-digit {
-  font-size: min(22vw, 11dvh, 110px);
+.explore-digit {
+  font-size: min(22vw, 9dvh, 100px);
 }
 
-.baby-word {
+.explore-word {
   font-size: min(8vw, 4.5dvh, 36px);
   opacity: 0.9;
 }
 
-.baby-btn:active {
+.explore-btn:active {
   transform: scale(0.95);
 }
 
-.baby-btn-played {
+.explore-btn-played {
   animation: pop-bounce 0.38s ease;
 }
 
@@ -388,7 +393,7 @@ body {
   }
 }
 
-.baby-tally {
+.explore-tally {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -396,7 +401,7 @@ body {
   margin: 8px 0;
 }
 
-.baby-tally-chip {
+.explore-tally-chip {
   min-width: 34px;
   height: 34px;
   padding: 0 10px;
