@@ -1320,3 +1320,282 @@ body {
   opacity: 0.5;
   cursor: default;
 }
+
+/* ---------- Print worksheet ---------- */
+.print-open-btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  align-self: center;
+  background: none;
+  color: var(--ink-dim, #6b7187);
+  font: 700 14px 'IBM Plex Sans', sans-serif;
+  padding: 8px 14px;
+}
+
+.print-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(20, 22, 35, 0.45);
+}
+
+.print-panel {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 20px 16px;
+  border-radius: 24px;
+  background: #fff;
+  color: #1b1d2a;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.print-panel-title {
+  margin: 0;
+  text-align: center;
+  font: 700 20px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+
+.print-panel-sub {
+  margin: -6px 0 0;
+  text-align: center;
+  color: #6b7187;
+  font-size: 14px;
+}
+
+.print-count {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: #eef1f7;
+}
+
+.print-count-btn {
+  appearance: none;
+  flex: 1;
+  border: none;
+  cursor: pointer;
+  padding: 12px 6px;
+  border-radius: 11px;
+  background: none;
+  color: #6b7187;
+  font: 700 15px 'IBM Plex Sans', sans-serif;
+}
+
+.print-count-btn-active {
+  background: #fff;
+  color: #3b6fef;
+  box-shadow: 0 1px 4px rgba(23, 26, 43, 0.14);
+}
+
+.print-key-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #1b1d2a;
+}
+
+.print-key-toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: #3b6fef;
+}
+
+.print-go {
+  width: 100%;
+  background: #3b6fef;
+  color: #fff;
+  font-size: 16px;
+}
+
+.print-cancel {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  background: none;
+  color: #6b7187;
+  font: 700 14px 'IBM Plex Sans', sans-serif;
+  padding: 6px;
+}
+
+/* The worksheet itself: hidden on screen, the only thing printed. */
+.print-sheet {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    height: auto !important;
+  }
+
+  #root {
+    display: none !important;
+  }
+
+  .print-sheet {
+    display: block;
+    color: #000;
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    font-size: 15pt;
+  }
+
+  .ws-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 2px solid #000;
+    padding-bottom: 6px;
+  }
+
+  .ws-title {
+    font: 700 20pt 'Fredoka', ui-rounded, system-ui, sans-serif;
+  }
+
+  .ws-level {
+    font-size: 12pt;
+  }
+
+  .ws-name-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 14px 0 18px;
+    font-size: 12pt;
+  }
+
+  .ws-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 28px;
+    row-gap: 22px;
+  }
+
+  .ws-item {
+    display: flex;
+    gap: 8px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .ws-num {
+    font-weight: 700;
+    min-width: 1.6em;
+  }
+
+  .ws-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ws-math {
+    margin: 0;
+    font-size: 18pt;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ws-text {
+    margin: 0;
+    font-size: 12.5pt;
+    line-height: 1.4;
+  }
+
+  .ws-blank {
+    display: inline-block;
+    width: 3.2em;
+    border-bottom: 1.5px solid #000;
+  }
+
+  .ws-circle-blank {
+    display: inline-block;
+    width: 1.3em;
+    height: 1.3em;
+    vertical-align: middle;
+    border: 1.5px solid #000;
+    border-radius: 50%;
+  }
+
+  .ws-answer-line,
+  .ws-choices {
+    font-size: 12pt;
+  }
+
+  .ws-choice {
+    display: inline-block;
+    margin-left: 14px;
+    font-size: 14pt;
+    font-weight: 700;
+  }
+
+  .ws-stack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    align-self: flex-start;
+    font-size: 18pt;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+
+  .ws-stack-op {
+    margin-right: 10px;
+  }
+
+  .ws-stack-rule {
+    width: 100%;
+    min-width: 3.5em;
+    border-top: 2px solid #000;
+    margin-top: 2px;
+    height: 1.4em;
+  }
+
+  .ws-clock {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .ws-clock .clock-face circle:first-of-type {
+    stroke: #000;
+    stroke-width: 2.5;
+  }
+
+  .ws-key {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .ws-key .ws-title {
+    border-bottom: 2px solid #000;
+    padding-bottom: 6px;
+    margin-bottom: 14px;
+  }
+
+  .ws-key-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    columns: 2;
+    column-gap: 28px;
+    font-size: 14pt;
+    line-height: 1.9;
+  }
+}
