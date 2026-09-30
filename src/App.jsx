@@ -6,6 +6,7 @@ import { SentenceQuestionTemplates } from './types.js';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
 import AdditionHelp from './AdditionHelp.jsx';
+import PrintSheet from './PrintSheet.jsx';
 
 const SESSION_ROUNDS = 10;
 const PROGRESS_KEY = 'mathpop-progress-v2';
@@ -309,6 +310,21 @@ function makeProblem(op, level) {
   return buildProblem(op, level);
 }
 
+// A worksheet's worth of problems, skipping exact repeats where it can
+// (easy levels have few possible problems, so some repeats are allowed).
+function makeWorksheet(op, level, count) {
+  const seen = new Set();
+  const problems = [];
+  for (let tries = 0; problems.length < count && tries < count * 20; tries++) {
+    const p = makeProblem(op, level);
+    const key = JSON.stringify(p);
+    if (seen.has(key) && tries < count * 10) continue;
+    seen.add(key);
+    problems.push(p);
+  }
+  return problems;
+}
+
 function makeOptions(problem) {
   if (problem.type === 'skill') return buildSkillOptions(problem);
   return buildOptions(problem);
@@ -440,6 +456,11 @@ export default function App() {
   const [operation, setOperation] = useState('multiply');
   const [roundIndex, setRoundIndex] = useState(0);
   const [problem, setProblem] = useState(null);
+  // Print worksheet: the options panel, and the sheet being printed.
+  const [printPanel, setPrintPanel] = useState(false);
+  const [printCount, setPrintCount] = useState(10);
+  const [printKey, setPrintKey] = useState(true);
+  const [printSet, setPrintSet] = useState(null);
   const [options, setOptions] = useState([]);
   const [answerCorrect, setAnswerCorrect] = useState(false);
   const [chosen, setChosen] = useState(null);
@@ -620,6 +641,18 @@ export default function App() {
     setTypedAnswer('');
     setFirstAttempt(true);
     setView('question');
+  }
+
+  // Once the worksheet is on the page, open the print dialog.
+  useEffect(() => {
+    if (!printSet) return;
+    const id = setTimeout(() => window.print(), 50);
+    return () => clearTimeout(id);
+  }, [printSet]);
+
+  function printWorksheet() {
+    setPrintPanel(false);
+    setPrintSet({ problems: makeWorksheet(operation, level, printCount), withKey: printKey, id: Date.now() });
   }
 
   const modeLabel = isSkillConcept(operation)
@@ -901,6 +934,9 @@ export default function App() {
                 🤔 Need help?
               </button>
             )}
+            <button className="print-open-btn" onClick={() => setPrintPanel(true)}>
+              🖨️ Print worksheet
+            </button>
 
             <div className="answer-area">
             {settings.inputMethod === 'write' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
@@ -1133,6 +1169,54 @@ export default function App() {
           </>
         )}
 
+        {printPanel && (
+          <div className="print-panel-backdrop" onClick={() => setPrintPanel(false)}>
+            <div
+              className="print-panel"
+              role="dialog"
+              aria-label="Print a worksheet"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="print-panel-title">🖨️ Print a worksheet</h2>
+              <p className="print-panel-sub">
+                New {modeLabel} problems at this level, to do on paper.
+              </p>
+              <div className="print-count" role="radiogroup" aria-label="How many questions">
+                {[10, 20].map((n) => (
+                  <button
+                    key={n}
+                    role="radio"
+                    aria-checked={printCount === n}
+                    className={`print-count-btn${printCount === n ? ' print-count-btn-active' : ''}`}
+                    onClick={() => setPrintCount(n)}
+                  >
+                    {n} questions
+                  </button>
+                ))}
+              </div>
+              <label className="print-key-toggle">
+                <input type="checkbox" checked={printKey} onChange={(e) => setPrintKey(e.target.checked)} />
+                Include an answer key (on its own page)
+              </label>
+              <button className="pill-btn-primary print-go" onClick={printWorksheet}>
+                Print
+              </button>
+              <button className="print-cancel" onClick={() => setPrintPanel(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {printSet && (
+          <PrintSheet
+            key={printSet.id}
+            problems={printSet.problems}
+            title={modeLabel.charAt(0).toUpperCase() + modeLabel.slice(1)}
+            levelLabel={level.charAt(0).toUpperCase() + level.slice(1)}
+            withKey={printSet.withKey}
+          />
+        )}
       </div>
     </div>
   );
