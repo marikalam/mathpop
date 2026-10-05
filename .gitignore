@@ -1,2 +1,4 @@
 node_modules
 dist
+.ios-assets-cache
+.DS_Store

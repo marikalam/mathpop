@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import LevelSwitcher from './LevelSwitcher.jsx';
 import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
 import { getVoiceQuality, playFeedbackAndSpeak, prewarmVoices, speakInLanguage, speakProblem, speakResults, unlockAudio } from './sound.js';
@@ -9,6 +10,25 @@ import AdditionHelp from './AdditionHelp.jsx';
 import PrintSheet from './PrintSheet.jsx';
 
 const SESSION_ROUNDS = 10;
+// The iPhone app has no link out to the other apps' website.
+const IS_NATIVE = Capacitor.isNativePlatform();
+// The four operation tiles across the top of the home page.
+const HERO_OPS = [
+  { symbol: '+', color: '#2fae6b' },
+  { symbol: '−', color: '#8e4fd6' },
+  { symbol: '×', color: '#3b6fef' },
+  { symbol: '÷', color: '#f0954f' },
+];
+// The home page's practice modes (Random Mix and Explore Numbers have
+// their own Quick play card above them).
+const HOME_CARDS = [
+  { id: 'multiply', icon: '×', title: 'Multiplication', sub: 'Times tables practice', from: '#4a7cf5', to: '#3660e0' },
+  { id: 'add', icon: '+', title: 'Addition', sub: 'Add it up', from: '#38c07f', to: '#2a9e60' },
+  { id: 'subtract', icon: '−', title: 'Subtraction', sub: 'Take it away', from: '#a065e6', to: '#7c3fc4' },
+  { id: 'sentence', icon: '📖', title: 'Word Problems', sub: 'Math in a story', from: '#1fb6ba', to: '#14898c' },
+  { id: 'clock', icon: '🕐', title: 'Tell Time', sub: 'Read the clock', from: '#f0954f', to: '#e0793a' },
+  { id: 'skills', icon: '🏆', title: 'Skill Builders', sub: '2nd-grade concepts', from: '#f06f9a', to: '#d94f7e' },
+];
 const PROGRESS_KEY = 'mathpop-progress-v2';
 const SETTINGS_KEY = 'mathpop-settings-v1';
 const EXPLORE_SESSION_TAPS = 20;
@@ -405,25 +425,21 @@ function AppHeader({ level, onChangeLevel, onBack, showBack, onSettings }) {
           </h1>
         )}
         {!showBack && (
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="games-link-btn" onClick={onSettings} aria-label="Settings">
+          <div className="brand-actions">
+            <LevelSwitcher level={level} onChange={onChangeLevel} />
+            <button className="settings-btn" onClick={onSettings} aria-label="Settings">
               ⚙️
             </button>
-            <a className="games-link-btn" href="https://marikalam.github.io/apps/">
-              Apps
-            </a>
           </div>
         )}
       </div>
-      {showBack ? (
+      {showBack && (
         <div className="nav-row">
           <button className="back-link" onClick={onBack}>
             ← Back
           </button>
           <LevelSwitcher level={level} onChange={onChangeLevel} />
         </div>
-      ) : (
-        <LevelSwitcher level={level} onChange={onChangeLevel} />
       )}
     </>
   );
@@ -452,6 +468,7 @@ export default function App() {
   const [level, setLevel] = useState('medium');
   const [progress, setProgress] = useState(loadProgress);
   const [settings, setSettings] = useState(loadSettings);
+  const levelStats = progress[level] || { total: 0, correct: 0 };
 
   const [operation, setOperation] = useState('multiply');
   const [roundIndex, setRoundIndex] = useState(0);
@@ -669,80 +686,80 @@ export default function App() {
         {view === 'home' && (
           <>
             <AppHeader level={level} onChangeLevel={changeLevel} showBack={false} onSettings={() => setView('settings')} />
-            <div className="menu-list">
-              <button className="menu-card menu-card-blue" onClick={() => startOperation('multiply')}>
-                <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
-                  <span className="op-symbol">×</span>
+            <section className="home-hero">
+              <div className="home-hero-ops" aria-hidden="true">
+                {HERO_OPS.map((op) => (
+                  <span key={op.symbol} className="home-hero-op" style={{ background: op.color }}>
+                    {op.symbol}
+                  </span>
+                ))}
+              </div>
+              <h2 className="home-hello">Ready to pop some math?</h2>
+              <p className="home-tagline">Pick a game, answer ten problems, and watch your score grow.</p>
+              <div className="home-stats">
+                {levelStats.total ? (
+                  <>
+                    <span className="home-stat">✅ {levelStats.total} solved</span>
+                    <span className="home-stat">🎯 {Math.round((levelStats.correct / levelStats.total) * 100)}% right</span>
+                  </>
+                ) : (
+                  <span className="home-stat">⭐ Start your first round</span>
+                )}
+              </div>
+            </section>
+
+            <section className="quick-set" aria-label="Quick play">
+              <button className="home-cta" onClick={() => startOperation('random')}>
+                <span className="home-cta-icon" aria-hidden="true">
+                  🎲
                 </span>
-                <span className="menu-text">
-                  <span className="menu-title">Multiplication</span>
-                  <span className="menu-sub">Times tables practice</span>
+                <span className="home-cta-text">
+                  <span className="home-cta-title">Random Mix</span>
+                  <span className="home-cta-sub">A bit of everything</span>
                 </span>
-              </button>
-              <button className="menu-card menu-card-green" onClick={() => startOperation('add')}>
-                <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
-                  <span className="op-symbol">+</span>
-                </span>
-                <span className="menu-text">
-                  <span className="menu-title">Addition</span>
-                  <span className="menu-sub">Add it up</span>
-                </span>
-              </button>
-              <button className="menu-card menu-card-purple" onClick={() => startOperation('subtract')}>
-                <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
-                  <span className="op-symbol">−</span>
-                </span>
-                <span className="menu-text">
-                  <span className="menu-title">Subtraction</span>
-                  <span className="menu-sub">Take it away</span>
-                </span>
-              </button>
-              <button className="menu-card menu-card-mixed" onClick={() => startOperation('random')}>
-                <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
-                  <span className="op-symbol">🎲</span>
-                </span>
-                <span className="menu-text">
-                  <span className="menu-title">Random Mix</span>
-                  <span className="menu-sub">A bit of everything</span>
+                <span className="home-cta-arrow" aria-hidden="true">
+                  →
                 </span>
               </button>
-              <button className="menu-card menu-card-teal" onClick={() => startOperation('sentence')}>
-                <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
-                  <span className="op-symbol">📖</span>
+              <button className="quick-explore" onClick={() => setView('explore')}>
+                <span className="quick-explore-icon" aria-hidden="true">
+                  🔢
                 </span>
-                <span className="menu-text">
-                  <span className="menu-title">Word Problems</span>
-                  <span className="menu-sub">Math in a story</span>
+                <span className="home-cta-text">
+                  <span className="quick-explore-title">Explore Numbers</span>
+                  <span className="quick-explore-sub">Tap a number, hear it out loud</span>
                 </span>
-              </button>
-              <button className="menu-card menu-card-orange" onClick={() => startOperation('clock')}>
-                <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
-                  <span className="op-symbol">🕐</span>
-                </span>
-                <span className="menu-text">
-                  <span className="menu-title">Tell Time</span>
-                  <span className="menu-sub">Read the clock</span>
+                <span className="quick-explore-arrow" aria-hidden="true">
+                  →
                 </span>
               </button>
-              <button className="menu-card menu-card-skills" onClick={() => setView('skills')}>
-                <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
-                  <span className="op-symbol">🏆</span>
-                </span>
-                <span className="menu-text">
-                  <span className="menu-title">Skill Builders</span>
-                  <span className="menu-sub">2nd-grade math concepts</span>
-                </span>
-              </button>
-              <button className="menu-card menu-card-explore" onClick={() => setView('explore')}>
-                <span className="icon-badge" style={{ background: 'rgba(255,255,255,0.22)' }}>
-                  <span className="op-symbol">🔢</span>
-                </span>
-                <span className="menu-text">
-                  <span className="menu-title">Explore Numbers</span>
-                  <span className="menu-sub">Tap a number, hear it out loud</span>
-                </span>
-              </button>
+            </section>
+
+            <h3 className="home-section-title">Practice</h3>
+            <div className="home-grid">
+              {HOME_CARDS.map((card) => (
+                <button
+                  key={card.id}
+                  className="home-card"
+                  style={{ '--card-from': card.from, '--card-to': card.to }}
+                  onClick={() => (card.id === 'skills' ? setView('skills') : startOperation(card.id))}
+                >
+                  <span className="home-card-icon" aria-hidden="true">
+                    {card.icon}
+                  </span>
+                  <span className="home-card-text">
+                    <span className="home-card-title">{card.title}</span>
+                    <span className="home-card-sub">{card.sub}</span>
+                  </span>
+                </button>
+              ))}
             </div>
+
+            {!IS_NATIVE && (
+              <a className="all-apps-link" href="https://marikalam.github.io/apps/">
+                ← More apps
+              </a>
+            )}
           </>
         )}
 
