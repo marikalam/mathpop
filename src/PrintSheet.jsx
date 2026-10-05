@@ -80,7 +80,7 @@ export default function PrintSheet({ problems, title, levelLabel, withKey }) {
     <div className="print-sheet">
       <header className="ws-header">
         <div className="ws-title">MathPop · {title}</div>
-        <div className="ws-level">Level: {levelLabel}</div>
+        <div className="ws-level">{levelLabel}</div>
       </header>
       <div className="ws-name-row">
         <span>Name: ______________________</span>

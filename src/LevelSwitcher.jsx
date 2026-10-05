@@ -1,38 +1,33 @@
 import { useState } from 'react';
-
-const LEVELS = [
-  { key: 'easy', label: 'Easy', color: '#2FAE6B' },
-  { key: 'medium', label: 'Medium', color: '#E0A53B' },
-  { key: 'hard', label: 'Hard', color: '#E5484D' },
-];
+import { GRADES, gradeInfo } from './grades.js';
 
 export default function LevelSwitcher({ level, onChange }) {
   const [open, setOpen] = useState(false);
-  const current = LEVELS.find((l) => l.key === level);
+  const current = gradeInfo(level);
 
   return (
     <div className="level-switcher">
-      <button className="level-pill" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+      <button className="level-pill" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label={`Grade: ${current.label}`}>
         <span className="level-dot" style={{ background: current.color }} />
         <span className="level-pill-text">
-          <span className="level-pill-label">Level</span>
-          <span className="level-pill-name">{current.label}</span>
+          <span className="level-pill-label">Grade</span>
+          <span className="level-pill-name">{current.short}</span>
         </span>
         <span className="level-pill-chevron">▾</span>
       </button>
       {open && (
         <div className="level-menu">
-          {LEVELS.map((l) => (
+          {GRADES.map((g) => (
             <button
-              key={l.key}
-              className={`level-menu-item${l.key === level ? ' level-menu-item-active' : ''}`}
+              key={g.id}
+              className={`level-menu-item${g.id === current.id ? ' level-menu-item-active' : ''}`}
               onClick={() => {
-                onChange(l.key);
+                onChange(g.id);
                 setOpen(false);
               }}
             >
-              <span className="level-dot" style={{ background: l.color }} />
-              <span>{l.label}</span>
+              <span className="level-dot" style={{ background: g.color }} />
+              <span>{g.label}</span>
             </button>
           ))}
         </div>

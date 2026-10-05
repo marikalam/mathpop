@@ -1774,3 +1774,145 @@ body {
     height: 28px;
   }
 }
+
+/* ---------- Home page fits one screen ----------
+   The page is exactly the visible screen height and doesn't scroll: the
+   practice cards share whatever height is left after the fixed parts. */
+.page-fit {
+  overflow: hidden;
+  padding-bottom: max(14px, env(safe-area-inset-bottom));
+}
+
+.home-fit {
+  min-height: 0;
+  gap: 12px;
+}
+
+.home-fit > * {
+  flex: none;
+}
+
+.home-fit .home-hero {
+  gap: 4px;
+  padding: 12px 16px 14px;
+}
+
+.home-fit .home-hero-op {
+  width: clamp(30px, 5vh, 44px);
+  height: clamp(30px, 5vh, 44px);
+  font-size: clamp(20px, 3.2vh, 28px);
+  border-radius: 12px;
+}
+
+.home-fit .home-hello {
+  font-size: clamp(20px, 6.5vw, 26px);
+}
+
+.home-fit .home-tagline {
+  font-size: 13.5px;
+}
+
+.home-fit .quick-set {
+  gap: 8px;
+  padding: 10px;
+}
+
+.home-fit .home-cta {
+  padding: 12px 16px;
+}
+
+.home-fit .home-cta-icon {
+  width: 42px;
+  height: 42px;
+  font-size: 22px;
+}
+
+.home-fit .home-cta-title {
+  font-size: 20px;
+}
+
+.home-fit .quick-explore {
+  padding: 8px 16px;
+}
+
+.home-fit .quick-explore-icon {
+  height: 32px;
+}
+
+.home-fit .quick-explore-title {
+  font-size: 16.5px;
+}
+
+.home-fit .quick-explore-sub {
+  font-size: 12px;
+}
+
+.home-fit .home-section-title {
+  margin: 0;
+  font-size: 15.5px;
+}
+
+.home-fit .home-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-auto-rows: 1fr;
+  gap: 10px;
+}
+
+.home-fit .home-card {
+  min-height: 0;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  overflow: hidden;
+}
+
+.home-fit .home-card-icon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 0;
+  border-radius: 12px;
+  font-size: 20px;
+}
+
+.home-fit .home-card-text {
+  min-width: 0;
+}
+
+.home-fit .home-card-title {
+  font-size: 15.5px;
+}
+
+.home-fit .home-card-sub {
+  font-size: 12px;
+}
+
+.home-fit .all-apps-link {
+  margin-top: -6px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+/* Shorter screens (iPhone SE, or Safari with its toolbars showing): drop
+   the tagline and the small print so nothing gets cut off. */
+@media (max-height: 740px) {
+  .home-fit {
+    gap: 10px;
+  }
+
+  .home-fit .home-tagline,
+  .home-fit .quick-explore-sub,
+  .home-fit .home-card-sub {
+    display: none;
+  }
+
+  .home-fit .home-hero {
+    padding: 10px 14px 12px;
+  }
+
+  .home-fit .home-stats {
+    margin-top: 2px;
+  }
+}

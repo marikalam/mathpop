@@ -6,6 +6,7 @@ import { getVoiceQuality, playFeedbackAndSpeak, prewarmVoices, speakInLanguage, 
 import { SentenceQuestionTemplates } from './types.js';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
+import { DEFAULT_GRADE, GRADE_RANGES, gradeInfo, gradeTier } from './grades.js';
 import AdditionHelp from './AdditionHelp.jsx';
 import PrintSheet from './PrintSheet.jsx';
 
@@ -27,10 +28,11 @@ const HOME_CARDS = [
   { id: 'subtract', icon: '−', title: 'Subtraction', sub: 'Take it away', from: '#a065e6', to: '#7c3fc4' },
   { id: 'sentence', icon: '📖', title: 'Word Problems', sub: 'Math in a story', from: '#1fb6ba', to: '#14898c' },
   { id: 'clock', icon: '🕐', title: 'Tell Time', sub: 'Read the clock', from: '#f0954f', to: '#e0793a' },
-  { id: 'skills', icon: '🏆', title: 'Skill Builders', sub: '2nd-grade concepts', from: '#f06f9a', to: '#d94f7e' },
+  { id: 'skills', icon: '🏆', title: 'Skill Builders', sub: 'Concepts, unit by unit', from: '#f06f9a', to: '#d94f7e' },
 ];
 const PROGRESS_KEY = 'mathpop-progress-v2';
 const SETTINGS_KEY = 'mathpop-settings-v1';
+const GRADE_KEY = 'mathpop-grade-v1';
 const EXPLORE_SESSION_TAPS = 20;
 const EXPLORE_SESSION_KEY = 'mathpop-baby-session-v1';
 const EXPLORE_NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -181,55 +183,27 @@ function buildClockProblem(level) {
   return { type: 'clock', op: 'clock', hour, minute, correct: formatTime(hour, minute), level };
 }
 
-function buildProblem(mode, level) {
+function buildProblem(mode, grade) {
   if (mode === 'sentence') {
     const op = shuffle(['multiply', 'add', 'subtract'])[0];
-    return buildSentenceQuestion(op, level);
+    return buildSentenceQuestion(op, gradeTier(grade));
   }
   if (mode === 'clock') {
-    return buildClockProblem(level);
+    return buildClockProblem(gradeTier(grade));
   }
 
   const op = mode === 'random' ? shuffle(['multiply', 'add', 'subtract'])[0] : mode;
-  let a;
-  let b;
+  const [[aMin, aMax], [bMin, bMax]] = (GRADE_RANGES[grade] || GRADE_RANGES[DEFAULT_GRADE])[op];
+  let a = randInt(aMin, aMax);
+  let b = randInt(bMin, bMax);
   if (op === 'multiply') {
-    if (level === 'easy') {
-      a = randInt(1, 3);
-      b = randInt(1, 3);
-    } else if (level === 'medium') {
-      a = randInt(2, 9);
-      b = randInt(2, 15);
-    } else {
-      a = randInt(2, 12);
-      b = randInt(5, 20);
-    }
     if (Math.random() < 0.5) [a, b] = [b, a];
     return { a, b, op, symbol: '×', correct: a * b };
   }
   if (op === 'add') {
-    if (level === 'easy') {
-      a = randInt(1, 5);
-      b = randInt(1, 5);
-    } else if (level === 'medium') {
-      a = randInt(10, 50);
-      b = randInt(10, 50);
-    } else {
-      a = randInt(20, 99);
-      b = randInt(20, 99);
-    }
     return { a, b, op, symbol: '+', correct: a + b };
   }
-  if (level === 'easy') {
-    a = randInt(2, 10);
-    b = randInt(1, Math.min(a, 5));
-  } else if (level === 'medium') {
-    a = randInt(20, 99);
-    b = randInt(1, Math.min(a, 50));
-  } else {
-    a = randInt(50, 150);
-    b = randInt(10, Math.min(a, 99));
-  }
+  b = Math.min(b, a);
   return { a, b, op, symbol: '−', correct: a - b };
 }
 
@@ -325,9 +299,9 @@ function buildOptions(problem) {
   return shuffle([correct, ...distractors.slice(0, 3)]);
 }
 
-function makeProblem(op, level) {
-  if (isSkillConcept(op)) return buildSkillProblem(op, level);
-  return buildProblem(op, level);
+function makeProblem(op, grade) {
+  if (isSkillConcept(op)) return buildSkillProblem(op, gradeTier(grade));
+  return buildProblem(op, grade);
 }
 
 // A worksheet's worth of problems, skipping exact repeats where it can
@@ -385,11 +359,37 @@ function voiceUpgradeTip() {
   return null;
 }
 
+// Progress is kept per grade. Older saves were kept per Easy/Medium/Hard
+// level; those carry over to the grade that matches them.
+const OLD_LEVEL_GRADES = { easy: '1', medium: '2', hard: '4' };
+
 function loadProgress() {
   try {
-    return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {};
+    const saved = JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {};
+    for (const [oldLevel, grade] of Object.entries(OLD_LEVEL_GRADES)) {
+      if (saved[oldLevel] && !saved[grade]) saved[grade] = saved[oldLevel];
+      delete saved[oldLevel];
+    }
+    return saved;
   } catch {
     return {};
+  }
+}
+
+function loadGrade() {
+  try {
+    const saved = localStorage.getItem(GRADE_KEY);
+    return saved && gradeInfo(saved).id === saved ? saved : DEFAULT_GRADE;
+  } catch {
+    return DEFAULT_GRADE;
+  }
+}
+
+function saveGrade(grade) {
+  try {
+    localStorage.setItem(GRADE_KEY, grade);
+  } catch {
+    /* ignore */
   }
 }
 
@@ -465,7 +465,7 @@ function ProgressDots({ current, total }) {
 
 export default function App() {
   const [view, setView] = useState('home');
-  const [level, setLevel] = useState('medium');
+  const [level, setLevel] = useState(loadGrade);
   const [progress, setProgress] = useState(loadProgress);
   const [settings, setSettings] = useState(loadSettings);
   const levelStats = progress[level] || { total: 0, correct: 0 };
@@ -562,6 +562,7 @@ export default function App() {
 
   function changeLevel(newLevel) {
     setLevel(newLevel);
+    saveGrade(newLevel);
     if (view === 'question' && problem) {
       const next = makeProblem(operation, newLevel);
       setProblem(next);
@@ -681,8 +682,9 @@ export default function App() {
         : OPERATIONS[operation].label.toLowerCase();
 
   return (
-    <div className="page">
-      <div className="app">
+    // The home page fits one phone screen, no scrolling.
+    <div className={view === 'home' ? 'page page-fit' : 'page'}>
+      <div className={view === 'home' ? 'app home-fit' : 'app'}>
         {view === 'home' && (
           <>
             <AppHeader level={level} onChangeLevel={changeLevel} showBack={false} onSettings={() => setView('settings')} />
@@ -1230,7 +1232,7 @@ export default function App() {
             key={printSet.id}
             problems={printSet.problems}
             title={modeLabel.charAt(0).toUpperCase() + modeLabel.slice(1)}
-            levelLabel={level.charAt(0).toUpperCase() + level.slice(1)}
+            levelLabel={gradeInfo(level).label}
             withKey={printSet.withKey}
           />
         )}
