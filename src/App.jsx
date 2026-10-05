@@ -6,6 +6,7 @@ import { getVoiceQuality, playFeedbackAndSpeak, prewarmVoices, speakInLanguage, 
 import { SentenceQuestionTemplates } from './types.js';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
+import { loadDigitModel } from './digitModel.js';
 import { DEFAULT_GRADE, GRADE_RANGES, gradeInfo, gradeTier } from './grades.js';
 import AdditionHelp from './AdditionHelp.jsx';
 import PrintSheet from './PrintSheet.jsx';
@@ -33,6 +34,9 @@ const HOME_CARDS = [
 const PROGRESS_KEY = 'mathpop-progress-v2';
 const SETTINGS_KEY = 'mathpop-settings-v1';
 const GRADE_KEY = 'mathpop-grade-v1';
+// The loading screen when the app opens (see `opening`).
+const OPENING_MIN_MS = 700;
+const OPENING_MAX_MS = 4000;
 const EXPLORE_SESSION_TAPS = 20;
 const EXPLORE_SESSION_KEY = 'mathpop-baby-session-v1';
 const EXPLORE_NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -467,6 +471,28 @@ export default function App() {
   const [view, setView] = useState('home');
   const [level, setLevel] = useState(loadGrade);
   const [progress, setProgress] = useState(loadProgress);
+  // The loading screen shown as the app opens, while the fonts and the
+  // handwriting reader get ready. At least OPENING_MIN_MS so it doesn't
+  // just flicker, and at most OPENING_MAX_MS (e.g. on a slow connection).
+  const [opening, setOpening] = useState(true);
+  useEffect(() => {
+    const started = performance.now();
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      setOpening(false);
+    };
+    const cap = setTimeout(finish, OPENING_MAX_MS);
+    let wait;
+    Promise.all([document.fonts?.ready, loadDigitModel()].map((p) => Promise.resolve(p).catch(() => {}))).then(() => {
+      wait = setTimeout(finish, Math.max(0, OPENING_MIN_MS - (performance.now() - started)));
+    });
+    return () => {
+      clearTimeout(cap);
+      clearTimeout(wait);
+    };
+  }, []);
   const [settings, setSettings] = useState(loadSettings);
   const levelStats = progress[level] || { total: 0, correct: 0 };
 
@@ -680,6 +706,25 @@ export default function App() {
       : operation === 'sentence'
         ? 'word problem'
         : OPERATIONS[operation].label.toLowerCase();
+
+  if (opening) {
+    return (
+      <div className="opening" role="status" aria-label="MathPop is opening">
+        <img className="opening-mark" src={`${import.meta.env.BASE_URL}icon-192.png`} alt="" />
+        <span className="logo opening-word">
+          <span className="ink">Math</span>
+          <span className="pop-blue">P</span>
+          <span className="pop-purple">o</span>
+          <span className="pop-green">p</span>
+        </span>
+        <span className="opening-dots" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </span>
+      </div>
+    );
+  }
 
   return (
     // The home page fits one phone screen, no scrolling.
