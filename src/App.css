@@ -16,9 +16,14 @@
   box-sizing: border-box;
 }
 
+/* MathPop is laid out like an app: no pinch or double-tap zoom (also set
+   in index.html's viewport), and the page itself never slides around -
+   only a screen's own content scrolls (.page), when it doesn't fit. */
 html, body {
   height: 100%;
-  overscroll-behavior-y: none;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
 }
 
 body {
@@ -33,12 +38,15 @@ body {
   width: 100%;
   background: var(--bg);
   color: var(--ink);
-  padding-inline: 16px;
-  padding-block: 20px 32px;
+  /* Keep clear of the notch / status bar and home indicator in the iOS app
+     and the home-screen web app (both draw edge to edge). */
+  padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right));
+  padding-block: max(20px, env(safe-area-inset-top)) max(32px, env(safe-area-inset-bottom));
   display: flex;
   justify-content: center;
+  overflow-x: hidden;
   overflow-y: auto;
-  overscroll-behavior-y: contain;
+  overscroll-behavior: none;
 }
 
 .app {
@@ -62,24 +70,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.games-link-btn {
-  appearance: none;
-  border: none;
-  cursor: pointer;
-  text-decoration: none;
-  padding: 9px 16px;
-  border-radius: 999px;
-  background: var(--card-bg);
-  box-shadow: var(--shadow-sm);
-  color: var(--ink-dim);
-  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
-  font-weight: 600;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .logo {
@@ -111,11 +101,6 @@ body {
 }
 .logo .pop-green {
   color: var(--accent-green);
-}
-
-.brand-spacer {
-  width: 40px;
-  height: 40px;
 }
 
 .nav-row {
@@ -219,79 +204,6 @@ body {
 
 .level-menu-item-active {
   background: rgba(59, 111, 239, 0.1);
-}
-
-.menu-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin-top: 4px;
-}
-
-.menu-card {
-  appearance: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  text-align: left;
-  border-radius: 22px;
-  padding: 18px;
-  box-shadow: var(--shadow);
-}
-
-.menu-card-blue {
-  background: linear-gradient(135deg, #4a7cf5, #3660e0);
-}
-.menu-card-green {
-  background: linear-gradient(135deg, #38c07f, #2a9e60);
-}
-.menu-card-purple {
-  background: linear-gradient(135deg, #a065e6, #7c3fc4);
-}
-.menu-card-mixed {
-  background: linear-gradient(135deg, #4a7cf5, #38c07f 50%, #a065e6);
-}
-.menu-card-teal {
-  background: linear-gradient(135deg, #1fb6ba, #14898c);
-}
-.menu-card-orange {
-  background: linear-gradient(135deg, #f0954f, #e0793a);
-}
-.menu-card-skills {
-  background: linear-gradient(135deg, #4e8ff7, #8b5cf6 50%, #14b8a6);
-}
-.menu-card-explore {
-  background: linear-gradient(135deg, #ff9ec4, #ffc46b);
-}
-.menu-card-blue .menu-title,
-.menu-card-blue .menu-sub,
-.menu-card-green .menu-title,
-.menu-card-green .menu-sub,
-.menu-card-purple .menu-title,
-.menu-card-purple .menu-sub,
-.menu-card-mixed .menu-title,
-.menu-card-mixed .menu-sub,
-.menu-card-teal .menu-title,
-.menu-card-teal .menu-sub,
-.menu-card-orange .menu-title,
-.menu-card-orange .menu-sub,
-.menu-card-skills .menu-title,
-.menu-card-skills .menu-sub,
-.menu-card-explore .menu-title,
-.menu-card-explore .menu-sub {
-  color: #fff;
-}
-.menu-card-blue .menu-sub,
-.menu-card-green .menu-sub,
-.menu-card-purple .menu-sub,
-.menu-card-mixed .menu-sub,
-.menu-card-teal .menu-sub,
-.menu-card-orange .menu-sub,
-.menu-card-skills .menu-sub,
-.menu-card-explore .menu-sub {
-  opacity: 0.85;
 }
 
 .explore-counter {
@@ -638,46 +550,6 @@ body {
   background: rgba(255, 255, 255, 0.8);
   border-radius: 2px;
   margin-top: 4px;
-}
-
-.menu-card-amber {
-  background: #fbeed9;
-}
-
-.icon-badge {
-  flex: none;
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.op-symbol {
-  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 26px;
-  color: #fff;
-  line-height: 1;
-}
-
-.menu-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.menu-title {
-  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 18px;
-  color: var(--ink);
-}
-
-.menu-sub {
-  font-size: 13px;
-  color: var(--ink-dim);
 }
 
 .screen-title {
@@ -1597,5 +1469,308 @@ body {
     column-gap: 28px;
     font-size: 14pt;
     line-height: 1.9;
+  }
+}
+
+/* Home page header: the level pill and settings sit beside the logo. */
+.brand-row {
+  gap: 10px;
+}
+
+.brand-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-actions .level-menu {
+  left: auto;
+  right: 0;
+}
+
+.settings-btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+  font-size: 18px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Home page, laid out like PitchPop's: a greeting card, a Quick play card,
+   then the practice modes two to a row. */
+.home-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 18px 18px;
+  border-radius: 28px;
+  background: radial-gradient(120% 90% at 50% 0%, #fff7e8 0%, #eefaf3 45%, #eef3ff 100%);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.home-hero-ops {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.home-hero-op {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  color: #fff;
+  font: 700 28px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  line-height: 1;
+  box-shadow: var(--shadow-sm);
+}
+
+.home-hero-op:nth-child(odd) {
+  transform: rotate(-6deg);
+}
+
+.home-hero-op:nth-child(even) {
+  transform: rotate(5deg) translateY(3px);
+}
+
+.home-hello {
+  margin: 4px 0 0;
+  font: 700 clamp(22px, 7vw, 28px) 'Fredoka', ui-rounded, system-ui, sans-serif;
+  text-wrap: balance;
+}
+
+.home-tagline {
+  margin: 0;
+  max-width: 320px;
+  color: var(--ink-dim);
+  font-size: 14.5px;
+  line-height: 1.4;
+  text-wrap: balance;
+}
+
+.home-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.home-stat {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: var(--shadow-sm);
+  font: 700 13px 'IBM Plex Sans', sans-serif;
+  color: var(--ink);
+}
+
+.quick-set {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 2px solid transparent;
+  border-radius: 28px;
+  background:
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+    linear-gradient(135deg, #2fae6b, #3b6fef, #8e4fd6) border-box;
+  box-shadow: var(--shadow-sm);
+}
+
+.home-cta {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #2fae6b 0%, #3b6fef 55%, #8e4fd6 100%);
+  color: #fff;
+  box-shadow: 0 14px 28px -14px rgba(59, 111, 239, 0.7);
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.08s ease;
+}
+
+.home-cta:active,
+.quick-explore:active {
+  transform: scale(0.98);
+}
+
+.home-cta-icon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  font-size: 24px;
+}
+
+.home-cta-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.home-cta-title {
+  font: 700 22px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.home-cta-sub {
+  font: 600 13.5px 'IBM Plex Sans', sans-serif;
+  opacity: 0.95;
+}
+
+.home-cta-arrow {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.quick-explore {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 10px 18px;
+  border-radius: 20px;
+  background: #fff4e8;
+  color: var(--ink);
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.08s ease;
+}
+
+.quick-explore-icon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 40px;
+  font-size: 24px;
+}
+
+.quick-explore-title {
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #e0793a;
+}
+
+.quick-explore-sub {
+  font: 600 13px 'IBM Plex Sans', sans-serif;
+  color: var(--ink-dim);
+}
+
+.quick-explore-arrow {
+  font-size: 22px;
+  font-weight: 700;
+  color: #e0793a;
+}
+
+.home-section-title {
+  margin: 4px 0 -6px;
+  padding: 0 4px;
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: var(--ink);
+}
+
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.home-card {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 118px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: linear-gradient(145deg, var(--card-from), var(--card-to));
+  color: #fff;
+  box-shadow: 0 12px 22px -14px var(--card-to);
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.08s ease;
+}
+
+.home-card:active {
+  transform: scale(0.97);
+}
+
+.home-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 4px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.25);
+  font: 700 24px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  line-height: 1;
+}
+
+.home-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.home-card-title {
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  line-height: 1.15;
+}
+
+.home-card-sub {
+  font: 600 12.5px 'IBM Plex Sans', sans-serif;
+  line-height: 1.3;
+  opacity: 0.92;
+}
+
+.all-apps-link {
+  align-self: center;
+  padding: 6px 12px;
+  color: var(--ink-dim);
+  font: 600 14px 'IBM Plex Sans', sans-serif;
+  text-decoration: none;
+}
+
+/* Small phones: tighter logo so the level pill and settings still fit. */
+@media (max-width: 370px) {
+  .brand-row .logo {
+    font-size: 22px;
+  }
+  .brand-row .logo-mark {
+    width: 28px;
+    height: 28px;
   }
 }
