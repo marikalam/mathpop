@@ -7,7 +7,7 @@ import { SentenceQuestionTemplates } from './types.js';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
 import { loadDigitModel } from './digitModel.js';
-import { DEFAULT_GRADE, GRADE_RANGES, gradeInfo, gradeTier } from './grades.js';
+import { DEFAULT_GRADE, GRADE_RANGES, gradeInfo, gradeOps, gradePractice, gradeTier } from './grades.js';
 import AdditionHelp from './AdditionHelp.jsx';
 import PrintSheet from './PrintSheet.jsx';
 
@@ -21,16 +21,24 @@ const HERO_OPS = [
   { symbol: '×', color: '#3b6fef' },
   { symbol: '÷', color: '#f0954f' },
 ];
-// The home page's practice modes (Random Mix and Explore Numbers have
-// their own Quick play card above them).
-const HOME_CARDS = [
-  { id: 'multiply', icon: '×', title: 'Multiplication', sub: 'Times tables practice', from: '#4a7cf5', to: '#3660e0' },
-  { id: 'add', icon: '+', title: 'Addition', sub: 'Add it up', from: '#38c07f', to: '#2a9e60' },
-  { id: 'subtract', icon: '−', title: 'Subtraction', sub: 'Take it away', from: '#a065e6', to: '#7c3fc4' },
-  { id: 'sentence', icon: '📖', title: 'Word Problems', sub: 'Math in a story', from: '#1fb6ba', to: '#14898c' },
-  { id: 'clock', icon: '🕐', title: 'Tell Time', sub: 'Read the clock', from: '#f0954f', to: '#e0793a' },
-  { id: 'skills', icon: '🏆', title: 'Skill Builders', sub: 'Concepts, unit by unit', from: '#f06f9a', to: '#d94f7e' },
-];
+// Every card the home page's Practice grid can show; each grade picks six
+// of them (GRADE_PRACTICE in grades.js). Random Mix and Explore Numbers
+// have their own Quick play card above.
+const PRACTICE_CARDS = {
+  multiply: { icon: '×', title: 'Multiplication', sub: 'Times tables practice', from: '#4a7cf5', to: '#3660e0' },
+  add: { icon: '+', title: 'Addition', sub: 'Add it up', from: '#38c07f', to: '#2a9e60' },
+  subtract: { icon: '−', title: 'Subtraction', sub: 'Take it away', from: '#a065e6', to: '#7c3fc4' },
+  sentence: { icon: '📖', title: 'Word Problems', sub: 'Math in a story', from: '#1fb6ba', to: '#14898c' },
+  clock: { icon: '🕐', title: 'Tell Time', sub: 'Read the clock', from: '#f0954f', to: '#e0793a' },
+  skills: { icon: '🏆', title: 'Skill Builders', sub: 'All 2nd-grade concepts', from: '#f06f9a', to: '#d94f7e' },
+  compare: { icon: '⚖️', title: 'Comparing', sub: 'Bigger, smaller, equal', from: '#f06f9a', to: '#d94f7e' },
+  addStrategy: { icon: '🔟', title: 'Make a Ten', sub: 'Doubles & tens', from: '#f5a524', to: '#e08a12' },
+  placeValue: { icon: '🔢', title: 'Place Value', sub: 'Tens and ones', from: '#4e8ff7', to: '#3a6fd8' },
+  measurement: { icon: '📏', title: 'Measurement', sub: 'Inches, feet & cm', from: '#f5a524', to: '#e08a12' },
+  regroup: { icon: '🧱', title: 'Stack & Solve', sub: 'Carrying & borrowing', from: '#f06f9a', to: '#d94f7e' },
+  bigNumber: { icon: '💯', title: 'Big Numbers', sub: 'Into the millions', from: '#14b8a6', to: '#0f9384' },
+  multistep: { icon: '🧩', title: 'Multi-Step', sub: 'Two-step stories', from: '#f5a524', to: '#e08a12' },
+};
 const PROGRESS_KEY = 'mathpop-progress-v2';
 const SETTINGS_KEY = 'mathpop-settings-v1';
 const GRADE_KEY = 'mathpop-grade-v1';
@@ -189,14 +197,14 @@ function buildClockProblem(level) {
 
 function buildProblem(mode, grade) {
   if (mode === 'sentence') {
-    const op = shuffle(['multiply', 'add', 'subtract'])[0];
+    const op = shuffle(gradeOps(grade))[0];
     return buildSentenceQuestion(op, gradeTier(grade));
   }
   if (mode === 'clock') {
     return buildClockProblem(gradeTier(grade));
   }
 
-  const op = mode === 'random' ? shuffle(['multiply', 'add', 'subtract'])[0] : mode;
+  const op = mode === 'random' ? shuffle(gradeOps(grade))[0] : mode;
   const [[aMin, aMax], [bMin, bMax]] = (GRADE_RANGES[grade] || GRADE_RANGES[DEFAULT_GRADE])[op];
   let a = randInt(aMin, aMax);
   let b = randInt(bMin, bMax);
@@ -469,6 +477,7 @@ function ProgressDots({ current, total }) {
 
 export default function App() {
   const [view, setView] = useState('home');
+  const [returnView, setReturnView] = useState('home');
   const [level, setLevel] = useState(loadGrade);
   const [progress, setProgress] = useState(loadProgress);
   // The loading screen shown as the app opens, while the fonts and the
@@ -547,7 +556,7 @@ export default function App() {
   }
 
   function sessionBack() {
-    setView(isSkillConcept(operation) ? 'skills' : 'home');
+    setView(returnView);
   }
 
   const exploreLang = EXPLORE_LANGUAGES.find((l) => l.key === settings.exploreLang) || EXPLORE_LANGUAGES[0];
@@ -597,7 +606,9 @@ export default function App() {
     }
   }
 
-  function startOperation(op) {
+  // `from` is the screen Back returns to; Play again keeps the last one.
+  function startOperation(op, from) {
+    if (from) setReturnView(from);
     const first = makeProblem(op, level);
     setOperation(op);
     setRoundIndex(0);
@@ -756,7 +767,7 @@ export default function App() {
             </section>
 
             <section className="quick-set" aria-label="Quick play">
-              <button className="home-cta" onClick={() => startOperation('random')}>
+              <button className="home-cta" onClick={() => startOperation('random', 'home')}>
                 <span className="home-cta-icon" aria-hidden="true">
                   🎲
                 </span>
@@ -784,22 +795,25 @@ export default function App() {
 
             <h3 className="home-section-title">Practice</h3>
             <div className="home-grid">
-              {HOME_CARDS.map((card) => (
-                <button
-                  key={card.id}
-                  className="home-card"
-                  style={{ '--card-from': card.from, '--card-to': card.to }}
-                  onClick={() => (card.id === 'skills' ? setView('skills') : startOperation(card.id))}
-                >
-                  <span className="home-card-icon" aria-hidden="true">
-                    {card.icon}
-                  </span>
-                  <span className="home-card-text">
-                    <span className="home-card-title">{card.title}</span>
-                    <span className="home-card-sub">{card.sub}</span>
-                  </span>
-                </button>
-              ))}
+              {gradePractice(level).map((id) => {
+                const card = PRACTICE_CARDS[id];
+                return (
+                  <button
+                    key={id}
+                    className="home-card"
+                    style={{ '--card-from': card.from, '--card-to': card.to }}
+                    onClick={() => (id === 'skills' ? setView('skills') : startOperation(id, 'home'))}
+                  >
+                    <span className="home-card-icon" aria-hidden="true">
+                      {card.icon}
+                    </span>
+                    <span className="home-card-text">
+                      <span className="home-card-title">{card.title}</span>
+                      <span className="home-card-sub">{card.sub}</span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
             {!IS_NATIVE && (
@@ -885,7 +899,7 @@ export default function App() {
                         key={concept.id}
                         className="skill-card"
                         style={{ background: SKILL_META[concept.id].color }}
-                        onClick={() => startOperation(concept.id)}
+                        onClick={() => startOperation(concept.id, 'skills')}
                       >
                         <span className="skill-card-symbol">{SKILL_META[concept.id].symbol}</span>
                         <span className="skill-card-text">
