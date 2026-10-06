@@ -1,12 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GRADES, gradeInfo } from './grades.js';
 
 export default function LevelSwitcher({ level, onChange }) {
   const [open, setOpen] = useState(false);
   const current = gradeInfo(level);
+  const ref = useRef(null);
+
+  // Tapping anywhere outside the menu closes it.
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = (e) => {
+      if (!ref.current?.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [open]);
 
   return (
-    <div className="level-switcher">
+    <div className="level-switcher" ref={ref}>
       <button className="level-pill" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label={`Grade: ${current.label}`}>
         <span className="level-dot" style={{ background: current.color }} />
         <span className="level-pill-text">
