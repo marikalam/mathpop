@@ -36,3 +36,7 @@ Every push to `main` that touches the app builds it on a GitHub Mac and uploads 
 
 1. In App Store Connect, create a new app with the bundle ID **`com.marikalam.mathpop`** (same team as PitchPop).
 2. In this repo's Settings → Secrets and variables → Actions, add the same three secrets PitchPop uses: `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8`.
+
+## App Store
+
+Everything for the App Store listing is in `appstore/`: the name, subtitle, description, keywords, categories and age rating (`listing.md`), the App Review notes (`review-notes.md`), and six screenshots at both required iPhone sizes (`screenshots/`). The privacy policy is `public/privacy.html`, published with the website at marikalam.github.io/apps/mathpop/privacy.html. MathPop is meant for the Kids category (ages 6–8): it has no accounts, ads, purchases, analytics or links out of the app, and the iPhone app hides the website-only "Print worksheet" and "More apps" buttons.
