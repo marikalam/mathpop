@@ -63,6 +63,7 @@ math,addition,subtraction,multiplication,times tables,tell time,kindergarten,fir
 ## Screenshots
 Six per size, in this order: home, a problem, a right answer, Tell Time,
 a word problem, Explore Numbers.
+- `screenshots/6.3-inch/` — 1206×2622, for the "iPhone with Dynamic Island (medium display)" slot (required).
 - `screenshots/6.5-inch/` — 1284×2778, for the "iPhone 6.5" Display" slot.
 - `screenshots/6.9-inch/` — 1320×2868, for the "iPhone 6.9" Display" slot if
   it's offered.
