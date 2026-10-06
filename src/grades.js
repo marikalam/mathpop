@@ -49,3 +49,31 @@ export const GRADE_RANGES = {
     multiply: [[2, 12], [5, 20]],
   },
 };
+
+// Which operations each grade practices. Random Mix and Word Problems
+// draw from these, so younger grades never see multiplication.
+export const GRADE_OPS = {
+  k: ['add', 'subtract'],
+  1: ['add', 'subtract'],
+  2: ['add', 'subtract'],
+  3: ['multiply', 'add', 'subtract'],
+  4: ['multiply', 'add', 'subtract'],
+};
+
+// The six Practice cards on the home page for each grade: core
+// operations plus the Skill Builders concepts that fit that grade.
+export const GRADE_PRACTICE = {
+  k: ['add', 'subtract', 'compare', 'addStrategy', 'placeValue', 'sentence'],
+  1: ['add', 'subtract', 'addStrategy', 'placeValue', 'clock', 'sentence'],
+  2: ['add', 'subtract', 'sentence', 'clock', 'measurement', 'skills'],
+  3: ['multiply', 'add', 'subtract', 'regroup', 'clock', 'sentence'],
+  4: ['multiply', 'bigNumber', 'regroup', 'multistep', 'sentence', 'clock'],
+};
+
+export function gradeOps(id) {
+  return GRADE_OPS[gradeInfo(id).id];
+}
+
+export function gradePractice(id) {
+  return GRADE_PRACTICE[gradeInfo(id).id];
+}
