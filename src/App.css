@@ -173,7 +173,9 @@ body {
 .level-menu {
   position: absolute;
   top: calc(100% + 6px);
-  left: 0;
+  /* The grade pill always sits at the right edge, so the menu opens
+     leftward and never runs off the screen. */
+  right: 0;
   z-index: 5;
   background: var(--card-bg);
   border-radius: 16px;
@@ -1481,11 +1483,6 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.brand-actions .level-menu {
-  left: auto;
-  right: 0;
 }
 
 .settings-btn {
