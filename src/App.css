@@ -165,6 +165,10 @@ body {
   color: var(--ink);
 }
 
+.level-pill-static {
+  cursor: default;
+}
+
 .level-pill-chevron {
   color: var(--ink-dim);
   font-size: 11px;
