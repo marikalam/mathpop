@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MathPop Privacy Policy</title>
+    <link rel="icon" href="favicon.png" />
+    <style>
+      :root {
+        --bg: #f2f4f9;
+        --card: #ffffff;
+        --ink: #171a2b;
+        --ink-dim: #5d6380;
+        --accent: #3b6fef;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #14161f;
+          --card: #1d2030;
+          --ink: #eef0f7;
+          --ink-dim: #a4a9c0;
+          --accent: #7ea0ff;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 16px/1.6 -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        padding: max(24px, env(safe-area-inset-top)) 16px 48px;
+      }
+      main {
+        max-width: 680px;
+        margin: 0 auto;
+        background: var(--card);
+        border-radius: 20px;
+        padding: 28px 24px;
+      }
+      h1 {
+        font-size: 28px;
+        line-height: 1.2;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 19px;
+        margin: 28px 0 6px;
+      }
+      p,
+      li {
+        margin: 6px 0;
+      }
+      ul {
+        padding-left: 22px;
+      }
+      .updated {
+        color: var(--ink-dim);
+        margin: 0 0 18px;
+        font-size: 14px;
+      }
+      a {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>MathPop Privacy Policy</h1>
+      <p class="updated">Last updated October 6, 2026</p>
+
+      <p>
+        MathPop is a math practice app made by Marika Lam. It collects nothing: no accounts, no ads, no analytics and
+        no tracking. This policy covers the MathPop iPhone app and the website at marikalam.github.io/apps/mathpop.
+      </p>
+
+      <h2>What MathPop saves</h2>
+      <p>
+        MathPop remembers a few things so it picks up where you left off: the grade you chose, your answer settings,
+        and how many problems were answered and how many were right. All of it stays on your device. None of it is
+        sent to us or anyone else, and there are no accounts to sign in to.
+      </p>
+
+      <h2>Handwriting</h2>
+      <p>
+        When you write an answer with your finger, the numbers are read by a small model that runs entirely on your
+        device. Your drawing is never uploaded or saved.
+      </p>
+
+      <h2>Speech and sounds</h2>
+      <p>
+        The voice that reads problems aloud is generated on your device. In the iPhone app, everything it needs is
+        built in, and the Explore Numbers voices in other languages use the speech voices already on your iPhone. On
+        the website, the voice files are downloaded the first time from public file hosts (Hugging Face and
+        jsDelivr), which, like any website, can see your IP address when your browser downloads from them. Nothing you
+        type or write is sent to them.
+      </p>
+
+      <h2>Children</h2>
+      <p>
+        MathPop is made for kids to use, ideally with a parent or teacher nearby. It doesn't ask for any personal
+        information, and kids don't need to enter any to play.
+      </p>
+
+      <h2>Deleting your data</h2>
+      <p>
+        Everything MathPop saves is on your device. Delete the MathPop app, or clear the website's data in your browser
+        settings, and it's gone.
+      </p>
+
+      <h2>Credits</h2>
+      <ul>
+        <li>
+          Voice: the open-source <a href="https://github.com/rhasspy/piper">Piper</a> text-to-speech engine with the
+          "hfc_female" voice, trained on the
+          <a href="https://ast-astrec.nict.go.jp/en/release/hi-fi-captain/">Hi-Fi-CAPTAIN</a> dataset by NICT, used
+          under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>. MathPop is free and
+          non-commercial.
+        </li>
+        <li>Speech runtime: <a href="https://onnxruntime.ai/">ONNX Runtime</a> (MIT License).</li>
+        <li>Handwriting reader: a small digit model trained on the MNIST dataset.</li>
+        <li>Fonts: Fredoka and IBM Plex (SIL Open Font License).</li>
+      </ul>
+
+      <h2>Changes</h2>
+      <p>If this policy changes, we'll update this page and the date at the top.</p>
+
+      <h2>Contact</h2>
+      <p>Questions: <a href="mailto:marikaleelam@gmail.com">marikaleelam@gmail.com</a></p>
+    </main>
+  </body>
+</html>

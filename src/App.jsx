@@ -12,7 +12,7 @@ import AdditionHelp from './AdditionHelp.jsx';
 import PrintSheet from './PrintSheet.jsx';
 
 const SESSION_ROUNDS = 10;
-// The iPhone app has no link out to the other apps' website.
+// The iPhone app has no link out to the other apps' website, and no printing.
 const IS_NATIVE = Capacitor.isNativePlatform();
 // The four operation tiles across the top of the home page.
 const HERO_OPS = [
@@ -1008,9 +1008,13 @@ export default function App() {
                 🤔 Need help?
               </button>
             )}
-            <button className="print-open-btn" onClick={() => setPrintPanel(true)}>
-              🖨️ Print worksheet
-            </button>
+            {/* Printing doesn't work inside the iPhone app's web view, so the
+                worksheet is a website-only extra. */}
+            {!IS_NATIVE && (
+              <button className="print-open-btn" onClick={() => setPrintPanel(true)}>
+                🖨️ Print worksheet
+              </button>
+            )}
 
             <div className="answer-area">
             {settings.inputMethod === 'write' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
