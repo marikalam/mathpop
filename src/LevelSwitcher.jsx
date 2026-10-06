@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { GRADES, gradeInfo } from './grades.js';
 
-export default function LevelSwitcher({ level, onChange }) {
+export default function LevelSwitcher({ level, onChange, readOnly = false }) {
   const [open, setOpen] = useState(false);
   const current = gradeInfo(level);
   const ref = useRef(null);
@@ -15,6 +15,18 @@ export default function LevelSwitcher({ level, onChange }) {
     document.addEventListener('pointerdown', close);
     return () => document.removeEventListener('pointerdown', close);
   }, [open]);
+
+  if (readOnly) {
+    return (
+      <div className="level-pill level-pill-static" aria-label={`Grade: ${current.label}`}>
+        <span className="level-dot" style={{ background: current.color }} />
+        <span className="level-pill-text">
+          <span className="level-pill-label">Grade</span>
+          <span className="level-pill-name">{current.short}</span>
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="level-switcher" ref={ref}>

@@ -450,7 +450,9 @@ function AppHeader({ level, onChangeLevel, onBack, showBack, onSettings }) {
           <button className="back-link" onClick={onBack}>
             ← Back
           </button>
-          <LevelSwitcher level={level} onChange={onChangeLevel} />
+          {/* The grade is picked on the home page; inside a game it's only
+              shown, since each grade has its own set of games. */}
+          <LevelSwitcher level={level} readOnly />
         </div>
       )}
     </>
@@ -598,12 +600,6 @@ export default function App() {
   function changeLevel(newLevel) {
     setLevel(newLevel);
     saveGrade(newLevel);
-    if (view === 'question' && problem) {
-      const next = makeProblem(operation, newLevel);
-      setProblem(next);
-      setOptions(makeOptions(next));
-      setChosen(null);
-    }
   }
 
   // `from` is the screen Back returns to; Play again keeps the last one.
