@@ -70,7 +70,15 @@ export const SKILL_UNITS = [
   },
 ];
 
-const UNIT_COLOR = { A: '#4E8FF7', B: '#8B5CF6', C: '#F5A623', D: '#14B8A6' };
+// Singapore math topics the grades use outside the four units above
+// (grades.js): number bonds, fractions, and factors & multiples.
+export const SINGAPORE_CONCEPTS = [
+  { id: 'numberBond', title: 'Number Bonds', sub: 'Part, part, whole' },
+  { id: 'fraction', title: 'Fractions', sub: 'Parts of a whole' },
+  { id: 'factors', title: 'Factors & Multiples', sub: 'What goes into what' },
+];
+
+const UNIT_COLOR = { A: '#4E8FF7', B: '#8B5CF6', C: '#F5A623', D: '#14B8A6', SG: '#E0577F' };
 const CONCEPT_SYMBOL = {
   placeValue: '🔢',
   compare: '⚖️',
@@ -84,10 +92,13 @@ const CONCEPT_SYMBOL = {
   bigNumber: '💯',
   regroup: '🧱',
   multistep: '🧩',
+  numberBond: '🔗',
+  fraction: '🍕',
+  factors: '🧮',
 };
 
 export const SKILL_META = {};
-for (const unit of SKILL_UNITS) {
+for (const unit of [...SKILL_UNITS, { id: 'SG', concepts: SINGAPORE_CONCEPTS }]) {
   for (const concept of unit.concepts) {
     SKILL_META[concept.id] = {
       label: concept.title,
@@ -556,6 +567,150 @@ function multistepProblem(level) {
   };
 }
 
+// Number bonds (Singapore math's part-part-whole): two parts and the
+// whole they make, one of them missing. Kindergarten bonds go up to 10,
+// Primary 1 up to 20.
+function numberBondProblem(level, grade) {
+  const whole = grade === 'k' ? randInt(3, 10) : randInt(8, 20);
+  const left = randInt(1, whole - 1);
+  const right = whole - left;
+  const missing = Math.random() < 0.3 ? 'whole' : Math.random() < 0.5 ? 'left' : 'right';
+  const show = (part) => (missing === part ? '?' : part === 'whole' ? whole : part === 'left' ? left : right);
+  const correct = missing === 'whole' ? whole : missing === 'left' ? left : right;
+  const known = missing === 'left' ? right : left;
+  return {
+    promptKind: 'bond',
+    bondWhole: show('whole'),
+    bondParts: [show('left'), show('right')],
+    prompt:
+      missing === 'whole'
+        ? `${left} and ${right} make ?`
+        : `${known} and ? make ${whole}`,
+    correct,
+    answerType: 'numeric',
+    answerLabel: `${left} and ${right} make ${whole}`,
+    speech:
+      missing === 'whole'
+        ? `${left} and ${right} make what number?`
+        : `${known} and what number make ${whole}?`,
+    questionTitle: 'Complete the number bond',
+  };
+}
+
+const FRACTION_WORDS = { 2: ['half', 'halves'], 3: ['third', 'thirds'], 4: ['quarter', 'quarters'], 5: ['fifth', 'fifths'], 6: ['sixth', 'sixths'], 8: ['eighth', 'eighths'], 10: ['tenth', 'tenths'], 12: ['twelfth', 'twelfths'] };
+const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven'];
+
+function fractionWords(a, b) {
+  const [one, many] = FRACTION_WORDS[b] || [`${b}th`, `${b}ths`];
+  return `${NUMBER_WORDS[a] || a} ${a === 1 ? one : many}`;
+}
+
+// Fractions, Singapore style: Primary 2 halves, thirds and quarters of a
+// number; Primary 3 equivalent fractions and fractions of a set; Primary 4
+// fractions of a set and mixed numbers.
+function fractionProblem(level, grade) {
+  const ofSet = (dens, maxGroups, numerator) => {
+    const b = pick(dens);
+    const a = numerator ? randInt(1, b - 1) : 1;
+    const n = b * randInt(2, maxGroups);
+    return {
+      prompt: `What is ${a}/${b} of ${n}?`,
+      correct: (a * n) / b,
+      answerLabel: `${a}/${b} of ${n} = ${(a * n) / b}`,
+      speech: `What is ${fractionWords(a, b)} of ${n}?`,
+    };
+  };
+  let problem;
+  if (grade === '3') {
+    if (Math.random() < 0.5) {
+      const b = pick([2, 3, 4, 5]);
+      const a = randInt(1, b - 1);
+      const m = randInt(2, 4);
+      problem = {
+        prompt: `${a}/${b} = ?/${b * m}`,
+        correct: a * m,
+        answerLabel: `${a}/${b} = ${a * m}/${b * m}`,
+        speech: `${fractionWords(a, b)} is how many ${FRACTION_WORDS[b * m]?.[1] || `${b * m}ths`}?`,
+        questionTitle: 'Make an equivalent fraction',
+      };
+    } else problem = ofSet([2, 3, 4, 5], 6, true);
+  } else if (grade === '4') {
+    const kind = pick(['set', 'toImproper', 'toMixed']);
+    if (kind === 'set') problem = ofSet([3, 4, 5, 6, 8], 10, true);
+    else {
+      const b = pick([2, 3, 4, 5, 6, 8]);
+      const a = randInt(1, b - 1);
+      const w = randInt(1, 4);
+      const improper = w * b + a;
+      problem =
+        kind === 'toImproper'
+          ? {
+              prompt: `${w} ${a}/${b} = ?/${b}`,
+              correct: improper,
+              answerLabel: `${w} ${a}/${b} = ${improper}/${b}`,
+              speech: `${w} and ${fractionWords(a, b)} is how many ${FRACTION_WORDS[b][1]}?`,
+              questionTitle: 'Mixed number to fraction',
+            }
+          : {
+              prompt: `${improper}/${b} = ${w} ?/${b}`,
+              correct: a,
+              answerLabel: `${improper}/${b} = ${w} ${a}/${b}`,
+              speech: `${improper} ${FRACTION_WORDS[b][1]} is ${w} and how many ${FRACTION_WORDS[b][1]}?`,
+              questionTitle: 'Fraction to mixed number',
+            };
+    }
+  } else if (Math.random() < 0.25) {
+    const b = pick([2, 3, 4]);
+    problem = {
+      prompt: `How many ${FRACTION_WORDS[b][1]} make 1 whole?`,
+      correct: b,
+      answerLabel: `${b} ${FRACTION_WORDS[b][1]} make 1 whole`,
+      speech: `How many ${FRACTION_WORDS[b][1]} make one whole?`,
+    };
+  } else problem = ofSet([2, 3, 4], 5, false);
+  return { questionTitle: 'Fractions', answerType: 'numeric', ...problem };
+}
+
+// Factors and multiples (Primary 4): which of four numbers is a factor
+// of, or a multiple of, the given number.
+function factorsProblem() {
+  if (Math.random() < 0.5) {
+    const n = pick([12, 16, 18, 20, 24, 28, 30, 32, 36, 40, 42, 45, 48, 54, 56, 60, 64, 72, 84, 90, 96]);
+    const factors = [];
+    const others = [];
+    for (let k = 2; k <= 12; k++) {
+      if (n % k !== 0) others.push(k);
+      else if (k < n) factors.push(k);
+    }
+    const correct = pick(factors);
+    return {
+      prompt: `Which number is a factor of ${n}?`,
+      correct,
+      answerType: 'choice',
+      choices: shuffle([correct, ...shuffle(others).slice(0, 3)]),
+      answerLabel: `${correct} × ${n / correct} = ${n}`,
+      speech: `Which number is a factor of ${n}?`,
+      questionTitle: 'Find the factor',
+    };
+  }
+  const m = randInt(3, 12);
+  const correct = m * randInt(3, 12);
+  const pool = new Set();
+  while (pool.size < 3) {
+    const c = correct + randInt(-m + 1, m - 1);
+    if (c > 0 && c % m !== 0) pool.add(c);
+  }
+  return {
+    prompt: `Which number is a multiple of ${m}?`,
+    correct,
+    answerType: 'choice',
+    choices: shuffle([correct, ...pool]),
+    answerLabel: `${m} × ${correct / m} = ${correct}`,
+    speech: `Which number is a multiple of ${m}?`,
+    questionTitle: 'Find the multiple',
+  };
+}
+
 const BUILDERS = {
   placeValue: (level) => placeValueProblem(level, false),
   compare: compareProblem,
@@ -569,15 +724,19 @@ const BUILDERS = {
   bigNumber: (level) => placeValueProblem(level, true),
   regroup: regroupProblem,
   multistep: multistepProblem,
+  numberBond: numberBondProblem,
+  fraction: fractionProblem,
+  factors: factorsProblem,
 };
 
 export function isSkillConcept(id) {
   return Object.prototype.hasOwnProperty.call(SKILL_META, id);
 }
 
-export function buildSkillProblem(conceptId, level) {
+// `grade` (grades.js) lets the Singapore topics follow the school year.
+export function buildSkillProblem(conceptId, level, grade) {
   const builder = BUILDERS[conceptId];
-  const problem = builder(level);
+  const problem = builder(level, grade);
   return {
     type: 'skill',
     concept: conceptId,

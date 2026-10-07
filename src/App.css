@@ -439,9 +439,23 @@ body {
   flex-direction: column;
   gap: 10px;
   align-items: center;
-  flex: 1 1 auto;
-  min-height: 0;
-  justify-content: center;
+  padding: 14px;
+  border-radius: 20px;
+  background: var(--card-bg, #fff);
+  box-shadow: var(--shadow-sm, 0 4px 10px -4px rgba(23, 26, 43, 0.16));
+  animation: help-open 0.2s ease-out;
+}
+
+@keyframes help-open {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.help-title {
+  margin: 0;
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
 }
 
 .help-step {
@@ -1996,4 +2010,746 @@ body {
   .opening-dots span {
     animation: none;
   }
+}
+
+/* Number bonds (Singapore math): the whole on top, two parts below. */
+.number-bond {
+  width: min(220px, 70%);
+  height: auto;
+}
+
+.bond-line {
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 4;
+}
+
+.bond-circle {
+  fill: rgba(255, 255, 255, 0.95);
+  stroke: #fff;
+  stroke-width: 3;
+}
+
+.bond-circle-missing {
+  fill: rgba(255, 255, 255, 0.25);
+  stroke-dasharray: 6 5;
+}
+
+.bond-text {
+  text-anchor: middle;
+  font: 700 30px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  fill: #c43c66;
+}
+
+.bond-circle-missing + .bond-text {
+  fill: #fff;
+}
+
+
+/* ---------- Account and players (same as PitchPop) ---------- */
+.back-link-center {
+  align-self: center;
+  margin-top: -4px;
+}
+
+/* The player pill sits in the header, just left of the account button, on
+   every screen. Its menu opens under it, right-aligned. */
+.profile-switcher {
+  position: relative;
+  min-width: 0;
+}
+
+.profile-pill {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  max-width: 100%;
+  background: var(--card-bg);
+  border-radius: 999px;
+  padding: 0 10px 0 5px;
+  box-shadow: var(--shadow-sm);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.profile-pill-name {
+  min-width: 0;
+  max-width: 88px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 700 13px 'IBM Plex Sans', sans-serif;
+  color: var(--ink);
+}
+
+.profile-pill-chevron {
+  color: var(--ink-dim);
+  font-size: 11px;
+}
+
+.profile-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 5;
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+}
+
+.profile-menu-item {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  background: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+  text-align: left;
+}
+
+.profile-menu-item-active {
+  background: rgba(59, 111, 239, 0.1);
+}
+
+/* Menu groups (Play / Learn / Practice): one divider per group instead of
+   one per item. The menu scrolls if a family has many players. */
+.profile-menu {
+  max-height: min(72vh, 560px);
+  overflow-y: auto;
+}
+
+.profile-menu-section {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #edf0f6;
+}
+
+.profile-menu-heading {
+  padding: 4px 10px 0;
+  color: var(--ink-dim);
+  font: 700 10.5px 'IBM Plex Sans', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.profile-menu-section .profile-settings-item {
+  border-top: none;
+  margin-top: 0;
+  padding: 8px 10px;
+}
+
+.profile-settings-item {
+  appearance: none;
+  border: none;
+  border-top: 1px solid #edf0f6;
+  cursor: pointer;
+  background: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 10px;
+  color: var(--accent-blue);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  text-align: left;
+}
+
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-card {
+  background: var(--card-bg);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.settings-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-card-header .profile-name-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.remove-player-btn {
+  appearance: none;
+  border: 1px solid #f1b8bb;
+  border-radius: 9px;
+  cursor: pointer;
+  padding: 9px 10px;
+  background: #fff5f5;
+  color: #bb3036;
+  font: 700 12px 'IBM Plex Sans', sans-serif;
+}
+
+.remove-player-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.profile-name-input,
+.add-profile input {
+  width: 100%;
+  border: 1px solid #d9deeb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: #fbfcff;
+  font: 700 15px 'IBM Plex Sans', sans-serif;
+}
+
+.player-history {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-dim);
+  line-height: 1.5;
+}
+
+.player-history strong {
+  color: var(--ink);
+}
+
+.player-history-streak {
+  display: block;
+  color: #9a4a12;
+  font-weight: 600;
+}
+
+.settings-help {
+  margin: 8px 0 10px;
+  color: var(--ink-dim);
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.add-profile {
+  display: flex;
+  gap: 8px;
+}
+
+.add-profile input {
+  flex: 1;
+  min-width: 0;
+}
+
+.add-profile .pill-btn-primary {
+  flex: none;
+  padding-inline: 14px;
+}
+
+/* Tiny color bars in the player menu showing which colors each player is learning */
+.profile-level {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  padding-left: 8px;
+}
+
+.profile-level-bar {
+  width: 6px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.main-menu-section-first .profile-settings-item {
+  border-top: none;
+  margin-top: 0;
+  padding: 8px 10px;
+}
+
+.account-btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 700;
+}
+
+.account-btn-signed-in {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  color: #fff;
+  font-size: 15px;
+  box-shadow: var(--shadow-sm);
+}
+
+.account-btn-signed-out {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.1;
+}
+
+/* Two lines, so it's clear an account can be made here too. */
+.account-btn-line2 {
+  font-size: 10.5px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* Sync status line on Players & colors */
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  text-align: left;
+}
+
+.sync-status-on {
+  background: #e8f6ee;
+  color: #1f6b43;
+  overflow-wrap: anywhere;
+}
+
+.sync-status-off {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  justify-content: space-between;
+  background: #eef1f7;
+  color: var(--ink-dim);
+}
+
+.sync-link {
+  color: var(--accent-blue);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sync-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-green);
+}
+
+/* Account screen */
+.account-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-card,
+.account-section {
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.auth-title {
+  margin: 0;
+  font: 700 21px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  text-align: center;
+}
+
+.auth-sub {
+  margin: 6px 0 16px;
+  color: var(--ink-dim);
+  font-size: 13px;
+  text-align: center;
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: #eef1f7;
+}
+
+.auth-tab {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  padding: 9px;
+  border-radius: 9px;
+  background: none;
+  color: var(--ink-dim);
+  font: 700 13px 'IBM Plex Sans', sans-serif;
+}
+
+.auth-tab-active {
+  background: var(--card-bg);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font: 600 12px 'IBM Plex Sans', sans-serif;
+  color: var(--ink-dim);
+}
+
+.auth-field input {
+  border: 1px solid #d9deeb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #fbfcff;
+  color: var(--ink);
+  font: 15px 'IBM Plex Sans', sans-serif;
+}
+
+.auth-field input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(59, 111, 239, 0.15);
+}
+
+.password-wrap {
+  position: relative;
+  display: flex;
+}
+
+.password-wrap input {
+  flex: 1;
+  min-width: 0;
+  padding-right: 52px;
+}
+
+.password-toggle {
+  appearance: none;
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--ink-dim);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.password-toggle[aria-pressed='true'] {
+  color: var(--accent-blue);
+}
+
+.auth-forgot-link {
+  align-self: flex-end;
+  background: none;
+  border: none;
+  padding: 0;
+  font: 600 12px 'IBM Plex Sans', sans-serif;
+  color: var(--accent-blue);
+  cursor: pointer;
+}
+
+.auth-error,
+.auth-notice {
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.auth-error {
+  background: #fdecec;
+  color: #b3261e;
+}
+
+.auth-notice {
+  background: #e8f6ee;
+  color: #1f6b43;
+}
+
+.account-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 4px;
+}
+
+.account-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  color: #fff;
+  font: 700 30px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  box-shadow: var(--shadow);
+}
+
+.account-email {
+  font-weight: 700;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.account-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e8f6ee;
+  color: #1f6b43;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.account-section {
+  padding: 4px 16px;
+}
+
+.account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 0;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 15px;
+}
+
+.account-row-button {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  background: none;
+  color: var(--ink);
+  text-align: left;
+}
+
+.account-row-label {
+  font-weight: 700;
+}
+
+.account-row-value {
+  color: var(--ink-dim);
+  font-weight: 600;
+}
+
+.account-row-help {
+  margin: -6px 0 14px;
+  color: var(--ink-dim);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.account-signout {
+  appearance: none;
+  cursor: pointer;
+  padding: 13px;
+  border: 1px solid #f1b8bb;
+  border-radius: 999px;
+  background: #fff5f5;
+  color: #bb3036;
+  font: 700 14px 'IBM Plex Sans', sans-serif;
+}
+
+.account-delete {
+  appearance: none;
+  cursor: pointer;
+  align-self: center;
+  padding: 6px 10px;
+  border: none;
+  background: none;
+  color: var(--ink-dim);
+  font: 600 13px 'IBM Plex Sans', sans-serif;
+  text-decoration: underline;
+}
+
+.account-btn-signed-out {
+  white-space: nowrap;
+}
+
+/* ---------- Back to the app from an account email (EmailHandoff) ---------- */
+.handoff-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(20, 22, 26, 0.45);
+}
+
+.handoff-card {
+  width: min(360px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 22px 18px;
+  border-radius: 24px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.handoff-icon {
+  font-size: 44px;
+  line-height: 1;
+}
+
+.handoff-title {
+  margin: 0;
+  font: 700 22px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: var(--ink);
+}
+
+.handoff-text {
+  margin: 0 0 6px;
+  color: var(--ink-dim);
+  font-size: 15px;
+}
+
+.handoff-open {
+  text-decoration: none;
+  text-align: center;
+}
+
+.handoff-stay {
+  appearance: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 8px;
+  color: var(--ink-dim);
+  font: 600 14px 'IBM Plex Sans', sans-serif;
+}
+
+/* Signed in without internet (SyncStatus) */
+.sync-dot-offline {
+  background: #e8a33a;
+}
+
+/* Players & grades: each player's grade, as chips (MathPop's version of
+   PitchPop's color chips), and the grade badge in the player menu. */
+.grade-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.grade-setting {
+  appearance: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 8px 2px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: #eef1f7;
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.grade-setting-active {
+  background: var(--grade-color);
+  color: #fff;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.grade-setting-name {
+  font: 700 16px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+
+.grade-setting-sg {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+.profile-grade {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fff;
+  font: 700 12px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+
+/* Header: the logo on the left (just the icon on a narrow phone), the
+   player pill and the account button on the right - as in PitchPop. */
+.brand-row {
+  gap: 8px;
+}
+
+.brand-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.logo-word {
+  display: flex;
+  white-space: nowrap;
+}
+
+.logo-word-hidden {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* The playing player's grade, on the home page. */
+.home-grade {
+  display: flex;
+  justify-content: center;
 }

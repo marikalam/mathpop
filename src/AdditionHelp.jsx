@@ -65,7 +65,7 @@ export default function AdditionHelp({ a, b, onClose }) {
 
   return (
     <div className="addition-help">
-      <h2 className="screen-title">Let's break it down!</h2>
+      <h3 className="help-title">Let's break it down!</h3>
 
       {help.crossesTen ? (
         <>
@@ -91,8 +91,8 @@ export default function AdditionHelp({ a, b, onClose }) {
         </>
       )}
 
-      <button className="pill-btn-primary pill-btn-full" onClick={onClose}>
-        Got it, let's try! →
+      <button className="pill-btn-secondary pill-btn-full" onClick={onClose}>
+        Got it, hide help
       </button>
     </div>
   );
