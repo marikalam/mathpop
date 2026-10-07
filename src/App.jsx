@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import LevelSwitcher from './LevelSwitcher.jsx';
-import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
-import { getVoiceQuality, playFeedbackAndSpeak, prewarmVoices, speakInLanguage, speakProblem, speakResults, unlockAudio } from './sound.js';
+import { CheckIcon, ClockFace, ShapeIcon, XIcon } from './icons.jsx';
+import { getVoiceQuality, playCorrectChime, playFeedbackAndSpeak, playPop, prewarmVoices, speak, speakInLanguage, speakProblem, speakResults, unlockAudio } from './sound.js';
 import { SentenceQuestionTemplates } from './types.js';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
+import { COLORS, LITTLE_META, SHAPES, buildLittleProblem, isLittleConcept, wordIn } from './littleLearners.js';
 import WritePad from './WritePad.jsx';
 import { loadDigitModel } from './digitModel.js';
 import { DEFAULT_GRADE, GRADE_RANGES, gradeInfo, gradeOps, gradePractice, gradeTier } from './grades.js';
@@ -21,9 +22,17 @@ const HERO_OPS = [
   { symbol: '×', color: '#3b6fef' },
   { symbol: '÷', color: '#f0954f' },
 ];
-// Every card the home page's Practice grid can show; each grade picks six
-// of them (GRADE_PRACTICE in grades.js). Random Mix and Explore Numbers
-// have their own Quick play card above.
+// Baby's home page shows shapes instead (the ids are SHAPES in littleLearners.js).
+const HERO_SHAPES = [
+  { shape: 'circle', color: '#ef4444' },
+  { shape: 'square', color: '#3b82f6' },
+  { shape: 'triangle', color: '#22c55e' },
+  { shape: 'star', color: '#f5a623' },
+];
+// Every card the home page's Practice grid can show; each grade picks its
+// own (GRADE_PRACTICE in grades.js). Random Mix (and Explore, for Pre-K)
+// have their own Quick play card above. Cards with a `view` open that
+// screen instead of starting a round.
 const PRACTICE_CARDS = {
   multiply: { icon: '×', title: 'Multiplication', sub: 'Times tables practice', from: '#4a7cf5', to: '#3660e0' },
   add: { icon: '+', title: 'Addition', sub: 'Add it up', from: '#38c07f', to: '#2a9e60' },
@@ -38,6 +47,15 @@ const PRACTICE_CARDS = {
   regroup: { icon: '🧱', title: 'Stack & Solve', sub: 'Carrying & borrowing', from: '#f06f9a', to: '#d94f7e' },
   bigNumber: { icon: '💯', title: 'Big Numbers', sub: 'Into the millions', from: '#14b8a6', to: '#0f9384' },
   multistep: { icon: '🧩', title: 'Multi-Step', sub: 'Two-step stories', from: '#f5a524', to: '#e08a12' },
+  count: { icon: '🍎', title: 'Counting', sub: 'How many?', from: '#f47b6b', to: '#e0564a' },
+  shapes: { icon: '🔺', title: 'Shapes', sub: 'Find the shape', from: '#1fb6ba', to: '#14898c' },
+  colors: { icon: '🎨', title: 'Colors', sub: 'Find the color', from: '#a065e6', to: '#7c3fc4' },
+  nextNumber: { icon: '➡️', title: 'What Comes Next', sub: '1, 2, 3, …?', from: '#4a7cf5', to: '#3660e0' },
+  moreFewer: { icon: '⚖️', title: 'More or Fewer', sub: 'Which group has more?', from: '#38c07f', to: '#2a9e60' },
+  popCount: { icon: '🎈', title: 'Pop & Count', sub: 'Pop balloons, count out loud', from: '#f06f9a', to: '#d94f7e', view: 'popcount' },
+  exploreNumbers: { icon: '🔢', title: 'Numbers', sub: 'Tap a number, hear it', from: '#4a7cf5', to: '#3660e0', view: 'explore', tab: 'numbers' },
+  exploreShapes: { icon: '🔺', title: 'Shapes', sub: 'Tap a shape, hear it', from: '#1fb6ba', to: '#14898c', view: 'explore', tab: 'shapes' },
+  exploreColors: { icon: '🎨', title: 'Colors', sub: 'Tap a color, hear it', from: '#a065e6', to: '#7c3fc4', view: 'explore', tab: 'colors' },
 };
 const PROGRESS_KEY = 'mathpop-progress-v2';
 const SETTINGS_KEY = 'mathpop-settings-v1';
@@ -74,6 +92,22 @@ const EXPLORE_LANGUAGES = [
     show: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'],
   },
 ];
+const EXPLORE_TABS = [
+  { key: 'numbers', label: '123 Numbers' },
+  { key: 'shapes', label: '🔺 Shapes' },
+  { key: 'colors', label: '🎨 Colors' },
+];
+const SHAPE_COLORS = ['#EF4444', '#3B82F6', '#22C55E', '#F5A623', '#EC4899', '#8B5CF6', '#14B8A6', '#F97316'];
+// Pop & Count: how many balloons a round can have.
+const POP_RANGE = { baby: [1, 5], prek: [3, 10] };
+const BALLOON_COLORS = ['#EF4444', '#3B82F6', '#22C55E', '#F5A623', '#EC4899', '#8B5CF6', '#14B8A6', '#F97316'];
+
+function newPopRound(grade) {
+  const [min, max] = POP_RANGE[grade] || POP_RANGE.prek;
+  const total = Math.floor(Math.random() * (max - min + 1)) + min;
+  return { colors: Array.from({ length: total }, () => BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)]), popped: [] };
+}
+
 const EXPLORE_COLORS = ['#3B6FEF', '#2FAE6B', '#8E4FD6', '#E0793A', '#14B8A6', '#EF4444', '#F5A623', '#EC4899', '#4E8FF7', '#A855F7', '#0EA5E9'];
 
 function loadExploreSession() {
@@ -116,7 +150,7 @@ const OPERATIONS = {
   clock: { symbol: '🕐', label: 'Clock', color: '#E0793A' },
 };
 
-const ALL_META = { ...OPERATIONS, ...SKILL_META };
+const ALL_META = { ...OPERATIONS, ...SKILL_META, ...LITTLE_META };
 
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -204,7 +238,7 @@ function buildProblem(mode, grade) {
     return buildClockProblem(gradeTier(grade));
   }
 
-  const op = mode === 'random' ? shuffle(gradeOps(grade))[0] : mode;
+  const op = mode;
   const [[aMin, aMax], [bMin, bMax]] = (GRADE_RANGES[grade] || GRADE_RANGES[DEFAULT_GRADE])[op];
   let a = randInt(aMin, aMax);
   let b = randInt(bMin, bMax);
@@ -311,7 +345,9 @@ function buildOptions(problem) {
   return shuffle([correct, ...distractors.slice(0, 3)]);
 }
 
-function makeProblem(op, grade) {
+function makeProblem(mode, grade) {
+  const op = mode === 'random' ? shuffle(gradeOps(grade))[0] : mode;
+  if (isLittleConcept(op)) return buildLittleProblem(op, gradeInfo(grade).id);
   if (isSkillConcept(op)) return buildSkillProblem(op, gradeTier(grade));
   return buildProblem(op, grade);
 }
@@ -343,6 +379,11 @@ function problemPromptText(problem) {
     return problem.promptKind === 'compare' ? `${problem.compareLeft} ___ ${problem.compareRight}` : problem.prompt;
   }
   return `${problem.a} ${problem.symbol} ${problem.b}`;
+}
+
+// What a picked answer is called, e.g. "the circle" for a shape choice.
+function choiceLabel(problem, value) {
+  return problem.choiceLabels?.[value] ?? String(value);
 }
 
 function problemAnswerText(problem) {
@@ -526,6 +567,8 @@ export default function App() {
 
   const [exploreSession, setExploreSession] = useState(loadExploreSession);
   const [explorePlayed, setExplorePlayed] = useState(null);
+  const [exploreTab, setExploreTab] = useState('numbers');
+  const [popRound, setPopRound] = useState(null);
   const [voiceQuality, setVoiceQuality] = useState('piper');
 
   useEffect(() => {
@@ -563,15 +606,20 @@ export default function App() {
 
   const exploreLang = EXPLORE_LANGUAGES.find((l) => l.key === settings.exploreLang) || EXPLORE_LANGUAGES[0];
 
-  function exploreTap(n) {
-    if (exploreSession.taps >= EXPLORE_SESSION_TAPS) return;
+  function sayNumber(n) {
     speakInLanguage(exploreLang.say ? exploreLang.say[n] : String(n), exploreLang.lang);
-    setExplorePlayed(n);
+  }
+
+  // `key` is the number itself, or "s:circle" / "c:red" for a shape or color.
+  function exploreTap(key, say) {
+    if (exploreSession.taps >= EXPLORE_SESSION_TAPS) return;
+    say();
+    setExplorePlayed(key);
     if (navigator.vibrate) navigator.vibrate(15);
     setExploreSession((prev) => {
       const next = {
         taps: prev.taps + 1,
-        counts: { ...prev.counts, [n]: (prev.counts[n] || 0) + 1 },
+        counts: { ...prev.counts, [key]: (prev.counts[key] || 0) + 1 },
       };
       saveExploreSession(next);
       return next;
@@ -583,6 +631,43 @@ export default function App() {
     setExploreSession(next);
     saveExploreSession(next);
     setExplorePlayed(null);
+  }
+
+  function openExplore(tab) {
+    setExploreTab(tab);
+    setExplorePlayed(null);
+    setView('explore');
+  }
+
+  function openPopCount() {
+    setPopRound(newPopRound(gradeInfo(level).id));
+    setView('popcount');
+  }
+
+  // Each balloon popped says the next number, so kids count one balloon
+  // per number; popping the last one gets a cheer.
+  function popBalloon(i) {
+    if (!popRound || popRound.popped.includes(i)) return;
+    const popped = [...popRound.popped, i];
+    const total = popRound.colors.length;
+    setPopRound({ ...popRound, popped });
+    playPop();
+    sayNumber(popped.length);
+    if (navigator.vibrate) navigator.vibrate(15);
+    if (popped.length === total) {
+      setTimeout(() => {
+        playCorrectChime();
+        if (exploreLang.key === 'en') speak(`${total}! Great counting!`);
+      }, 900);
+    }
+  }
+
+  function openCard(id) {
+    const card = PRACTICE_CARDS[id];
+    if (id === 'skills') setView('skills');
+    else if (card.view === 'explore') openExplore(card.tab);
+    else if (card.view === 'popcount') openPopCount();
+    else startOperation(id, 'home');
   }
 
   function updateExploreLang(key) {
@@ -650,7 +735,7 @@ export default function App() {
           op: problem.op,
           correct,
           prompt: problemPromptText(problem),
-          yourAnswer: value,
+          yourAnswer: choiceLabel(problem, value),
           answerText: problemAnswerText(problem),
         },
       ]);
@@ -706,7 +791,10 @@ export default function App() {
     setPrintSet({ problems: makeWorksheet(operation, level, printCount), withKey: printKey, id: Date.now() });
   }
 
-  const modeLabel = isSkillConcept(operation)
+  const grade = gradeInfo(level);
+  const modeLabel = isLittleConcept(operation)
+    ? LITTLE_META[operation].label.toLowerCase()
+    : isSkillConcept(operation)
     ? SKILL_META[operation].label.toLowerCase()
     : operation === 'random'
       ? 'random mix'
@@ -742,14 +830,27 @@ export default function App() {
             <AppHeader level={level} onChangeLevel={changeLevel} showBack={false} onSettings={() => setView('settings')} />
             <section className="home-hero">
               <div className="home-hero-ops" aria-hidden="true">
-                {HERO_OPS.map((op) => (
-                  <span key={op.symbol} className="home-hero-op" style={{ background: op.color }}>
-                    {op.symbol}
-                  </span>
-                ))}
+                {grade.id === 'baby'
+                  ? HERO_SHAPES.map((s) => (
+                      <span key={s.shape} className="home-hero-op home-hero-shape">
+                        <ShapeIcon shape={s.shape} color={s.color} size="70%" />
+                      </span>
+                    ))
+                  : HERO_OPS.map((op) => (
+                      <span key={op.symbol} className="home-hero-op" style={{ background: op.color }}>
+                        {op.symbol}
+                      </span>
+                    ))}
               </div>
-              <h2 className="home-hello">Ready to pop some math?</h2>
-              <p className="home-tagline">Pick a game, answer ten problems, and watch your score grow.</p>
+              <h2 className="home-hello">{grade.id === 'baby' ? "Let's play!" : 'Ready to pop some math?'}</h2>
+              <p className="home-tagline">
+                {grade.id === 'baby'
+                  ? 'Tap to hear numbers, shapes and colors, and pop balloons to count.'
+                  : grade.id === 'prek'
+                    ? 'Count, find shapes and colors, and watch your stars grow.'
+                    : 'Pick a game, answer ten problems, and watch your score grow.'}
+              </p>
+              {grade.id !== 'baby' && (
               <div className="home-stats">
                 {levelStats.total ? (
                   <>
@@ -760,8 +861,12 @@ export default function App() {
                   <span className="home-stat">⭐ Start your first round</span>
                 )}
               </div>
+              )}
             </section>
 
+            {/* Baby has no quizzes, so no Random Mix; Explore is for Baby and
+                Pre-K (Baby gets it as its own cards below). */}
+            {grade.id !== 'baby' && (
             <section className="quick-set" aria-label="Quick play">
               <button className="home-cta" onClick={() => startOperation('random', 'home')}>
                 <span className="home-cta-icon" aria-hidden="true">
@@ -775,22 +880,25 @@ export default function App() {
                   →
                 </span>
               </button>
-              <button className="quick-explore" onClick={() => setView('explore')}>
-                <span className="quick-explore-icon" aria-hidden="true">
-                  🔢
-                </span>
-                <span className="home-cta-text">
-                  <span className="quick-explore-title">Explore Numbers</span>
-                  <span className="quick-explore-sub">Tap a number, hear it out loud</span>
-                </span>
-                <span className="quick-explore-arrow" aria-hidden="true">
-                  →
-                </span>
-              </button>
+              {grade.early && (
+                <button className="quick-explore" onClick={() => openExplore('numbers')}>
+                  <span className="quick-explore-icon" aria-hidden="true">
+                    🔢
+                  </span>
+                  <span className="home-cta-text">
+                    <span className="quick-explore-title">Explore</span>
+                    <span className="quick-explore-sub">Numbers, shapes & colors out loud</span>
+                  </span>
+                  <span className="quick-explore-arrow" aria-hidden="true">
+                    →
+                  </span>
+                </button>
+              )}
             </section>
+            )}
 
-            <h3 className="home-section-title">Practice</h3>
-            <div className="home-grid">
+            <h3 className="home-section-title">{grade.id === 'baby' ? 'Play' : 'Practice'}</h3>
+            <div className={grade.id === 'baby' ? 'home-grid home-grid-big' : 'home-grid'}>
               {gradePractice(level).map((id) => {
                 const card = PRACTICE_CARDS[id];
                 return (
@@ -798,7 +906,7 @@ export default function App() {
                     key={id}
                     className="home-card"
                     style={{ '--card-from': card.from, '--card-to': card.to }}
-                    onClick={() => (id === 'skills' ? setView('skills') : startOperation(id, 'home'))}
+                    onClick={() => openCard(id)}
                   >
                     <span className="home-card-icon" aria-hidden="true">
                       {card.icon}
@@ -827,13 +935,31 @@ export default function App() {
               <div className="complete-wrap">
                 <div className="complete-emoji">🌟</div>
                 <h2 className="screen-title">All done!</h2>
-                <p className="screen-sub">You tapped {EXPLORE_SESSION_TAPS} numbers.</p>
+                <p className="screen-sub">You tapped {EXPLORE_SESSION_TAPS} times.</p>
                 <div className="explore-tally">
-                  {EXPLORE_NUMBERS.filter((n) => exploreSession.counts[n]).map((n) => (
-                    <div key={n} className="explore-tally-chip" style={{ background: EXPLORE_COLORS[n] }}>
-                      {n}: {exploreSession.counts[n]}
-                    </div>
-                  ))}
+                  {Object.entries(exploreSession.counts).map(([key, count]) => {
+                    const shape = key.startsWith('s:') && SHAPES.find((sh) => `s:${sh.id}` === key);
+                    const color = key.startsWith('c:') && COLORS.find((c) => `c:${c.id}` === key);
+                    if (shape) {
+                      return (
+                        <div key={key} className="explore-tally-chip explore-tally-chip-light">
+                          <ShapeIcon shape={shape.id} color="#14A3B8" size={22} /> {count}
+                        </div>
+                      );
+                    }
+                    if (color) {
+                      return (
+                        <div key={key} className="explore-tally-chip explore-tally-chip-light">
+                          <span className="explore-tally-swatch" style={{ background: color.hex }} /> {count}
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={key} className="explore-tally-chip" style={{ background: EXPLORE_COLORS[key] }}>
+                        {key}: {count}
+                      </div>
+                    );
+                  })}
                 </div>
                 <div className="feedback-actions">
                   <button className="pill-btn-primary" onClick={explorePlayAgain}>
@@ -843,6 +969,19 @@ export default function App() {
               </div>
             ) : (
               <>
+                <div className="explore-tab-row" role="tablist" aria-label="What to explore">
+                  {EXPLORE_TABS.map((t) => (
+                    <button
+                      key={t.key}
+                      role="tab"
+                      aria-selected={t.key === exploreTab}
+                      className={`explore-tab${t.key === exploreTab ? ' explore-tab-active' : ''}`}
+                      onClick={() => setExploreTab(t.key)}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
                 <div className="explore-lang-row" role="radiogroup" aria-label="Language">
                   {EXPLORE_LANGUAGES.map((l) => (
                     <button
@@ -859,21 +998,113 @@ export default function App() {
                 <div className="explore-counter">
                   {exploreSession.taps} / {EXPLORE_SESSION_TAPS}
                 </div>
-                <div className="explore-grid">
-                  {EXPLORE_NUMBERS.map((n) => (
-                    <button
-                      key={n}
-                      className={`explore-btn${n === 10 ? ' explore-btn-wide' : ''}${explorePlayed === n ? ' explore-btn-played' : ''}`}
-                      style={{ background: EXPLORE_COLORS[n] }}
-                      aria-label={`Say the number ${n}`}
-                      onClick={() => exploreTap(n)}
-                    >
-                      <span className="explore-digit">{n}</span>
-                      {exploreLang.show && <span className="explore-word">{exploreLang.show[n]}</span>}
-                    </button>
-                  ))}
-                </div>
+                {exploreTab === 'numbers' && (
+                  <div className="explore-grid">
+                    {EXPLORE_NUMBERS.map((n) => (
+                      <button
+                        key={n}
+                        className={`explore-btn${n === 10 ? ' explore-btn-wide' : ''}${explorePlayed === n ? ' explore-btn-played' : ''}`}
+                        style={{ background: EXPLORE_COLORS[n] }}
+                        aria-label={`Say the number ${n}`}
+                        onClick={() => exploreTap(n, () => sayNumber(n))}
+                      >
+                        <span className="explore-digit">{n}</span>
+                        {exploreLang.show && <span className="explore-word">{exploreLang.show[n]}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {exploreTab === 'shapes' && (
+                  <div className="explore-grid explore-grid-4">
+                    {SHAPES.map((sh, i) => {
+                      const word = wordIn(sh, exploreLang.key);
+                      const key = `s:${sh.id}`;
+                      return (
+                        <button
+                          key={sh.id}
+                          className={`explore-btn explore-btn-stack explore-btn-light${explorePlayed === key ? ' explore-btn-played' : ''}`}
+                          aria-label={`Say ${sh.en}`}
+                          onClick={() => exploreTap(key, () => speakInLanguage(word.say, exploreLang.lang))}
+                        >
+                          <span className="explore-shape">
+                            <ShapeIcon shape={sh.id} color={SHAPE_COLORS[i]} size="100%" />
+                          </span>
+                          <span className="explore-word">{word.show}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {exploreTab === 'colors' && (
+                  <div className="explore-grid explore-grid-5">
+                    {COLORS.map((c) => {
+                      const word = wordIn(c, exploreLang.key);
+                      const key = `c:${c.id}`;
+                      return (
+                        <button
+                          key={c.id}
+                          className={`explore-btn${c.id === 'white' ? ' explore-btn-white' : ''}${explorePlayed === key ? ' explore-btn-played' : ''}`}
+                          style={{ background: c.hex, color: c.dark ? '#171a2b' : '#fff' }}
+                          aria-label={`Say ${c.en}`}
+                          onClick={() => exploreTap(key, () => speakInLanguage(word.say, exploreLang.lang))}
+                        >
+                          <span className="explore-word explore-color-word">{word.show}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </>
+            )}
+          </>
+        )}
+
+        {view === 'popcount' && popRound && (
+          <>
+            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
+            <div className="explore-lang-row" role="radiogroup" aria-label="Language">
+              {EXPLORE_LANGUAGES.map((l) => (
+                <button
+                  key={l.key}
+                  role="radio"
+                  aria-checked={l.key === exploreLang.key}
+                  className={`explore-lang-btn${l.key === exploreLang.key ? ' explore-lang-btn-active' : ''}`}
+                  onClick={() => updateExploreLang(l.key)}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+            <h2 className="screen-title">
+              {popRound.popped.length === popRound.colors.length
+                ? `${popRound.colors.length}! Great counting!`
+                : 'Pop the balloons and count!'}
+            </h2>
+            <div className="pop-count-number" aria-live="polite">
+              {popRound.popped.length}
+            </div>
+            <div className="balloon-field">
+              {popRound.colors.map((color, i) => {
+                const order = popRound.popped.indexOf(i);
+                return order >= 0 ? (
+                  <span key={i} className="balloon-popped" style={{ color }}>
+                    {order + 1}
+                  </span>
+                ) : (
+                  <button
+                    key={i}
+                    className="balloon"
+                    style={{ '--balloon': color, animationDelay: `${(i % 4) * 0.35}s` }}
+                    aria-label="Pop the balloon"
+                    onClick={() => popBalloon(i)}
+                  />
+                );
+              })}
+            </div>
+            {popRound.popped.length === popRound.colors.length && (
+              <button className="pill-btn-primary pill-btn-full" onClick={openPopCount}>
+                More balloons! 🎈
+              </button>
             )}
           </>
         )}
@@ -970,6 +1201,19 @@ export default function App() {
             >
               {problem.type === 'clock' ? (
                 <ClockFace hour={problem.hour} minute={problem.minute} />
+              ) : problem.promptKind === 'count' ? (
+                <span className={`count-field${problem.countN > 10 ? ' count-field-many' : ''}`}>
+                  {Array.from({ length: problem.countN }, (_, i) => (
+                    <span key={i}>{problem.countEmoji}</span>
+                  ))}
+                </span>
+              ) : problem.promptKind === 'sequence' ? (
+                <span className="problem-text sequence-row">
+                  {problem.sequence.map((n) => (
+                    <span key={n}>{n}</span>
+                  ))}
+                  <span className="compare-blank">?</span>
+                </span>
               ) : problem.type === 'skill' && problem.promptKind === 'compare' ? (
                 <span className="problem-text compare-row">
                   <span>{problem.compareLeft}</span>
@@ -988,9 +1232,11 @@ export default function App() {
               ) : (
                 <span
                   className={
-                    problem.type === 'sentence' || (problem.type === 'skill' && problem.prompt.length > 24)
-                      ? 'problem-text problem-text-sentence'
-                      : 'problem-text'
+                    problem.promptKind === 'find'
+                      ? 'problem-text problem-text-find'
+                      : problem.type === 'sentence' || (problem.type === 'skill' && problem.prompt.length > 24)
+                        ? 'problem-text problem-text-sentence'
+                        : 'problem-text'
                   }
                 >
                   {problem.type === 'sentence'
@@ -1002,15 +1248,16 @@ export default function App() {
               )}
             </button>
             {problem.type === 'skill' && problem.hint && <p className="screen-sub skill-hint">💡 {problem.hint}</p>}
-            <p className="screen-sub tap-to-hear">Tap the problem to hear it</p>
+            <p className="screen-sub tap-to-hear">{isLittleConcept(problem.op) ? 'Tap to hear it again' : 'Tap the problem to hear it'}</p>
             {problem.op === 'add' && problem.type !== 'sentence' && problem.type !== 'skill' && (
               <button className="help-btn" onClick={() => setView('help')}>
                 🤔 Need help?
               </button>
             )}
             {/* Printing doesn't work inside the iPhone app's web view, so the
-                worksheet is a website-only extra. */}
-            {!IS_NATIVE && (
+                worksheet is a website-only extra. The little-kid games are
+                pictures to tap, so they have no worksheet. */}
+            {!IS_NATIVE && !isLittleConcept(problem.op) && (
               <button className="print-open-btn" onClick={() => setPrintPanel(true)}>
                 🖨️ Print worksheet
               </button>
@@ -1117,10 +1364,20 @@ export default function App() {
                 </div>
               </div>
             ) : (
-              <div className="options-grid">
+              <div className={`options-grid${problem.optionKind === 'group' ? ' options-grid-stack' : ''}`}>
                 {options.map((value) => (
-                  <button key={value} className="option-btn" onClick={() => chooseAnswer(value)}>
-                    {value}
+                  <button
+                    key={value}
+                    className={`option-btn${problem.optionKind ? ` option-btn-${problem.optionKind}` : ''}`}
+                    style={problem.optionKind === 'color' ? { background: COLORS.find((c) => c.id === value).hex } : undefined}
+                    aria-label={problem.choiceLabels ? choiceLabel(problem, value) : undefined}
+                    onClick={() => chooseAnswer(value)}
+                  >
+                    {problem.optionKind === 'shape' ? (
+                      <ShapeIcon shape={value} color={problem.choiceColors[value]} size={72} />
+                    ) : problem.optionKind === 'color' ? null : (
+                      value
+                    )}
                   </button>
                 ))}
               </div>
@@ -1157,9 +1414,15 @@ export default function App() {
             </div>
             <h2 className="screen-title">{answerCorrect ? 'Great job!' : 'Not quite!'}</h2>
             <p className="screen-sub">
-              {answerCorrect ? "That's right!" : `You picked ${chosen}. The correct answer is:`}
+              {answerCorrect ? "That's right!" : `You picked ${choiceLabel(problem, chosen)}. The correct answer is:`}
             </p>
             <div className="answer-card" style={{ background: ALL_META[problem.op].color }}>
+              {problem.optionKind === 'shape' && (
+                <ShapeIcon shape={problem.correct} color={problem.choiceColors[problem.correct]} size={64} />
+              )}
+              {problem.optionKind === 'color' && (
+                <span className="answer-swatch" style={{ background: COLORS.find((c) => c.id === problem.correct).hex }} />
+              )}
               <div className="answer-equation">{problemAnswerText(problem)}</div>
             </div>
             {answerCorrect ? (

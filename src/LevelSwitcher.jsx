@@ -18,10 +18,10 @@ export default function LevelSwitcher({ level, onChange, readOnly = false }) {
 
   if (readOnly) {
     return (
-      <div className="level-pill level-pill-static" aria-label={`Grade: ${current.label}`}>
+      <div className="level-pill level-pill-static" aria-label={`${current.early ? 'Level' : 'Grade'}: ${current.label}`}>
         <span className="level-dot" style={{ background: current.color }} />
         <span className="level-pill-text">
-          <span className="level-pill-label">Grade</span>
+          <span className="level-pill-label">{current.early ? 'Level' : 'Grade'}</span>
           <span className="level-pill-name">{current.short}</span>
         </span>
       </div>
@@ -30,10 +30,10 @@ export default function LevelSwitcher({ level, onChange, readOnly = false }) {
 
   return (
     <div className="level-switcher" ref={ref}>
-      <button className="level-pill" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label={`Grade: ${current.label}`}>
+      <button className="level-pill" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label={`${current.early ? 'Level' : 'Grade'}: ${current.label}`}>
         <span className="level-dot" style={{ background: current.color }} />
         <span className="level-pill-text">
-          <span className="level-pill-label">Grade</span>
+          <span className="level-pill-label">{current.early ? 'Level' : 'Grade'}</span>
           <span className="level-pill-name">{current.short}</span>
         </span>
         <span className="level-pill-chevron">▾</span>

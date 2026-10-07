@@ -44,6 +44,14 @@ export function playCorrectChime() {
   tone(ctx, 783.99, now + 0.18, 0.3, 0.18);
 }
 
+// A quick rising blip for popping a balloon.
+export function playPop() {
+  const ctx = ensureAudio();
+  const now = ctx.currentTime + 0.01;
+  tone(ctx, 660, now, 0.08, 0.2);
+  tone(ctx, 990, now + 0.04, 0.1, 0.14);
+}
+
 export function playIncorrectBuzz() {
   const ctx = ensureAudio();
   const now = ctx.currentTime + 0.01;

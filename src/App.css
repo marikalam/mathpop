@@ -1776,6 +1776,246 @@ body {
   }
 }
 
+/* ---------- Little learners (Baby, Pre-K, Kindergarten) ---------- */
+
+/* Baby's hero shows shapes on white tiles instead of the + − × ÷ tiles. */
+.home-hero-shape {
+  background: #fff;
+}
+
+/* Baby's Play cards: a big picture in the middle, easy to aim for. */
+.home-fit .home-grid-big .home-card {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.home-fit .home-grid-big .home-card-icon {
+  width: clamp(56px, 10vh, 88px);
+  height: clamp(56px, 10vh, 88px);
+  border-radius: 24px;
+  font-size: clamp(32px, 6vh, 52px);
+}
+
+.home-fit .home-grid-big .home-card-title {
+  font-size: 20px;
+}
+
+/* "Find the triangle", "Which has more?" */
+.problem-text-find {
+  display: block;
+  font-size: clamp(30px, 9vw, 40px);
+  line-height: 1.2;
+}
+
+.explore-tab-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.explore-tab {
+  appearance: none;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 10px 4px;
+  border-radius: 14px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.explore-tab-active {
+  background: #e0793a;
+  color: #fff;
+}
+
+.explore-grid-4 {
+  grid-template-rows: repeat(4, 1fr);
+}
+
+.explore-grid-5 {
+  grid-template-rows: repeat(5, 1fr);
+}
+
+.explore-btn-stack {
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+}
+
+.explore-btn-light {
+  background: var(--card-bg);
+  color: var(--ink);
+}
+
+.explore-btn-white {
+  box-shadow: var(--shadow), inset 0 0 0 2px #e3e6ef;
+}
+
+.explore-shape {
+  display: block;
+  width: min(22vw, 9dvh, 96px);
+  height: min(22vw, 9dvh, 96px);
+}
+
+.explore-color-word {
+  opacity: 1;
+}
+
+.explore-tally-chip-light {
+  gap: 6px;
+  background: var(--card-bg);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
+.explore-tally-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+/* Counting: the things to count, in rows of five so they're easy to count. */
+.count-field {
+  display: grid;
+  grid-template-columns: repeat(5, auto);
+  justify-content: center;
+  gap: 6px 10px;
+  font-size: clamp(30px, 10vw, 44px);
+  line-height: 1.1;
+}
+
+.count-field-many {
+  font-size: clamp(22px, 7vw, 30px);
+}
+
+.sequence-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.option-btn-shape {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 110px;
+}
+
+.option-btn-color {
+  min-height: 110px;
+  box-shadow: var(--shadow), inset 0 0 0 3px rgba(0, 0, 0, 0.08);
+}
+
+/* More or Fewer: each choice is a whole group, so one per row. */
+.options-grid-stack {
+  grid-template-columns: 1fr;
+}
+
+.option-btn-group {
+  min-height: 80px;
+  padding: 10px 14px;
+  font-size: clamp(24px, 8vw, 32px);
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+  word-break: break-all;
+}
+
+.answer-card svg {
+  display: block;
+  margin: 0 auto 8px;
+}
+
+.answer-swatch {
+  display: block;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8);
+}
+
+/* Pop & Count */
+.pop-count-number {
+  align-self: center;
+  font: 700 56px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  line-height: 1;
+  color: var(--accent-blue);
+  font-variant-numeric: tabular-nums;
+}
+
+.balloon-field {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-start;
+  gap: 18px 14px;
+  padding: 6px 0 20px;
+}
+
+.balloon,
+.balloon-popped {
+  width: 72px;
+  height: 90px;
+}
+
+.balloon {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+  border-radius: 50% 50% 48% 48% / 42% 42% 58% 58%;
+  background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.55), transparent 32%), var(--balloon);
+  box-shadow: inset -6px -8px 0 rgba(0, 0, 0, 0.08), var(--shadow-sm);
+  animation: balloon-bob 2.4s ease-in-out infinite;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The little knot and string under each balloon. */
+.balloon::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 2px;
+  height: 18px;
+  background: rgba(23, 26, 43, 0.3);
+}
+
+.balloon-popped {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 44px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  animation: pop-bounce 0.38s ease;
+}
+
+@keyframes balloon-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .balloon,
+  .balloon-popped {
+    animation: none;
+  }
+}
+
 /* ---------- Home page fits one screen ----------
    The page is exactly the visible screen height and doesn't scroll: the
    practice cards share whatever height is left after the fixed parts. */
