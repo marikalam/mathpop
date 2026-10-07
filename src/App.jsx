@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import LevelSwitcher from './LevelSwitcher.jsx';
 import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
@@ -7,9 +7,22 @@ import { SentenceQuestionTemplates } from './types.js';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
 import { loadDigitModel } from './digitModel.js';
-import { DEFAULT_GRADE, GRADE_RANGES, gradeInfo, gradeOps, gradePractice, gradeTier } from './grades.js';
+import { DEFAULT_GRADE, gradeInfo, gradeOperands, gradeOps, gradePractice, gradeTier } from './grades.js';
 import AdditionHelp from './AdditionHelp.jsx';
 import PrintSheet from './PrintSheet.jsx';
+import ProfileSwitcher from './ProfileSwitcher.jsx';
+import EmailHandoff from './EmailHandoff.jsx';
+import { AccountButton, AccountScreen, AddPlayerForm, PlayerSettingsCard, SyncStatus } from './Account.jsx';
+import {
+  deleteCloudProfile,
+  getUser,
+  loadCloudProfiles,
+  onAuthEvent,
+  rememberedAccount,
+  saveCloudProfile,
+  signInFromLink,
+} from './cloud.js';
+import { listenForAppLinks } from './appLink.js';
 
 const SESSION_ROUNDS = 10;
 // The iPhone app has no link out to the other apps' website, and no printing.
@@ -28,6 +41,10 @@ const PRACTICE_CARDS = {
   multiply: { icon: '×', title: 'Multiplication', sub: 'Times tables practice', from: '#4a7cf5', to: '#3660e0' },
   add: { icon: '+', title: 'Addition', sub: 'Add it up', from: '#38c07f', to: '#2a9e60' },
   subtract: { icon: '−', title: 'Subtraction', sub: 'Take it away', from: '#a065e6', to: '#7c3fc4' },
+  divide: { icon: '÷', title: 'Division', sub: 'Share it equally', from: '#f0954f', to: '#e0793a' },
+  numberBond: { icon: '🔗', title: 'Number Bonds', sub: 'Part, part, whole', from: '#e0577f', to: '#c43c66' },
+  fraction: { icon: '🍕', title: 'Fractions', sub: 'Parts of a whole', from: '#14b8a6', to: '#0f9384' },
+  factors: { icon: '🧮', title: 'Factors & Multiples', sub: 'What goes into what', from: '#8e4fd6', to: '#6f35b8' },
   sentence: { icon: '📖', title: 'Word Problems', sub: 'Math in a story', from: '#1fb6ba', to: '#14898c' },
   clock: { icon: '🕐', title: 'Tell Time', sub: 'Read the clock', from: '#f0954f', to: '#e0793a' },
   skills: { icon: '🏆', title: 'Skill Builders', sub: 'All 2nd-grade concepts', from: '#f06f9a', to: '#d94f7e' },
@@ -39,7 +56,17 @@ const PRACTICE_CARDS = {
   bigNumber: { icon: '💯', title: 'Big Numbers', sub: 'Into the millions', from: '#14b8a6', to: '#0f9384' },
   multistep: { icon: '🧩', title: 'Multi-Step', sub: 'Two-step stories', from: '#f5a524', to: '#e08a12' },
 };
-const PROGRESS_KEY = 'mathpop-progress-v2';
+// Progress per player and grade: { playerId: { grade: { total, correct, byOp } } }.
+// The older one (v2) was per grade only, for the whole phone; it becomes
+// the first guest player's.
+const PROGRESS_KEY = 'mathpop-progress-v3';
+const OLD_PROGRESS_KEY = 'mathpop-progress-v2';
+// Players, like PitchPop's: a guest's are saved on this device; a signed-in
+// family's are saved in the account (cloud.js) with a copy here, so the app
+// opens with them at once and works offline. Each has a grade (grades.js).
+const GUEST_PLAYERS_KEY = 'mathpop-guest-players-v1';
+const ACCOUNT_PLAYERS_KEY = 'mathpop-account-players-v1';
+const ACTIVE_PLAYER_KEY = 'mathpop-active-player-v1';
 const SETTINGS_KEY = 'mathpop-settings-v1';
 const GRADE_KEY = 'mathpop-grade-v1';
 // The loading screen when the app opens (see `opening`).
@@ -113,6 +140,7 @@ const OPERATIONS = {
   multiply: { symbol: '×', label: 'Multiplication', color: '#3B6FEF' },
   add: { symbol: '+', label: 'Addition', color: '#2FAE6B' },
   subtract: { symbol: '−', label: 'Subtraction', color: '#8E4FD6' },
+  divide: { symbol: '÷', label: 'Division', color: '#E0793A' },
   clock: { symbol: '🕐', label: 'Clock', color: '#E0793A' },
 };
 
@@ -197,7 +225,8 @@ function buildClockProblem(level) {
 
 function buildProblem(mode, grade) {
   if (mode === 'sentence') {
-    const op = shuffle(gradeOps(grade))[0];
+    // Word problems are written for adding, taking away and multiplying.
+    const op = shuffle(gradeOps(grade).filter((o) => SentenceQuestionTemplates[o]))[0];
     return buildSentenceQuestion(op, gradeTier(grade));
   }
   if (mode === 'clock') {
@@ -205,9 +234,7 @@ function buildProblem(mode, grade) {
   }
 
   const op = mode === 'random' ? shuffle(gradeOps(grade))[0] : mode;
-  const [[aMin, aMax], [bMin, bMax]] = (GRADE_RANGES[grade] || GRADE_RANGES[DEFAULT_GRADE])[op];
-  let a = randInt(aMin, aMax);
-  let b = randInt(bMin, bMax);
+  let [a, b] = gradeOperands(grade, op);
   if (op === 'multiply') {
     if (Math.random() < 0.5) [a, b] = [b, a];
     return { a, b, op, symbol: '×', correct: a * b };
@@ -215,7 +242,9 @@ function buildProblem(mode, grade) {
   if (op === 'add') {
     return { a, b, op, symbol: '+', correct: a + b };
   }
-  b = Math.min(b, a);
+  if (op === 'divide') {
+    return { a, b, op, symbol: '÷', correct: a / b };
+  }
   return { a, b, op, symbol: '−', correct: a - b };
 }
 
@@ -282,7 +311,13 @@ function buildOptions(problem) {
   const add = (v) => {
     if (Number.isInteger(v) && v >= 0 && v !== correct) pool.add(v);
   };
-  if (symbol === '×') {
+  if (symbol === '÷') {
+    add(correct + 1);
+    add(correct - 1);
+    add(correct + 2);
+    add(correct * 2);
+    add(a - b);
+  } else if (symbol === '×') {
     add(a * (b + 1));
     add(a * (b - 1));
     add((a + 1) * b);
@@ -312,7 +347,7 @@ function buildOptions(problem) {
 }
 
 function makeProblem(op, grade) {
-  if (isSkillConcept(op)) return buildSkillProblem(op, gradeTier(grade));
+  if (isSkillConcept(op)) return buildSkillProblem(op, gradeTier(grade), gradeInfo(grade).id);
   return buildProblem(op, grade);
 }
 
@@ -371,24 +406,11 @@ function voiceUpgradeTip() {
   return null;
 }
 
-// Progress is kept per grade. Older saves were kept per Easy/Medium/Hard
-// level; those carry over to the grade that matches them.
+// The phone's grade from before players (it becomes the first player's).
+// Older saves were kept per Easy/Medium/Hard level.
 const OLD_LEVEL_GRADES = { easy: '1', medium: '2', hard: '4' };
 
-function loadProgress() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {};
-    for (const [oldLevel, grade] of Object.entries(OLD_LEVEL_GRADES)) {
-      if (saved[oldLevel] && !saved[grade]) saved[grade] = saved[oldLevel];
-      delete saved[oldLevel];
-    }
-    return saved;
-  } catch {
-    return {};
-  }
-}
-
-function loadGrade() {
+function loadOldGrade() {
   try {
     const saved = localStorage.getItem(GRADE_KEY);
     return saved && gradeInfo(saved).id === saved ? saved : DEFAULT_GRADE;
@@ -397,65 +419,185 @@ function loadGrade() {
   }
 }
 
-function saveGrade(grade) {
+function readJson(key) {
   try {
-    localStorage.setItem(GRADE_KEY, grade);
+    return JSON.parse(localStorage.getItem(key));
+  } catch {
+    return null;
+  }
+}
+
+function writeJson(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
   } catch {
     /* ignore */
   }
+}
+
+function newPlayerId(name) {
+  return `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'player'}-${Date.now()}`;
+}
+
+// A guest's players. The very first time, one "Player 1" at the grade this
+// phone used before players, keeping the progress saved here so far.
+function loadGuestPlayers() {
+  const saved = readJson(GUEST_PLAYERS_KEY);
+  if (Array.isArray(saved) && saved.length) return saved;
+  // (Only the very first time: later, e.g. after moving the guest players
+  // into an account, a fresh starter begins at the default grade.)
+  const firstTime = !readJson(PROGRESS_KEY);
+  const first = { id: newPlayerId('Player 1'), name: 'Player 1', grade: firstTime ? loadOldGrade() : DEFAULT_GRADE };
+  writeJson(GUEST_PLAYERS_KEY, [first]);
+  if (firstTime) {
+    const old = readJson(OLD_PROGRESS_KEY) || {};
+    for (const [oldLevel, grade] of Object.entries(OLD_LEVEL_GRADES)) {
+      if (old[oldLevel] && !old[grade]) old[grade] = old[oldLevel];
+      delete old[oldLevel];
+    }
+    writeJson(PROGRESS_KEY, { [first.id]: old });
+  }
+  return [first];
+}
+
+function loadAccountPlayers() {
+  const saved = readJson(ACCOUNT_PLAYERS_KEY);
+  return Array.isArray(saved) && saved.length ? saved : null;
+}
+
+function savePlayers(list, owner) {
+  writeJson(owner === 'account' ? ACCOUNT_PLAYERS_KEY : GUEST_PLAYERS_KEY, list);
+}
+
+// Who was playing last, signed in and as a guest.
+function loadActive(owner) {
+  return (readJson(ACTIVE_PLAYER_KEY) || {})[owner] || null;
+}
+
+function saveActive(owner, id) {
+  writeJson(ACTIVE_PLAYER_KEY, { ...(readJson(ACTIVE_PLAYER_KEY) || {}), [owner]: id });
+}
+
+function loadProgress() {
+  loadGuestPlayers(); // moves the older, phone-wide progress to a player first
+  return readJson(PROGRESS_KEY) || {};
 }
 
 function saveProgress(data) {
-  try {
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(data));
-  } catch {
-    /* ignore */
-  }
+  writeJson(PROGRESS_KEY, data);
 }
 
-function AppHeader({ level, onChangeLevel, onBack, showBack, onSettings }) {
+// A guest player worth asking about when signing in: anything but the
+// untouched "Player 1" the app starts with.
+function isUntouchedStarter(player, progress) {
+  return player.name === 'Player 1' && !Object.keys(progress[player.id] || {}).length;
+}
+
+function LogoWord({ hidden }) {
+  return (
+    <span className={`logo-word${hidden ? ' logo-word-hidden' : ''}`} aria-hidden={hidden || undefined}>
+      <span className="ink">Math</span>
+      <span className="pop-blue">P</span>
+      <span className="pop-purple">o</span>
+      <span className="pop-green">p</span>
+    </span>
+  );
+}
+
+// On a narrow phone the header can't fit the logo word, the player pill and
+// the account button in one row; then the word is hidden and just the app
+// icon shows (same as PitchPop).
+function useCompactLogo(rowRef) {
+  const [compact, setCompact] = useState(false);
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+    if (!row) return undefined;
+    const check = () => {
+      const left = row.querySelector('.brand-left');
+      const right = row.querySelector('.brand-actions');
+      const word = row.querySelector('.logo-word');
+      if (!left || !right || !word) return;
+      const wordWidth = word.getBoundingClientRect().width;
+      const leftWithWord = word.classList.contains('logo-word-hidden')
+        ? left.getBoundingClientRect().width + wordWidth
+        : left.getBoundingClientRect().width;
+      setCompact(leftWithWord + right.getBoundingClientRect().width + 12 > row.clientWidth);
+    };
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(row);
+    observer.observe(row.querySelector('.brand-actions'));
+    observer.observe(row.querySelector('.logo-word'));
+    return () => observer.disconnect();
+  }, [rowRef]);
+  return compact;
+}
+
+function AppHeader({ level, onBack, showBack, players }) {
+  const rowRef = useRef(null);
+  const compact = useCompactLogo(rowRef);
+  const logo = (
+    <h1 className="logo">
+      <img className="logo-mark" src={`${import.meta.env.BASE_URL}icon-192.png`} alt="" />
+      <LogoWord hidden={compact} />
+    </h1>
+  );
   return (
     <>
-      <div className="brand-row">
-        {showBack ? (
-          <button className="logo-btn" onClick={onBack}>
-            <h1 className="logo">
-              <img className="logo-mark" src={`${import.meta.env.BASE_URL}icon-192.png`} alt="" />
-              <span className="ink">Math</span>
-              <span className="pop-blue">P</span>
-              <span className="pop-purple">o</span>
-              <span className="pop-green">p</span>
-            </h1>
-          </button>
-        ) : (
-          <h1 className="logo">
-            <img className="logo-mark" src={`${import.meta.env.BASE_URL}icon-192.png`} alt="" />
-            <span className="ink">Math</span>
-            <span className="pop-blue">P</span>
-            <span className="pop-purple">o</span>
-            <span className="pop-green">p</span>
-          </h1>
-        )}
-        {!showBack && (
-          <div className="brand-actions">
-            <LevelSwitcher level={level} onChange={onChangeLevel} />
-            <button className="settings-btn" onClick={onSettings} aria-label="Settings">
-              ⚙️
+      <div className="brand-row" ref={rowRef}>
+        <div className="brand-left">
+          {showBack ? (
+            <button className="logo-btn" onClick={onBack}>
+              {logo}
             </button>
-          </div>
-        )}
+          ) : (
+            logo
+          )}
+        </div>
+        <div className="brand-actions">
+          <ProfileSwitcher
+            profile={players.profile}
+            profiles={players.profiles}
+            onChange={players.onChange}
+            onOpenSettings={players.onOpenPlayers}
+            onOpenAnswerSettings={players.onOpenAnswerSettings}
+          />
+          <AccountButton user={players.user} onClick={players.onOpenAccount} />
+        </div>
       </div>
       {showBack && (
         <div className="nav-row">
           <button className="back-link" onClick={onBack}>
             ← Back
           </button>
-          {/* The grade is picked on the home page; inside a game it's only
-              shown, since each grade has its own set of games. */}
+          {/* The grade is the player's, set on the home page or the Players
+              screen; inside a game it's only shown. */}
           <LevelSwitcher level={level} readOnly />
         </div>
       )}
     </>
+  );
+}
+
+// A Singapore-math number bond: the whole on top, its two parts below,
+// joined by lines; the missing one shows "?".
+function NumberBond({ whole, parts }) {
+  const cell = (value, x, y, key) => (
+    <g key={key}>
+      <circle cx={x} cy={y} r="30" className={`bond-circle${value === '?' ? ' bond-circle-missing' : ''}`} />
+      <text x={x} y={y + 11} className="bond-text">
+        {value}
+      </text>
+    </g>
+  );
+  return (
+    <svg className="number-bond" viewBox="0 0 220 170" role="img" aria-label={`Number bond: ${whole} is ${parts[0]} and ${parts[1]}`}>
+      <line x1="110" y1="44" x2="52" y2="124" className="bond-line" />
+      <line x1="110" y1="44" x2="168" y2="124" className="bond-line" />
+      {cell(whole, 110, 40, 'w')}
+      {cell(parts[0], 52, 128, 'l')}
+      {cell(parts[1], 168, 128, 'r')}
+    </svg>
   );
 }
 
@@ -480,8 +622,269 @@ function ProgressDots({ current, total }) {
 export default function App() {
   const [view, setView] = useState('home');
   const [returnView, setReturnView] = useState('home');
-  const [level, setLevel] = useState(loadGrade);
   const [progress, setProgress] = useState(loadProgress);
+
+  // ---------- Players and the family account (same as PitchPop) ----------
+  // Signed in on this device before: open with the account's players (the
+  // copy kept here), checked with the account below.
+  const [cloudUser, setCloudUser] = useState(rememberedAccount);
+  const [profileOwner, setProfileOwner] = useState(() => (rememberedAccount() && loadAccountPlayers() ? 'account' : 'guest'));
+  const [profiles, setProfiles] = useState(() => (profileOwner === 'account' ? loadAccountPlayers() : loadGuestPlayers()));
+  const [profile, setProfile] = useState(() => {
+    const active = loadActive(profileOwner);
+    return profiles.some((p) => p.id === active) ? active : profiles[0].id;
+  });
+  // Edits on the Players screen stay in this draft until "Save".
+  const [draftProfiles, setDraftProfiles] = useState(profiles);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
+  // After signing in with guest players on this device: who to offer to move
+  // into the account, and the account's players meanwhile.
+  const [guestMove, setGuestMove] = useState(null);
+  const currentProfile = profiles.find((p) => p.id === profile) || profiles[0];
+  // Each player plays at their own grade.
+  const level = gradeInfo(currentProfile.grade).id;
+
+  useEffect(() => {
+    savePlayers(profiles, profileOwner);
+  }, [profiles, profileOwner]);
+  useEffect(() => {
+    saveActive(profileOwner, profile);
+  }, [profile, profileOwner]);
+
+  // Switches between the guest and account player lists, keeping whoever
+  // is playing if they're in the new list.
+  function showProfiles(list, owner) {
+    setProfiles(list);
+    setDraftProfiles(list);
+    setProfileOwner(owner);
+    setProfile((current) => {
+      if (list.some((p) => p.id === current)) return current;
+      const active = loadActive(owner);
+      return list.some((p) => p.id === active) ? active : list[0].id;
+    });
+  }
+
+  // Signed in: check with the account, and show its latest players (the
+  // copy on this device if it can't be reached). Bumped on every sign-in
+  // and sign-out so a slow check can't undo them.
+  const authEpoch = useRef(0);
+  useEffect(() => {
+    let cancelled = false;
+    const epoch = authEpoch.current;
+    const remembered = rememberedAccount();
+    Promise.all([getUser(), loadCloudProfiles()])
+      .then(([user, cloudProfiles]) => {
+        if (cancelled || epoch !== authEpoch.current) return;
+        if (!user) {
+          if (remembered) {
+            setCloudUser(null);
+            showProfiles(loadGuestPlayers(), 'guest');
+          }
+          return;
+        }
+        setCloudUser(user);
+        if (cloudProfiles?.length) showProfiles(cloudProfiles, 'account');
+        else {
+          const cached = loadAccountPlayers();
+          if (cached) showProfiles(cached, 'account');
+        }
+      })
+      .catch((err) => console.error('MathPop is using the players saved on this device', err));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Back online (or back to the app): send changes made offline and show
+  // the account's latest players - unless they're being edited.
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  useEffect(() => {
+    if (!cloudUser) return undefined;
+    let busy = false;
+    const reconnect = async () => {
+      if (busy || (typeof navigator !== 'undefined' && navigator.onLine === false)) return;
+      busy = true;
+      const epoch = authEpoch.current;
+      const cloudProfiles = await loadCloudProfiles();
+      busy = false;
+      if (!cloudProfiles?.length || viewRef.current === 'players' || epoch !== authEpoch.current) return;
+      showProfiles(cloudProfiles, 'account');
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') reconnect();
+    };
+    window.addEventListener('online', reconnect);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener('online', reconnect);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [cloudUser]);
+
+  // A "reset your password" email link: straight to choosing a new one.
+  useEffect(
+    () =>
+      onAuthEvent((event) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          setPasswordRecovery(true);
+          setView('account');
+        }
+      }),
+    [],
+  );
+
+  // In the iPhone app: an account email's link, handed over by the
+  // website (appLink.js), signs the family in here.
+  const handleSignedInRef = useRef(null);
+  handleSignedInRef.current = (user) => handleSignedIn(user);
+  useEffect(
+    () =>
+      listenForAppLinks(async ({ accessToken, refreshToken, recovery }) => {
+        const user = await signInFromLink(accessToken, refreshToken);
+        if (!user) return;
+        if (recovery) {
+          authEpoch.current += 1;
+          setCloudUser(user);
+          setPasswordRecovery(true);
+          setView('account');
+        } else {
+          handleSignedInRef.current(user);
+        }
+      }),
+    [],
+  );
+
+  function starterPlayer() {
+    return { id: newPlayerId('Player 1'), name: 'Player 1', grade: DEFAULT_GRADE };
+  }
+
+  async function handleSignedIn(user) {
+    authEpoch.current += 1;
+    setCloudUser(user);
+    if (!user) {
+      showProfiles(loadGuestPlayers(), 'guest');
+      return;
+    }
+    const cloudProfiles = (await loadCloudProfiles()) || loadAccountPlayers() || [];
+    // Guest players on this device (other than the untouched starter):
+    // offer to move them into the account.
+    const guests = loadGuestPlayers().filter((p) => !isUntouchedStarter(p, progress));
+    let list = cloudProfiles;
+    if (!list.length && !guests.length) {
+      list = [starterPlayer()];
+      list.forEach(saveCloudProfile);
+    }
+    showProfiles(list.length ? list : loadGuestPlayers(), list.length ? 'account' : 'guest');
+    if (guests.length) setGuestMove({ guests, account: list });
+    setView((v) => (v === 'account' ? 'home' : v));
+  }
+
+  // "Move them": the guest players join the account (with their progress,
+  // which is kept per player), and this device's guest list starts over.
+  function moveGuestPlayers() {
+    const { guests, account } = guestMove;
+    const ids = new Set(account.map((p) => p.id));
+    const merged = [...account, ...guests.filter((p) => !ids.has(p.id))];
+    guests.forEach(saveCloudProfile);
+    try {
+      localStorage.removeItem(GUEST_PLAYERS_KEY);
+    } catch {
+      /* ignore */
+    }
+    showProfiles(merged, 'account');
+    setGuestMove(null);
+  }
+
+  // "Not now": the guest players stay on this device (back when signed out).
+  function keepGuestPlayers() {
+    if (!guestMove.account.length) {
+      const list = [starterPlayer()];
+      list.forEach(saveCloudProfile);
+      showProfiles(list, 'account');
+    }
+    setGuestMove(null);
+  }
+
+  // Deleting the account: its players are gone; the guest players on this
+  // device remain.
+  function handleAccountDeleted() {
+    authEpoch.current += 1;
+    try {
+      localStorage.removeItem(ACCOUNT_PLAYERS_KEY);
+    } catch {
+      /* ignore */
+    }
+    setCloudUser(null);
+    showProfiles(loadGuestPlayers(), 'guest');
+  }
+
+  function changeProfile(id) {
+    setProfile(id);
+    // A round in progress was built for the other player's grade.
+    setView((v) => (['question', 'feedback', 'complete', 'review'].includes(v) ? 'home' : v));
+  }
+
+  // The grade picked on the home page is the playing player's.
+  function updatePlayer(id, changes) {
+    const next = profiles.map((p) => (p.id === id ? { ...p, ...changes } : p));
+    setProfiles(next);
+    setDraftProfiles(next);
+    if (profileOwner === 'account') saveCloudProfile(next.find((p) => p.id === id));
+  }
+
+  function openPlayers() {
+    setDraftProfiles(profiles);
+    setView('players');
+  }
+
+  function openAccount() {
+    setView('account');
+  }
+
+  function updateDraftProfile(id, changes) {
+    setDraftProfiles((prev) => prev.map((p) => (p.id === id ? { ...p, ...changes } : p)));
+  }
+
+  function addPlayer(rawName) {
+    const name = rawName.trim();
+    if (!name) return;
+    setDraftProfiles((prev) => [...prev, { id: newPlayerId(name), name, grade: currentProfile.grade || DEFAULT_GRADE }]);
+  }
+
+  function removePlayer(id) {
+    const target = draftProfiles.find((p) => p.id === id);
+    if (!target || draftProfiles.length === 1) return;
+    if (
+      window.confirm(`Are you sure you want to remove ${target.name}?`) &&
+      window.confirm(`Are you really sure? ${target.name}'s grade and progress will be deleted.`)
+    ) {
+      setDraftProfiles((prev) => prev.filter((p) => p.id !== id));
+    }
+  }
+
+  function savePlayersScreen() {
+    const cleaned = draftProfiles.map((p) => ({ ...p, name: p.name.trim() || 'Player' }));
+    const keptIds = new Set(cleaned.map((p) => p.id));
+    if (profileOwner === 'account') {
+      cleaned.forEach(saveCloudProfile);
+      profiles.filter((p) => !keptIds.has(p.id)).forEach((p) => deleteCloudProfile(p.id));
+    }
+    setProfiles(cleaned);
+    setDraftProfiles(cleaned);
+    if (!keptIds.has(profile)) setProfile(cleaned[0].id);
+    setView('home');
+  }
+
+  const headerPlayers = {
+    profile: currentProfile.id,
+    profiles,
+    user: cloudUser,
+    onChange: changeProfile,
+    onOpenPlayers: openPlayers,
+    onOpenAccount: openAccount,
+    onOpenAnswerSettings: () => setView('settings'),
+  };
   // The loading screen shown as the app opens, while the fonts and the
   // handwriting reader get ready. At least OPENING_MIN_MS so it doesn't
   // just flicker, and at most OPENING_MAX_MS (e.g. on a slow connection).
@@ -505,7 +908,8 @@ export default function App() {
     };
   }, []);
   const [settings, setSettings] = useState(loadSettings);
-  const levelStats = progress[level] || { total: 0, correct: 0 };
+  const playerProgress = progress[currentProfile.id] || {};
+  const levelStats = playerProgress[level] || { total: 0, correct: 0 };
 
   const [operation, setOperation] = useState('multiply');
   const [roundIndex, setRoundIndex] = useState(0);
@@ -523,6 +927,9 @@ export default function App() {
   const [sessionResults, setSessionResults] = useState({});
   const [sessionLog, setSessionLog] = useState([]);
   const [firstAttempt, setFirstAttempt] = useState(true);
+  // The help under an addition problem, open or not (closes on each new one).
+  const [showHelp, setShowHelp] = useState(false);
+  useEffect(() => setShowHelp(false), [problem]);
 
   const [exploreSession, setExploreSession] = useState(loadExploreSession);
   const [explorePlayed, setExplorePlayed] = useState(null);
@@ -598,8 +1005,7 @@ export default function App() {
   }
 
   function changeLevel(newLevel) {
-    setLevel(newLevel);
-    saveGrade(newLevel);
+    updatePlayer(currentProfile.id, { grade: newLevel });
   }
 
   // `from` is the screen Back returns to; Play again keeps the last one.
@@ -656,16 +1062,20 @@ export default function App() {
       ]);
 
       setProgress((prev) => {
-        const p = prev[level] || { total: 0, correct: 0, byOp: {} };
+        const mine = prev[currentProfile.id] || {};
+        const p = mine[level] || { total: 0, correct: 0, byOp: {} };
         const opStats = p.byOp[problem.op] || { total: 0, correct: 0 };
         const next = {
           ...prev,
-          [level]: {
-            total: p.total + 1,
-            correct: p.correct + (correct ? 1 : 0),
-            byOp: {
-              ...p.byOp,
-              [problem.op]: { total: opStats.total + 1, correct: opStats.correct + (correct ? 1 : 0) },
+          [currentProfile.id]: {
+            ...mine,
+            [level]: {
+              total: p.total + 1,
+              correct: p.correct + (correct ? 1 : 0),
+              byOp: {
+                ...p.byOp,
+                [problem.op]: { total: opStats.total + 1, correct: opStats.correct + (correct ? 1 : 0) },
+              },
             },
           },
         };
@@ -739,7 +1149,7 @@ export default function App() {
       <div className={view === 'home' ? 'app home-fit' : 'app'}>
         {view === 'home' && (
           <>
-            <AppHeader level={level} onChangeLevel={changeLevel} showBack={false} onSettings={() => setView('settings')} />
+            <AppHeader level={level} showBack={false} players={headerPlayers} />
             <section className="home-hero">
               <div className="home-hero-ops" aria-hidden="true">
                 {HERO_OPS.map((op) => (
@@ -748,8 +1158,12 @@ export default function App() {
                   </span>
                 ))}
               </div>
-              <h2 className="home-hello">Ready to pop some math?</h2>
+              <h2 className="home-hello">Ready to pop some math, {currentProfile.name}?</h2>
               <p className="home-tagline">Pick a game, answer ten problems, and watch your score grow.</p>
+              {/* The playing player's grade; changing it here saves it for them. */}
+              <div className="home-grade">
+                <LevelSwitcher level={level} onChange={changeLevel} />
+              </div>
               <div className="home-stats">
                 {levelStats.total ? (
                   <>
@@ -822,7 +1236,7 @@ export default function App() {
 
         {view === 'explore' && (
           <>
-            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
+            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
             {exploreSession.taps >= EXPLORE_SESSION_TAPS ? (
               <div className="complete-wrap">
                 <div className="complete-emoji">🌟</div>
@@ -880,7 +1294,7 @@ export default function App() {
 
         {view === 'skills' && (
           <>
-            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
+            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
             <h2 className="screen-title">Skill Builders</h2>
             <p className="screen-sub" style={{ marginBottom: '4px' }}>2nd-grade math concepts, unit by unit</p>
             <div className="skill-units">
@@ -911,9 +1325,54 @@ export default function App() {
           </>
         )}
 
+        {view === 'account' && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
+            <h2 className="screen-title">Account</h2>
+            <AccountScreen
+              user={cloudUser}
+              playerCount={profiles.length}
+              onSignedIn={handleSignedIn}
+              onAccountDeleted={handleAccountDeleted}
+              onOpenPlayers={openPlayers}
+              onDone={goHome}
+              recoveryMode={passwordRecovery}
+              onPasswordUpdated={() => setPasswordRecovery(false)}
+            />
+          </>
+        )}
+
+        {view === 'players' && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
+            <h2 className="screen-title">Players &amp; grades</h2>
+            <p className="screen-sub">Each player plays at their own grade, following Singapore math.</p>
+            <SyncStatus user={profileOwner === 'account' ? cloudUser : null} onOpenAccount={openAccount} />
+            <div className="settings-list">
+              {draftProfiles.map((p) => (
+                <PlayerSettingsCard
+                  key={p.id}
+                  profile={p}
+                  onUpdate={(changes) => updateDraftProfile(p.id, changes)}
+                  onRemove={() => removePlayer(p.id)}
+                  canRemove={draftProfiles.length > 1}
+                  stats={(progress[p.id] || {})[gradeInfo(p.grade).id]}
+                />
+              ))}
+            </div>
+            <AddPlayerForm onAdd={addPlayer} />
+            <button className="pill-btn-primary pill-btn-full" onClick={savePlayersScreen}>
+              Save players &amp; grades
+            </button>
+            <button className="back-link back-link-center" onClick={goHome}>
+              Cancel
+            </button>
+          </>
+        )}
+
         {view === 'settings' && (
           <>
-            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={goHome} />
+            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
             <h2 className="screen-title">Settings</h2>
             <div style={{ padding: '20px', textAlign: 'center' }}>
               <p className="screen-sub" style={{ marginBottom: '30px' }}>How do you want to answer?</p>
@@ -949,7 +1408,7 @@ export default function App() {
 
         {view === 'question' && problem && (
           <>
-            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={sessionBack} />
+            <AppHeader level={level} players={headerPlayers} showBack onBack={sessionBack} />
             <ProgressDots current={roundIndex + 1} total={SESSION_ROUNDS} />
             <h2 className="screen-title">
               {problem.questionTitle || (problem.type === 'clock' ? 'What time is it?' : "What's the answer?")}
@@ -970,6 +1429,8 @@ export default function App() {
             >
               {problem.type === 'clock' ? (
                 <ClockFace hour={problem.hour} minute={problem.minute} />
+              ) : problem.type === 'skill' && problem.promptKind === 'bond' ? (
+                <NumberBond whole={problem.bondWhole} parts={problem.bondParts} />
               ) : problem.type === 'skill' && problem.promptKind === 'compare' ? (
                 <span className="problem-text compare-row">
                   <span>{problem.compareLeft}</span>
@@ -1003,11 +1464,16 @@ export default function App() {
             </button>
             {problem.type === 'skill' && problem.hint && <p className="screen-sub skill-hint">💡 {problem.hint}</p>}
             <p className="screen-sub tap-to-hear">Tap the problem to hear it</p>
-            {problem.op === 'add' && problem.type !== 'sentence' && problem.type !== 'skill' && (
-              <button className="help-btn" onClick={() => setView('help')}>
-                🤔 Need help?
-              </button>
-            )}
+            {/* The make-a-ten help opens right here, under the problem (for
+                sums up to two digits, which the blocks can show). */}
+            {problem.op === 'add' && problem.type !== 'sentence' && problem.type !== 'skill' && problem.a < 100 && problem.b < 100 &&
+              (showHelp ? (
+                <AdditionHelp a={problem.a} b={problem.b} onClose={() => setShowHelp(false)} />
+              ) : (
+                <button className="help-btn" onClick={() => setShowHelp(true)}>
+                  🤔 Need help?
+                </button>
+              ))}
             {/* Printing doesn't work inside the iPhone app's web view, so the
                 worksheet is a website-only extra. */}
             {!IS_NATIVE && (
@@ -1129,16 +1595,10 @@ export default function App() {
           </>
         )}
 
-        {view === 'help' && problem && (
-          <>
-            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={() => setView('question')} />
-            <AdditionHelp a={problem.a} b={problem.b} onClose={() => setView('question')} />
-          </>
-        )}
 
         {view === 'feedback' && problem && (
           <>
-            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={sessionBack} />
+            <AppHeader level={level} players={headerPlayers} showBack onBack={sessionBack} />
             <ProgressDots current={roundIndex + 1} total={SESSION_ROUNDS} />
             <div className={`feedback-icon-wrap${answerCorrect ? ' feedback-correct' : ' feedback-incorrect'}`}>
               {answerCorrect && (
@@ -1176,7 +1636,7 @@ export default function App() {
 
         {view === 'complete' && (
           <>
-            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={sessionBack} />
+            <AppHeader level={level} players={headerPlayers} showBack onBack={sessionBack} />
             <div className="complete-wrap">
               <div className="complete-emoji">🎉</div>
               <h2 className="screen-title">All done!</h2>
@@ -1223,7 +1683,7 @@ export default function App() {
 
         {view === 'review' && (
           <>
-            <AppHeader level={level} onChangeLevel={changeLevel} showBack onBack={() => setView('complete')} />
+            <AppHeader level={level} players={headerPlayers} showBack onBack={() => setView('complete')} />
             <h2 className="screen-title">Review Answers</h2>
             <p className="screen-sub" style={{ marginBottom: '4px' }}>
               {sessionCorrect} / {sessionLog.length} correct
@@ -1296,6 +1756,36 @@ export default function App() {
           />
         )}
       </div>
+      {guestMove && (
+        <div className="handoff-backdrop" role="dialog" aria-modal="true" aria-labelledby="guest-move-title">
+          <div className="handoff-card">
+            <div className="handoff-icon" aria-hidden="true">
+              👨‍👩‍👧
+            </div>
+            <h2 id="guest-move-title" className="handoff-title">
+              Move your guest players into your account?
+            </h2>
+            <p className="handoff-text">
+              {guestMove.guests.length === 1
+                ? guestMove.guests[0].name
+                : `${guestMove.guests
+                    .slice(0, -1)
+                    .map((p) => p.name)
+                    .join(', ')} and ${guestMove.guests[guestMove.guests.length - 1].name}`}
+              {guestMove.guests.length === 1 ? ' was' : ' were'} added on this device as a guest. Move{' '}
+              {guestMove.guests.length === 1 ? 'them' : 'them all'}, with their grades and progress, into your family
+              account?
+            </p>
+            <button className="pill-btn-primary pill-btn-full handoff-open" onClick={moveGuestPlayers}>
+              Move them
+            </button>
+            <button className="handoff-stay" onClick={keepGuestPlayers}>
+              Not now
+            </button>
+          </div>
+        </div>
+      )}
+      <EmailHandoff />
     </div>
   );
 }

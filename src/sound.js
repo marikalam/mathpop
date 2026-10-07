@@ -51,7 +51,7 @@ export function playIncorrectBuzz() {
   tone(ctx, 174.61, now + 0.1, 0.28, 0.16);
 }
 
-const OPERATION_WORDS = { '×': 'times', '+': 'plus', '−': 'minus' };
+const OPERATION_WORDS = { '×': 'times', '+': 'plus', '−': 'minus', '÷': 'divided by' };
 
 // Voice lists load asynchronously on most browsers - calling getVoices()
 // right away often returns [] and silently falls back to the flattest
