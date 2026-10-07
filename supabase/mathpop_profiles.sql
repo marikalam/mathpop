@@ -2,7 +2,7 @@
 -- project and the same sign-in as PitchPop). Each row is one player:
 --   profile_key  the player's id in the app
 --   name         the player's name
---   grade        the grade they play at: 'k', '1', '2', '3' or '4'
+--   grade        the grade they play at: 'p' (Pre-K), 'k', '1', '2', '3' or '4'
 -- Row-level security limits each family account to its own players.
 --
 -- Run once in the Supabase dashboard: SQL Editor -> New query -> paste -> Run.
@@ -13,10 +13,15 @@ create table if not exists public.mathpop_profiles (
   owner_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   profile_key text not null,
   name text not null,
-  grade text not null default '2' check (grade in ('k', '1', '2', '3', '4')),
+  grade text not null default '2',
   created_at timestamptz not null default now(),
   unique (owner_id, profile_key)
 );
+
+-- The grades a player can have (Pre-K was added later: safe to run again).
+alter table public.mathpop_profiles drop constraint if exists mathpop_profiles_grade_check;
+alter table public.mathpop_profiles
+  add constraint mathpop_profiles_grade_check check (grade in ('p', 'k', '1', '2', '3', '4'));
 
 alter table public.mathpop_profiles enable row level security;
 

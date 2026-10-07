@@ -10,6 +10,7 @@ import { loadDigitModel } from './digitModel.js';
 import { DEFAULT_GRADE, gradeInfo, gradeOperands, gradeOps, gradePractice, gradeTier } from './grades.js';
 import AdditionHelp from './AdditionHelp.jsx';
 import PrintSheet from './PrintSheet.jsx';
+import { PREK_CONCEPTS, ShapeIcon } from './preK.jsx';
 import ProfileSwitcher from './ProfileSwitcher.jsx';
 import EmailHandoff from './EmailHandoff.jsx';
 import { AccountButton, AccountScreen, AddPlayerForm, PlayerSettingsCard, SyncStatus } from './Account.jsx';
@@ -42,6 +43,12 @@ const PRACTICE_CARDS = {
   add: { icon: '+', title: 'Addition', sub: 'Add it up', from: '#38c07f', to: '#2a9e60' },
   subtract: { icon: '−', title: 'Subtraction', sub: 'Take it away', from: '#a065e6', to: '#7c3fc4' },
   divide: { icon: '÷', title: 'Division', sub: 'Share it equally', from: '#f0954f', to: '#e0793a' },
+  count: { icon: '🍎', title: 'Count It', sub: 'How many?', from: '#f5a524', to: '#e08a12' },
+  findNumber: { icon: '🔢', title: 'Find the Number', sub: 'Hear it, tap it', from: '#4e8ff7', to: '#3a6fd8' },
+  shapes: { icon: '🔺', title: 'Shapes', sub: 'Circle, square, star', from: '#e0577f', to: '#c43c66' },
+  bigSmall: { icon: '🐘', title: 'Big & Small', sub: 'Which is bigger?', from: '#14b8a6', to: '#0f9384' },
+  moreFewer: { icon: '⚖️', title: 'More or Fewer', sub: 'Which has more?', from: '#8e4fd6', to: '#6f35b8' },
+  pattern: { icon: '🔴', title: 'Patterns', sub: 'What comes next?', from: '#38c07f', to: '#2a9e60' },
   numberBond: { icon: '🔗', title: 'Number Bonds', sub: 'Part, part, whole', from: '#e0577f', to: '#c43c66' },
   fraction: { icon: '🍕', title: 'Fractions', sub: 'Parts of a whole', from: '#14b8a6', to: '#0f9384' },
   factors: { icon: '🧮', title: 'Factors & Multiples', sub: 'What goes into what', from: '#8e4fd6', to: '#6f35b8' },
@@ -347,6 +354,8 @@ function buildOptions(problem) {
 }
 
 function makeProblem(op, grade) {
+  // Pre-K's Random Mix: one of its picture games each time.
+  if (op === 'random' && gradeInfo(grade).id === 'p') op = shuffle(PREK_CONCEPTS.map((c) => c.id))[0];
   if (isSkillConcept(op)) return buildSkillProblem(op, gradeTier(grade), gradeInfo(grade).id);
   return buildProblem(op, grade);
 }
@@ -1429,6 +1438,23 @@ export default function App() {
             >
               {problem.type === 'clock' ? (
                 <ClockFace hour={problem.hour} minute={problem.minute} />
+              ) : problem.type === 'skill' && problem.promptKind === 'count' ? (
+                <span className="prek-count" aria-hidden="true">
+                  {Array.from({ length: problem.countN }, (_, i) => (
+                    <span key={i}>{problem.countEmoji}</span>
+                  ))}
+                </span>
+              ) : problem.type === 'skill' && problem.promptKind === 'pattern' ? (
+                <span className="prek-pattern" aria-hidden="true">
+                  {problem.patternItems.map((item, i) => (
+                    <span key={i}>{item}</span>
+                  ))}
+                  <span className="prek-pattern-next">?</span>
+                </span>
+              ) : problem.type === 'skill' && problem.promptKind === 'say' ? (
+                <span className="prek-say">
+                  <span aria-hidden="true">🔊</span> {problem.sayText}
+                </span>
               ) : problem.type === 'skill' && problem.promptKind === 'bond' ? (
                 <NumberBond whole={problem.bondWhole} parts={problem.bondParts} />
               ) : problem.type === 'skill' && problem.promptKind === 'compare' ? (
@@ -1585,8 +1611,19 @@ export default function App() {
             ) : (
               <div className="options-grid">
                 {options.map((value) => (
-                  <button key={value} className="option-btn" onClick={() => chooseAnswer(value)}>
-                    {value}
+                  <button
+                    key={value}
+                    className={`option-btn${problem.choiceKind ? ` option-btn-${problem.choiceKind}` : ''}`}
+                    onClick={() => chooseAnswer(value)}
+                    aria-label={problem.choiceKind === 'size' ? `The ${value} one` : String(value)}
+                  >
+                    {problem.choiceKind === 'shape' ? (
+                      <ShapeIcon shape={value} color={problem.shapeColors[value]} />
+                    ) : problem.choiceKind === 'size' ? (
+                      <span className={`prek-size prek-size-${value}`}>{problem.sizeEmoji}</span>
+                    ) : (
+                      value
+                    )}
                   </button>
                 ))}
               </div>

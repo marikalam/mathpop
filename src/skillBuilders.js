@@ -6,6 +6,8 @@
  * loosely following a typical rigorous 2nd-grade math scope & sequence.
  */
 
+import { PREK_BUILDERS, PREK_CONCEPTS, PREK_SYMBOL } from './preK.jsx';
+
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -78,7 +80,7 @@ export const SINGAPORE_CONCEPTS = [
   { id: 'factors', title: 'Factors & Multiples', sub: 'What goes into what' },
 ];
 
-const UNIT_COLOR = { A: '#4E8FF7', B: '#8B5CF6', C: '#F5A623', D: '#14B8A6', SG: '#E0577F' };
+const UNIT_COLOR = { A: '#4E8FF7', B: '#8B5CF6', C: '#F5A623', D: '#14B8A6', SG: '#E0577F', PK: '#F59E0B' };
 const CONCEPT_SYMBOL = {
   placeValue: '🔢',
   compare: '⚖️',
@@ -98,11 +100,11 @@ const CONCEPT_SYMBOL = {
 };
 
 export const SKILL_META = {};
-for (const unit of [...SKILL_UNITS, { id: 'SG', concepts: SINGAPORE_CONCEPTS }]) {
+for (const unit of [...SKILL_UNITS, { id: 'SG', concepts: SINGAPORE_CONCEPTS }, { id: 'PK', concepts: PREK_CONCEPTS }]) {
   for (const concept of unit.concepts) {
     SKILL_META[concept.id] = {
       label: concept.title,
-      symbol: CONCEPT_SYMBOL[concept.id],
+      symbol: CONCEPT_SYMBOL[concept.id] || PREK_SYMBOL[concept.id],
       color: UNIT_COLOR[unit.id],
       unit: unit.id,
     };
@@ -727,6 +729,7 @@ const BUILDERS = {
   numberBond: numberBondProblem,
   fraction: fractionProblem,
   factors: factorsProblem,
+  ...PREK_BUILDERS,
 };
 
 export function isSkillConcept(id) {
