@@ -2820,3 +2820,93 @@ body {
 .grade-settings-grid {
   grid-template-columns: repeat(3, 1fr);
 }
+
+/* ---------- Logo tap animation (LogoMark.jsx) ---------- */
+/* The logo is always tappable now; no fading on hover, which on an iPhone
+   stays stuck after a tap. */
+.brand-row .logo-btn:hover {
+  opacity: 1;
+}
+.logo-mark-svg {
+  display: block;
+  flex-shrink: 0;
+  overflow: visible;
+}
+.logo-mark-svg .lm-tile,
+.logo-mark-svg .lm-sign,
+.logo-mark-svg circle {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.logo-mark-play {
+  animation: logo-mark-bounce 0.7s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.logo-mark-play .lm-tile {
+  animation: logo-tile-pop 0.5s ease-out both;
+}
+.logo-mark-play .lm-minus { animation-delay: 0.1s; }
+.logo-mark-play .lm-times { animation-delay: 0.2s; }
+.logo-mark-play .lm-divide { animation-delay: 0.3s; }
+.logo-mark-play .lm-plus .lm-sign {
+  animation: logo-spin 0.6s ease-in-out both;
+}
+.logo-mark-play .lm-minus .lm-sign {
+  animation: logo-stretch 0.55s ease-in-out 0.1s both;
+}
+.logo-mark-play .lm-times .lm-sign {
+  animation: logo-spin 0.6s ease-in-out 0.2s both;
+}
+.logo-mark-play .lm-dot-top {
+  animation: logo-dot-up 0.5s ease-out 0.3s both;
+}
+.logo-mark-play .lm-dot-bottom {
+  animation: logo-dot-down 0.5s ease-out 0.3s both;
+}
+@keyframes logo-mark-bounce {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.45) rotate(-8deg); }
+  100% { transform: scale(1); }
+}
+@keyframes logo-tile-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+@keyframes logo-spin {
+  0% { transform: rotate(0); }
+  100% { transform: rotate(180deg); }
+}
+@keyframes logo-stretch {
+  0% { transform: scaleX(1); }
+  40% { transform: scaleX(1.5) scaleY(0.8); }
+  70% { transform: scaleX(0.85); }
+  100% { transform: scaleX(1); }
+}
+@keyframes logo-dot-up {
+  0% { transform: translateY(0); }
+  40% { transform: translateY(-120%); }
+  100% { transform: translateY(0); }
+}
+@keyframes logo-dot-down {
+  0% { transform: translateY(0); }
+  40% { transform: translateY(120%); }
+  100% { transform: translateY(0); }
+}
+.logo-word-play > span {
+  display: inline-block;
+  animation: logo-letter-hop 0.45s ease-out both;
+}
+.logo-word-play > span:nth-child(2) { animation-delay: 0.08s; }
+.logo-word-play > span:nth-child(3) { animation-delay: 0.16s; }
+@keyframes logo-letter-hop {
+  0% { transform: translateY(0); }
+  40% { transform: translateY(-30%) scale(1.15); }
+  100% { transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .logo-mark-play,
+  .logo-mark-play *,
+  .logo-word-play > span {
+    animation: none !important;
+  }
+}
