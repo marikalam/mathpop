@@ -10,6 +10,7 @@ import { loadDigitModel } from './digitModel.js';
 import { DEFAULT_GRADE, gradeInfo, gradeOperands, gradeOps, gradeTier } from './grades.js';
 import { TOPIC_ICONS, gradeSection, gradeSections, gradeTopics } from './curriculum.js';
 import TopicVisual from './TopicVisual.jsx';
+import { setStoryPlayer } from './storyNames.js';
 import AdditionHelp from './AdditionHelp.jsx';
 import PrintSheet from './PrintSheet.jsx';
 import { PREK_CONCEPTS, ShapeIcon } from './preK.jsx';
@@ -652,6 +653,8 @@ export default function App() {
   const currentProfile = profiles.find((p) => p.id === profile) || profiles[0];
   // Each player plays at their own grade.
   const level = gradeInfo(currentProfile.grade).id;
+  // Signed in: the player's own name turns up in word problems.
+  setStoryPlayer(cloudUser ? currentProfile.name : null);
 
   useEffect(() => {
     savePlayers(profiles, profileOwner);

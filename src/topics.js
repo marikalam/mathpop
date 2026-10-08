@@ -5,6 +5,8 @@
 // answer or a list of choices. `visual` is drawn above the prompt by
 // TopicVisual.jsx (plain data, so worksheets can tell problems apart).
 
+import { storyName, storyNames } from './storyNames.js';
+
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -38,7 +40,6 @@ function gcd(a, b) {
   return b === 0 ? a : gcd(b, a % b);
 }
 
-const NAMES = ['Mia', 'Leo', 'Aisha', 'Ben', 'Wei', 'Zara', 'Omar', 'Lily', 'Ravi', 'Ella', 'Sam', 'Nora'];
 const fmt = (n) => n.toLocaleString('en-US');
 const MINUS = '−';
 const signed = (n) => (n < 0 ? `${MINUS}${-n}` : String(n));
@@ -930,7 +931,7 @@ function moneyProblem(tier, grade) {
       questionTitle: 'Money',
     };
   }
-  const name = pick(NAMES);
+  const name = storyName();
   const a = randInt(3, 40) * 5 + randInt(1, 9) * 100;
   const b = randInt(3, 40) * 5 + randInt(1, 5) * 100;
   const kind = pick(['total', 'change']);
@@ -1046,7 +1047,7 @@ const clockText = (mins) => `${((Math.floor(mins / 60) + 11) % 12) + 1}:${pad(mi
 
 // How long? Durations within an hour (P2) and across the hour (P3).
 function durationProblem(tier, grade) {
-  const name = pick(NAMES);
+  const name = storyName();
   const activity = pick(['reads', 'plays football', 'practises piano', 'swims', 'paints', 'bakes']);
   if (grade === '2') {
     if (Math.random() < 0.4) {
@@ -1554,7 +1555,7 @@ function barGraphProblem(tier, grade) {
 
 // Ordering logic (Beast Academy 4B).
 function logicProblem() {
-  const people = shuffle(NAMES).slice(0, 3);
+  const people = storyNames(3);
   const [quality, most, least] = pick([['taller', 'tallest', 'shortest'], ['older', 'oldest', 'youngest'], ['faster', 'fastest', 'slowest']]);
   // people[0] > people[1] > people[2]
   const clues = shuffle([`${people[0]} is ${quality} than ${people[1]}.`, `${people[1]} is ${quality} than ${people[2]}.`]);

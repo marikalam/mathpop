@@ -8,6 +8,7 @@
 
 import { PREK_BUILDERS, PREK_CONCEPTS, PREK_SYMBOL } from './preK.jsx';
 import { TOPIC_BUILDERS } from './topics.js';
+import { storyName } from './storyNames.js';
 import { TOPIC_ICONS, gradeSections } from './curriculum.js';
 import { GRADES } from './grades.js';
 
@@ -29,16 +30,13 @@ function pick(list) {
 }
 
 function nameA() {
-  return pick(['Julie', 'Marcus', 'Sarah', 'Alex', 'Emma', 'Jordan', 'Casey']);
+  return storyName();
 }
 
-// 'They' takes 'give', not 'gives', so the verb comes with it.
+// Stories say "they" for everyone (storyNames.js); the verb ending comes
+// with it ('they give', not 'they gives').
 function pronoun() {
-  return pick([
-    ['They', ''],
-    ['He', 's'],
-    ['She', 's'],
-  ]);
+  return ['They', ''];
 }
 
 export const SKILL_UNITS = [
