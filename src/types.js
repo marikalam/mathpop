@@ -1,3 +1,5 @@
+import { storyName, storyNames } from './storyNames.js';
+
 /**
  * @typedef {Object} ArithmeticProblem
  * @property {number} a - First operand
@@ -27,12 +29,11 @@ export const SentenceQuestionTemplates = {
       (a, b) => {
         const name = nameA();
         const pron = pronoun();
-        return `${name} counts ${a} fish in one pond. ${pron} counts ${b} more fish in another pond. How many fish does ${name} count altogether?`;
+        return `${name} counts ${a} fish in one pond. ${pron} count ${b} more fish in another pond. How many fish does ${name} count altogether?`;
       },
       (a, b) => `There are ${a} apples in one basket. There are ${b} apples in another basket. How many apples are there in total?`,
       (a, b) => {
-        const name1 = nameA();
-        const name2 = nameB();
+        const [name1, name2] = storyNames(2);
         return `${name1} has ${a} stickers. ${name2} gives ${name1} ${b} more stickers. How many stickers does ${name1} have now?`;
       },
     ],
@@ -77,7 +78,7 @@ export const SentenceQuestionTemplates = {
       (a, b) => {
         const name = nameA();
         const pron = pronoun();
-        return `${name} has ${a} candies. ${pron} eats ${b} candies. How many candies does ${name} have left?`;
+        return `${name} has ${a} candies. ${pron} eat ${b} candies. How many candies does ${name} have left?`;
       },
       (a, b) => `A tree has ${a} apples. ${b} apples fall off. How many apples are still on the tree?`,
       (a, b) => {
@@ -103,16 +104,9 @@ export const SentenceQuestionTemplates = {
 };
 
 function nameA() {
-  const names = ['Julie', 'Marcus', 'Sarah', 'Alex', 'Emma', 'Jordan', 'Casey'];
-  return names[Math.floor(Math.random() * names.length)];
-}
-
-function nameB() {
-  const names = ['Julie', 'Marcus', 'Sarah', 'Alex', 'Emma', 'Jordan', 'Casey'];
-  return names[Math.floor(Math.random() * names.length)];
+  return storyName();
 }
 
 function pronoun() {
-  const pronouns = ['They', 'He', 'She'];
-  return pronouns[Math.floor(Math.random() * pronouns.length)];
+  return 'They';
 }
