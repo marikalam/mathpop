@@ -13,6 +13,7 @@ import PrintSheet from './PrintSheet.jsx';
 import { PREK_CONCEPTS, ShapeIcon } from './preK.jsx';
 import ProfileSwitcher from './ProfileSwitcher.jsx';
 import EmailHandoff from './EmailHandoff.jsx';
+import LogoMark from './LogoMark.jsx';
 import { AccountButton, AccountScreen, AddPlayerForm, PlayerSettingsCard, SyncStatus } from './Account.jsx';
 import {
   deleteCloudProfile,
@@ -502,13 +503,16 @@ function isUntouchedStarter(player, progress) {
   return player.name === 'Player 1' && !Object.keys(progress[player.id] || {}).length;
 }
 
-function LogoWord({ hidden }) {
+// `playing` (from a logo tap) makes the P, o, p hop one after another.
+function LogoWord({ hidden, playing = 0 }) {
   return (
     <span className={`logo-word${hidden ? ' logo-word-hidden' : ''}`} aria-hidden={hidden || undefined}>
       <span className="ink">Math</span>
-      <span className="pop-blue">P</span>
-      <span className="pop-purple">o</span>
-      <span className="pop-green">p</span>
+      <span key={playing} className={playing ? 'logo-word-play' : undefined}>
+        <span className="pop-blue">P</span>
+        <span className="pop-purple">o</span>
+        <span className="pop-green">p</span>
+      </span>
     </span>
   );
 }
@@ -545,23 +549,26 @@ function useCompactLogo(rowRef) {
 function AppHeader({ level, onBack, showBack, players }) {
   const rowRef = useRef(null);
   const compact = useCompactLogo(rowRef);
-  const logo = (
-    <h1 className="logo">
-      <img className="logo-mark" src={`${import.meta.env.BASE_URL}icon-192.png`} alt="" />
-      <LogoWord hidden={compact} />
-    </h1>
-  );
+  const [logoPlaying, setLogoPlaying] = useState(0);
   return (
     <>
       <div className="brand-row" ref={rowRef}>
         <div className="brand-left">
-          {showBack ? (
-            <button className="logo-btn" onClick={onBack}>
-              {logo}
-            </button>
-          ) : (
-            logo
-          )}
+          {/* Tapping the logo plays its little animation (and, away from
+              the home page, also goes back home). */}
+          <button
+            className="logo-btn"
+            aria-label={showBack ? 'Math Pop - back to home' : 'Math Pop'}
+            onClick={() => {
+              setLogoPlaying((n) => n + 1);
+              if (showBack) onBack();
+            }}
+          >
+            <h1 className="logo">
+              <LogoMark playing={logoPlaying} />
+              <LogoWord hidden={compact} playing={logoPlaying} />
+            </h1>
+          </button>
         </div>
         <div className="brand-actions">
           <ProfileSwitcher
