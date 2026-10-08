@@ -3215,3 +3215,15 @@ body {
 .option-btn-frac {
   font-size: 28px;
 }
+
+/* Grown-ups-only check before the family account (ParentGate) */
+.parent-gate-input {
+  width: 120px;
+  padding: 10px 12px;
+  border: 2px solid var(--ink-dim);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--ink);
+  font: 700 26px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  text-align: center;
+}

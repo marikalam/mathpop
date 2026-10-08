@@ -16,6 +16,7 @@ import PrintSheet from './PrintSheet.jsx';
 import { PREK_CONCEPTS, ShapeIcon } from './preK.jsx';
 import ProfileSwitcher from './ProfileSwitcher.jsx';
 import EmailHandoff from './EmailHandoff.jsx';
+import ParentGate from './ParentGate.jsx';
 import LogoMark from './LogoMark.jsx';
 import { AccountButton, AccountScreen, AddPlayerForm, PlayerSettingsCard, SyncStatus } from './Account.jsx';
 import {
@@ -850,7 +851,22 @@ export default function App() {
     setView('players');
   }
 
+  // In the iPhone app, a grown-up answers a quick question first (Kids
+  // category); once per app launch is enough.
+  const [parentGate, setParentGate] = useState(false);
+  const parentChecked = useRef(false);
+
   function openAccount() {
+    if (IS_NATIVE && !parentChecked.current) {
+      setParentGate(true);
+      return;
+    }
+    setView('account');
+  }
+
+  function passParentGate() {
+    parentChecked.current = true;
+    setParentGate(false);
     setView('account');
   }
 
@@ -1895,6 +1911,7 @@ export default function App() {
           </div>
         </div>
       )}
+      {parentGate && <ParentGate onPass={passParentGate} onCancel={() => setParentGate(false)} />}
       <EmailHandoff />
     </div>
   );
