@@ -100,20 +100,6 @@ export const GRADE_OPS = {
   4: ['multiply', 'divide', 'add', 'subtract'],
 };
 
-// The six Practice cards on the home page for each grade.
-export const GRADE_PRACTICE = {
-  p: ['count', 'findNumber', 'shapes', 'bigSmall', 'moreFewer', 'pattern'],
-  k: ['numberBond', 'add', 'subtract', 'compare', 'placeValue', 'sentence'],
-  1: ['numberBond', 'addStrategy', 'add', 'subtract', 'clock', 'sentence'],
-  2: ['add', 'subtract', 'multiply', 'divide', 'fraction', 'sentence'],
-  3: ['multiply', 'divide', 'regroup', 'fraction', 'clock', 'sentence'],
-  4: ['multiply', 'divide', 'factors', 'fraction', 'bigNumber', 'multistep'],
-};
-
 export function gradeOps(id) {
   return GRADE_OPS[gradeInfo(id).id];
-}
-
-export function gradePractice(id) {
-  return GRADE_PRACTICE[gradeInfo(id).id];
 }
