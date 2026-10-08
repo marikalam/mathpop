@@ -1157,12 +1157,13 @@ export default function App() {
     );
   }
 
+  const homeFits = view === 'home' && gradeSections(gradeInfo(level).id).length <= 6;
+
   return (
-    // The home page fits one phone screen, no scrolling.
-    <div className={view === 'home' ? 'page page-fit' : 'page'}>
-      {/* The home page fits on one screen, without scrolling, when the
-          grade has up to six sections; with more it scrolls. */}
-      <div className={view === 'home' && gradeSections(gradeInfo(level).id).length <= 6 ? 'app home-fit' : 'app'}>
+    // The home page fits one phone screen, without scrolling, when the
+    // grade has up to six sections; with more it scrolls like other pages.
+    <div className={homeFits ? 'page page-fit' : 'page'}>
+      <div className={homeFits ? 'app home-fit' : 'app'}>
         {view === 'home' && (
           <>
             <AppHeader level={level} showBack={false} players={headerPlayers} />

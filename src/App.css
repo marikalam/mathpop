@@ -1794,7 +1794,8 @@ body {
    The page is exactly the visible screen height and doesn't scroll: the
    practice cards share whatever height is left after the fixed parts. */
 .page-fit {
-  overflow: hidden;
+  /* Still scrolls if a very short screen can't fit everything. */
+  overflow-y: auto;
   padding-bottom: max(14px, env(safe-area-inset-bottom));
 }
 
