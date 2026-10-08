@@ -7,7 +7,9 @@ import { SentenceQuestionTemplates } from './types.js';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
 import { loadDigitModel } from './digitModel.js';
-import { DEFAULT_GRADE, gradeInfo, gradeOperands, gradeOps, gradePractice, gradeTier } from './grades.js';
+import { DEFAULT_GRADE, gradeInfo, gradeOperands, gradeOps, gradeTier } from './grades.js';
+import { TOPIC_ICONS, gradeSection, gradeSections, gradeTopics } from './curriculum.js';
+import TopicVisual from './TopicVisual.jsx';
 import AdditionHelp from './AdditionHelp.jsx';
 import PrintSheet from './PrintSheet.jsx';
 import { PREK_CONCEPTS, ShapeIcon } from './preK.jsx';
@@ -36,34 +38,6 @@ const HERO_OPS = [
   { symbol: '×', color: '#3b6fef' },
   { symbol: '÷', color: '#f0954f' },
 ];
-// Every card the home page's Practice grid can show; each grade picks six
-// of them (GRADE_PRACTICE in grades.js). Random Mix and Explore Numbers
-// have their own Quick play card above.
-const PRACTICE_CARDS = {
-  multiply: { icon: '×', title: 'Multiplication', sub: 'Times tables practice', from: '#4a7cf5', to: '#3660e0' },
-  add: { icon: '+', title: 'Addition', sub: 'Add it up', from: '#38c07f', to: '#2a9e60' },
-  subtract: { icon: '−', title: 'Subtraction', sub: 'Take it away', from: '#a065e6', to: '#7c3fc4' },
-  divide: { icon: '÷', title: 'Division', sub: 'Share it equally', from: '#f0954f', to: '#e0793a' },
-  count: { icon: '🍎', title: 'Count It', sub: 'How many?', from: '#f5a524', to: '#e08a12' },
-  findNumber: { icon: '🔢', title: 'Find the Number', sub: 'Hear it, tap it', from: '#4e8ff7', to: '#3a6fd8' },
-  shapes: { icon: '🔺', title: 'Shapes', sub: 'Circle, square, star', from: '#e0577f', to: '#c43c66' },
-  bigSmall: { icon: '🐘', title: 'Big & Small', sub: 'Which is bigger?', from: '#14b8a6', to: '#0f9384' },
-  moreFewer: { icon: '⚖️', title: 'More or Fewer', sub: 'Which has more?', from: '#8e4fd6', to: '#6f35b8' },
-  pattern: { icon: '🔴', title: 'Patterns', sub: 'What comes next?', from: '#38c07f', to: '#2a9e60' },
-  numberBond: { icon: '🔗', title: 'Number Bonds', sub: 'Part, part, whole', from: '#e0577f', to: '#c43c66' },
-  fraction: { icon: '🍕', title: 'Fractions', sub: 'Parts of a whole', from: '#14b8a6', to: '#0f9384' },
-  factors: { icon: '🧮', title: 'Factors & Multiples', sub: 'What goes into what', from: '#8e4fd6', to: '#6f35b8' },
-  sentence: { icon: '📖', title: 'Word Problems', sub: 'Math in a story', from: '#1fb6ba', to: '#14898c' },
-  clock: { icon: '🕐', title: 'Tell Time', sub: 'Read the clock', from: '#f0954f', to: '#e0793a' },
-  skills: { icon: '🏆', title: 'Skill Builders', sub: 'All 2nd-grade concepts', from: '#f06f9a', to: '#d94f7e' },
-  compare: { icon: '⚖️', title: 'Comparing', sub: 'Bigger, smaller, equal', from: '#f06f9a', to: '#d94f7e' },
-  addStrategy: { icon: '🔟', title: 'Make a Ten', sub: 'Doubles & tens', from: '#f5a524', to: '#e08a12' },
-  placeValue: { icon: '🔢', title: 'Place Value', sub: 'Tens and ones', from: '#4e8ff7', to: '#3a6fd8' },
-  measurement: { icon: '📏', title: 'Measurement', sub: 'Inches, feet & cm', from: '#f5a524', to: '#e08a12' },
-  regroup: { icon: '🧱', title: 'Stack & Solve', sub: 'Carrying & borrowing', from: '#f06f9a', to: '#d94f7e' },
-  bigNumber: { icon: '💯', title: 'Big Numbers', sub: 'Into the millions', from: '#14b8a6', to: '#0f9384' },
-  multistep: { icon: '🧩', title: 'Multi-Step', sub: 'Two-step stories', from: '#f5a524', to: '#e08a12' },
-};
 // Progress per player and grade: { playerId: { grade: { total, correct, byOp } } }.
 // The older one (v2) was per grade only, for the whole phone; it becomes
 // the first guest player's.
@@ -225,10 +199,20 @@ function formatTime(hour, minute) {
   return `${hour}:${String(minute).padStart(2, '0')}`;
 }
 
-function buildClockProblem(level) {
+// Kindergarten reads the hour, Primary 1 and 2 to 5 minutes (sometimes
+// the hour or half hour in Primary 1), Primary 3 and 4 to the minute.
+function buildClockProblem(grade) {
+  const g = gradeInfo(grade).id;
+  const level = gradeTier(grade);
   const hour = randInt(1, 12);
-  const minute = level === 'easy' ? 0 : level === 'medium' ? shuffle([0, 15, 30, 45])[0] : randInt(0, 11) * 5;
-  return { type: 'clock', op: 'clock', hour, minute, correct: formatTime(hour, minute), level };
+  let minute;
+  if (g === 'p' || g === 'k') minute = 0;
+  else if (g === '1') minute = Math.random() < 0.4 ? shuffle([0, 30])[0] : randInt(0, 11) * 5;
+  else if (g === '2') minute = randInt(0, 11) * 5;
+  else minute = Math.random() < 0.5 ? randInt(0, 59) : randInt(0, 11) * 5;
+  // How far apart the wrong answers are (buildOptions).
+  const step = g === 'p' || g === 'k' ? 60 : 5;
+  return { type: 'clock', op: 'clock', hour, minute, correct: formatTime(hour, minute), level, step };
 }
 
 function buildProblem(mode, grade) {
@@ -238,7 +222,7 @@ function buildProblem(mode, grade) {
     return buildSentenceQuestion(op, gradeTier(grade));
   }
   if (mode === 'clock') {
-    return buildClockProblem(gradeTier(grade));
+    return buildClockProblem(grade);
   }
 
   const op = mode === 'random' ? shuffle(gradeOps(grade))[0] : mode;
@@ -297,7 +281,7 @@ function buildOptions(problem) {
 
   if (problem.type === 'clock') {
     const { hour, minute, level } = problem;
-    const step = level === 'easy' ? 60 : level === 'medium' ? 15 : 5;
+    const step = problem.step || (level === 'easy' ? 60 : level === 'medium' ? 15 : 5);
     const totalMinutes = (hour % 12) * 60 + minute; // 0-719, on a 12-hour wheel
     const timeAtOffset = (offsetSteps) => {
       const tm = (((totalMinutes + offsetSteps * step) % 720) + 720) % 720;
@@ -357,6 +341,13 @@ function buildOptions(problem) {
 function makeProblem(op, grade) {
   // Pre-K's Random Mix: one of its picture games each time.
   if (op === 'random' && gradeInfo(grade).id === 'p') op = shuffle(PREK_CONCEPTS.map((c) => c.id))[0];
+  // Random Mix: any topic from the grade's sections; a section's Mix: any
+  // topic in that section.
+  else if (op === 'random') op = shuffle(gradeTopics(gradeInfo(grade).id))[0];
+  else if (op.startsWith('section:')) {
+    const section = gradeSection(gradeInfo(grade).id, op.slice(8));
+    op = shuffle(section ? section.topics.map((t) => t.id) : gradeOps(grade))[0];
+  }
   if (isSkillConcept(op)) return buildSkillProblem(op, gradeTier(grade), gradeInfo(grade).id);
   return buildProblem(op, grade);
 }
@@ -637,6 +628,8 @@ function ProgressDots({ current, total }) {
 
 export default function App() {
   const [view, setView] = useState('home');
+  // The section open on the 'section' screen (curriculum.js).
+  const [sectionId, setSectionId] = useState(null);
   const [returnView, setReturnView] = useState('home');
   const [progress, setProgress] = useState(loadProgress);
 
@@ -1134,7 +1127,9 @@ export default function App() {
 
   const modeLabel = isSkillConcept(operation)
     ? SKILL_META[operation].label.toLowerCase()
-    : operation === 'random'
+    : operation.startsWith('section:')
+      ? (gradeSection(gradeInfo(level).id, operation.slice(8))?.title || 'mixed').toLowerCase()
+      : operation === 'random'
       ? 'random mix'
       : operation === 'sentence'
         ? 'word problem'
@@ -1162,7 +1157,9 @@ export default function App() {
   return (
     // The home page fits one phone screen, no scrolling.
     <div className={view === 'home' ? 'page page-fit' : 'page'}>
-      <div className={view === 'home' ? 'app home-fit' : 'app'}>
+      {/* The home page fits on one screen, without scrolling, when the
+          grade has up to six sections; with more it scrolls. */}
+      <div className={view === 'home' && gradeSections(gradeInfo(level).id).length <= 6 ? 'app home-fit' : 'app'}>
         {view === 'home' && (
           <>
             <AppHeader level={level} showBack={false} players={headerPlayers} />
@@ -1219,28 +1216,31 @@ export default function App() {
               </button>
             </section>
 
-            <h3 className="home-section-title">Practice</h3>
+            <h3 className="home-section-title">Sections</h3>
             <div className="home-grid">
-              {gradePractice(level).map((id) => {
-                const card = PRACTICE_CARDS[id];
-                return (
-                  <button
-                    key={id}
-                    className="home-card"
-                    style={{ '--card-from': card.from, '--card-to': card.to }}
-                    onClick={() => (id === 'skills' ? setView('skills') : startOperation(id, 'home'))}
-                  >
-                    <span className="home-card-icon" aria-hidden="true">
-                      {card.icon}
+              {gradeSections(gradeInfo(level).id).map((section) => (
+                <button
+                  key={section.id}
+                  className="home-card"
+                  style={{ '--card-from': section.from, '--card-to': section.to }}
+                  onClick={() => {
+                    setSectionId(section.id);
+                    setView('section');
+                  }}
+                >
+                  <span className="home-card-icon" aria-hidden="true">
+                    {section.icon}
+                  </span>
+                  <span className="home-card-text">
+                    <span className="home-card-title">{section.short || section.title}</span>
+                    <span className="home-card-sub">
+                      {section.topics.length} topic{section.topics.length === 1 ? '' : 's'}
                     </span>
-                    <span className="home-card-text">
-                      <span className="home-card-title">{card.title}</span>
-                      <span className="home-card-sub">{card.sub}</span>
-                    </span>
-                  </button>
-                );
-              })}
+                  </span>
+                </button>
+              ))}
             </div>
+            <p className="curriculum-note">Topics follow Singapore math and Beast Academy for {gradeInfo(level).label}.</p>
 
             {!IS_NATIVE && (
               <a className="all-apps-link" href="https://marikalam.github.io/apps/">
@@ -1307,6 +1307,63 @@ export default function App() {
             )}
           </>
         )}
+
+        {view === 'section' &&
+          (() => {
+            const section = gradeSection(gradeInfo(level).id, sectionId);
+            if (!section) return null;
+            return (
+              <>
+                <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
+                <h2 className="screen-title">
+                  <span aria-hidden="true">{section.icon}</span> {section.title}
+                </h2>
+                <p className="screen-sub">{gradeInfo(level).label} · {section.sub}</p>
+                {section.topics.length > 1 && (
+                  <button
+                    className="home-cta section-mix"
+                    style={{ '--card-from': section.from, '--card-to': section.to }}
+                    onClick={() => startOperation(`section:${section.id}`, 'section')}
+                  >
+                    <span className="home-cta-icon" aria-hidden="true">
+                      🎲
+                    </span>
+                    <span className="home-cta-text">
+                      <span className="home-cta-title">Mix it up</span>
+                      <span className="home-cta-sub">All {section.topics.length} topics together</span>
+                    </span>
+                    <span className="home-cta-arrow" aria-hidden="true">
+                      →
+                    </span>
+                  </button>
+                )}
+                <div className="topic-list">
+                  {section.topics.map((topic) => {
+                    const stats = levelStats.byOp?.[topic.id];
+                    return (
+                      <button key={topic.id} className="topic-card" onClick={() => startOperation(topic.id, 'section')}>
+                        <span className="topic-card-icon" style={{ background: section.to }} aria-hidden="true">
+                          {TOPIC_ICONS[topic.id] || section.icon}
+                        </span>
+                        <span className="topic-card-text">
+                          <span className="topic-card-title">{topic.title}</span>
+                          <span className="topic-card-sub">{topic.sub}</span>
+                        </span>
+                        <span className="topic-card-side">
+                          <span className="topic-card-from">{topic.from}</span>
+                          {stats?.total ? (
+                            <span className="topic-card-score">
+                              {Math.round((stats.correct / stats.total) * 100)}% · {stats.total}
+                            </span>
+                          ) : null}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
 
         {view === 'skills' && (
           <>
@@ -1445,6 +1502,11 @@ export default function App() {
             >
               {problem.type === 'clock' ? (
                 <ClockFace hour={problem.hour} minute={problem.minute} />
+              ) : problem.type === 'skill' && problem.visual ? (
+                <span className="problem-visual-wrap">
+                  <TopicVisual v={problem.visual} />
+                  <span className="problem-text problem-text-sentence">{problem.prompt}</span>
+                </span>
               ) : problem.type === 'skill' && problem.promptKind === 'count' ? (
                 <span className="prek-count" aria-hidden="true">
                   {Array.from({ length: problem.countN }, (_, i) => (

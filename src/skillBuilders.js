@@ -7,6 +7,9 @@
  */
 
 import { PREK_BUILDERS, PREK_CONCEPTS, PREK_SYMBOL } from './preK.jsx';
+import { TOPIC_BUILDERS } from './topics.js';
+import { TOPIC_ICONS, gradeSections } from './curriculum.js';
+import { GRADES } from './grades.js';
 
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -29,8 +32,13 @@ function nameA() {
   return pick(['Julie', 'Marcus', 'Sarah', 'Alex', 'Emma', 'Jordan', 'Casey']);
 }
 
+// 'They' takes 'give', not 'gives', so the verb comes with it.
 function pronoun() {
-  return pick(['They', 'He', 'She']);
+  return pick([
+    ['They', ''],
+    ['He', 's'],
+    ['She', 's'],
+  ]);
 }
 
 export const SKILL_UNITS = [
@@ -108,6 +116,17 @@ for (const unit of [...SKILL_UNITS, { id: 'SG', concepts: SINGAPORE_CONCEPTS }, 
       color: UNIT_COLOR[unit.id],
       unit: unit.id,
     };
+  }
+}
+// The topics the grade sections add (topics.js), named and coloured as in
+// the first section that has them.
+for (const grade of GRADES) {
+  for (const section of gradeSections(grade.id)) {
+    for (const topic of section.topics) {
+      if (TOPIC_BUILDERS[topic.id] && !SKILL_META[topic.id]) {
+        SKILL_META[topic.id] = { label: topic.title, symbol: TOPIC_ICONS[topic.id] || section.icon, color: section.to, unit: section.id };
+      }
+    }
   }
 }
 
@@ -529,7 +548,7 @@ function multistepProblem(level) {
   const range = level === 'easy' ? [1, 20] : level === 'medium' ? [10, 60] : [20, 150];
   const pattern = pick(['add-add', 'add-sub', 'sub-add', 'sub-sub']);
   const name = nameA();
-  const pron = pronoun();
+  const [pron, s] = pronoun();
   const item = pick(MULTISTEP_ITEMS);
 
   let a = randInt(range[0], range[1]);
@@ -539,25 +558,26 @@ function multistepProblem(level) {
     b = randInt(range[0], range[1]);
     c = randInt(range[0], range[1]);
     correct = a + b + c;
-    prompt = `${name} has ${a} ${item}. ${pron} finds ${b} more, then finds ${c} more. How many ${item} does ${name} have now?`;
+    prompt = `${name} has ${a} ${item}. ${pron} find${s} ${b} more, then find${s} ${c} more. How many ${item} does ${name} have now?`;
   } else if (pattern === 'add-sub') {
     b = randInt(range[0], range[1]);
     const intermediate = a + b;
     c = randInt(1, intermediate);
     correct = intermediate - c;
-    prompt = `${name} has ${a} ${item}. ${pron} buys ${b} more, then gives away ${c}. How many ${item} does ${name} have now?`;
+    prompt = `${name} has ${a} ${item}. ${pron} buy${s} ${b} more, then give${s} away ${c}. How many ${item} does ${name} have now?`;
   } else if (pattern === 'sub-add') {
     b = randInt(1, a);
     const intermediate = a - b;
     c = randInt(range[0], range[1]);
     correct = intermediate + c;
-    prompt = `${name} has ${a} ${item}. ${pron} gives away ${b}, then finds ${c} more. How many ${item} does ${name} have now?`;
+    prompt = `${name} has ${a} ${item}. ${pron} give${s} away ${b}, then find${s} ${c} more. How many ${item} does ${name} have now?`;
   } else {
-    b = randInt(1, a);
+    if (a < 3) a = 3;
+    b = randInt(1, a - 2);
     const intermediate = a - b;
-    c = randInt(0, intermediate);
+    c = randInt(1, intermediate - 1);
     correct = intermediate - c;
-    prompt = `${name} has ${a} ${item}. ${pron} gives away ${b}, then gives away ${c} more. How many ${item} does ${name} have left?`;
+    prompt = `${name} has ${a} ${item}. ${pron} give${s} away ${b}, then give${s} away ${c} more. How many ${item} does ${name} have left?`;
   }
 
   return {
@@ -730,6 +750,8 @@ const BUILDERS = {
   fraction: fractionProblem,
   factors: factorsProblem,
   ...PREK_BUILDERS,
+  // Grade-aware versions of placeValue and compare, and the new topics.
+  ...TOPIC_BUILDERS,
 };
 
 export function isSkillConcept(id) {

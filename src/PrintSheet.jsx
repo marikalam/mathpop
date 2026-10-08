@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import { ClockFace } from './icons.jsx';
+import TopicVisual from './TopicVisual.jsx';
 
 // A printable worksheet: numbered problems in two columns with room to
 // write, and an optional answer key on its own page. It's rendered into
@@ -48,7 +49,12 @@ function Problem({ problem }) {
         </div>
       );
     } else {
-      body = <p className={problem.prompt.length > 24 ? 'ws-text' : 'ws-math'}>{problem.prompt}</p>;
+      body = (
+        <>
+          {problem.visual && <TopicVisual v={problem.visual} />}
+          <p className={problem.prompt.length > 24 ? 'ws-text' : 'ws-math'}>{problem.prompt}</p>
+        </>
+      );
     }
     return (
       <>
