@@ -60,12 +60,13 @@ export function getAdditionHelp(a, b) {
   return { crossesTen: true, complement, newA: a + complement, newB: b - complement };
 }
 
-export default function AdditionHelp({ a, b, onClose }) {
+// `bare`: just the blocks, inside the Show me how panel (no title or close).
+export default function AdditionHelp({ a, b, onClose, bare }) {
   const help = getAdditionHelp(a, b);
 
   return (
-    <div className="addition-help">
-      <h3 className="help-title">Let's break it down!</h3>
+    <div className={`addition-help${bare ? ' addition-help-bare' : ''}`}>
+      {!bare && <h3 className="help-title">Let's break it down!</h3>}
 
       {help.crossesTen ? (
         <>
@@ -91,9 +92,11 @@ export default function AdditionHelp({ a, b, onClose }) {
         </>
       )}
 
-      <button className="pill-btn-secondary pill-btn-full" onClick={onClose}>
-        Got it, hide help
-      </button>
+      {!bare && (
+        <button className="pill-btn-secondary pill-btn-full" onClick={onClose}>
+          Got it, hide help
+        </button>
+      )}
     </div>
   );
 }

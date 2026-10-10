@@ -66,8 +66,31 @@ function countProblem() {
     speech: `How many ${many}? Let's count them!`,
     speechAnswer: `${n} ${n === 1 ? one : many}`,
     questionTitle: 'Count them!',
+    explain: [
+      `Let's count the ${many} together.`,
+      `Touch each ${one} as we count. One number for each ${one}.`,
+      ...(n >= 3 ? ['Ready? One, two, and keep going!'] : []),
+      "Don't skip any, and don't count any twice.",
+      `How many ${many} did we count?`,
+    ],
+    explainAnswer: `We counted ${n} ${n === 1 ? one : many}!`,
   };
 }
+
+// What each number looks like, to help find it.
+const DIGIT_LOOKS = [
+  'Zero is round, like an egg.',
+  'One is a tall, straight line, like a stick.',
+  'Two has a curvy top and a flat bottom, like a swan.',
+  'Three has two round bumps.',
+  'Four has a pointy corner and a line going down.',
+  'Five has a flat hat on top and a round tummy.',
+  'Six has a curvy line that rolls into a circle at the bottom.',
+  'Seven has a flat top and a slide going down.',
+  'Eight looks like a snowman, two circles stacked up.',
+  'Nine has a little circle on top and a line going down.',
+  'Ten has two numbers, a one and a zero, like a stick and an egg.',
+];
 
 function findNumberProblem() {
   const n = Math.random() < 0.7 ? randInt(1, 5) : randInt(0, 10);
@@ -82,6 +105,8 @@ function findNumberProblem() {
     speech: `Can you find the number ${NUMBER_WORDS[n]}?`,
     speechAnswer: NUMBER_WORDS[n],
     questionTitle: 'Find the number',
+    explain: [`We're looking for ${NUMBER_WORDS[n]}.`, DIGIT_LOOKS[n], 'Look at each number, nice and slow.', `Which one is ${NUMBER_WORDS[n]}?`],
+    explainAnswer: `That's the number ${NUMBER_WORDS[n]}!`,
   };
 }
 
@@ -94,6 +119,17 @@ export const SHAPES = {
   heart: 'heart',
   oval: 'oval',
   diamond: 'diamond',
+};
+// What each shape looks like, said in "Show me how".
+const SHAPE_LOOKS = {
+  circle: 'A circle is round, like a ball. It has no corners at all.',
+  square: 'A square has 4 sides, all the same size, and 4 corners.',
+  triangle: 'A triangle has 3 sides and 3 pointy corners.',
+  rectangle: 'A rectangle has 4 sides, 2 long ones and 2 short ones, like a door.',
+  star: 'A star has 5 pointy tips, like a star in the sky.',
+  heart: 'A heart has 2 round bumps on top and a point at the bottom.',
+  oval: 'An oval is round but stretched out, like an egg.',
+  diamond: 'A diamond has 4 sides and stands up on a point, like a kite.',
 };
 const FIRST_SHAPES = ['circle', 'square', 'triangle', 'star', 'heart'];
 const SHAPE_COLORS = ['#EF4444', '#3B6FEF', '#2FAE6B', '#F5A623', '#8E4FD6', '#EC4899', '#14B8A6'];
@@ -117,22 +153,24 @@ function shapesProblem() {
     speech: `Can you find the ${correct}?`,
     speechAnswer: `the ${correct}`,
     questionTitle: 'Shapes',
+    explain: [`Let's find the ${correct}.`, SHAPE_LOOKS[correct], 'Look at each shape. Which one looks like that?'],
+    explainAnswer: `It's the ${correct}!`,
   };
 }
 
 const BIG_SMALL = [
-  ['🐘', 'elephant'],
-  ['🐻', 'bear'],
-  ['🐳', 'whale'],
-  ['🏠', 'house'],
-  ['🌳', 'tree'],
-  ['🐶', 'puppy'],
-  ['🍎', 'apple'],
-  ['🚌', 'bus'],
+  ['🐘', 'elephant', 'elephants'],
+  ['🐻', 'bear', 'bears'],
+  ['🐳', 'whale', 'whales'],
+  ['🏠', 'house', 'houses'],
+  ['🌳', 'tree', 'trees'],
+  ['🐶', 'puppy', 'puppies'],
+  ['🍎', 'apple', 'apples'],
+  ['🚌', 'bus', 'buses'],
 ];
 
 function bigSmallProblem() {
-  const [emoji, name] = pick(BIG_SMALL);
+  const [emoji, name, names] = pick(BIG_SMALL);
   const correct = Math.random() < 0.5 ? 'big' : 'small';
   return {
     promptKind: 'say',
@@ -147,11 +185,18 @@ function bigSmallProblem() {
     speech: `Which ${name} is ${correct}?`,
     speechAnswer: `the ${correct} ${name}`,
     questionTitle: 'Big and small',
+    explain: [
+      `Look at the two ${names}.`,
+      'One is big, and one is small.',
+      correct === 'big' ? 'The big one takes up lots of room.' : 'The small one is little. It takes up just a tiny bit of room.',
+      `Which ${name} is ${correct}?`,
+    ],
+    explainAnswer: `It's the ${correct} ${name}!`,
   };
 }
 
 function moreFewerProblem() {
-  const [emoji, , many] = pick(THINGS);
+  const [emoji, one, many] = pick(THINGS);
   let a = randInt(1, 6);
   let b = randInt(1, 6);
   // Easy to see: at least two apart.
@@ -173,6 +218,14 @@ function moreFewerProblem() {
     speech: more ? `Which has more ${many}?` : `Which has fewer ${many}?`,
     speechAnswer: `${n} ${many}`,
     questionTitle: more ? 'More' : 'Fewer',
+    explain: [
+      `Let's look at both groups of ${many}.`,
+      `Count each group. Touch each ${one} as you go.`,
+      more ? 'More means the group that has lots.' : 'Fewer means the group that has not as many.',
+      more ? 'Or match them up, one and one. The group with some left over has more.' : 'Or match them up, one and one. The group that runs out first has fewer.',
+      `Which group has ${more ? 'more' : 'fewer'}?`,
+    ],
+    explainAnswer: `The group with ${n} ${n === 1 ? one : many} has ${more ? 'more' : 'fewer'}!`,
   };
 }
 
@@ -182,6 +235,25 @@ const PATTERN_SETS = [
   ['🍎', '🍌', '🍇', '🍊'],
   ['⭐', '🌙', '☀️', '☁️'],
 ];
+// What to call each pattern picture out loud: in a list, and as the answer.
+const PATTERN_NAMES = {
+  '🔴': ['red', 'the red one'],
+  '🔵': ['blue', 'the blue one'],
+  '🟡': ['yellow', 'the yellow one'],
+  '🟢': ['green', 'the green one'],
+  '🐶': ['dog', 'the dog'],
+  '🐱': ['cat', 'the cat'],
+  '🐰': ['bunny', 'the bunny'],
+  '🐸': ['frog', 'the frog'],
+  '🍎': ['apple', 'the apple'],
+  '🍌': ['banana', 'the banana'],
+  '🍇': ['grapes', 'the grapes'],
+  '🍊': ['orange', 'the orange'],
+  '⭐': ['star', 'the star'],
+  '🌙': ['moon', 'the moon'],
+  '☀️': ['sun', 'the sun'],
+  '☁️': ['cloud', 'the cloud'],
+};
 const PATTERN_KINDS = [
   [0, 1],
   [0, 0, 1],
@@ -211,6 +283,13 @@ function patternProblem() {
     speech: 'What comes next?',
     speechAnswer: 'that one',
     questionTitle: 'What comes next?',
+    explain: [
+      "Let's say the pattern out loud together.",
+      `${seq.map((x) => PATTERN_NAMES[x][0]).join(', ').replace(/^./, (c) => c.toUpperCase())}.`,
+      `It goes ${kind.map((k) => PATTERN_NAMES[items[k]][0]).join(', ')}, and then it starts again.`,
+      'Say it again and keep going. What comes next?',
+    ],
+    explainAnswer: `Next comes ${PATTERN_NAMES[correct][1]}!`,
   };
 }
 

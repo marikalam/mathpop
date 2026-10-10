@@ -213,8 +213,29 @@ export async function getVoiceQuality() {
 }
 
 let currentSource = null;
+// Bumped by every new speak() or stopSpeaking(), so a walkthrough that's
+// still playing (speakSteps) knows to stop.
+let speechRun = 0;
+
+function stopCurrent() {
+  if (currentSource) {
+    try {
+      currentSource.stop();
+    } catch {
+      /* already stopped */
+    }
+    currentSource = null;
+  }
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+}
+
+export function stopSpeaking() {
+  speechRun++;
+  stopCurrent();
+}
 
 export async function speak(text) {
+  speechRun++;
   try {
     const { synthesizeSpeech } = await getPiperModule();
     const blob = await synthesizeSpeech(text);
@@ -259,7 +280,8 @@ export function playFeedbackAndSpeak(correct, correctAnswer) {
     playIncorrectBuzz();
   }
   setTimeout(() => {
-    speak(`The answer is ${correctAnswer}`);
+    // Kids who can't read yet hear where the help is (🙋 Show me how).
+    speak(correct ? `The answer is ${correctAnswer}` : `The answer is ${correctAnswer}. Tap the hand, and I'll show you how.`);
   }, 300);
 }
 
@@ -270,4 +292,67 @@ export function speakResults(correct, total) {
       ? `Perfect! You got all ${total} correct!`
       : `You got ${correct} correct and ${wrong} wrong.`
   );
+}
+
+async function synthesize(text) {
+  const { synthesizeSpeech } = await getPiperModule();
+  const blob = await synthesizeSpeech(text);
+  return ensureAudio().decodeAudioData(await blob.arrayBuffer());
+}
+
+function playBuffer(audioBuffer) {
+  return new Promise((resolve) => {
+    const ctx = ensureAudio();
+    stopCurrent();
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(ctx.destination);
+    source.onended = () => resolve();
+    currentSource = source;
+    source.start();
+  });
+}
+
+async function speakWithWebSpeechAPIAndWait(text) {
+  if (!('speechSynthesis' in window)) return;
+  const utterance = new SpeechSynthesisUtterance(text);
+  const voice = await pickVoice();
+  if (voice) utterance.voice = voice;
+  utterance.rate = 0.92;
+  await new Promise((resolve) => {
+    utterance.onend = resolve;
+    utterance.onerror = resolve;
+    // Some browsers never fire onend; don't get stuck.
+    setTimeout(resolve, 1500 + text.length * 120);
+    window.speechSynthesis.speak(utterance);
+  });
+}
+
+const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// "Show me how": say each step in turn, a little pause between them, and
+// tell the screen which step is being said (onStep(i)) so it can light it
+// up. The next step is made while this one plays, so there's no gap.
+// Stops if anything else starts speaking, or stopSpeaking() is called.
+export async function speakSteps(steps, onStep) {
+  const run = ++speechRun;
+  stopCurrent();
+  let piper = true;
+  let nextAudio = synthesize(steps[0]).catch(() => null);
+  for (let i = 0; i < steps.length; i++) {
+    if (run !== speechRun) return false;
+    const audio = piper ? await nextAudio : null;
+    if (run !== speechRun) return false;
+    if (i + 1 < steps.length && piper && audio) nextAudio = synthesize(steps[i + 1]).catch(() => null);
+    onStep(i);
+    if (audio) {
+      await playBuffer(audio);
+    } else {
+      piper = false;
+      await speakWithWebSpeechAPIAndWait(steps[i]);
+    }
+    if (run !== speechRun) return false;
+    await pause(450);
+  }
+  return run === speechRun;
 }
