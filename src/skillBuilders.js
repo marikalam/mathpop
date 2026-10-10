@@ -731,7 +731,7 @@ function factorsProblem() {
   };
 }
 
-const BUILDERS = {
+export const BUILDERS = {
   placeValue: (level) => placeValueProblem(level, false),
   compare: compareProblem,
   addStrategy: addStrategyProblem,
