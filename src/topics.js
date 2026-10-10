@@ -44,13 +44,80 @@ const fmt = (n) => n.toLocaleString('en-US');
 const MINUS = '−';
 const signed = (n) => (n < 0 ? `${MINUS}${-n}` : String(n));
 
+// ---- Words for "Show me how" (explain.js): these steps are spoken aloud,
+// so numbers, fractions, money and times are written the way we say them.
+
+const sayNum = (n) => (n < 0 ? `negative ${-n}` : String(n));
+const plural = (n, word, many = `${word}s`) => `${n} ${n === 1 ? word : many}`;
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+const ORDINAL_PARTS = {
+  2: 'half', 3: 'third', 4: 'fourth', 5: 'fifth', 6: 'sixth', 7: 'seventh', 8: 'eighth', 9: 'ninth', 10: 'tenth',
+  11: 'eleventh', 12: 'twelfth', 13: 'thirteenth', 14: 'fourteenth', 15: 'fifteenth', 16: 'sixteenth', 18: 'eighteenth',
+  20: 'twentieth', 24: 'twenty-fourth', 100: 'hundredth',
+};
+// 'halves', 'thirds'...: the name of the pieces when a whole is cut into d.
+const partsName = (d) => (d === 2 ? 'halves' : `${ORDINAL_PARTS[d] || `${d}th`}s`);
+// 3, 4 -> '3 fourths'; 1, 2 -> '1 half'.
+const fracWords = (a, d) => (a === 1 ? `1 ${ORDINAL_PARTS[d] || `${d}th`}` : `${a} ${partsName(d)}`);
+// '3/4', '1 1/2' or '2' -> words.
+function fracStringWords(s) {
+  const [whole, frac] = s.includes(' ') ? s.split(' ') : s.includes('/') ? [null, s] : [s, null];
+  const part = frac ? fracWords(...frac.split('/').map(Number)) : '';
+  if (whole && part) return `${whole} and ${part}`;
+  return part || (whole === '1' ? '1 whole' : `${whole} wholes`);
+}
+
+// 1250 cents -> '12 dollars and 50 cents'.
+function moneyWords(c) {
+  const d = Math.floor(c / 100);
+  const cents = c % 100;
+  if (d && cents) return `${plural(d, 'dollar')} and ${plural(cents, 'cent')}`;
+  return d ? plural(d, 'dollar') : plural(cents, 'cent');
+}
+
+// 4, 5 -> '4 oh 5'; 4, 0 -> '4 o'clock'.
+const timeWords = (h, m) => (m === 0 ? `${h} o'clock` : m < 10 ? `${h} oh ${m}` : `${h} ${m}`);
+const clockWords = (mins) => timeWords(((Math.floor(mins / 60) + 11) % 12) + 1, mins % 60);
+
+// The last step of every comparing walkthrough, and the answer after it.
+const compareAsk = (l, r) => `So is ${l} less than, greater than, or equal to ${r}?`;
+const compareSay = (a, b, l, r) => `So ${l} is ${a < b ? 'less than' : a > b ? 'greater than' : 'equal to'} ${r}.`;
+
 // ---------------- Numbers ----------------
 
 // Counting to 20 in ten frames, the Singapore way (K2).
 function framesProblem() {
   const n = randInt(5, 20);
   const near = [n - 1, n + 1, n - 2, n + 2, n + 10, n - 10].filter((x) => x >= 1 && x <= 20);
+  let explain;
+  if (n > 10) {
+    explain = [
+      'Let’s count the dots together.',
+      'Each ten frame has 10 boxes, in 2 rows of 5.',
+      'The first frame is full, so that’s 10 dots. No need to count them one by one!',
+      'Now count on from 10 with the dots in the next frame.',
+      'How many dots are there in all?',
+    ];
+  } else if (n === 10) {
+    explain = [
+      'Let’s look at the ten frame together.',
+      'A ten frame has 2 rows of 5 boxes.',
+      'Is every box filled with a dot?',
+      'So how many dots is a full frame?',
+    ];
+  } else {
+    explain = n === 5
+      ? ['Let’s count the dots together.', 'Look at the bottom row first. It’s empty!', 'Now touch each dot in the top row as you count.', 'How many dots are there?']
+      : [
+        'Let’s count the dots together.',
+        'The top row is full, and a full row has 5 dots.',
+        'Now count on from 5 with the dots in the bottom row.',
+        'How many dots are there in all?',
+      ];
+  }
   return {
+    explain,
     visual: { kind: 'tenFrames', n },
     prompt: 'How many dots?',
     correct: n,
@@ -72,6 +139,12 @@ function numberOrderProblem(tier, grade) {
     const kind = pick(['before', 'after', 'between']);
     if (kind === 'between') {
       return {
+        explain: [
+          'Let’s say the numbers in order, like counting.',
+          `Start at ${n - 1}.`,
+          `The number in between comes right after ${n - 1} and right before ${n + 1}.`,
+          `So what number comes after ${n - 1}?`,
+        ],
         prompt: `What number is between ${n - 1} and ${n + 1}?`,
         correct: n,
         answerType: 'numeric',
@@ -82,6 +155,9 @@ function numberOrderProblem(tier, grade) {
     }
     const correct = kind === 'before' ? n - 1 : n + 1;
     return {
+      explain: kind === 'before'
+        ? ['Just before means one less.', `Picture counting backward from ${n}.`, 'Take just one step back.', `What is 1 less than ${n}?`]
+        : ['Just after means one more.', `Picture counting up from ${n}.`, 'Take just one step forward.', `What is 1 more than ${n}?`],
       prompt: `What number comes just ${kind} ${n}?`,
       correct,
       answerType: 'numeric',
@@ -95,7 +171,19 @@ function numberOrderProblem(tier, grade) {
   const more = Math.random() < 0.5;
   const n = more ? randInt(step, max - step - 1) : randInt(step, max - 1);
   const correct = more ? n + step : n - step;
+  const placeName = { 10: 'tens', 100: 'hundreds', 1000: 'thousands', 10000: 'ten thousands' }[step];
+  const one = { 10: 'ten', 100: 'hundred', 1000: 'thousand', 10000: 'ten thousand' }[step];
+  const d = Math.floor(n / step) % 10;
+  const trade = more ? d === 9 : d === 0;
   return {
+    explain: [
+      `${fmt(step)} ${more ? 'more' : 'less'} means one ${more ? 'more' : 'less'} ${one}.`,
+      `Look at the ${placeName} place in ${fmt(n)}. It has a ${d}.`,
+      trade
+        ? `${d} can’t go ${more ? 'up' : 'down'} one in that place, so we trade with the next place over.`
+        : `Change that ${d} to ${more ? d + 1 : d - 1}. All the other digits stay the same.`,
+      trade ? `Try counting ${more ? 'on' : 'back'} ${fmt(step)} from ${fmt(n)}. What number do you land on?` : 'So what number is that?',
+    ],
     prompt: `What is ${fmt(step)} ${more ? 'more' : 'less'} than ${fmt(n)}?`,
     correct,
     answerType: 'numeric',
@@ -116,7 +204,15 @@ function skipCountProblem(tier, grade) {
   const hole = randInt(1, 4);
   const correct = seq[hole];
   const shown = seq.map((n, i) => (i === hole ? '?' : fmt(n)));
+  const prev = seq[hole - 1];
   return {
+    explain: [
+      `These numbers count ${down ? 'back' : 'up'} by ${fmt(step)}s.`,
+      `Each jump ${down ? 'takes away' : 'adds'} ${fmt(step)}.`,
+      `The number just before the gap is ${fmt(prev)}.`,
+      hole < 4 ? `You can check your answer with the number after the gap, ${fmt(seq[hole + 1])}.` : 'Make one more jump from there.',
+      `So what is ${fmt(prev)} ${down ? 'take away' : 'plus'} ${fmt(step)}?`,
+    ],
     prompt: shown.join(', '),
     correct,
     answerType: 'numeric',
@@ -130,13 +226,22 @@ function skipCountProblem(tier, grade) {
 const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
 const ORDINAL_WORDS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth'];
 const LINE_ANIMALS = ['🐶', '🐱', '🐰', '🐸', '🐵', '🐷', '🐔', '🐻', '🦊', '🐼'];
+const ANIMAL_NAMES = { '🐶': 'dog', '🐱': 'cat', '🐰': 'bunny', '🐸': 'frog', '🐵': 'monkey', '🐷': 'pig', '🐔': 'chicken', '🐻': 'bear', '🦊': 'fox', '🐼': 'panda' };
 
 // First, second, third... in a line (P1).
 function ordinalProblem() {
   const row = shuffle(LINE_ANIMALS).slice(0, 7);
   const i = randInt(0, 6);
+  const animal = ANIMAL_NAMES[row[i]];
   if (Math.random() < 0.5) {
     return {
+      explain: [
+        'Find the left side of the line. It says left there.',
+        'Put your finger on the first animal and count each one: first, second, third, and so on.',
+        `Stop when you say ${ORDINAL_WORDS[i]}.`,
+        'Which animal is your finger on?',
+      ],
+      explainAnswer: `It’s the ${animal}!`,
       visual: { kind: 'line', items: row },
       prompt: `Which animal is ${ORDINALS[i]} from the left?`,
       correct: row[i],
@@ -149,6 +254,13 @@ function ordinalProblem() {
     };
   }
   return {
+    explain: [
+      `First, find the ${animal} in the line.`,
+      'Now start at the left side, where it says left.',
+      `Count each animal as you go: first, second, third, until you reach the ${animal}.`,
+      `Which place is the ${animal} in?`,
+    ],
+    explainAnswer: `The ${animal} is ${ORDINAL_WORDS[i]}!`,
     visual: { kind: 'line', items: row },
     prompt: `The ${row[i]} is in which place from the left?`,
     correct: ORDINALS[i],
@@ -177,8 +289,21 @@ function placeValueProblem(tier, grade) {
   const value = digit * 10 ** place;
   // 'The digit 2' only makes sense when there is just one 2.
   const unique = String(n).split('').filter((d) => d === String(digit)).length === 1;
+  const len = String(n).length;
+  const placeList = `Start at the right and move left: ${names.slice(0, len).join(', ')}.`;
   if (unique && Math.random() < 0.5) {
     return {
+      explain: [
+        `Let’s name the place of each digit in ${fmt(n)}.`,
+        placeList,
+        `The ${digit} is in the ${names[place]} place.`,
+        place === 0
+          ? 'Digits in the ones place are worth just that many ones.'
+          : digit === 1
+            ? `So it stands for 1 of the ${names[place]}.`
+            : `So it stands for ${digit} ${names[place]}. Count by ${fmt(10 ** place)}s, ${digit} times.`,
+        `So how much is the ${digit} really worth?`,
+      ],
       prompt: `In ${fmt(n)}, what is the value of the digit ${digit}?`,
       correct: value,
       answerType: 'numeric',
@@ -189,6 +314,13 @@ function placeValueProblem(tier, grade) {
     };
   }
   return {
+    explain: [
+      `Let’s find each place in ${fmt(n)}.`,
+      'The digit at the far right is in the ones place.',
+      placeList,
+      `Slide your finger over to the ${names[place]} place.`,
+      'Which digit is sitting there?',
+    ],
     prompt: `In ${fmt(n)}, which digit is in the ${names[place]} place?`,
     correct: digit,
     answerType: 'numeric',
@@ -230,7 +362,37 @@ function compareProblem(tier, grade) {
     s[i] = String((Number(s[i]) + randInt(1, 9)) % 10);
     b = Number(s.join(''));
   } else b = randInt(1, max - 1);
-  return compareSigns(a, b, fmt(a), fmt(b), a, b);
+  const [sa, sb] = [String(a), String(b)];
+  const PLACES = ['ones', 'tens', 'hundreds', 'thousands', 'ten thousands'];
+  let explain;
+  if (sa.length !== sb.length) {
+    explain = [
+      `Let’s compare ${fmt(a)} and ${fmt(b)}.`,
+      `${fmt(a)} has ${plural(sa.length, 'digit')}, and ${fmt(b)} has ${plural(sb.length, 'digit')}.`,
+      'The number with more digits is the bigger number.',
+      compareAsk(fmt(a), fmt(b)),
+    ];
+  } else if (sa.length === 1) {
+    explain = [
+      'Think about counting: 1, 2, 3, 4, and on.',
+      'The number you say later is the bigger one.',
+      a === b ? 'Are these two numbers the same?' : `Do you say ${a} or ${b} later?`,
+      compareAsk(a, b),
+    ];
+  } else {
+    const i = [...sa].findIndex((ch, k) => ch !== sb[k]);
+    const placeOf = (k) => PLACES[sa.length - 1 - k];
+    explain = [`Let’s compare ${fmt(a)} and ${fmt(b)}, starting with the biggest place.`];
+    if (i === -1) {
+      explain.push('Check each place, one by one. Do all the digits match?');
+    } else {
+      if (i > 0) explain.push(`The ${i === 1 ? `${placeOf(0)} digits are` : 'first digits are'} the same, so keep going.`);
+      explain.push(`In the ${placeOf(i)} place, ${fmt(a)} has ${sa[i]}, and ${fmt(b)} has ${sb[i]}.`);
+      explain.push(`Which is bigger, ${sa[i]} or ${sb[i]}?`);
+    }
+    explain.push(compareAsk(fmt(a), fmt(b)));
+  }
+  return { ...compareSigns(a, b, fmt(a), fmt(b), a, b), explain, explainAnswer: compareSay(a, b, fmt(a), fmt(b)) };
 }
 
 // Rounding (P4) and estimating (Beast Academy 3D).
@@ -239,7 +401,18 @@ function roundingProblem(tier, grade) {
   const n = grade === '3' ? randInt(to + 1, 9999) : randInt(1000, 99999);
   const correct = Math.round(n / to) * to;
   if (n % to === 0) return roundingProblem(tier, grade);
+  const placeName = { 10: 'tens', 100: 'hundreds', 1000: 'thousands' }[to];
+  const next = Math.floor(n / (to / 10)) % 10;
   return {
+    explain: [
+      `We want the nearest ${fmt(to)}, so find the ${placeName} place in ${fmt(n)}.`,
+      `Now look at the digit just to its right. It’s a ${next}.`,
+      next >= 5
+        ? `${next} is 5 or more, so we round up. The ${placeName} digit goes up by one.`
+        : `${next} is less than 5, so we round down. The ${placeName} digit stays the same.`,
+      `Then every digit after the ${placeName} place turns into a zero.`,
+      'So what number do you get?',
+    ],
     prompt: `Round ${fmt(n)} to the nearest ${fmt(to)}.`,
     correct,
     answerType: 'numeric',
@@ -259,8 +432,15 @@ function estimateProblem(tier, grade) {
   const rx = Math.round(x / 100) * 100;
   const ry = Math.round(y / 100) * 100;
   const correct = add ? rx + ry : rx - ry;
-  if (!add && correct <= 0) return estimateProblem(tier, grade);
+  if (!add && (correct <= 0 || correct === ry)) return estimateProblem(tier, grade);
   return {
+    explain: [
+      'To estimate, we round each number to the nearest hundred.',
+      `${x} is close to ${rx}.`,
+      `${y} is close to ${ry}.`,
+      `Those are much easier to ${add ? 'add' : 'take away'}. So what is ${rx} ${add ? 'plus' : 'take away'} ${ry}?`,
+    ],
+    explainAnswer: `So it’s about ${fmt(correct)}.`,
     prompt: `About how much is ${x} ${add ? '+' : MINUS} ${y}?`,
     correct,
     answerType: 'choice',
@@ -278,6 +458,12 @@ function negativeProblem() {
   if (kind === 'line') {
     const n = randInt(-9, 9);
     return {
+      explain: [
+        'Look at the number line. Zero is in the middle.',
+        'Numbers to the right of zero are positive. Numbers to the left of zero are negative.',
+        n === 0 ? 'Is the arrow right on zero?' : 'Start at zero and count the marks over to the arrow.',
+        n === 0 ? 'So what number is that?' : 'Is the arrow left or right of zero? So what number is it pointing to?',
+      ],
       visual: { kind: 'numberLine', from: -10, to: 10, mark: n },
       prompt: 'What number is the arrow pointing to?',
       correct: signed(n),
@@ -292,13 +478,32 @@ function negativeProblem() {
   if (kind === 'compare') {
     const a = randInt(-12, 8);
     const b = randInt(-12, 8);
-    return compareSigns(a, b, signed(a), signed(b), a < 0 ? `negative ${-a}` : a, b < 0 ? `negative ${-b}` : b);
+    return {
+      ...compareSigns(a, b, signed(a), signed(b), sayNum(a), sayNum(b)),
+      explain: [
+        'Picture the number line. Numbers get bigger as you go to the right.',
+        'Negative numbers sit to the left of zero.',
+        ...(a < 0 && b < 0 && a !== b ? ['Here’s a trick: the farther a negative number is from zero, the smaller it is.'] : []),
+        a === b ? 'Do they sit on the very same spot?' : `Which one is farther to the right, ${sayNum(a)} or ${sayNum(b)}?`,
+        compareAsk(sayNum(a), sayNum(b)),
+      ],
+      explainAnswer: compareSay(a, b, sayNum(a), sayNum(b)),
+    };
   }
   const start = kind === 'colder' ? randInt(-3, 8) : randInt(1, 9);
-  const drop = randInt(start + 1, start + 8);
+  const drop = randInt(Math.max(start + 1, 2), start + 8);
   const correct = start - drop;
+  const jumps = start > 0
+    ? [`${cap(plural(start, 'jump'))} to the left ${start === 1 ? 'takes' : 'take'} you down to zero.`, `Then you still have ${plural(drop - start, 'jump')} to go, below zero.`]
+    : start === 0 ? [`You’re already at zero, so all ${drop} jumps go below zero.`] : [`Make ${drop} jumps to the left, counting as you go.`];
   if (kind === 'colder') {
     return {
+      explain: [
+        `Start at ${sayNum(start)} degrees on the number line.`,
+        'Colder means the temperature goes down, so we jump to the left.',
+        ...jumps,
+        'Where do you land? What is the temperature now?',
+      ],
       visual: { kind: 'numberLine', from: -10, to: 10 },
       prompt: `It is ${signed(start)}°C. It gets ${drop} degrees colder. What is the temperature now?`,
       correct: `${signed(correct)}°C`,
@@ -311,6 +516,12 @@ function negativeProblem() {
     };
   }
   return {
+    explain: [
+      `Start at ${start} on the number line.`,
+      `Taking away ${drop} means ${drop} jumps to the left.`,
+      ...jumps,
+      'Where do you land?',
+    ],
     visual: { kind: 'numberLine', from: -10, to: 10 },
     prompt: `${start} ${MINUS} ${drop} = ?`,
     correct: signed(correct),
@@ -331,11 +542,28 @@ function exponentsProblem() {
   const kind = pick(['power', 'power', 'ten', 'compare']);
   if (kind === 'compare') {
     const [a, b] = pick([[2, 5], [2, 3], [3, 4], [2, 6], [3, 5]]);
-    return compareSigns(a ** b, b ** a, `${a}${SUPER[b]}`, `${b}${SUPER[a]}`, `${a} to the power of ${b}`, `${b} to the power of ${a}`);
+    const [l, r] = [`${a} to the power of ${b}`, `${b} to the power of ${a}`];
+    return {
+      ...compareSigns(a ** b, b ** a, `${a}${SUPER[b]}`, `${b}${SUPER[a]}`, l, r),
+      explain: [
+        `${cap(l)} means ${b} ${a}s multiplied together.`,
+        `${Array(b).fill(a).join(' times ')} makes ${a ** b}.`,
+        `${cap(r)} means ${a} ${b}s multiplied together.`,
+        `${Array(a).fill(b).join(' times ')} makes ${b ** a}.`,
+        compareAsk(l, r),
+      ],
+      explainAnswer: compareSay(a ** b, b ** a, l, r),
+    };
   }
   if (kind === 'ten') {
     const e = randInt(2, 5);
     return {
+      explain: [
+        `10 to the power of ${e} means ${e} tens multiplied together.`,
+        'Here’s a trick: each time you multiply by 10, you stick one more zero on the end.',
+        `So it’s a 1 with ${e} zeros after it.`,
+        'What number is that?',
+      ],
       prompt: `10${SUPER[e]} = ?`,
       correct: 10 ** e,
       answerType: 'numeric',
@@ -346,7 +574,16 @@ function exponentsProblem() {
     };
   }
   const [base, e] = pick([[2, 2], [2, 3], [2, 4], [2, 5], [3, 2], [3, 3], [4, 2], [4, 3], [5, 2], [5, 3], [6, 2], [7, 2], [8, 2], [9, 2]]);
+  const partial = [];
+  for (let k = 2; k < e; k++) partial.push(`${base ** (k - 1)} times ${base} is ${base ** k}.`);
   return {
+    explain: [
+      `${base} to the power of ${e} means ${e} ${base}s multiplied together.`,
+      `That’s ${Array(e).fill(base).join(' times ')}.`,
+      ...(partial.length === 1 ? ['Let’s multiply one at a time.'] : []),
+      ...partial,
+      `So what is ${base ** (e - 1)} times ${base}?`,
+    ],
     prompt: `${base}${SUPER[e]} = ?`,
     correct: base ** e,
     answerType: 'numeric',
@@ -370,6 +607,13 @@ function primesProblem() {
       if (!isPrime(c) && c % 2 === 1 && !composites.includes(c)) composites.push(c);
     }
     return {
+      explain: [
+        'A prime number can only be made as 1 times itself.',
+        'Other numbers can be split into equal groups, so they are not prime.',
+        'Try splitting each number into equal groups of 3, 5, or 7.',
+        'The number that won’t split evenly is the prime one.',
+        'Which one do you think it is?',
+      ],
       prompt: 'Which number is prime?',
       correct,
       answerType: 'choice',
@@ -383,6 +627,13 @@ function primesProblem() {
   const i = randInt(2, PRIMES.length - 2);
   const after = randInt(PRIMES[i], PRIMES[i + 1] - 1);
   return {
+    explain: [
+      'A prime number can only be made as 1 times itself.',
+      `Let’s check the numbers after ${after}, one at a time.`,
+      'Skip the even ones. They split into groups of 2.',
+      'Also skip any number that splits into equal groups of 3, 5, or 7.',
+      `What is the first number after ${after} that won’t split?`,
+    ],
     prompt: `What is the first prime number after ${after}?`,
     correct: PRIMES[i + 1],
     answerType: 'numeric',
@@ -407,7 +658,23 @@ function missingDigitProblem() {
   s[1 - place] = '□';
   const shownA = hideIn === 'a' ? s.join('') : a;
   const shownB = hideIn === 'b' ? s.join('') : b;
+  const other = hideIn === 'a' ? b : a;
+  const onesSum = (a % 10) + (b % 10);
+  const explain = place === 0
+    ? [
+      'Let’s start with the ones place.',
+      `The other number has ${other % 10} ones, and the answer has ${sum % 10} ones.`,
+      `So ${other % 10} plus the missing digit must end in ${sum % 10}.`,
+      `What digit plus ${other % 10} ends in ${sum % 10}?`,
+    ]
+    : [
+      `First add the ones: ${a % 10} plus ${b % 10} is ${onesSum}.`,
+      onesSum >= 10 ? 'That makes a new ten, so carry 1 ten over to the tens.' : 'No new ten there, so nothing to carry.',
+      `The answer has ${plural(Math.floor(sum / 10), 'ten')}. The other number gives ${plural(Math.floor(other / 10), 'ten')}${onesSum >= 10 ? ', plus the 1 we carried' : ''}.`,
+      `How many more tens do you need to make ${plural(Math.floor(sum / 10), 'ten')}?`,
+    ];
   return {
+    explain,
     prompt: `${shownA} + ${shownB} = ${sum}`,
     correct: digit,
     answerType: 'numeric',
@@ -419,6 +686,7 @@ function missingDigitProblem() {
 }
 
 const GROUP_EMOJI = ['🍪', '🍎', '🌸', '⭐', '🐟', '🍓', '🧁', '⚽'];
+const GROUP_NAMES = { '🍪': 'cookies', '🍎': 'apples', '🌸': 'flowers', '⭐': 'stars', '🐟': 'fish', '🍓': 'strawberries', '🧁': 'cupcakes', '⚽': 'balls' };
 
 // Equal groups, multiplying as adding the same number (P1, P2).
 function equalGroupsProblem(tier, grade) {
@@ -426,7 +694,14 @@ function equalGroupsProblem(tier, grade) {
   const each = randInt(2, grade === '1' ? 5 : 6);
   const emoji = pick(GROUP_EMOJI);
   const correct = groups * each;
+  const counted = Array.from({ length: groups - 1 }, (_, i) => each * (i + 1));
   return {
+    explain: [
+      `Look, there are ${groups} groups, with ${each} ${GROUP_NAMES[emoji]} in each group.`,
+      `Let’s skip count by ${each}s, one group at a time.`,
+      `Point to each group and count with me: ${counted.join(', ')}.`,
+      `Now one more group of ${each}. How many in all?`,
+    ],
     visual: { kind: 'groups', groups, each, emoji },
     prompt: `${groups} groups of ${each}. How many in all?`,
     correct,
@@ -445,6 +720,12 @@ function sharingProblem(tier, grade) {
   const total = kids * each;
   const emoji = pick(GROUP_EMOJI);
   return {
+    explain: [
+      `We have ${total} ${GROUP_NAMES[emoji]} to share with ${kids} friends.`,
+      'Sharing equally means everyone gets the same number.',
+      `Give one to each friend, round and round. Each time round uses up ${kids}.`,
+      `Keep going until all ${total} are gone. How many does each friend get?`,
+    ],
     visual: { kind: 'pile', n: total, emoji },
     prompt: `Share ${total} equally among ${kids} friends. How many does each friend get?`,
     correct: each,
@@ -464,6 +745,19 @@ function remainderProblem(tier, grade) {
   const n = d * q + r;
   const askR = Math.random() < 0.6;
   return {
+    explain: askR
+      ? [
+        `${n} divided by ${d} is ${q}, with some left over.`,
+        `${q} groups of ${d} is ${d * q}.`,
+        `Now see how much is left: take ${d * q} away from ${n}.`,
+        'How many are left over?',
+      ]
+      : [
+        `There are ${r} left over, so take those away first.`,
+        `${n} take away ${r} is ${n - r}.`,
+        `Now ${n - r} splits evenly into groups of ${d}.`,
+        `So ${d} times what makes ${n - r}?`,
+      ],
     prompt: askR ? `${n} ÷ ${d} = ${q} R ?` : `${n} ÷ ${d} = ? R ${r}`,
     correct: askR ? r : q,
     answerType: 'numeric',
@@ -480,6 +774,12 @@ function squaresProblem() {
   const kind = pick(['square', 'root', 'which']);
   if (kind === 'square') {
     return {
+      explain: [
+        `${n} times ${n} means ${n} groups of ${n}.`,
+        n <= 6 ? `Look at the square. It has ${n} rows, with ${n} in each row.` : `Picture a square with ${n} rows of ${n}.`,
+        `${cap(plural(n - 1, 'group'))} of ${n} is ${n * (n - 1)}.`,
+        `Add one more group of ${n}. What is ${n * (n - 1)} plus ${n}?`,
+      ],
       visual: n <= 6 ? { kind: 'square', n } : undefined,
       prompt: `${n} × ${n} = ?`,
       correct: n * n,
@@ -490,7 +790,14 @@ function squaresProblem() {
     };
   }
   if (kind === 'root') {
+    const t = n > 3 ? n - 1 : n + 1;
     return {
+      explain: [
+        `We need one number that, times itself, makes ${n * n}.`,
+        'Let’s try a number and see.',
+        `${t} times ${t} is ${t * t}. That’s too ${t < n ? 'small' : 'big'}.`,
+        `So try a ${t < n ? 'bigger' : 'smaller'} number. Which number times itself makes ${n * n}?`,
+      ],
       prompt: `? × ? = ${n * n}`,
       correct: n,
       answerType: 'numeric',
@@ -505,7 +812,14 @@ function squaresProblem() {
     const c = randInt(5, 140);
     if (!Number.isInteger(Math.sqrt(c)) && !others.includes(c)) others.push(c);
   }
+  const ex = n === 3 ? 4 : 3;
   return {
+    explain: [
+      `A perfect square is a number times itself, like ${ex} times ${ex} is ${ex * ex}.`,
+      'It makes a perfect square shape out of dots!',
+      'Check each choice. Can you make it from a number times the same number?',
+      'Which one do you think it is?',
+    ],
     prompt: 'Which number is a perfect square?',
     correct: n * n,
     answerType: 'choice',
@@ -524,6 +838,12 @@ function distributiveProblem() {
   const ones = b - 10;
   if (Math.random() < 0.5) {
     return {
+      explain: [
+        `Here’s a trick: break ${b} into a ten and some ones.`,
+        `Then ${a} times ${b} is ${a} times 10, plus ${a} times the ones.`,
+        `${b} is 10 and how many more?`,
+        'That number goes in the box. What is it?',
+      ],
       prompt: `${a} × ${b} = ${a} × 10 + ${a} × ?`,
       correct: ones,
       answerType: 'numeric',
@@ -534,6 +854,12 @@ function distributiveProblem() {
     };
   }
   return {
+    explain: [
+      `Here’s a trick: break ${b} into 10 and ${ones}.`,
+      `${a} times 10 is ${a * 10}.`,
+      `${a} times ${ones} is ${a * ones}.`,
+      `Now put them back together. What is ${a * 10} plus ${a * ones}?`,
+    ],
     prompt: `${a} × ${b} = ?`,
     correct: a * b,
     answerType: 'numeric',
@@ -550,22 +876,28 @@ function orderOpsProblem() {
   let text;
   let value;
   let hint;
+  let explain;
   if (kind === 0) {
     const [a, b, c] = [randInt(2, 20), randInt(2, 9), randInt(2, 9)];
     text = `${a} + ${b} × ${c}`;
     value = a + b * c;
     hint = 'Multiply before you add.';
+    explain = ['Here’s the rule: we multiply before we add.', `So do ${b} times ${c} first. That’s ${b * c}.`, `Now what is ${a} plus ${b * c}?`];
   } else if (kind === 1) {
     const [b, c] = [randInt(2, 9), randInt(2, 9)];
     const a = b * c + randInt(1, 30);
     text = `${a} ${MINUS} ${b} × ${c}`;
     value = a - b * c;
     hint = 'Multiply before you subtract.';
+    explain = value === b * c
+      ? ['Here’s the rule: we multiply before we take away.', `So do ${b} times ${c} first.`, `Now take that away from ${a}. What do you get?`]
+      : ['Here’s the rule: we multiply before we take away.', `So do ${b} times ${c} first. That’s ${b * c}.`, `Now what is ${a} take away ${b * c}?`];
   } else if (kind === 2) {
     const [a, b, c] = [randInt(2, 12), randInt(2, 9), randInt(2, 6)];
     text = `(${a} + ${b}) × ${c}`;
     value = (a + b) * c;
     hint = 'Do what is in the parentheses first.';
+    explain = ['See the brackets? The part inside them always goes first.', `${a} plus ${b} is ${a + b}.`, `Now what is ${a + b} times ${c}?`];
   } else {
     const c = randInt(2, 9);
     const q = randInt(2, 9);
@@ -573,8 +905,12 @@ function orderOpsProblem() {
     text = `${a} ${MINUS} ${c * q} ÷ ${c}`;
     value = a - q;
     hint = 'Divide before you subtract.';
+    explain = value === q
+      ? ['Here’s the rule: we divide before we take away.', `So do ${c * q} divided by ${c} first.`, `Now take that away from ${a}. What do you get?`]
+      : ['Here’s the rule: we divide before we take away.', `So do ${c * q} divided by ${c} first. That’s ${q}.`, `Now what is ${a} take away ${q}?`];
   }
   return {
+    explain,
     prompt: `${text} = ?`,
     correct: value,
     answerType: 'numeric',
@@ -593,6 +929,12 @@ function variablesProblem(tier, grade) {
     const n = randInt(3, 40);
     const b = randInt(5, 40);
     return {
+      explain: [
+        `The letter ${letter} stands for a mystery number.`,
+        `The mystery number plus ${b} makes ${n + b}.`,
+        `To undo adding ${b}, we take ${b} away.`,
+        `So what is ${n + b} take away ${b}?`,
+      ],
       prompt: `${letter} + ${b} = ${n + b}.  ${letter} = ?`,
       correct: n,
       answerType: 'numeric',
@@ -605,6 +947,12 @@ function variablesProblem(tier, grade) {
     const n = randInt(2, 12);
     const b = randInt(2, 9);
     return {
+      explain: [
+        `The letter ${letter} stands for a mystery number.`,
+        `${b} groups of the mystery number make ${n * b}.`,
+        'To undo times, we divide.',
+        `So what is ${n * b} divided by ${b}?`,
+      ],
       prompt: `${b} × ${letter} = ${n * b}.  ${letter} = ?`,
       correct: n,
       answerType: 'numeric',
@@ -617,6 +965,12 @@ function variablesProblem(tier, grade) {
     const v = randInt(2, 9);
     const c = randInt(1, 15);
     return {
+      explain: [
+        `${letter} is ${v}, so put a ${v} everywhere you see ${letter}.`,
+        `That makes ${v} plus ${v} plus ${c}.`,
+        `${v} plus ${v} is ${v + v}.`,
+        `So what is ${v + v} plus ${c}?`,
+      ],
       prompt: `If ${letter} = ${v}, what is ${letter} + ${letter} + ${c}?`,
       correct: v + v + c,
       answerType: 'numeric',
@@ -629,6 +983,12 @@ function variablesProblem(tier, grade) {
   const m = randInt(2, 6);
   const c = randInt(1, 20);
   return {
+    explain: [
+      'Let’s undo it, one step at a time.',
+      `First take away the ${c}. ${m * n + c} take away ${c} is ${m * n}.`,
+      `So ${m} times ${letter} is ${m * n}.`,
+      `Now what is ${m * n} divided by ${m}?`,
+    ],
     prompt: `${m} × ${letter} + ${c} = ${m * n + c}.  ${letter} = ?`,
     correct: n,
     answerType: 'numeric',
@@ -661,6 +1021,13 @@ function fractionPictureProblem(tier, grade) {
   const shape = b <= 8 && Math.random() < 0.5 ? 'circle' : 'bar';
   const correct = `${a}/${b}`;
   return {
+    explain: [
+      `First, count all the equal parts in the ${shape}.`,
+      `There are ${b} equal parts, so each part is 1 ${ORDINAL_PARTS[b]}.`,
+      'Now count just the shaded parts.',
+      `So how many ${partsName(b)} are shaded?`,
+    ],
+    explainAnswer: `It’s ${fracWords(a, b)}!`,
     visual: { kind: 'fraction', shape, parts: b, shaded: a },
     prompt: 'What fraction is shaded?',
     correct,
@@ -701,8 +1068,35 @@ function compareFractionsProblem(tier, grade) {
     c = randInt(1, d - 1);
   }
   if (Math.random() < 0.5) [a, b, c, d] = [c, d, a, b];
+  const [l, r] = [fracWords(a, b), fracWords(c, d)];
+  let explain;
+  if (b === d) {
+    explain = [
+      `Both fractions are in ${partsName(b)}, so the pieces are the same size.`,
+      'When the pieces are the same size, more pieces means more.',
+      a === c ? 'Do they have the same number of pieces?' : `Which is more pieces, ${a} or ${c}?`,
+    ];
+  } else if (a === 1 && c === 1) {
+    explain = [
+      'Picture two pizzas, the very same size.',
+      `One is cut into ${b} slices, and the other into ${d} slices.`,
+      'Cutting into more slices makes each slice smaller.',
+      `Which slice is bigger, 1 out of ${b} or 1 out of ${d}?`,
+    ];
+  } else {
+    const [sa, sb, big] = b < d ? [a, b, d] : [c, d, b];
+    const m = big / sb;
+    explain = [
+      'The bottoms are different, so let’s make them the same.',
+      `Multiply the top and bottom of ${fracWords(sa, sb)} by ${m}.`,
+      `${cap(fracWords(sa, sb))} is the same as ${fracWords(sa * m, big)}.`,
+      `Now both are in ${partsName(big)}. Which has more pieces?`,
+    ];
+  }
   return {
-    ...compareSigns(a * d, c * b, `${a}/${b}`, `${c}/${d}`),
+    ...compareSigns(a * d, c * b, `${a}/${b}`, `${c}/${d}`, l, r),
+    explain: [...explain, compareAsk(l, r)],
+    explainAnswer: compareSay(a * d, c * b, l, r),
     hint: b === d ? 'Same size parts: more parts is bigger.' : a === 1 && c === 1 ? 'Cut into more pieces means smaller pieces.' : 'Make the bottoms the same first.',
   };
 }
@@ -736,8 +1130,26 @@ function addFractionsProblem(tier, grade) {
     top = nc - na;
   }
   const correct = fracText(top, den);
+  const op = add ? 'plus' : 'take away';
+  const [lb, rb] = [Number(left.split('/')[1]), Number(right.split('/')[1])];
+  const [nl, nr] = left === `${a}/${b}` ? [na, nc] : [nc, na];
+  const explain = [];
+  if (b === d) {
+    explain.push(`Both fractions are in ${partsName(den)}, so the pieces are the same size.`);
+    explain.push(`We just ${add ? 'add' : 'take away'} the tops. The bottom stays the same.`);
+  } else {
+    const [x, xb] = lb < rb ? left.split('/').map(Number) : right.split('/').map(Number);
+    explain.push('The bottoms are different, so let’s make them the same first.');
+    explain.push(`${cap(fracWords(x, xb))} is the same as ${fracWords(x * (den / xb), den)}.`);
+    explain.push(`Now both are in ${partsName(den)}, so we ${add ? 'add' : 'take away'} the tops.`);
+  }
+  if (top > den) explain.push('If you get more than a whole, see how many wholes you can make.');
+  else if (correct !== `${top}/${den}`) explain.push('Then see if you can write it in a simpler way.');
+  explain.push(`So what is ${fracWords(nl, den)} ${op} ${fracWords(nr, den)}?`);
   const wrong = [fracText(top + 1, den), fracText(Math.max(1, top - 1), den), `${add ? a + c : Math.abs(a - c)}/${b + d}`, `${top}/${den * 2}`];
   return {
+    explain,
+    explainAnswer: `It’s ${fracStringWords(correct)}!`,
     prompt: `${left} ${add ? '+' : MINUS} ${right} = ?`,
     correct,
     answerType: 'choice',
@@ -761,6 +1173,12 @@ function decimalPlaceProblem() {
     const h = randInt(1, 9);
     const asTenths = Math.random() < 0.5;
     return {
+      explain: [
+        `In ${w}.${t}${h}, the little dot is called the decimal point.`,
+        'The first digit after the point is in the tenths place.',
+        'The next digit after that is in the hundredths place.',
+        `Find the ${asTenths ? 'tenths' : 'hundredths'} place. Which digit is there?`,
+      ],
       prompt: `In ${w}.${t}${h}, which digit is in the ${asTenths ? 'tenths' : 'hundredths'} place?`,
       correct: asTenths ? t : h,
       answerType: 'numeric',
@@ -772,6 +1190,12 @@ function decimalPlaceProblem() {
   if (kind === 'tenths') {
     const t = randInt(1, 9);
     return {
+      explain: [
+        'The first place after the decimal point is the tenths place.',
+        `In 0.${t}, look at the digit right after the point.`,
+        'That digit tells you how many tenths there are.',
+        `So how many tenths is 0.${t}?`,
+      ],
       prompt: `0.${t} = ?/10`,
       correct: t,
       answerType: 'numeric',
@@ -784,6 +1208,12 @@ function decimalPlaceProblem() {
     const h = randInt(1, 99);
     const shown = (h / 100).toFixed(2);
     return {
+      explain: [
+        'Two places after the decimal point is the hundredths place.',
+        `In ${shown}, read the two digits after the point together, like a whole number.`,
+        ...(h < 10 ? ['A zero at the front doesn’t add anything.'] : []),
+        `So how many hundredths is ${shown}?`,
+      ],
       prompt: `${shown} = ?/100`,
       correct: h,
       answerType: 'numeric',
@@ -797,6 +1227,13 @@ function decimalPlaceProblem() {
   const [x, y] = shuffle([a, b]);
   return {
     ...compareSigns(x, y, dec(x), dec(y)),
+    explain: [
+      'Let’s write both numbers with 2 digits after the point.',
+      `That gives ${x.toFixed(2)} and ${y.toFixed(2)}.`,
+      `Now it’s ${Math.round(x * 100)} hundredths and ${Math.round(y * 100)} hundredths. Which is more?`,
+      compareAsk(dec(x), dec(y)),
+    ],
+    explainAnswer: compareSay(x, y, dec(x), dec(y)),
     hint: `Write both with 2 decimal places: ${x.toFixed(2)} and ${y.toFixed(2)}.`,
   };
 }
@@ -810,7 +1247,19 @@ function decimalConvertProblem() {
   const [a, b, v] = pick(pairs);
   const correct = dec(v);
   if (Math.random() < 0.6) {
+    let explain;
+    if (b === 10) explain = [`${cap(fracWords(a, b))} goes right in the tenths place.`, 'The tenths place is the first place after the decimal point.'];
+    else if (b === 100) explain = [`${cap(fracWords(a, b))} fills the tenths and hundredths places.`, 'Those are the two places after the decimal point.'];
+    else {
+      const to = 10 % b === 0 ? 10 : 100;
+      explain = [
+        `Let’s make the bottom ${to}. Multiply the top and bottom by ${to / b}.`,
+        `${cap(fracWords(a, b))} is the same as ${fracWords(a * (to / b), to)}.`,
+        to === 10 ? 'Tenths go in the first place after the decimal point.' : 'Hundredths fill the two places after the decimal point.',
+      ];
+    }
     return {
+      explain: [...explain, `So how do you write ${fracWords(a, b)} as a decimal?`],
       prompt: `${a}/${b} = ?`,
       correct,
       answerType: 'choice',
@@ -822,7 +1271,16 @@ function decimalConvertProblem() {
     };
   }
   const frac = `${a}/${b}`;
+  const places = correct.split('.')[1].length;
+  const asParts = Math.round(v * 10 ** places);
   return {
+    explain: [
+      `${correct} has ${plural(places, 'digit')} after the decimal point, so the bottom number is ${places === 1 ? 10 : 100}.`,
+      'The digits after the point tell you the top number.',
+      ...(gcd(asParts, 10 ** places) > 1 ? ['Then make it simpler. Divide the top and bottom by the same number.'] : []),
+      `Which fraction is the same as ${correct}?`,
+    ],
+    explainAnswer: `So ${correct} is ${fracWords(a, b)}!`,
     prompt: `${correct} = ?`,
     correct: frac,
     answerType: 'choice',
@@ -851,7 +1309,15 @@ function decimalAddSubProblem() {
     (value + 1).toFixed(places),
     (value + (add ? 0.1 : -0.1)).toFixed(places),
   ].filter((w) => Number(w) >= 0);
+  const unit = places === 1 ? 'tenths' : 'hundredths';
   return {
+    explain: [
+      'First, line up the decimal points, one on top of the other.',
+      `Here’s a trick: think of both numbers in ${unit}.`,
+      `${show(x)} is ${x} ${unit}, and ${show(y)} is ${y} ${unit}.`,
+      `Work out ${x} ${add ? 'plus' : 'take away'} ${y}, then put the point back in.`,
+      `So what is ${show(x)} ${add ? 'plus' : 'take away'} ${show(y)}?`,
+    ],
     prompt: `${show(x)} ${add ? '+' : MINUS} ${show(y)} = ?`,
     correct,
     answerType: 'choice',
@@ -882,7 +1348,17 @@ function moneyProblem(tier, grade) {
         items.push(c);
         total += c;
       }
+      items.sort((x, y) => y - x);
+      const sums = items.map((_, i) => items.slice(0, i + 1).reduce((t, c) => t + c, 0));
       return {
+        explain: items.length === 1
+          ? ['Look at the coin. What number is written on it?', 'That number tells you how many cents it is worth.', 'So how many cents is that?']
+          : [
+            'Start with the biggest coin, then count on.',
+            `The biggest coin is ${items[0]} cents.`,
+            ...(items.length > 2 ? [`Count on with the next coins: ${sums.slice(0, -1).join(', ')}.`] : []),
+            `Now count on ${items[items.length - 1]} more from ${sums[sums.length - 2]}. How many cents in all?`,
+          ],
         visual: { kind: 'money', items: items.sort((x, y) => y - x) },
         prompt: 'How many cents in all?',
         correct: total,
@@ -895,7 +1371,15 @@ function moneyProblem(tier, grade) {
     }
     const items = Array.from({ length: randInt(2, 4) }, () => pick([200, 500, 1000, 100]));
     const total = items.reduce((s, c) => s + c, 0) / 100;
+    items.sort((x, y) => y - x);
+    const sums = items.map((_, i) => items.slice(0, i + 1).reduce((t, c) => t + c, 0) / 100);
     return {
+      explain: [
+        'Start with the biggest one, then count on.',
+        `The biggest is ${plural(items[0] / 100, 'dollar')}.`,
+        ...(items.length > 2 ? [`Count on with the next ones: ${sums.slice(0, -1).join(', ')}.`] : []),
+        `Now count on ${items[items.length - 1] / 100} more from ${sums[sums.length - 2]}. How many dollars in all?`,
+      ],
       visual: { kind: 'money', items: items.sort((x, y) => y - x) },
       prompt: 'How many dollars in all?',
       correct: total,
@@ -908,7 +1392,14 @@ function moneyProblem(tier, grade) {
   if (grade === '2') {
     if (Math.random() < 0.5) {
       const cents = randInt(1, 9) * 100 + randInt(1, 19) * 5;
+      const d = Math.floor(cents / 100);
       return {
+        explain: [
+          'One dollar is worth 100 cents.',
+          `So ${plural(d, 'dollar')} is ${d * 100} cents.`,
+          `Then there are ${cents % 100} more cents.`,
+          `So what is ${d * 100} plus ${cents % 100}?`,
+        ],
         prompt: `${dollars(cents)} = ? ¢`,
         correct: cents,
         answerType: 'numeric',
@@ -920,7 +1411,18 @@ function moneyProblem(tier, grade) {
     }
     const items = [pick(NOTES), pick([100, 200, 500]), ...Array.from({ length: randInt(1, 3) }, () => pick(COINS.slice(0, 4)))];
     const total = items.reduce((s, c) => s + c, 0);
+    const notes = items.filter((c) => c >= 100).sort((x, y) => y - x);
+    const coins = items.filter((c) => c < 100).sort((x, y) => y - x);
+    const coinTotal = coins.reduce((s, c) => s + c, 0);
     return {
+      explain: [
+        'Let’s count the dollars first, then the cents.',
+        `The dollars: ${notes.map((c) => c / 100).join(' plus ')} makes ${plural(notes.reduce((s, c) => s + c, 0) / 100, 'dollar')}.`,
+        `The coins: ${coins.join(' plus ')} makes ${coinTotal} cents.`,
+        ...(coinTotal >= 100 ? ['Remember, 100 cents makes 1 more dollar.'] : []),
+        'So how much money is that in all?',
+      ],
+      explainAnswer: `It’s ${moneyWords(total)}!`,
       visual: { kind: 'money', items: items.sort((x, y) => y - x) },
       prompt: 'How much money is there?',
       correct: dollars(total),
@@ -937,7 +1439,16 @@ function moneyProblem(tier, grade) {
   const kind = pick(['total', 'change']);
   if (kind === 'total') {
     const correct = a + b;
+    const cents = (a % 100) + (b % 100);
     return {
+      explain: [
+        'Let’s add the dollars first, then the cents.',
+        `Dollars: ${Math.floor(a / 100)} plus ${Math.floor(b / 100)} is ${Math.floor(a / 100) + Math.floor(b / 100)}.`,
+        `Cents: ${a % 100} plus ${b % 100} is ${cents}.`,
+        ...(cents >= 100 ? ['That’s more than 100 cents, so trade 100 cents for 1 more dollar.'] : []),
+        'So how much is that altogether?',
+      ],
+      explainAnswer: `It’s ${moneyWords(correct)} altogether.`,
       prompt: `${name} buys a book for ${dollars(a)} and a pen for ${dollars(b)}. How much is that altogether?`,
       correct: dollars(correct),
       answerType: 'choice',
@@ -950,7 +1461,16 @@ function moneyProblem(tier, grade) {
   const paid = Math.ceil((a + 1) / 1000) * 1000 >= 2000 ? 2000 : 1000;
   const correct = paid - a;
   if (correct <= 0) return moneyProblem(tier, grade);
+  const nextDollar = Math.ceil(a / 100);
   return {
+    explain: [
+      'Change is the money you get back.',
+      `Here’s a trick: count up from ${moneyWords(a)} to ${moneyWords(paid)}.`,
+      ...(a % 100 ? [`First, ${100 - (a % 100)} cents gets you up to ${plural(nextDollar, 'dollar')}.`] : []),
+      ...(paid / 100 > nextDollar ? [`Then ${plural(paid / 100 - nextDollar, 'more dollar')} gets you to ${moneyWords(paid)}.`] : []),
+      'So how much did you count up in all?',
+    ],
+    explainAnswer: `${name} gets ${moneyWords(correct)} back.`,
     prompt: `${name} pays ${dollars(paid)} for a toy that costs ${dollars(a)}. How much change does ${name} get?`,
     correct: dollars(correct),
     answerType: 'choice',
@@ -975,6 +1495,19 @@ function rulerProblem(tier, grade) {
   const start = grade === '2' && Math.random() < 0.5 ? randInt(1, 3) : 0;
   const [thing, color] = pick(RULER_THINGS);
   return {
+    explain: start
+      ? [
+        `Look closely! The ${thing} starts at ${start}, not at 0.`,
+        `Find where it ends. It ends at ${start + len}.`,
+        `So count the spaces from ${start} to ${start + len}. Each space is 1 centimetre.`,
+        `What is ${start + len} take away ${start}?`,
+      ]
+      : [
+        `Look at the left end of the ${thing}. It starts right at 0.`,
+        'Each space between the numbers is 1 centimetre.',
+        `Now slide your eyes to the other end of the ${thing}.`,
+        'Which number on the ruler is it lined up with?',
+      ],
     visual: { kind: 'ruler', start, len, color },
     prompt: `How long is the ${thing}? (cm)`,
     correct: len,
@@ -988,13 +1521,30 @@ function rulerProblem(tier, grade) {
 
 const MASS_THINGS = [['a watermelon', 'kg'], ['a bag of rice', 'kg'], ['a dog', 'kg'], ['a grape', 'g'], ['a paper clip', 'g'], ['a pencil', 'g'], ['a coin', 'g'], ['a child', 'kg']];
 const VOLUME_THINGS = [['a bathtub', 'L'], ['a bucket', 'L'], ['a fish tank', 'L'], ['a spoon', 'mL'], ['a cup of tea', 'mL'], ['a bottle cap', 'mL'], ['a swimming pool', 'L']];
+const UNIT_WORDS = { kg: 'kilograms', g: 'grams', L: 'litres', mL: 'millilitres', km: 'kilometres', m: 'metres', cm: 'centimetres' };
+const UNIT_WORD = { kg: 'kilogram', g: 'gram', L: 'litre', mL: 'millilitre', km: 'kilometre', m: 'metre', cm: 'centimetre' };
+const unitWords = (n, u) => `${fmt(n)} ${n === 1 ? UNIT_WORD[u] : UNIT_WORDS[u]}`;
+// What the front of the small unit's name tells you, for 1 big = ? small.
+const UNIT_PREFIX = {
+  g: 'Kilo means a thousand.',
+  mL: 'Milli means one thousandth. A millilitre is tiny, like a few drops of water.',
+  m: 'Kilo means a thousand.',
+  cm: 'Centi means one hundredth. A centimetre is about as wide as your fingertip.',
+};
 
 // Mass and volume: choosing units (P2) and converting compound units (P3).
 function massVolumeProblem(tier, grade) {
   if (grade === '2' && Math.random() < 0.6) {
     const mass = Math.random() < 0.5;
     const [thing, unit] = pick(mass ? MASS_THINGS : VOLUME_THINGS);
+    const big = unit === 'kg' || unit === 'L';
     return {
+      explain: mass
+        ? ['Grams are for light things, like a feather.', 'Kilograms are for heavy things, like a big suitcase.', `Is ${thing} light or heavy?`, 'So which unit would you use?']
+        : ['Millilitres are for tiny amounts, like a few drops.', 'Litres are for big amounts, like a big bottle of water.', `Does ${thing} hold a little or a lot?`, 'So which unit fits best?'],
+      explainAnswer: mass
+        ? `${cap(UNIT_WORDS[unit])}, because ${thing} is ${big ? 'heavy' : 'light'}.`
+        : `${cap(UNIT_WORDS[unit])}, because ${thing} holds ${big ? 'a lot' : 'just a little'}.`,
       prompt: mass ? `Which unit would you use for the mass of ${thing}?` : `Which unit would you use for how much water ${thing} holds?`,
       correct: unit,
       answerType: 'choice',
@@ -1007,8 +1557,12 @@ function massVolumeProblem(tier, grade) {
   }
   const [big, small, k] = pick([['kg', 'g', 1000], ['L', 'mL', 1000], ['km', 'm', 1000], ['m', 'cm', 100]]);
   const whole = randInt(1, grade === '2' ? 5 : 9);
+  const fact = `1 ${UNIT_WORD[big]} is ${unitWords(k, small)}.`;
   if (grade === '2') {
     return {
+      explain: whole === 1
+        ? [UNIT_PREFIX[small], `So how many ${UNIT_WORDS[small]} make 1 ${UNIT_WORD[big]}?`]
+        : [fact, `So ${unitWords(whole, big)} is ${whole} groups of ${fmt(k)}.`, `What is ${whole} times ${fmt(k)}?`],
       prompt: `${whole} ${big} = ? ${small}`,
       correct: whole * k,
       answerType: 'numeric',
@@ -1022,6 +1576,12 @@ function massVolumeProblem(tier, grade) {
   const total = whole * k + part;
   if (Math.random() < 0.5) {
     return {
+      explain: [
+        fact,
+        ...(whole > 1 ? [`So ${unitWords(whole, big)} is ${unitWords(whole * k, small)}.`] : []),
+        `Then add ${unitWords(part, small)} more.`,
+        `What is ${fmt(whole * k)} plus ${part}?`,
+      ],
       prompt: `${whole} ${big} ${part} ${small} = ? ${small}`,
       correct: total,
       answerType: 'numeric',
@@ -1032,6 +1592,11 @@ function massVolumeProblem(tier, grade) {
     };
   }
   return {
+    explain: [
+      fact,
+      ...(whole > 1 ? [`So ${unitWords(whole, big)} uses up ${unitWords(whole * k, small)}.`] : []),
+      `How many are left over? What is ${fmt(total)} take away ${fmt(whole * k)}?`,
+    ],
     prompt: `${fmt(total)} ${small} = ${whole} ${big} ? ${small}`,
     correct: part,
     answerType: 'numeric',
@@ -1054,6 +1619,12 @@ function durationProblem(tier, grade) {
       const h = randInt(1, 9);
       const len = randInt(1, 3);
       return {
+        explain: [
+          `Start at ${h} o'clock.`,
+          'Each time the clock gets to the next o’clock, that’s 1 hour.',
+          `Count the hours, one jump at a time, until you reach ${h + len} o'clock.`,
+          'How many jumps did you make?',
+        ],
         prompt: `${name} ${activity} from ${h}:00 to ${h + len}:00. How many hours is that?`,
         correct: len,
         answerType: 'numeric',
@@ -1066,6 +1637,18 @@ function durationProblem(tier, grade) {
     const s = randInt(0, 6) * 5;
     const len = randInt(2, (55 - s) / 5) * 5;
     return {
+      explain: s
+        ? [
+          'Both times are in the same hour, so just look at the minutes.',
+          `It starts at ${s} minutes past and ends at ${s + len} minutes past.`,
+          `Count on by fives from ${s} up to ${s + len}.`,
+          'How many minutes did you count?',
+        ]
+        : [
+          `It starts right at ${h} o'clock, when the minutes are zero.`,
+          'Both times are in the same hour, so just look at the minutes.',
+          `How many minutes past ${h} is ${timeWords(h, s + len)}?`,
+        ],
       prompt: `${name} ${activity} from ${h}:${pad(s)} to ${h}:${pad(s + len)}. How many minutes is that?`,
       correct: len,
       answerType: 'numeric',
@@ -1078,6 +1661,12 @@ function durationProblem(tier, grade) {
     const h = randInt(1, 3);
     const m = randInt(1, 11) * 5;
     return {
+      explain: [
+        '1 hour is 60 minutes.',
+        ...(h > 1 ? [`So ${h} hours is ${h} sixties. That’s ${h * 60} minutes.`] : []),
+        `Then add the ${m} extra minutes.`,
+        `What is ${h * 60} plus ${m}?`,
+      ],
       prompt: `${h} h ${m} min = ? min`,
       correct: h * 60 + m,
       answerType: 'numeric',
@@ -1090,7 +1679,25 @@ function durationProblem(tier, grade) {
   const start = randInt(7, 18) * 60 + randInt(6, 11) * 5;
   const len = randInt(3, 15) * 5;
   const end = start + len;
+  const jumps = [];
+  let at = start;
+  while (at < end) {
+    const to = Math.min(end, Math.floor(at / 60) * 60 + 60);
+    jumps.push([at, to]);
+    at = to;
+  }
   return {
+    explain: jumps.length === 1
+      ? [
+        'Both times are in the same hour, so just look at the minutes.',
+        `Count on by fives from ${start % 60} minutes to ${end % 60} minutes.`,
+        'How many minutes did you count?',
+      ]
+      : [
+        'Here’s a trick: count on to the next hour first.',
+        ...jumps.map(([f, t], i) => `${i ? 'Then from' : 'From'} ${clockWords(f)} to ${clockWords(t)} is ${t - f} minutes.`),
+        `So what is ${jumps.map(([f, t]) => t - f).join(' plus ')}?`,
+      ],
     prompt: `${name} ${activity} from ${clockText(start)} to ${clockText(end)}. How many minutes is that?`,
     correct: len,
     answerType: 'numeric',
@@ -1109,8 +1716,18 @@ function clock24Problem() {
   const ampm = h < 12 ? 'a.m.' : 'p.m.';
   const t12 = `${h12}:${pad(m)} ${ampm}`;
   const t24 = `${pad(h)}:${pad(m)}`;
+  const am = ampm === 'a.m.';
+  const say24 = `${h === 0 ? 'zero zero' : h < 10 ? `oh ${h}` : h} ${m === 0 ? 'hundred' : m < 10 ? `oh ${m}` : m}`;
+  const say12 = `${timeWords(h12, m)} ${am ? 'A M' : 'P M'}`;
   if (Math.random() < 0.5) {
+    let rule;
+    if (h === 0) rule = ['In 24-hour time, the day starts at midnight with hour zero.', '12 A M is just after midnight, so the hour is written 0 0.'];
+    else if (am) rule = ['A M means the morning, before noon.', 'Morning hours stay the same in 24-hour time, with a zero in front if needed.'];
+    else if (h === 12) rule = ['12 P M is noon, the middle of the day.', 'Noon stays 12 in 24-hour time.'];
+    else rule = ['P M means after noon.', `For P M times, add 12 to the hour. So add 12 to ${h12}.`];
     return {
+      explain: [...rule, 'The minutes stay just the same.', 'Which one shows that time?'],
+      explainAnswer: `It’s ${say24}.`,
       prompt: `${t12} in 24-hour time is…`,
       correct: t24,
       answerType: 'choice',
@@ -1123,7 +1740,14 @@ function clock24Problem() {
     };
   }
   const other = `${h12}:${pad(m)} ${ampm === 'a.m.' ? 'p.m.' : 'a.m.'}`;
+  let rule;
+  if (h === 0) rule = ['Hour zero is midnight.', 'On a 12-hour clock, midnight is 12 A M.'];
+  else if (am) rule = [`The hour is ${h}, which is less than 12.`, 'So it’s the morning, A M, and the hour stays the same.'];
+  else if (h === 12) rule = ['Hour 12 is noon, the middle of the day.', 'So it’s P M, and the hour stays 12.'];
+  else rule = [`The hour is ${h}, which is more than 12.`, `So it’s P M, after noon. Take 12 away from ${h} to get the hour.`];
   return {
+    explain: [...rule, 'The minutes stay just the same.', 'Which one shows that time?'],
+    explainAnswer: `It’s ${say12}.`,
     prompt: `${t24} is…`,
     correct: t12,
     answerType: 'choice',
@@ -1144,6 +1768,14 @@ function perimeterProblem(tier, grade) {
     const cw = randInt(2, w - 3);
     const ch = randInt(2, h - 3);
     return {
+      explain: [
+        'Perimeter is the distance all the way around the edge.',
+        'This shape has a corner cut out of it.',
+        'Here’s a trick: push the cut-out sides back out, and you get a whole rectangle with the same perimeter.',
+        `So it’s just like a rectangle ${w} across and ${h} up.`,
+        `${w} plus ${h} is ${w + h}. That gets you halfway around.`,
+        `So what is ${w + h} plus ${w + h}?`,
+      ],
       visual: { kind: 'lshape', w, h, cw, ch },
       prompt: 'What is the perimeter? (cm)',
       correct: 2 * (w + h),
@@ -1159,6 +1791,13 @@ function perimeterProblem(tier, grade) {
   if (Math.random() < 0.3) {
     const p = 2 * (w + h);
     return {
+      explain: [
+        'The perimeter goes all the way around: 2 sides across and 2 sides going up.',
+        'So half the perimeter is the side across the bottom plus the side going up.',
+        `Half of ${p} is ${w + h}.`,
+        `The side across is ${w} centimetres.`,
+        `So what is ${w + h} take away ${w}?`,
+      ],
       visual: { kind: 'rect', w, h, hideH: true },
       prompt: `The perimeter is ${p} cm. What is the missing side? (cm)`,
       correct: h,
@@ -1170,6 +1809,12 @@ function perimeterProblem(tier, grade) {
     };
   }
   return {
+    explain: [
+      'Perimeter means the distance all the way around.',
+      `Trace around the rectangle: it has 2 sides of ${w} and 2 sides of ${h}.`,
+      `${w} plus ${h} is ${w + h}. That gets you halfway around.`,
+      `So what is ${w + h} plus ${w + h}?`,
+    ],
     visual: { kind: 'rect', w, h },
     prompt: 'What is the perimeter? (cm)',
     correct: 2 * (w + h),
@@ -1193,8 +1838,16 @@ function areaProblem(tier, grade) {
     const y0 = randInt(0, rows - h);
     for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) cells.push(y * cols + x);
     // Sometimes a bump on top, so it isn't always a rectangle.
-    if (Math.random() < 0.5 && y0 > 0) cells.push((y0 - 1) * cols + x0);
+    const bump = Math.random() < 0.5 && y0 > 0;
+    if (bump) cells.push((y0 - 1) * cols + x0);
     return {
+      explain: [
+        'Area is how many squares cover the shape.',
+        `Look at the big shaded block. It has ${h} rows, with ${w} squares in each row.`,
+        `Skip count by ${w}s, one row at a time.`,
+        ...(bump ? ['Don’t forget the 1 square sticking out on top!'] : []),
+        'So how many squares are shaded in all?',
+      ],
       visual: { kind: 'grid', cols, rows, cells },
       prompt: 'What is the area? (square units)',
       correct: cells.length,
@@ -1212,6 +1865,12 @@ function areaProblem(tier, grade) {
     const ch = randInt(2, h - 3);
     const area = w * h - cw * ch;
     return {
+      explain: [
+        `Imagine the corner wasn’t cut out. Then it’s a big rectangle, ${w} by ${h}.`,
+        `${w} times ${h} is ${w * h} square centimetres.`,
+        `The cut-out corner is ${cw} by ${ch}. That’s ${cw * ch} square centimetres.`,
+        `So what is ${w * h} take away ${cw * ch}?`,
+      ],
       visual: { kind: 'lshape', w, h, cw, ch },
       prompt: 'What is the area? (cm²)',
       correct: area,
@@ -1225,6 +1884,12 @@ function areaProblem(tier, grade) {
   const w = randInt(3, 12);
   const h = randInt(2, 9);
   return {
+    explain: [
+      'Area means how many squares, each 1 centimetre wide, fit inside.',
+      `Picture ${h} rows, with ${w} squares in each row.`,
+      `That’s ${h} groups of ${w}.`,
+      `So what is ${h} times ${w}?`,
+    ],
     visual: { kind: 'rect', w, h },
     prompt: 'What is the area? (cm²)',
     correct: w * h,
@@ -1244,7 +1909,19 @@ function anglesProblem(tier, grade) {
   if (grade === '3') {
     if (Math.random() < 0.3) {
       const [shape, n] = pick([['square', 4], ['rectangle', 4], ['right triangle', 1], ['equilateral triangle', 0]]);
+      const tip = {
+        square: 'A square has 4 corners. Check each one. Is it a square corner?',
+        rectangle: 'A rectangle has 4 corners. Check each one. Is it a square corner?',
+        'right triangle': 'The name is a big clue: it’s called a right triangle because of its corner.',
+        'equilateral triangle': 'All 3 corners of this triangle are the same, and they are pointy, not square.',
+      }[shape];
       return {
+        explain: [
+          'A right angle is a square corner, like the corner of a book.',
+          `Picture a ${shape}, and look at each corner.`,
+          tip,
+          `So how many right angles does a ${shape} have?`,
+        ],
         prompt: `How many right angles does a ${shape} have?`,
         correct: n,
         answerType: 'numeric',
@@ -1256,6 +1933,13 @@ function anglesProblem(tier, grade) {
     const deg = pick([30, 45, 60, 90, 90, 120, 135, 150]);
     const correct = deg < 90 ? 'Smaller' : deg > 90 ? 'Bigger' : 'Right angle';
     return {
+      explain: [
+        'A right angle is a square corner, like the corner of a piece of paper.',
+        'Imagine fitting a paper corner into this angle.',
+        'If the angle is narrower than the paper, it’s smaller. If it opens wider, it’s bigger.',
+        'Which one do you think it is?',
+      ],
+      explainAnswer: deg === 90 ? 'It’s a right angle!' : `It’s ${correct.toLowerCase()} than a right angle.`,
       visual: { kind: 'angle', deg },
       prompt: 'Compare this angle with a right angle.',
       correct,
@@ -1271,7 +1955,14 @@ function anglesProblem(tier, grade) {
   const kind = pick(['turn', 'compass', 'missing', 'missing']);
   if (kind === 'turn') {
     const [name, deg] = pick([['a quarter turn', 90], ['a half turn', 180], ['a three-quarter turn', 270], ['a full turn', 360]]);
+    const steps = {
+      90: ['A full turn, all the way around, is 360 degrees.', 'A quarter turn is 1 of 4 equal parts of a full turn.', 'So what is 360 divided by 4?'],
+      180: ['A quarter turn makes a square corner. That’s 90 degrees.', 'A half turn is 2 quarter turns.', 'So what is 90 plus 90?'],
+      270: ['A quarter turn makes a square corner. That’s 90 degrees.', 'Three quarters means 3 quarter turns.', 'So what is 90 plus 90 plus 90?'],
+      360: ['Picture spinning all the way around until you face the front again.', 'A quarter turn is 90 degrees, and a full turn is 4 quarter turns.', 'So what is 4 times 90?'],
+    }[deg];
     return {
+      explain: steps,
       prompt: `How many degrees is ${name}?`,
       correct: deg,
       answerType: 'numeric',
@@ -1287,6 +1978,14 @@ function anglesProblem(tier, grade) {
     const clockwise = Math.random() < 0.5;
     const to = (from + (clockwise ? steps : -steps) + 8) % 8;
     return {
+      explain: [
+        clockwise ? 'Clockwise means turning the same way a clock’s hands go.' : 'Anticlockwise means turning the opposite way to a clock’s hands.',
+        'On the compass, each step to the next direction is 45 degrees.',
+        `So ${steps * 45} degrees is ${plural(steps, 'step')}.`,
+        `Put your finger on ${COMPASS[from]} and move ${plural(steps, 'step')} ${clockwise ? 'clockwise' : 'anticlockwise'}.`,
+        'Which way are you facing now?',
+      ],
+      explainAnswer: `You face ${COMPASS[to]} now!`,
       visual: { kind: 'compass' },
       prompt: `You face ${COMPASS[from]} and turn ${steps * 45}° ${clockwise ? 'clockwise' : 'anticlockwise'}. Which way do you face now?`,
       correct: COMPASS[to],
@@ -1302,6 +2001,12 @@ function anglesProblem(tier, grade) {
   const total = pick([90, 180]);
   const known = randInt(2, total / 5 - 2) * 5;
   return {
+    explain: [
+      total === 90 ? 'The two angles fit together to make a right angle. That’s 90 degrees.' : 'The two angles fit together to make a straight line. That’s 180 degrees.',
+      `One angle is ${known} degrees.`,
+      `The other angle is what’s left. Count up from ${known} to ${total}.`,
+      `So what is ${total} take away ${known}?`,
+    ],
     visual: { kind: 'angleSplit', total, known },
     prompt: `What is the missing angle? (°)`,
     correct: total - known,
@@ -1317,6 +2022,14 @@ function anglesProblem(tier, grade) {
 
 const POLYGON_NAMES = { 3: 'triangle', 4: 'square', 5: 'pentagon', 6: 'hexagon', 8: 'octagon' };
 const SOLIDS = [['cube', 6], ['cuboid', 6], ['square pyramid', 5], ['triangular prism', 5], ['cylinder', 2], ['cone', 1]];
+const SOLID_TIPS = {
+  cube: ['Think of a dice.', 'Count the top, the bottom, and the sides all the way around.'],
+  cuboid: ['Think of a cereal box.', 'Count the top, the bottom, and the sides all the way around.'],
+  'square pyramid': ['It has a square on the bottom.', 'Then triangles lean in from each side of the square, up to the point.'],
+  'triangular prism': ['It has a triangle at each end, like a tent.', 'Then rectangles go around the sides, one for each side of the triangle.'],
+  cylinder: ['Think of a can of soup.', 'The top and the bottom are flat. The side all around is curved.'],
+  cone: ['Think of an ice cream cone, turned upside down.', 'The round bottom is flat. The rest is curved up to a point.'],
+};
 
 // Sides and corners (P1), 2D and 3D shapes (P2, Beast Academy 1A and 3A).
 function shapeSidesProblem(tier, grade) {
@@ -1324,6 +2037,11 @@ function shapeSidesProblem(tier, grade) {
   if (kind === 'solid') {
     const [solid, faces] = pick(SOLIDS);
     return {
+      explain: [
+        'A flat face is a flat side you could stand the shape on.',
+        ...SOLID_TIPS[solid],
+        `So how many flat faces does a ${solid} have?`,
+      ],
       prompt: `How many flat faces does a ${solid} have?`,
       correct: faces,
       answerType: 'numeric',
@@ -1336,6 +2054,13 @@ function shapeSidesProblem(tier, grade) {
   if (kind === 'name') {
     const correct = POLYGON_NAMES[n];
     return {
+      explain: [
+        'First, count the sides with your finger, all the way around.',
+        'A triangle has 3 sides, and a square has 4.',
+        'A pentagon has 5, a hexagon has 6, and an octagon has 8.',
+        'Which name matches the number of sides you counted?',
+      ],
+      explainAnswer: `It’s ${correct === 'octagon' ? 'an' : 'a'} ${correct}! It has ${n} sides.`,
       visual: { kind: 'polygon', sides: n },
       prompt: 'What is this shape called?',
       correct,
@@ -1348,7 +2073,14 @@ function shapeSidesProblem(tier, grade) {
     };
   }
   const corners = Math.random() < 0.4;
+  const what = corners ? 'corner' : 'side';
   return {
+    explain: [
+      corners ? 'A corner is a pointy spot where two sides meet.' : 'A side is a straight line on the edge of the shape.',
+      `Put your finger on one ${what} and count it as 1.`,
+      `Then go around, touching each ${what} as you count, until you get back to the start.`,
+      `How many ${what}s did you count?`,
+    ],
     visual: { kind: 'polygon', sides: n },
     prompt: `How many ${corners ? 'corners' : 'sides'} does it have?`,
     correct: n,
@@ -1359,6 +2091,18 @@ function shapeSidesProblem(tier, grade) {
   };
 }
 
+const QUAD_STEPS = {
+  square: ['It has 4 equal sides AND 4 right angles.', 'A rhombus has equal sides, but no square corners.', 'A rectangle has square corners, but not all its sides are equal.', 'Which shape has both?'],
+  rectangle: ['Right angles are square corners.', 'A square has 4 square corners too, but all its sides are equal.', 'This shape has long sides and short sides.', 'Which shape is that?'],
+  rhombus: ['Its sides are all equal, like a square.', 'But it has no right angles, so its corners are slanted.', 'It looks like a square that got pushed over.', 'Which shape is that?'],
+  trapezoid: ['Parallel sides go the same way and never meet, like train tracks.', 'Lots of four-sided shapes have 2 pairs of parallel sides.', 'This one has only 1 pair.', 'Which shape is that?'],
+  parallelogram: ['It has 2 pairs of parallel sides, like two sets of train tracks.', 'But it has no right angles, so it leans over.', 'And its sides aren’t all equal, so it isn’t a rhombus.', 'Which shape is that?'],
+};
+const TRIANGLE_STEPS = {
+  equilateral: ['Equi means equal, and lateral means side.', 'Which triangle name means equal sides?'],
+  isosceles: ['An equilateral triangle has all 3 sides equal.', 'A right triangle has a square corner.', 'The triangle with just 2 equal sides has its own special name.', 'Which one do you think it is?'],
+  right: ['A right angle is a square corner, like the corner of a book.', 'One kind of triangle is named after that corner.', 'Which one do you think it is?'],
+};
 const QUADS = [
   ['square', 'I have 4 equal sides and 4 right angles.'],
   ['rectangle', 'I have 4 right angles, and my long sides are longer than my short sides.'],
@@ -1377,6 +2121,8 @@ function shapeClassProblem() {
   if (Math.random() < 0.65) {
     const [correct, clue] = pick(QUADS);
     return {
+      explain: ['Let’s listen to the clues one at a time.', ...QUAD_STEPS[correct]],
+      explainAnswer: `It’s a ${correct}!`,
       visual: { kind: 'quad', shape: Math.random() < 0.5 ? correct : null },
       prompt: clue,
       correct,
@@ -1390,6 +2136,8 @@ function shapeClassProblem() {
   }
   const [correct, clue] = pick(TRIANGLES);
   return {
+    explain: ['Let’s think about what the triangle names mean.', ...TRIANGLE_STEPS[correct]],
+    explainAnswer: `It’s ${correct === 'right' ? 'a' : 'an'} ${correct} triangle!`,
     visual: { kind: 'triangle', type: correct },
     prompt: `${clue} What kind of triangle am I?`,
     correct,
@@ -1406,6 +2154,17 @@ function shapeClassProblem() {
 function linesProblem() {
   const correct = pick(['Parallel', 'Perpendicular', 'Neither']);
   return {
+    explain: [
+      'Parallel lines go the same way, like train tracks. They never meet.',
+      'Perpendicular lines cross to make a square corner, like a plus sign.',
+      'If they meet, but not at a square corner, the answer is neither.',
+      'Look at the two lines. Which one do you think it is?',
+    ],
+    explainAnswer: {
+      Parallel: 'They’re parallel. They never meet!',
+      Perpendicular: 'They’re perpendicular. They make a square corner!',
+      Neither: 'It’s neither. They meet, but not at a square corner.',
+    }[correct],
     visual: { kind: 'lines', type: correct.toLowerCase(), rot: randInt(-40, 40) },
     prompt: 'These two lines are…',
     correct,
@@ -1437,7 +2196,20 @@ const SYMMETRY = [
 // Lines of symmetry (P4).
 function symmetryProblem() {
   const [name, n, visual] = pick(SYMMETRY);
+  const tip = {
+    square: 'Try folding it top to bottom, side to side, and corner to corner.',
+    'regular pentagon': 'Try a fold from each corner to the middle of the side across from it.',
+    'regular hexagon': 'Try folds from corner to corner, and from the middle of one side to the middle of the opposite side.',
+    'equilateral triangle': 'Try a fold from each corner to the middle of the side across from it.',
+    rectangle: 'Try folding it top to bottom, side to side, and corner to corner. Which folds really match?',
+    parallelogram: 'Try every fold you can think of. Do the two halves ever match?',
+  }[name] || `Picture the ${name}. Try a fold straight down the middle, then straight across.`;
   return {
+    explain: [
+      'A line of symmetry folds a shape into two halves that match exactly.',
+      tip,
+      `How many ways can you fold the ${name} so the halves match?`,
+    ],
     visual,
     prompt: `How many lines of symmetry does this ${name} have?`,
     correct: n,
@@ -1450,6 +2222,7 @@ function symmetryProblem() {
 }
 
 const GRID_THINGS = ['🍎', '🐱', '⭐', '🚗', '🎈', '🌸', '🐟', '🍩', '⚽', '🦋', '🍓', '🐢'];
+const GRID_NAMES = { '🍎': 'apple', '🐱': 'cat', '⭐': 'star', '🚗': 'car', '🎈': 'balloon', '🌸': 'flower', '🐟': 'fish', '🍩': 'donut', '⚽': 'ball', '🦋': 'butterfly', '🍓': 'strawberry', '🐢': 'turtle' };
 
 // Rows and columns (Beast Academy 1D: position).
 function positionProblem() {
@@ -1460,6 +2233,13 @@ function positionProblem() {
   const c = randInt(1, cols);
   const correct = items[(r - 1) * cols + (c - 1)];
   return {
+    explain: [
+      'Rows go across, side by side. Columns go up and down.',
+      `Start at the top row and count down to row ${r}.`,
+      `Now stay in that row, and count from the left to column ${c}.`,
+      'What’s in that box?',
+    ],
+    explainAnswer: `It’s the ${GRID_NAMES[correct]}!`,
     visual: { kind: 'table', rows, cols, items },
     prompt: `What is in row ${r}, column ${c}?`,
     correct,
@@ -1481,14 +2261,31 @@ const GRAPH_SETS = [
   { title: 'Ways to school', items: [['🚌', 'bus'], ['🚗', 'car'], ['🚶', 'walk'], ['🚲', 'bike']] },
 ];
 
-function graphQuestion(rows, unitWord) {
+// `how` says how the graph is drawn, for the spoken walkthrough:
+// { per } for a picture graph, { step } for a bar graph.
+function graphQuestion(rows, unitWord, how) {
   const kind = pick(['count', 'more', 'most', 'total']);
   const [a, b] = shuffle(rows).slice(0, 2);
+  const bars = how.step !== undefined;
+  const read = (row) => {
+    if (bars) {
+      const half = row.value % how.step !== 0 ? ' It may stop halfway between two lines.' : '';
+      return `Find the bar for ${row.name}. Slide your finger from its top across to the numbers.${half}`;
+    }
+    return how.per > 1
+      ? `Find the row for ${row.name}. Each picture stands for ${how.per}, so count by ${how.per}s.`
+      : `Find the row for ${row.name}, and count the pictures.`;
+  };
+  const shows = (row) => `The ${bars ? 'bar' : 'row'} for ${row.name} shows ${row.value}.`;
   if (kind === 'most') {
     const most = Math.random() < 0.5;
     const best = rows.reduce((x, y) => ((most ? y.value > x.value : y.value < x.value) ? y : x));
-    if (rows.filter((r) => r.value === best.value).length > 1) return graphQuestion(rows, unitWord);
+    if (rows.filter((r) => r.value === best.value).length > 1) return graphQuestion(rows, unitWord, how);
     return {
+      explain: bars
+        ? ['Look at all the bars.', `The ${most ? 'tallest' : 'shortest'} bar shows the ${most ? 'most' : 'fewest'}.`, 'Which one do you think it is?']
+        : ['Look at all the rows.', `The row with the ${most ? 'most' : 'fewest'} pictures has the ${most ? 'most' : 'fewest'}.`, 'Which one do you think it is?'],
+      explainAnswer: `It’s ${best.name}, with ${best.value}.`,
       prompt: `Which has the ${most ? 'most' : 'fewest'}?`,
       correct: best.emoji,
       answerType: 'choice',
@@ -1500,7 +2297,14 @@ function graphQuestion(rows, unitWord) {
   }
   if (kind === 'more' && a.value !== b.value) {
     const [hi, lo] = a.value > b.value ? [a, b] : [b, a];
+    const clash = lo.value === hi.value - lo.value;
     return {
+      explain: [
+        read(hi),
+        shows(hi),
+        read(lo),
+        clash ? `Now count up from that number to ${hi.value}. How many did you count?` : `${shows(lo)} Now count up from ${lo.value} to ${hi.value}. How many did you count?`,
+      ],
       prompt: `How many more ${hi.emoji} than ${lo.emoji}?`,
       correct: hi.value - lo.value,
       answerType: 'numeric',
@@ -1510,6 +2314,7 @@ function graphQuestion(rows, unitWord) {
   }
   if (kind === 'total') {
     return {
+      explain: [read(a), shows(a), read(b), shows(b), `So what is ${a.value} plus ${b.value}?`],
       prompt: `How many ${a.emoji} and ${b.emoji} altogether?`,
       correct: a.value + b.value,
       answerType: 'numeric',
@@ -1518,6 +2323,7 @@ function graphQuestion(rows, unitWord) {
     };
   }
   return {
+    explain: [`Let’s read the ${bars ? 'bar graph' : 'picture graph'} together.`, read(a), 'What number is that?'],
     prompt: `How many ${a.emoji}?`,
     correct: a.value,
     answerType: 'numeric',
@@ -1535,7 +2341,7 @@ function pictureGraphProblem(tier, grade) {
     visual: { kind: 'pictograph', title: set.title, rows, per },
     questionTitle: 'Picture graph',
     hint: per > 1 ? `Each picture stands for ${per}.` : undefined,
-    ...graphQuestion(rows, 'are there'),
+    ...graphQuestion(rows, 'are there', { per }),
   };
 }
 
@@ -1547,7 +2353,7 @@ function barGraphProblem(tier, grade) {
   return {
     visual: { kind: 'bars', title: set.title, rows, step },
     questionTitle: 'Bar graph',
-    ...graphQuestion(rows, 'are there'),
+    ...graphQuestion(rows, 'are there', { step }),
   };
 }
 
@@ -1562,6 +2368,14 @@ function logicProblem() {
   const askMost = Math.random() < 0.5;
   const correct = askMost ? people[0] : people[2];
   return {
+    explain: [
+      'Let’s put them in order, one clue at a time.',
+      `${people[0]} is ${quality} than ${people[1]}.`,
+      `And ${people[1]} is ${quality} than ${people[2]}.`,
+      `So ${people[1]} is in the middle.`,
+      `Who is the ${askMost ? most : least}?`,
+    ],
+    explainAnswer: `So ${correct} is the ${askMost ? most : least}!`,
     prompt: `${clues.join(' ')} Who is the ${askMost ? most : least}?`,
     correct,
     answerType: 'choice',
@@ -1581,6 +2395,12 @@ function countingProblem() {
     const shirts = randInt(2, 6);
     const pants = randInt(2, 5);
     return {
+      explain: [
+        `Pick just one shirt. It can go with each of the ${pants} pairs of shorts.`,
+        `So every shirt makes ${pants} outfits.`,
+        `There are ${shirts} shirts, so that’s ${shirts} groups of ${pants}.`,
+        `What is ${shirts} times ${pants}?`,
+      ],
       prompt: `You have ${shirts} shirts and ${pants} pairs of shorts. How many different outfits can you make?`,
       correct: shirts * pants,
       answerType: 'numeric',
@@ -1594,6 +2414,13 @@ function countingProblem() {
     const a = randInt(5, 40);
     const b = a + randInt(8, 40);
     return {
+      explain: [
+        'Here’s a trick: take away, then add 1.',
+        'Try a small one first. From 1 to 3 is 1, 2, 3. That’s 3 numbers.',
+        'But 3 take away 1 is only 2. Taking away misses one end!',
+        `So ${b} take away ${a} is ${b - a}, and we add 1 more for the end we missed.`,
+        `So what is ${b - a} plus 1?`,
+      ],
       prompt: `How many numbers are there from ${a} to ${b}, counting both?`,
       correct: b - a + 1,
       answerType: 'numeric',
@@ -1604,7 +2431,14 @@ function countingProblem() {
     };
   }
   const n = randInt(3, 6);
+  const shakes = Array.from({ length: n - 1 }, (_, i) => n - 1 - i);
   return {
+    explain: [
+      `The first friend shakes hands with the ${n - 1} others.`,
+      `The next friend already shook with the first, so only ${plural(n - 2, 'new handshake')}.`,
+      'Each friend after that has one fewer new handshake.',
+      `So what is ${shakes.join(' plus ')}?`,
+    ],
     prompt: `${n} friends meet. Each one shakes hands with every other friend once. How many handshakes?`,
     correct: (n * (n - 1)) / 2,
     answerType: 'numeric',
@@ -1624,10 +2458,17 @@ function probabilityProblem() {
   const bag = colors.map(([emoji, name], i) => ({ emoji, name, n: counts[i] }));
   const total = counts.reduce((s, n) => s + n, 0);
   const kind = pick(['likely', 'chance', 'words']);
+  const countAll = `Count each colour: ${bag.map((b) => `${b.n} ${b.name}`).join(', ')}.`;
   if (kind === 'likely') {
     const most = Math.random() < 0.5;
     const best = bag.reduce((x, y) => ((most ? y.n > x.n : y.n < x.n) ? y : x));
     return {
+      explain: [
+        `The colour with the ${most ? 'most' : 'fewest'} marbles is the ${most ? 'most' : 'least'} likely to come out.`,
+        countAll,
+        'Which colour do you think it is?',
+      ],
+      explainAnswer: `${cap(best.name)}! There ${best.n === 1 ? 'is' : 'are'} ${plural(best.n, `${best.name} marble`)}.`,
       visual: { kind: 'bag', bag },
       prompt: `You pick one marble without looking. Which colour is ${most ? 'most' : 'least'} likely?`,
       correct: best.emoji,
@@ -1642,6 +2483,13 @@ function probabilityProblem() {
   if (kind === 'chance') {
     const one = pick(bag);
     return {
+      explain: [
+        `First count all the marbles: ${counts.join(' plus ')} is ${total}.`,
+        `Now count just the ${one.name} ones.`,
+        `The chance is how many ${one.name} marbles out of all ${total}.`,
+        'Which fraction shows that?',
+      ],
+      explainAnswer: `It’s ${one.n} out of ${total}, or ${fracWords(one.n, total)}.`,
       visual: { kind: 'bag', bag },
       prompt: `What is the chance of picking ${one.emoji}?`,
       correct: `${one.n}/${total}`,
@@ -1659,7 +2507,21 @@ function probabilityProblem() {
     ['likely', () => `picking a marble that isn't ${bag.reduce((x, y) => (y.n < x.n ? y : x)).emoji}`],
     ['unlikely', () => `picking ${bag.reduce((x, y) => (y.n < x.n ? y : x)).emoji}`],
   ]);
+  const fewest = bag.reduce((x, y) => (y.n < x.n ? y : x));
+  const look = {
+    certain: 'Look in the bag. Is every single thing in there a marble?',
+    impossible: 'Look in the bag. Are there any black marbles at all?',
+    likely: `Count the marbles that aren’t ${fewest.name}. Is that most of them?`,
+    unlikely: `How many ${fewest.name} marbles are there? Is that a lot, or just a few?`,
+  }[word];
   return {
+    explain: [
+      'Impossible means it can never happen. Certain means it will always happen.',
+      'Likely means it will probably happen. Unlikely means it probably won’t.',
+      look,
+      'Which word fits best?',
+    ],
+    explainAnswer: `It’s ${word}.`,
     visual: { kind: 'bag', bag },
     prompt: `How likely is ${make()}?`,
     correct: word,
