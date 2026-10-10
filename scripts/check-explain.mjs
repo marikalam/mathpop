@@ -63,7 +63,7 @@ function check(id, problem) {
   // Giving the answer away before the child tries (only checked for
   // bigger numbers that aren't in the question itself).
   const ans = problem.correct;
-  const asked = `${problem.prompt || ''} ${problem.speech || ''} ${problem.text || ''}`;
+  const asked = `${problem.prompt || ''} ${problem.speech || ''} ${problem.text || ''} ${problem.a ?? ''} ${problem.b ?? ''} ${problem.numbers || ''}`;
   if (typeof ans === 'number' && Math.abs(ans) >= 11) {
     const words = [String(ans), ans.toLocaleString('en-US')];
     const re = new RegExp(`(^|[^0-9.,])(${words.map((w) => w.replace(/[.,]/g, '\\$&')).join('|')})(?![0-9]|[.,][0-9])`);

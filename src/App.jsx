@@ -12,6 +12,7 @@ import { TOPIC_ICONS, gradeSection, gradeSections, gradeTopics } from './curricu
 import TopicVisual from './TopicVisual.jsx';
 import { setStoryPlayer } from './storyNames.js';
 import AdditionHelp from './AdditionHelp.jsx';
+import ExplainPanel from './ExplainPanel.jsx';
 import PrintSheet from './PrintSheet.jsx';
 import { PREK_CONCEPTS, ShapeIcon } from './preK.jsx';
 import ProfileSwitcher from './ProfileSwitcher.jsx';
@@ -958,6 +959,7 @@ export default function App() {
     const correct = value === problem.correct;
     setChosen(value);
     setAnswerCorrect(correct);
+    setShowHelp(false);
     playFeedbackAndSpeak(correct, problem.speechAnswer ?? problem.correct);
     if (navigator.vibrate) navigator.vibrate(correct ? 20 : [20, 40, 20]);
 
@@ -1482,14 +1484,19 @@ export default function App() {
             <p className="screen-sub tap-to-hear">Tap the problem to hear it</p>
             {/* The make-a-ten help opens right here, under the problem (for
                 sums up to two digits, which the blocks can show). */}
-            {problem.op === 'add' && problem.type !== 'sentence' && problem.type !== 'skill' && problem.a < 100 && problem.b < 100 &&
-              (showHelp ? (
-                <AdditionHelp a={problem.a} b={problem.b} onClose={() => setShowHelp(false)} />
-              ) : (
-                <button className="help-btn" onClick={() => setShowHelp(true)}>
-                  🤔 Need help?
-                </button>
-              ))}
+            {/* "Show me how": talks this problem through out loud. For
+                adding up to two digits, the make-a-ten blocks show too. */}
+            {showHelp ? (
+              <ExplainPanel problem={problem} onClose={() => setShowHelp(false)}>
+                {problem.op === 'add' && problem.type !== 'sentence' && problem.type !== 'skill' && problem.a < 100 && problem.b < 100 && (
+                  <AdditionHelp a={problem.a} b={problem.b} bare />
+                )}
+              </ExplainPanel>
+            ) : (
+              <button className="help-btn help-btn-show" onClick={() => { unlockAudio(); setShowHelp(true); }}>
+                🙋 Show me how
+              </button>
+            )}
             {/* Printing doesn't work inside the iPhone app's web view, so the
                 worksheet is a website-only extra. */}
             {!IS_NATIVE && (
@@ -1649,12 +1656,20 @@ export default function App() {
             <div className="answer-card" style={{ background: ALL_META[problem.op].color }}>
               <div className="answer-equation">{problemAnswerText(problem)}</div>
             </div>
+            {!answerCorrect &&
+              (showHelp ? (
+                <ExplainPanel problem={problem} withAnswer onClose={() => setShowHelp(false)} />
+              ) : (
+                <button className="help-btn help-btn-show" onClick={() => { unlockAudio(); setShowHelp(true); }}>
+                  🙋 Show me how
+                </button>
+              ))}
             {answerCorrect ? (
               <button className="pill-btn-primary pill-btn-full" onClick={nextProblem}>
                 {roundIndex + 1 >= SESSION_ROUNDS ? 'Finish' : 'Next problem'} →
               </button>
             ) : (
-              <button className="pill-btn-primary pill-btn-full" onClick={() => { setChosen(null); setTypedAnswer(''); setView('question'); }}>
+              <button className="pill-btn-primary pill-btn-full" onClick={() => { setChosen(null); setTypedAnswer(''); setShowHelp(false); setView('question'); }}>
                 Try again →
               </button>
             )}
