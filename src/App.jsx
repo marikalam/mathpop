@@ -1076,13 +1076,11 @@ export default function App() {
     );
   }
 
-  const homeFits = view === 'home' && gradeSections(gradeInfo(level).id).length <= 6;
-
   return (
-    // The home page fits one phone screen, without scrolling, when the
-    // grade has up to six sections; with more it scrolls like other pages.
-    <div className={homeFits ? 'page page-fit' : 'page'}>
-      <div className={homeFits ? 'app home-fit' : 'app'}>
+    // Every grade's home page has the same layout; it scrolls like other
+    // pages when it's longer than the screen.
+    <div className="page">
+      <div className="app">
         {view === 'home' && (
           <>
             <AppHeader level={level} showBack={false} players={headerPlayers} />
@@ -1144,7 +1142,7 @@ export default function App() {
               {gradeSections(gradeInfo(level).id).map((section) => (
                 <button
                   key={section.id}
-                  className="home-card"
+                  className="home-card section-card"
                   style={{ '--card-from': section.from, '--card-to': section.to }}
                   onClick={() => {
                     setSectionId(section.id);
