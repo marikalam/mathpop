@@ -3330,3 +3330,32 @@ body {
   padding: 4px 0 0;
   animation: none;
 }
+
+/* Section cards look the same on every grade's home page, whether the
+   page fits on one screen (few sections) or scrolls (more). */
+.home-grid .section-card {
+  min-height: 78px;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  overflow: hidden;
+}
+.home-grid .section-card .home-card-icon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0;
+  border-radius: 13px;
+  font-size: 22px;
+}
+.home-grid .section-card .home-card-text {
+  min-width: 0;
+}
+.home-grid .section-card .home-card-title {
+  font-size: 16px;
+}
+.home-grid .section-card .home-card-sub {
+  display: block;
+  font-size: 12.5px;
+}
