@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { explainSteps } from './explain.js';
+import ExplainPicture from './ExplainPicture.jsx';
 import { speakSteps, stopSpeaking } from './sound.js';
 
 // "Show me how": MathPop talks the child through this problem out loud,
@@ -45,6 +46,7 @@ export default function ExplainPanel({ problem, withAnswer = false, onClose, chi
           ✕
         </button>
       </div>
+      <ExplainPicture problem={problem} reveal={withAnswer} />
       <ol className="explain-steps">
         {steps.map((step, i) => (
           <li
