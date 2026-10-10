@@ -3314,7 +3314,6 @@ body {
 .explain-step-now {
   background: rgba(245, 165, 36, 0.2);
   box-shadow: inset 4px 0 0 #f5a524;
-  transform: scale(1.02);
 }
 
 .explain-step-later {
@@ -3358,4 +3357,143 @@ body {
 .home-grid .section-card .home-card-sub {
   display: block;
   font-size: 12.5px;
+}
+
+/* The question screen scrolls instead of squeezing: nothing on it shrinks,
+   so "Show me how" never ends up under the answer buttons. */
+.app > * {
+  flex-shrink: 0;
+}
+.answer-area {
+  flex: 1 0 auto;
+}
+/* Three answers (like <, > and =) sit in one even row. */
+.options-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* ---------- Show me how: the picture (ExplainPicture.jsx) ---------- */
+.ep-figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 10px;
+  border-radius: 16px;
+  background: #f5f7fc;
+}
+.ep-compare {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+.ep-number {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.ep-number-label {
+  font: 700 26px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: var(--ink);
+}
+.ep-groups {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.ep-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 8px;
+  border-radius: 12px;
+}
+.ep-group-now {
+  background: rgba(245, 165, 36, 0.22);
+  box-shadow: inset 0 0 0 2px #f5a524;
+}
+.ep-group-items {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px;
+  max-width: 140px;
+}
+.ep-group-label {
+  font: 600 13px 'IBM Plex Sans', sans-serif;
+  color: var(--ink-dim, #6b7090);
+}
+.ep-flat {
+  width: 34px;
+  height: 34px;
+  border-radius: 3px;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.35) 1px, transparent 1px) !important;
+  background-size: 3.4px 3.4px;
+}
+.ep-rod {
+  width: 8px;
+  height: 52px;
+  border-radius: 2px;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.45) 1px, transparent 1px) !important;
+  background-size: 8px 5.2px;
+}
+/* Ones in rows of five, like a ten frame. */
+.ep-items-ones {
+  max-width: 72px;
+}
+.ep-cube {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+.ep-sign {
+  align-self: center;
+  font: 700 34px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #f5a524;
+}
+.ep-caption {
+  font: 600 15px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: var(--ink);
+  text-align: center;
+}
+.ep-array {
+  display: grid;
+  gap: 5px;
+  align-items: center;
+}
+.ep-row-count {
+  font: 600 12px 'IBM Plex Sans', sans-serif;
+  color: var(--ink-dim, #6b7090);
+  padding-right: 6px;
+  text-align: right;
+}
+.ep-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3b6fef;
+}
+.ep-share {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.ep-share-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  max-width: 76px;
+  padding: 8px;
+  border: 2px dashed #c3c8db;
+  border-radius: 14px;
 }

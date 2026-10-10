@@ -1604,7 +1604,7 @@ export default function App() {
                 </div>
               </div>
             ) : (
-              <div className="options-grid">
+              <div className={`options-grid${options.length === 3 ? ' options-grid-3' : ''}`}>
                 {options.map((value) => (
                   <button
                     key={value}
