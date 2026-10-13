@@ -154,8 +154,22 @@ async function pickVoiceForLang(lang) {
   // No mainland Mandarin voice installed — a Taiwan Mandarin voice still
   // reads the digits correctly.
   if (pool.length === 0 && target === 'zh-cn') pool = voices.filter((v) => norm(v.lang) === 'zh-tw');
+  // Any voice for the same language, e.g. Mexican Spanish for es-ES
+  // (Chinese is kept apart above: Cantonese and Mandarin differ).
+  const base = target.split('-')[0];
+  if (pool.length === 0 && base !== 'zh') pool = voices.filter((v) => norm(v.lang).split('-')[0] === base);
   if (pool.length === 0) return null;
   return [...pool].sort((a, b) => scoreVoiceQuality(b) - scoreVoiceQuality(a))[0];
+}
+
+// Which of these languages (BCP 47 tags) this device can actually say.
+// English always works (MathPop's own voice). If the device lists no
+// voices at all, we can't tell, so all of them are kept.
+export async function languagesWithVoices(langs) {
+  const voices = await loadVoices();
+  if (voices.length === 0) return langs;
+  const found = await Promise.all(langs.map((l) => (l.startsWith('en') ? true : pickVoiceForLang(l).then(Boolean))));
+  return langs.filter((_, i) => found[i]);
 }
 
 function scoreVoiceQuality(voice) {

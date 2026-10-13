@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import LevelSwitcher from './LevelSwitcher.jsx';
 import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
-import { getVoiceQuality, playFeedbackAndSpeak, prewarmVoices, speakInLanguage, speakProblem, speakResults, unlockAudio } from './sound.js';
+import { getVoiceQuality, languagesWithVoices, playFeedbackAndSpeak, prewarmVoices, speakInLanguage, speakProblem, speakResults, unlockAudio } from './sound.js';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
 import { loadDigitModel } from './digitModel.js';
@@ -61,30 +61,35 @@ const EXPLORE_SESSION_TAPS = 20;
 const EXPLORE_SESSION_KEY = 'mathpop-baby-session-v1';
 const EXPLORE_NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 // `say` is what the voice is given (kana for Japanese so 4 and 7 come out
-// as よん/なな rather than し/しち); `show` is the small label under the digit.
+// as よん/なな rather than し/しち); `show` (or `say`) is the small word
+// under the digit; `name` is the language in English, under its own name.
+// Each is read by the phone's own voice for that language (English uses
+// MathPop's built-in voice); languages with no voice on the device are
+// hidden (exploreLanguagesWithVoices).
 const EXPLORE_LANGUAGES = [
-  { key: 'en', label: 'English', lang: 'en-US' },
-  {
-    key: 'ja',
-    label: '日本語',
-    lang: 'ja-JP',
-    say: ['ゼロ', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', 'なな', 'はち', 'きゅう', 'じゅう'],
-    show: ['ゼロ', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'],
-  },
-  {
-    key: 'yue',
-    label: '廣東話',
-    lang: 'zh-HK',
-    say: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'],
-    show: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'],
-  },
-  {
-    key: 'zh',
-    label: '普通话',
-    lang: 'zh-CN',
-    say: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'],
-    show: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'],
-  },
+  { key: 'en', label: 'English', name: 'English', lang: 'en-US', say: ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'] },
+  { key: 'es', label: 'Español', name: 'Spanish', lang: 'es-ES', say: ['cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez'] },
+  { key: 'fr', label: 'Français', name: 'French', lang: 'fr-FR', say: ['zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix'] },
+  { key: 'de', label: 'Deutsch', name: 'German', lang: 'de-DE', say: ['null', 'eins', 'zwei', 'drei', 'vier', 'fünf', 'sechs', 'sieben', 'acht', 'neun', 'zehn'] },
+  { key: 'it', label: 'Italiano', name: 'Italian', lang: 'it-IT', say: ['zero', 'uno', 'due', 'tre', 'quattro', 'cinque', 'sei', 'sette', 'otto', 'nove', 'dieci'] },
+  { key: 'pt', label: 'Português', name: 'Portuguese', lang: 'pt-BR', say: ['zero', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez'] },
+  { key: 'ja', label: '日本語', name: 'Japanese', lang: 'ja-JP', say: ['ゼロ', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', 'なな', 'はち', 'きゅう', 'じゅう'], show: ['ゼロ', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'] },
+  { key: 'yue', label: '廣東話', name: 'Cantonese', lang: 'zh-HK', say: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'] },
+  { key: 'zh', label: '普通话', name: 'Mandarin', lang: 'zh-CN', say: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'] },
+  { key: 'ko', label: '한국어', name: 'Korean', lang: 'ko-KR', say: ['영', '하나', '둘', '셋', '넷', '다섯', '여섯', '일곱', '여덟', '아홉', '열'] },
+  { key: 'vi', label: 'Tiếng Việt', name: 'Vietnamese', lang: 'vi-VN', say: ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín', 'mười'] },
+  { key: 'hi', label: 'हिन्दी', name: 'Hindi', lang: 'hi-IN', say: ['शून्य', 'एक', 'दो', 'तीन', 'चार', 'पाँच', 'छह', 'सात', 'आठ', 'नौ', 'दस'] },
+  { key: 'ar', label: 'العربية', name: 'Arabic', lang: 'ar-SA', say: ['صفر', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة', 'عشرة'] },
+  { key: 'he', label: 'עברית', name: 'Hebrew', lang: 'he-IL', say: ['אפס', 'אחת', 'שתיים', 'שלוש', 'ארבע', 'חמש', 'שש', 'שבע', 'שמונה', 'תשע', 'עשר'] },
+  { key: 'ru', label: 'Русский', name: 'Russian', lang: 'ru-RU', say: ['ноль', 'один', 'два', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять', 'десять'] },
+  { key: 'uk', label: 'Українська', name: 'Ukrainian', lang: 'uk-UA', say: ['нуль', 'один', 'два', 'три', 'чотири', 'п\'ять', 'шість', 'сім', 'вісім', 'дев\'ять', 'десять'] },
+  { key: 'pl', label: 'Polski', name: 'Polish', lang: 'pl-PL', say: ['zero', 'jeden', 'dwa', 'trzy', 'cztery', 'pięć', 'sześć', 'siedem', 'osiem', 'dziewięć', 'dziesięć'] },
+  { key: 'nl', label: 'Nederlands', name: 'Dutch', lang: 'nl-NL', say: ['nul', 'een', 'twee', 'drie', 'vier', 'vijf', 'zes', 'zeven', 'acht', 'negen', 'tien'] },
+  { key: 'sv', label: 'Svenska', name: 'Swedish', lang: 'sv-SE', say: ['noll', 'ett', 'två', 'tre', 'fyra', 'fem', 'sex', 'sju', 'åtta', 'nio', 'tio'] },
+  { key: 'el', label: 'Ελληνικά', name: 'Greek', lang: 'el-GR', say: ['μηδέν', 'ένα', 'δύο', 'τρία', 'τέσσερα', 'πέντε', 'έξι', 'επτά', 'οκτώ', 'εννέα', 'δέκα'] },
+  { key: 'tr', label: 'Türkçe', name: 'Turkish', lang: 'tr-TR', say: ['sıfır', 'bir', 'iki', 'üç', 'dört', 'beş', 'altı', 'yedi', 'sekiz', 'dokuz', 'on'] },
+  { key: 'id', label: 'Indonesia', name: 'Indonesian', lang: 'id-ID', say: ['nol', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh'] },
+  { key: 'th', label: 'ไทย', name: 'Thai', lang: 'th-TH', say: ['ศูนย์', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า', 'สิบ'] },
 ];
 const EXPLORE_COLORS = ['#3B6FEF', '#2FAE6B', '#8E4FD6', '#E0793A', '#14B8A6', '#EF4444', '#F5A623', '#EC4899', '#4E8FF7', '#A855F7', '#0EA5E9'];
 
@@ -898,11 +903,27 @@ export default function App() {
     setView(returnView);
   }
 
-  const exploreLang = EXPLORE_LANGUAGES.find((l) => l.key === settings.exploreLang) || EXPLORE_LANGUAGES[0];
+  // Only the languages this device has a voice for.
+  const [exploreLanguages, setExploreLanguages] = useState(EXPLORE_LANGUAGES);
+  useEffect(() => {
+    if (view !== 'explore') return;
+    let live = true;
+    languagesWithVoices(EXPLORE_LANGUAGES.map((l) => l.lang)).then((ok) => {
+      if (live) setExploreLanguages(EXPLORE_LANGUAGES.filter((l) => ok.includes(l.lang)));
+    });
+    return () => {
+      live = false;
+    };
+  }, [view]);
+  const exploreLang = exploreLanguages.find((l) => l.key === settings.exploreLang) || EXPLORE_LANGUAGES[0];
+  const exploreLangRow = useRef(null);
+  useEffect(() => {
+    exploreLangRow.current?.querySelector('[aria-checked="true"]')?.scrollIntoView?.({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  }, [view, exploreLanguages, settings.exploreLang]);
 
   function exploreTap(n) {
     if (exploreSession.taps >= EXPLORE_SESSION_TAPS) return;
-    speakInLanguage(exploreLang.say ? exploreLang.say[n] : String(n), exploreLang.lang);
+    speakInLanguage(exploreLang.say[n], exploreLang.lang);
     setExplorePlayed(n);
     if (navigator.vibrate) navigator.vibrate(15);
     setExploreSession((prev) => {
@@ -923,6 +944,10 @@ export default function App() {
   }
 
   function updateExploreLang(key) {
+    // Say the language's name in that language, so kids who can't read
+    // hear which one they picked.
+    const picked = EXPLORE_LANGUAGES.find((l) => l.key === key);
+    if (picked) speakInLanguage(picked.label, picked.lang);
     const newSettings = { ...settings, exploreLang: key };
     setSettings(newSettings);
     saveSettings(newSettings);
@@ -1194,8 +1219,8 @@ export default function App() {
               </div>
             ) : (
               <>
-                <div className="explore-lang-row" role="radiogroup" aria-label="Language">
-                  {EXPLORE_LANGUAGES.map((l) => (
+                <div className="explore-lang-row" role="radiogroup" aria-label="Language" ref={exploreLangRow}>
+                  {exploreLanguages.map((l) => (
                     <button
                       key={l.key}
                       role="radio"
@@ -1203,7 +1228,8 @@ export default function App() {
                       className={`explore-lang-btn${l.key === exploreLang.key ? ' explore-lang-btn-active' : ''}`}
                       onClick={() => updateExploreLang(l.key)}
                     >
-                      {l.label}
+                      <span className="explore-lang-label">{l.label}</span>
+                      {l.name !== l.label && <span className="explore-lang-name">{l.name}</span>}
                     </button>
                   ))}
                 </div>
@@ -1220,7 +1246,10 @@ export default function App() {
                       onClick={() => exploreTap(n)}
                     >
                       <span className="explore-digit">{n}</span>
-                      {exploreLang.show && <span className="explore-word">{exploreLang.show[n]}</span>}
+                      {(() => {
+                        const word = (exploreLang.show || exploreLang.say)[n];
+                        return <span className={`explore-word${word.length > 5 ? ' explore-word-long' : ''}`}>{word}</span>;
+                      })()}
                     </button>
                   ))}
                 </div>
