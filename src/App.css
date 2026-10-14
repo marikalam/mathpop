@@ -3534,3 +3534,406 @@ body {
   border: 2px dashed #c3c8db;
   border-radius: 14px;
 }
+
+
+/* ---------- Stickers (from PitchPop: Sticker.jsx, StickerPicker.jsx, StickerBook.jsx) ---------- */
+.sticker-pick .workon-title,
+.sticker-won .workon-title {
+  font-weight: 700;
+}
+
+.sticker-won .workon-text {
+  color: var(--ink-dim);
+}
+
+/* The "All done!" screen's sticker. */
+.sticker-won {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #fff4fb, #eef3ff);
+  box-shadow: var(--shadow-sm);
+}
+.sticker-won-emoji {
+  flex: none;
+  font-size: 48px;
+  animation: sticker-pop 0.7s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.sticker-today {
+  margin: 0;
+  text-align: center;
+  color: var(--ink-dim);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+@keyframes sticker-pop {
+  0% {
+    transform: scale(0) rotate(-30deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sticker-won-emoji {
+    animation: none;
+  }
+}
+/* A sticker drawing (Sticker.jsx). */
+.sticker {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
+.sticker svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.sticker-won-emoji {
+  display: flex;
+}
+
+/* Each sticker's own move (stickers.js MOVES). Stickers sit still; the
+   move plays (twice) only as a sticker is stuck into the book. */
+.sticker-bob { animation: stk-bob 2.4s ease-in-out infinite; }
+.sticker-pulse { animation: stk-pulse 1.6s ease-in-out infinite; }
+.sticker-twinkle { animation: stk-twinkle 2.2s ease-in-out infinite; }
+.sticker-float { animation: stk-float 3s ease-in-out infinite; }
+.sticker-wiggle { animation: stk-wiggle 2s ease-in-out infinite; }
+.sticker-hop { animation: stk-hop 1.8s ease-in-out infinite; }
+.sticker-rock { animation: stk-rock 3s ease-in-out infinite; }
+.sticker-flutter { animation: stk-flutter 0.9s ease-in-out infinite; }
+.sticker-spin { animation: stk-spin 9s linear infinite; }
+.sticker-dangle { animation: stk-dangle 2.6s ease-in-out infinite; transform-origin: 50% 0; }
+.sticker-shake { animation: stk-shake 0.5s ease-in-out infinite; }
+.sticker-play {
+  animation-iteration-count: 2 !important;
+  animation-delay: 0.5s !important;
+}
+.sticker-play.sticker-spin {
+  animation-duration: 1.4s !important;
+  animation-timing-function: ease-in-out !important;
+  animation-iteration-count: 1 !important;
+}
+.sticker-play.sticker-flutter,
+.sticker-play.sticker-shake {
+  animation-iteration-count: 4 !important;
+}
+/* Being stuck in: it drops onto the page with a little squish. */
+.sticker-place {
+  display: inline-flex;
+  animation: sticker-stick 0.55s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+@keyframes sticker-stick {
+  0% { transform: translateY(-40%) scale(1.8) rotate(-18deg); opacity: 0; }
+  60% { transform: scale(0.9) rotate(4deg); opacity: 1; }
+  100% { transform: none; }
+}
+
+/* Picking today's sticker. */
+.sticker-pick {
+  padding: 12px 14px 14px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #fff4fb, #eef3ff);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+.sticker-pick-title {
+  margin: 0 0 8px;
+}
+.sticker-pick-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+.sticker-pick-btn {
+  padding: 4px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.sticker-pick-btn.is-chosen {
+  border-color: #9775fa;
+  background: #fff;
+  transform: scale(1.18);
+}
+.sticker-pick-go {
+  margin-top: 10px;
+}
+.sticker-pick-go:disabled {
+  opacity: 0.55;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sticker-place { animation: none; }
+}
+@keyframes stk-bob { 50% { transform: translateY(-6%); } }
+@keyframes stk-pulse { 50% { transform: scale(1.1); } }
+@keyframes stk-twinkle { 25% { transform: rotate(-10deg) scale(1.05); } 75% { transform: rotate(10deg) scale(1.05); } }
+@keyframes stk-float { 50% { transform: translateY(-10%) rotate(3deg); } }
+@keyframes stk-wiggle { 0%, 60%, 100% { transform: rotate(0); } 70% { transform: rotate(-9deg); } 80% { transform: rotate(9deg); } 90% { transform: rotate(-5deg); } }
+@keyframes stk-hop { 0%, 50%, 100% { transform: translateY(0); } 25% { transform: translateY(-14%); } }
+@keyframes stk-rock { 25% { transform: rotate(-7deg); } 75% { transform: rotate(7deg); } }
+@keyframes stk-flutter { 50% { transform: scaleX(0.8); } }
+@keyframes stk-spin { to { transform: rotate(360deg); } }
+@keyframes stk-dangle { 50% { transform: translateY(8%) rotate(4deg); } }
+@keyframes stk-shake { 25% { transform: translate(-2%, 1%); } 75% { transform: translate(2%, -1%); } }
+@media (prefers-reduced-motion: reduce) {
+  .sticker { animation: none !important; }
+}
+
+/* ---------- The sticker book (StickerBook.jsx) ---------- */
+.sbook {
+  padding-bottom: 90px;
+}
+.sbook-cover {
+  position: relative;
+  padding: 10px 10px 12px 26px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #9775fa, #f783ac);
+  box-shadow: 0 18px 30px -18px #7048e8;
+}
+.sbook-rings {
+  position: absolute;
+  top: 26px;
+  bottom: 26px;
+  left: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.sbook-rings span {
+  width: 26px;
+  height: 10px;
+  border-radius: 6px;
+  background: linear-gradient(#f1f3f5, #adb5bd);
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.25);
+}
+.sbook-page {
+  padding: 14px 12px 16px;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle, #e9e4f7 1.2px, transparent 1.4px) 0 0 / 16px 16px,
+    #fffdf7;
+  text-align: center;
+}
+.sbook-title {
+  margin: 0;
+  font: 700 23px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #5f3dc4;
+}
+.sbook-count {
+  margin: 2px 0 10px;
+  color: var(--ink-dim);
+  font-size: 14px;
+  font-weight: 600;
+}
+.sbook-hint {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #fff4d6;
+  font-weight: 700;
+  font-size: 14.5px;
+}
+.sbook-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px 4px;
+}
+.sbook-spot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+}
+/* A sticker not collected yet: a faded shadow in its spot. */
+.sbook-shadow {
+  display: inline-flex;
+  filter: grayscale(1);
+  opacity: 0.22;
+}
+.sbook-shadow-btn {
+  padding: 4px;
+  border: 2px dashed transparent;
+  border-radius: 16px;
+  background: none;
+  cursor: pointer;
+  opacity: 0.4;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.sbook-shadow-btn.is-chosen {
+  border-color: #9775fa;
+  background: #fff;
+  filter: none;
+  opacity: 1;
+  transform: scale(1.18);
+}
+.sbook-stickbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, var(--bg) 35%);
+  z-index: 5;
+}
+.sbook-stickbar .pill-btn-primary:disabled {
+  opacity: 0.55;
+}
+.sbook-done {
+  margin: 12px 0 0;
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #5f3dc4;
+  animation: sticker-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.sbook-signin {
+  margin-top: 14px;
+}
+
+/* Putting a sticker on: it comes in big from the middle of the screen,
+   held up off the page (big soft shadow, tilted), glides over its spot,
+   gets pressed down flat (a little squish), and settles. */
+.sbook-flying {
+  position: relative;
+  z-index: 10;
+  display: inline-flex;
+  animation: sbook-stick 1.5s cubic-bezier(0.45, 0, 0.25, 1) both;
+}
+@keyframes sbook-stick {
+  0% {
+    transform: translate(var(--dx), var(--dy)) scale(0.4) rotate(-20deg);
+    opacity: 0;
+    filter: drop-shadow(0 6px 6px rgba(29, 33, 64, 0.2));
+  }
+  14% {
+    transform: translate(var(--dx), var(--dy)) scale(2.6) rotate(-10deg);
+    opacity: 1;
+    filter: drop-shadow(0 22px 18px rgba(29, 33, 64, 0.3));
+  }
+  34% {
+    transform: translate(var(--dx), var(--dy)) scale(2.5) rotate(8deg);
+    filter: drop-shadow(0 22px 18px rgba(29, 33, 64, 0.3));
+  }
+  72% {
+    transform: translate(0, -8px) scale(1.35) rotate(-6deg);
+    filter: drop-shadow(0 16px 12px rgba(29, 33, 64, 0.28));
+  }
+  84% {
+    transform: translate(0, 0) scale(0.9, 0.84) rotate(0);
+    filter: drop-shadow(0 1px 1px rgba(29, 33, 64, 0.1));
+  }
+  92% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
+}
+/* Pressed on: a sparkly ring pops out around it. */
+.sbook-landed {
+  position: relative;
+  display: inline-flex;
+}
+.sbook-landed::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border: 3px solid #ffd43b;
+  border-radius: 50%;
+  animation: sbook-ring 0.7s ease-out both;
+  pointer-events: none;
+}
+@keyframes sbook-ring {
+  from {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+.sbook-landed .sticker-play {
+  animation-delay: 0.4s !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sbook-flying,
+  .sbook-landed::after,
+  .sbook-done {
+    animation: none;
+  }
+}
+
+/* Stickers waiting to be picked, on the home Sticker book button. */
+.home-stickers-badge {
+  margin-left: 2px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #fff;
+  color: #ae3ec9;
+  font-size: 13px;
+}
+
+/* A guest's sticker: theirs to see, but no book to keep it in. */
+.sticker-guest {
+  text-align: left;
+}
+.sticker-guest-signin {
+  margin-top: 8px;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 999px;
+  background: #5f3dc4;
+  color: #fff;
+  font: 600 14px 'IBM Plex Sans', sans-serif;
+  cursor: pointer;
+}
+
+
+/* Home: the way into the sticker book, next to Explore Numbers. */
+.quick-row {
+  display: flex;
+  gap: 8px;
+}
+.quick-row .quick-explore {
+  flex: 1;
+  min-width: 0;
+}
+.home-stickers {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #b197fc, #f783ac);
+  box-shadow: 0 10px 20px -12px #cc5de8;
+  color: #fff;
+  font: 700 14px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+.home-stickers-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+.home-stickers-badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #fff;
+  color: #ae3ec9;
+  font-size: 12px;
+}
