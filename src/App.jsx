@@ -18,6 +18,10 @@ import { PREK_CONCEPTS, ShapeIcon } from './preK.jsx';
 import ProfileSwitcher from './ProfileSwitcher.jsx';
 import EmailHandoff from './EmailHandoff.jsx';
 import ParentGate from './ParentGate.jsx';
+import StickerPicker from './StickerPicker.jsx';
+import StickerBook from './StickerBook.jsx';
+import { earnSticker, pendingStickers } from './stickerStore.js';
+import { startStickerSync } from './stickerSync.js';
 import LogoMark from './LogoMark.jsx';
 import { AccountButton, AccountScreen, AddPlayerForm, PlayerSettingsCard, SyncStatus } from './Account.jsx';
 import {
@@ -903,6 +907,30 @@ export default function App() {
     setView(returnView);
   }
 
+  // ---------- Stickers (the same sticker book as PitchPop) ----------
+  // A sticker for every finished round. Signed-in families keep them in
+  // each player's sticker book, synced across their phones.
+  const signedIn = profileOwner === 'account' && !!cloudUser;
+  const [placingSticker, setPlacingSticker] = useState(null);
+  const [stickerBackTo, setStickerBackTo] = useState('home');
+  const [, setStickerTick] = useState(0);
+  useEffect(() => {
+    const reload = () => setStickerTick((t) => t + 1);
+    window.addEventListener('mathpop-stickers-changed', reload);
+    return () => window.removeEventListener('mathpop-stickers-changed', reload);
+  }, []);
+  const profileIds = profiles.map((p) => p.id).join(',');
+  useEffect(() => {
+    if (!signedIn || !profileIds) return undefined;
+    return startStickerSync(profileIds.split(','));
+  }, [signedIn, profileIds]);
+
+  function openStickerBook(placing = null) {
+    setPlacingSticker(placing);
+    setStickerBackTo(view === 'complete' ? 'complete' : 'home');
+    setView('stickers');
+  }
+
   // Only the languages this device has a voice for.
   const [exploreLanguages, setExploreLanguages] = useState(EXPLORE_LANGUAGES);
   useEffect(() => {
@@ -1047,6 +1075,8 @@ export default function App() {
 
   function nextProblem() {
     if (roundIndex + 1 >= SESSION_ROUNDS) {
+      // Every finished round earns a sticker (picked on the "All done!" screen).
+      if (signedIn) earnSticker(currentProfile.id);
       setView('complete');
       return;
     }
@@ -1148,18 +1178,31 @@ export default function App() {
                   →
                 </span>
               </button>
-              <button className="quick-explore" onClick={() => setView('explore')}>
-                <span className="quick-explore-icon" aria-hidden="true">
-                  🔢
-                </span>
-                <span className="home-cta-text">
-                  <span className="quick-explore-title">Explore Numbers</span>
-                  <span className="quick-explore-sub">Tap a number, hear it out loud</span>
-                </span>
-                <span className="quick-explore-arrow" aria-hidden="true">
-                  →
-                </span>
-              </button>
+              <div className="quick-row">
+                <button className="quick-explore" onClick={() => setView('explore')}>
+                  <span className="quick-explore-icon" aria-hidden="true">
+                    🔢
+                  </span>
+                  <span className="home-cta-text">
+                    <span className="quick-explore-title">Explore Numbers</span>
+                    <span className="quick-explore-sub">Tap a number, hear it out loud</span>
+                  </span>
+                  <span className="quick-explore-arrow" aria-hidden="true">
+                    →
+                  </span>
+                </button>
+                <button className="home-stickers" onClick={() => openStickerBook()}>
+                  <span className="home-stickers-icon" aria-hidden="true">
+                    📒
+                  </span>
+                  Stickers
+                  {signedIn && pendingStickers(currentProfile.id) > 0 && (
+                    <span className="home-stickers-badge" aria-label={`${pendingStickers(currentProfile.id)} waiting`}>
+                      🎁 {pendingStickers(currentProfile.id)}
+                    </span>
+                  )}
+                </button>
+              </div>
             </section>
 
             <h3 className="home-section-title">Sections</h3>
@@ -1193,6 +1236,20 @@ export default function App() {
                 ← More apps
               </a>
             )}
+          </>
+        )}
+
+        {view === 'stickers' && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={() => { setPlacingSticker(null); setView(stickerBackTo); }} />
+            <StickerBook
+              key={currentProfile.id}
+              player={currentProfile}
+              signedIn={signedIn}
+              onSignIn={openAccount}
+              placing={placingSticker}
+              onPlaced={() => setPlacingSticker(null)}
+            />
           </>
         )}
 
@@ -1716,6 +1773,14 @@ export default function App() {
                 <span className="results-score-number">{sessionCorrect}</span>
                 <span className="results-score-total">/ {SESSION_ROUNDS}</span>
               </div>
+              <StickerPicker
+                key={`${currentProfile.id}-${roundIndex}`}
+                playerId={currentProfile.id}
+                signedIn={signedIn}
+                from={operation}
+                onStick={(index) => openStickerBook(index)}
+                onSignIn={openAccount}
+              />
               {Object.keys(sessionResults).length > 0 && (
                 <div className="result-breakdown">
                   <p className="result-label">By operation:</p>
