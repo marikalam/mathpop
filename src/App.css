@@ -3899,41 +3899,33 @@ body {
 }
 
 
-/* Home: the way into the sticker book, next to Explore Numbers. */
-.quick-row {
-  display: flex;
-  gap: 8px;
-}
-.quick-row .quick-explore {
-  flex: 1;
-  min-width: 0;
-}
+/* Home: the sticker book, in the hello card (as in PitchPop). */
 .home-stickers {
   appearance: none;
   border: none;
   cursor: pointer;
-  flex: none;
-  display: flex;
-  flex-direction: column;
+  align-self: center;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 6px 14px;
-  border-radius: 20px;
+  gap: 8px;
+  margin: 2px auto 0;
+  padding: 10px 22px;
+  border-radius: 999px;
   background: linear-gradient(135deg, #b197fc, #f783ac);
   box-shadow: 0 10px 20px -12px #cc5de8;
   color: #fff;
-  font: 700 14px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
+  transition: transform 0.08s ease;
 }
-.home-stickers-icon {
-  font-size: 24px;
-  line-height: 1;
+.home-stickers:active {
+  transform: scale(0.97);
 }
 .home-stickers-badge {
   padding: 1px 8px;
   border-radius: 999px;
   background: #fff;
   color: #ae3ec9;
-  font-size: 12px;
+  font-size: 13px;
 }
