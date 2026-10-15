@@ -1120,10 +1120,10 @@ export default function App() {
   }
 
   return (
-    // Every grade's home page has the same layout; it scrolls like other
-    // pages when it's longer than the screen.
-    <div className="page">
-      <div className="app">
+    // The home page fits one screen, like PitchPop's: the section cards
+    // share whatever height is left (it still scrolls on a very short one).
+    <div className={view === 'home' ? 'page page-fit' : 'page'}>
+      <div className={view === 'home' ? 'app home-fit' : 'app'}>
         {view === 'home' && (
           <>
             <AppHeader level={level} showBack={false} players={headerPlayers} />
@@ -1139,10 +1139,8 @@ export default function App() {
               <p className="home-tagline">Pick a game, answer ten problems, and watch your score grow.</p>
               {/* The playing player's grade. A grown-up sets it in Players &
                   grades (the player menu), not here. */}
-              <div className="home-grade">
+              <div className="home-hero-row">
                 <LevelSwitcher level={level} readOnly />
-              </div>
-              <div className="home-stats">
                 {levelStats.total ? (
                   <>
                     <span className="home-stat">✅ {levelStats.total} solved</span>
@@ -1192,7 +1190,10 @@ export default function App() {
             </section>
 
             <h3 className="home-section-title">Sections</h3>
-            <div className="home-grid">
+            <div
+              className="home-grid"
+              style={{ gridTemplateRows: `repeat(${Math.ceil(gradeSections(gradeInfo(level).id).length / 2)}, minmax(0, 104px))` }}
+            >
               {gradeSections(gradeInfo(level).id).map((section) => (
                 <button
                   key={section.id}
