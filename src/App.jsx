@@ -749,14 +749,6 @@ export default function App() {
     setView((v) => (['question', 'feedback', 'complete', 'review'].includes(v) ? 'home' : v));
   }
 
-  // The grade picked on the home page is the playing player's.
-  function updatePlayer(id, changes) {
-    const next = profiles.map((p) => (p.id === id ? { ...p, ...changes } : p));
-    setProfiles(next);
-    setDraftProfiles(next);
-    if (profileOwner === 'account') saveCloudProfile(next.find((p) => p.id === id));
-  }
-
   function openPlayers() {
     setDraftProfiles(profiles);
     setView('players');
@@ -987,10 +979,6 @@ export default function App() {
     saveSettings(newSettings);
   }
 
-  function changeLevel(newLevel) {
-    updatePlayer(currentProfile.id, { grade: newLevel });
-  }
-
   // `from` is the screen Back returns to; Play again keeps the last one.
   function startOperation(op, from) {
     if (from) setReturnView(from);
@@ -1149,9 +1137,10 @@ export default function App() {
               </div>
               <h2 className="home-hello">Ready to pop some math, {currentProfile.name}?</h2>
               <p className="home-tagline">Pick a game, answer ten problems, and watch your score grow.</p>
-              {/* The playing player's grade; changing it here saves it for them. */}
+              {/* The playing player's grade. A grown-up sets it in Players &
+                  grades (the player menu), not here. */}
               <div className="home-grade">
-                <LevelSwitcher level={level} onChange={changeLevel} />
+                <LevelSwitcher level={level} readOnly />
               </div>
               <div className="home-stats">
                 {levelStats.total ? (
@@ -1163,6 +1152,16 @@ export default function App() {
                   <span className="home-stat">⭐ Start your first round</span>
                 )}
               </div>
+              {/* The sticker book, as in PitchPop: earned by finishing rounds. */}
+              <button className="home-stickers" onClick={() => openStickerBook()}>
+                <span aria-hidden="true">📒</span>
+                Sticker book
+                {signedIn && pendingStickers(currentProfile.id) > 0 && (
+                  <span className="home-stickers-badge" aria-label={`${pendingStickers(currentProfile.id)} waiting`}>
+                    🎁 {pendingStickers(currentProfile.id)}
+                  </span>
+                )}
+              </button>
             </section>
 
             <section className="quick-set" aria-label="Quick play">
@@ -1178,31 +1177,18 @@ export default function App() {
                   →
                 </span>
               </button>
-              <div className="quick-row">
-                <button className="quick-explore" onClick={() => setView('explore')}>
-                  <span className="quick-explore-icon" aria-hidden="true">
-                    🔢
-                  </span>
-                  <span className="home-cta-text">
-                    <span className="quick-explore-title">Explore Numbers</span>
-                    <span className="quick-explore-sub">Tap a number, hear it out loud</span>
-                  </span>
-                  <span className="quick-explore-arrow" aria-hidden="true">
-                    →
-                  </span>
-                </button>
-                <button className="home-stickers" onClick={() => openStickerBook()}>
-                  <span className="home-stickers-icon" aria-hidden="true">
-                    📒
-                  </span>
-                  Stickers
-                  {signedIn && pendingStickers(currentProfile.id) > 0 && (
-                    <span className="home-stickers-badge" aria-label={`${pendingStickers(currentProfile.id)} waiting`}>
-                      🎁 {pendingStickers(currentProfile.id)}
-                    </span>
-                  )}
-                </button>
-              </div>
+              <button className="quick-explore" onClick={() => setView('explore')}>
+                <span className="quick-explore-icon" aria-hidden="true">
+                  🔢
+                </span>
+                <span className="home-cta-text">
+                  <span className="quick-explore-title">Explore Numbers</span>
+                  <span className="quick-explore-sub">Tap a number, hear it out loud</span>
+                </span>
+                <span className="quick-explore-arrow" aria-hidden="true">
+                  →
+                </span>
+              </button>
             </section>
 
             <h3 className="home-section-title">Sections</h3>
@@ -1426,7 +1412,7 @@ export default function App() {
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
             <h2 className="screen-title">Players &amp; grades</h2>
-            <p className="screen-sub">Each player plays at their own grade, following Singapore math.</p>
+            <p className="screen-sub">Set each player's grade here. They play at that grade, following Singapore math.</p>
             <SyncStatus user={profileOwner === 'account' ? cloudUser : null} onOpenAccount={openAccount} />
             <div className="settings-list">
               {draftProfiles.map((p) => (
