@@ -1827,18 +1827,20 @@ body {
   }
 }
 
-/* ---------- Home page fits one screen ----------
-   The page is exactly the visible screen height and doesn't scroll: the
-   practice cards share whatever height is left after the fixed parts. */
+/* ---------- Home page fits one screen (like PitchPop) ----------
+   The page is exactly the visible screen and doesn't scroll: the section
+   cards share whatever height is left after the fixed parts (up to
+   104px a row). On a very short screen it still scrolls. */
 .page-fit {
-  /* Still scrolls if a very short screen can't fit everything. */
-  overflow-y: auto;
   padding-bottom: max(14px, env(safe-area-inset-bottom));
 }
 
+.page-fit .app {
+  height: 100%;
+}
+
 .home-fit {
-  min-height: 0;
-  gap: 12px;
+  gap: 10px;
 }
 
 .home-fit > * {
@@ -1846,82 +1848,103 @@ body {
 }
 
 .home-fit .home-hero {
-  gap: 4px;
-  padding: 12px 16px 14px;
+  gap: 6px;
+  padding: 12px 14px 14px;
 }
 
 .home-fit .home-hero-op {
-  width: clamp(30px, 5vh, 44px);
-  height: clamp(30px, 5vh, 44px);
-  font-size: clamp(20px, 3.2vh, 28px);
-  border-radius: 12px;
+  width: clamp(28px, 4.4vh, 40px);
+  height: clamp(28px, 4.4vh, 40px);
+  font-size: clamp(18px, 2.8vh, 26px);
+  border-radius: 11px;
 }
 
 .home-fit .home-hello {
-  font-size: clamp(20px, 6.5vw, 26px);
+  font-size: clamp(20px, 6.2vw, 25px);
 }
 
 .home-fit .home-tagline {
-  font-size: 13.5px;
+  display: none;
 }
 
+.home-hero-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.home-hero-row .level-pill {
+  padding-block: 4px;
+}
+
+.home-fit .home-stickers {
+  margin: 0 auto;
+  padding: 8px 20px;
+  font-size: 16px;
+}
+
+/* Random Mix and Explore Numbers side by side. */
 .home-fit .quick-set {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
-  padding: 10px;
+  padding: 8px;
+  border-radius: 24px;
 }
 
-.home-fit .home-cta {
-  padding: 12px 16px;
+.home-fit .home-cta,
+.home-fit .quick-explore {
+  min-width: 0;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 18px;
 }
 
-.home-fit .home-cta-icon {
-  width: 42px;
-  height: 42px;
-  font-size: 22px;
-}
-
-.home-fit .home-cta-title {
+.home-fit .home-cta-icon,
+.home-fit .quick-explore-icon {
+  flex: none;
+  width: 36px;
+  height: 36px;
   font-size: 20px;
 }
 
-.home-fit .quick-explore {
-  padding: 8px 16px;
-}
-
-.home-fit .quick-explore-icon {
-  height: 32px;
-}
-
+.home-fit .home-cta-title,
 .home-fit .quick-explore-title {
-  font-size: 16.5px;
+  font-size: 16px;
+  line-height: 1.15;
 }
 
-.home-fit .quick-explore-sub {
-  font-size: 12px;
+.home-fit .home-cta-sub,
+.home-fit .quick-explore-sub,
+.home-fit .home-cta-arrow,
+.home-fit .quick-explore-arrow {
+  display: none;
 }
 
 .home-fit .home-section-title {
   margin: 0;
-  font-size: 15.5px;
+  font-size: 15px;
 }
 
 .home-fit .home-grid {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 0;
-  grid-auto-rows: 1fr;
   gap: 10px;
+  align-content: start;
 }
 
-.home-fit .home-card {
+.home-fit .home-grid .home-card {
   min-height: 0;
   flex-direction: row;
   align-items: center;
   gap: 10px;
-  padding: 10px 14px;
+  padding: 8px 12px;
   overflow: hidden;
 }
 
-.home-fit .home-card-icon {
+.home-fit .home-grid .home-card-icon {
   flex: none;
   width: 36px;
   height: 36px;
@@ -1930,43 +1953,39 @@ body {
   font-size: 20px;
 }
 
-.home-fit .home-card-text {
+.home-fit .home-grid .home-card-text {
   min-width: 0;
 }
 
-.home-fit .home-card-title {
+.home-fit .home-grid .home-card-title {
   font-size: 15.5px;
 }
 
-.home-fit .home-card-sub {
+.home-fit .home-grid .home-card-sub {
   font-size: 12px;
 }
 
+.home-fit .curriculum-note {
+  margin: -2px 4px 0;
+  font-size: 11.5px;
+}
+
 .home-fit .all-apps-link {
-  margin-top: -6px;
+  margin-top: -8px;
   padding: 0 12px;
   font-size: 13px;
 }
 
-/* Shorter screens (iPhone SE, or Safari with its toolbars showing): drop
-   the tagline and the small print so nothing gets cut off. */
+/* Shorter screens (iPhone SE, or Safari with its toolbars showing). */
 @media (max-height: 740px) {
   .home-fit {
-    gap: 10px;
+    gap: 8px;
   }
 
-  .home-fit .home-tagline,
-  .home-fit .quick-explore-sub,
-  .home-fit .home-card-sub {
+  .home-fit .home-hero-ops,
+  .home-fit .home-grid .section-card .home-card-sub,
+  .home-fit .curriculum-note {
     display: none;
-  }
-
-  .home-fit .home-hero {
-    padding: 10px 14px 12px;
-  }
-
-  .home-fit .home-stats {
-    margin-top: 2px;
   }
 }
 
