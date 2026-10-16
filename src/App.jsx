@@ -24,7 +24,7 @@ import Sticker from './Sticker.jsx';
 import { STICKERS } from './stickers.js';
 import { startStickerSync } from './stickerSync.js';
 import TodayPlan from './TodayPlan.jsx';
-import { recordRound } from './todayPlan.js';
+import { clearMistake, mistakeRound, recordMistake, recordRound } from './todayPlan.js';
 import LogoMark from './LogoMark.jsx';
 import { AccountButton, AccountScreen, AddPlayerForm, PlayerSettingsCard, SyncStatus } from './Account.jsx';
 import {
@@ -972,9 +972,24 @@ export default function App() {
 
 
   // `from` is the screen Back returns to; Play again keeps the last one.
+  // Fix my mistakes (Today's practice): the problems this player got wrong
+  // lately, newest first, then more of the same topics to make ten.
+  const mistakeQueue = useRef([]);
+  const mistakeOps = useRef([]);
+  function roundProblem(op) {
+    if (op !== 'mistakes') return makeProblem(op, level);
+    if (mistakeQueue.current.length) return mistakeQueue.current.shift();
+    return makeProblem(mistakeOps.current.length ? shuffle(mistakeOps.current)[0] : 'random', level);
+  }
+
   function startOperation(op, from) {
     if (from) setReturnView(from);
-    const first = makeProblem(op, level);
+    if (op === 'mistakes') {
+      const list = mistakeRound(currentProfile.id, gradeInfo(level).id, SESSION_ROUNDS);
+      mistakeQueue.current = list;
+      mistakeOps.current = [...new Set(list.map((p) => p.op))];
+    }
+    const first = roundProblem(op);
     setOperation(op);
     setRoundIndex(0);
     setSessionCorrect(0);
@@ -1002,6 +1017,9 @@ export default function App() {
       if (correct) {
         setSessionCorrect((c) => c + 1);
       }
+      // Wrong the first time: keep it for Fix my mistakes; right: it's fixed.
+      if (correct) clearMistake(currentProfile.id, problem);
+      else recordMistake(currentProfile.id, gradeInfo(level).id, problem);
 
       setSessionResults((prev) => {
         const opStats = prev[problem.op] || { correct: 0, wrong: 0 };
@@ -1061,7 +1079,7 @@ export default function App() {
       setView('complete');
       return;
     }
-    const next = makeProblem(operation, level);
+    const next = roundProblem(operation);
     setRoundIndex((r) => r + 1);
     setProblem(next);
     setOptions(makeOptions(next));
@@ -1089,6 +1107,8 @@ export default function App() {
       ? (gradeSection(gradeInfo(level).id, operation.slice(8))?.title || 'mixed').toLowerCase()
       : operation === 'random'
       ? 'random mix'
+      : operation === 'mistakes'
+      ? 'fix-my-mistakes'
       : operation === 'sentence'
         ? 'word problem'
         : OPERATIONS[operation].label.toLowerCase();

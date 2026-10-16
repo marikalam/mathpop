@@ -3,6 +3,8 @@ import { earnSticker } from './stickerStore.js';
 
 // "Today's practice" on the home page (like PitchPop's): three rounds for
 // each player, made from how they've done at their grade:
+//   - Fix my mistakes: the very problems they got wrong lately, asked again
+//     (each one leaves the list once they get it right),
 //   - the topic they get wrong most (once they've tried it a few times),
 //   - something new: the next topic in the grade they haven't played yet
 //     (or, when they've tried them all, the one played longest ago),
@@ -11,7 +13,9 @@ import { earnSticker } from './stickerStore.js';
 // play), and each item checks off when a round of it is finished today.
 // Finishing all three earns a bonus sticker, once a day.
 const LOG_KEY = 'mathpop-round-log-v1';
-const PLAN_KEY = 'mathpop-today-plan-v1';
+const PLAN_KEY = 'mathpop-today-plan-v2';
+const MISTAKES_KEY = 'mathpop-mistakes-v1';
+const KEEP_MISTAKES = 40;
 const BONUS_KEY = 'mathpop-today-bonus-v1';
 const KEEP_ROUNDS = 200;
 // A topic counts as tricky once tried this many times with fewer right.
@@ -51,6 +55,49 @@ export function recordRound(playerId, mode, grade, correct, total) {
   write(LOG_KEY, { ...all, [playerId]: [...(all[playerId] || []), entry].slice(-KEEP_ROUNDS) });
 }
 
+// ---------- Mistakes: the problems a player got wrong ----------
+
+// What the child saw, as words (also tells problems apart).
+export function problemText(problem) {
+  if (problem.type === 'sentence') return problem.text;
+  if (problem.type === 'clock') return `the clock at ${problem.correct}`;
+  if (problem.type === 'skill') {
+    return problem.promptKind === 'compare' ? `${problem.compareLeft} ? ${problem.compareRight}` : problem.prompt;
+  }
+  return `${problem.a} ${problem.symbol} ${problem.b}`;
+}
+
+const mistakeKey = (problem) => `${problemText(problem)}|${problem.correct}`;
+
+export function loadMistakes(playerId, grade) {
+  return (read(MISTAKES_KEY)[playerId] || []).filter((m) => m.grade === grade);
+}
+
+// Got it wrong (the first try): keep the problem to ask again.
+export function recordMistake(playerId, grade, problem) {
+  const all = read(MISTAKES_KEY);
+  const key = mistakeKey(problem);
+  const mine = (all[playerId] || []).filter((m) => m.key !== key);
+  const entry = { key, grade, op: problem.op, at: Date.now(), problem };
+  write(MISTAKES_KEY, { ...all, [playerId]: [...mine, entry].slice(-KEEP_MISTAKES) });
+}
+
+// Got it right (the first try): if it was one of their mistakes, it's fixed.
+export function clearMistake(playerId, problem) {
+  const all = read(MISTAKES_KEY);
+  const key = mistakeKey(problem);
+  if (!(all[playerId] || []).some((m) => m.key === key)) return;
+  write(MISTAKES_KEY, { ...all, [playerId]: all[playerId].filter((m) => m.key !== key) });
+}
+
+// The problems for a Fix my mistakes round: the newest mistakes first.
+export function mistakeRound(playerId, grade, count) {
+  return loadMistakes(playerId, grade)
+    .slice(-count)
+    .reverse()
+    .map((m) => m.problem);
+}
+
 function gradeTopicList(grade) {
   const seen = new Set();
   const list = [];
@@ -69,13 +116,25 @@ function makePlan(playerId, grade, byOp) {
   const rounds = (read(LOG_KEY)[playerId] || []).filter((r) => r.grade === grade);
   const items = [];
 
+  const mistakes = loadMistakes(playerId, grade);
+  if (mistakes.length) {
+    items.push({ id: 'mistakes', mode: 'mistakes', icon: '🔁', title: 'Fix my mistakes', sub: '' });
+  }
+
   const tricky = topics
     .map((t) => ({ t, s: byOp[t.id] }))
     .filter(({ s }) => s && s.total >= MIN_TRIES && s.correct / s.total < GOOD_ENOUGH)
     .sort((a, b) => a.s.correct / a.s.total - b.s.correct / b.s.total)[0];
   if (tricky) {
     const pct = Math.round((100 * tricky.s.correct) / tricky.s.total);
-    items.push({ id: 'focus', mode: tricky.t.id, icon: '🎯', title: `Work on: ${tricky.t.title}`, sub: `${pct}% right so far · 1 round of 10` });
+    const missed = [...mistakes].reverse().find((m) => m.op === tricky.t.id);
+    items.push({
+      id: 'focus',
+      mode: tricky.t.id,
+      icon: '🎯',
+      title: `Work on: ${tricky.t.title}`,
+      sub: missed ? `${pct}% right · missed ${problemText(missed.problem)}` : `${pct}% right so far · 1 round of 10`,
+    });
   }
 
   const used = new Set(items.map((i) => i.mode));
@@ -83,7 +142,8 @@ function makePlan(playerId, grade, byOp) {
   const lastPlayed = (id) => rounds.reduce((last, r, i) => (r.mode === id ? i : last), -1);
   const oldest = topics.filter((t) => !used.has(t.id)).sort((a, b) => lastPlayed(a.id) - lastPlayed(b.id));
   const newOnes = untried.length ? untried : oldest;
-  const wanted = items.length ? 1 : 2;
+  // Three in all, with the Random Mix last.
+  const wanted = Math.max(0, 2 - items.length);
   newOnes.slice(0, wanted).forEach((t, i) => {
     items.push({
       id: `next${i}`,
@@ -103,7 +163,11 @@ export function todayPlan(playerId, grade, byOp = {}) {
   const today = dayKey();
   const plans = read(PLAN_KEY);
   let plan = plans[playerId];
-  if (!plan || plan.day !== today || plan.grade !== grade) {
+  const playedSoFar = (read(LOG_KEY)[playerId] || []).some((r) => r.day === today);
+  // A new day or grade gets a new list; so does one with mistakes to fix
+  // that the list doesn't have yet, as long as nothing on it is done.
+  const needsMistakes = plan && !plan.items.some((i) => i.id === 'mistakes') && loadMistakes(playerId, grade).length && !playedSoFar;
+  if (!plan || plan.day !== today || plan.grade !== grade || needsMistakes) {
     plan = { day: today, grade, items: makePlan(playerId, grade, byOp) };
     try {
       localStorage.setItem(PLAN_KEY, JSON.stringify({ ...plans, [playerId]: plan }));
@@ -112,7 +176,18 @@ export function todayPlan(playerId, grade, byOp = {}) {
     }
   }
   const playedToday = new Set((read(LOG_KEY)[playerId] || []).filter((r) => r.day === today).map((r) => r.mode));
-  return plan.items.map((item) => ({ ...item, done: playedToday.has(item.mode) }));
+  const mistakes = loadMistakes(playerId, grade);
+  return plan.items.map((item) => {
+    if (item.id !== 'mistakes') return { ...item, done: playedToday.has(item.mode) };
+    // How many are still waiting (it changes as they're fixed).
+    const left = mistakes.length;
+    const example = left ? problemText(mistakes[mistakes.length - 1].problem) : '';
+    return {
+      ...item,
+      done: playedToday.has('mistakes') || !left,
+      sub: left ? `${left} to try again · like ${example}` : 'All fixed! 🎉',
+    };
+  });
 }
 
 // The day's bonus sticker, once, when the whole list is done.
