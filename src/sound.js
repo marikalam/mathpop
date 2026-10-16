@@ -51,6 +51,43 @@ export function playIncorrectBuzz() {
   tone(ctx, 174.61, now + 0.1, 0.28, 0.16);
 }
 
+// Stickers (the same sounds as PitchPop): a bubbly "bloop" when one is
+// tapped or picked...
+export function playStickerPick() {
+  const ctx = ensureAudio();
+  const now = ctx.currentTime + 0.01;
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(520, now);
+  osc.frequency.exponentialRampToValueAtTime(1250, now + 0.11);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.linearRampToValueAtTime(0.2, now + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.18);
+  tone(ctx, 1567.98, now + 0.1, 0.18, 0.07);
+}
+
+// ...and a soft "pat" and a little twinkle when it's stuck in the book.
+export function playStickerStick() {
+  const ctx = ensureAudio();
+  const now = ctx.currentTime + 0.01;
+  const pat = ctx.createOscillator();
+  pat.type = 'sine';
+  pat.frequency.setValueAtTime(260, now);
+  pat.frequency.exponentialRampToValueAtTime(120, now + 0.09);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.linearRampToValueAtTime(0.28, now + 0.008);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+  pat.connect(gain).connect(ctx.destination);
+  pat.start(now);
+  pat.stop(now + 0.14);
+  [1046.5, 1318.51, 1567.98, 2093].forEach((f, i) => tone(ctx, f, now + 0.1 + i * 0.07, 0.22, 0.08));
+}
+
 const OPERATION_WORDS = { '×': 'times', '+': 'plus', '−': 'minus', '÷': 'divided by' };
 
 // Voice lists load asynchronously on most browsers - calling getVoices()
