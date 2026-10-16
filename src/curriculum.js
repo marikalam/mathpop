@@ -15,7 +15,7 @@ const SECTION_STYLE = {
   muldiv: { icon: '✖️', short: 'Multiply & Divide', from: '#a065e6', to: '#7c3fc4' },
   fractions: { icon: '🍕', short: 'Fractions', from: '#14b8a6', to: '#0f9384' },
   decimals: { icon: '🔟', short: 'Decimals', from: '#1fb6ba', to: '#14898c' },
-  measure: { icon: '📏', short: 'Measurement', from: '#f5a524', to: '#e08a12' },
+  measure: { icon: '📏', short: 'Measurement', tile: 'Measure', from: '#f5a524', to: '#e08a12' },
   shapes: { icon: '🔺', short: 'Shapes', from: '#e0577f', to: '#c43c66' },
   data: { icon: '📊', short: 'Graphs', from: '#f0954f', to: '#e0793a' },
   puzzles: { icon: '🧠', short: 'Puzzles', from: '#8e4fd6', to: '#6f35b8' },
