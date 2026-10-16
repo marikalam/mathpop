@@ -20,7 +20,9 @@ import EmailHandoff from './EmailHandoff.jsx';
 import ParentGate from './ParentGate.jsx';
 import StickerPicker from './StickerPicker.jsx';
 import StickerBook from './StickerBook.jsx';
-import { earnSticker, pendingStickers } from './stickerStore.js';
+import { earnSticker, pendingStickers, playerStickers } from './stickerStore.js';
+import Sticker from './Sticker.jsx';
+import { STICKERS } from './stickers.js';
 import { startStickerSync } from './stickerSync.js';
 import LogoMark from './LogoMark.jsx';
 import { AccountButton, AccountScreen, AddPlayerForm, PlayerSettingsCard, SyncStatus } from './Account.jsx';
@@ -1128,6 +1130,18 @@ export default function App() {
           <>
             <AppHeader level={level} showBack={false} players={headerPlayers} />
             <section className="home-hero">
+              {/* The player's newest stickers (or a few to start with)
+                  decorate the greeting, as in PitchPop. */}
+              {(() => {
+                const mine = signedIn ? playerStickers(currentProfile.id).slice(-4).map((st) => st.index) : [];
+                const pick = (name) => STICKERS.findIndex(([n]) => n === name);
+                const shown = mine.length >= 2 ? mine : [pick('Star'), pick('Abacus'), pick('Heart'), pick('Balloon')];
+                return shown.slice(0, 4).map((index, i) => (
+                  <span key={`${index}-${i}`} className={`home-hero-sticker home-hero-sticker-${i}`} aria-hidden="true">
+                    <Sticker index={index} size={40} />
+                  </span>
+                ));
+              })()}
               <div className="home-hero-ops" aria-hidden="true">
                 {HERO_OPS.map((op) => (
                   <span key={op.symbol} className="home-hero-op" style={{ background: op.color }}>
