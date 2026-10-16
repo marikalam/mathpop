@@ -10,30 +10,36 @@ MathPop: Kids Math Practice
 Pre-K to 4th grade math games
 
 ## Promotional text (170, can change anytime without review)
-Pick a grade, pick a game, and answer ten quick problems. Cheers for every right answer, and the full equation when it's wrong.
+A daily practice list made from your child's own mistakes, every problem explained out loud, and a sticker for every round. Pre-K to 4th grade.
 
 ## Description (4000)
-MathPop is a bright, simple math practice game for Pre-K through 4th grade. Pick a grade and MathPop shows the games that fit it, from adding within 10 all the way up to times tables and three-digit numbers.
+MathPop is a bright, simple math practice game for Pre-K through 4th grade. Each child plays at their own grade, with games that follow Singapore math and Beast Academy, from counting to 10 all the way up to fractions, times tables and big numbers.
 
-HOW IT WORKS
-• Choose a grade: Pre-K, Kindergarten, 1st, 2nd, 3rd or 4th
-• Pick a game and answer ten quick problems
-• Tap an answer, type it, or write it with your finger
-• Get a cheer for every right answer, and the full equation when it's wrong
+TODAY'S PRACTICE, MADE FOR YOUR CHILD
+• Fix my mistakes: the very problems they got wrong, asked again until they get them right
+• Work on: the topic they find hardest, with a problem they missed
+• Something new: the next topic for their grade
+• Finish all three for a bonus sticker
+
+STUCK? MATHPOP SHOWS HOW
+• Tap Show me how and MathPop talks your child through the problem out loud, step by step, like a grown-up sitting next to them
+• Making ten, tens and ones, skip counting, number bonds, bar models, reading a clock and more
+• Great for kids who can't read yet: every problem and every step is read aloud
+• A wrong answer never gives the answer away: it's "Try again"
+
+STICKERS FOR EVERY ROUND
+• Finish ten problems, pick a sticker, and watch it fly into your sticker book
+• Tap a sticker and it jumps and does its own little move
 
 GAMES FOR EVERY GRADE
-• Addition, Subtraction and Multiplication, with numbers sized for the grade
-• Word Problems: math in a short story, read out loud
-• Tell Time: read the clock, from o'clock to five-minute steps
-• Comparing, Make a Ten, Place Value, Measurement, Stack & Solve, Big Numbers and Multi-Step problems
-• Random Mix: a bit of everything
-• Explore Numbers: tap a number and hear it in English, Japanese, Cantonese or Mandarin
+• Numbers, Add & Subtract, Multiply & Divide, Fractions, Measurement, Shapes, Graphs and Puzzles
+• Word problems, telling time, money, place value and more, with pictures to help
+• Answer by tapping, typing or writing with your finger (set for each child)
+• Explore Numbers: tap a number and hear it in 23 languages, from Spanish and French to Japanese, Korean and Hindi
 
 MADE TO BE SIMPLE
-• Every problem can be read aloud by a friendly voice built into the app
-• Works offline
-• See how many problems were solved and how many were right
-• Add a player for each child, each with their own grade
+• A friendly voice built into the app, works offline
+• A player for each child, each with their own grade
 
 FAMILY ACCOUNT (OPTIONAL)
 Kids can play right away with no sign-in. Grown-ups can create a free family account to keep players and grades in sync across devices. The same account works in PitchPop.
@@ -65,8 +71,9 @@ math,addition,subtraction,multiplication,times tables,tell time,kindergarten,fir
   description and screenshots.
 
 ## Screenshots
-Six per size, in this order: home, a problem, a right answer, Tell Time,
-a word problem, Explore Numbers.
+Six per size, in this order: home (Today's practice), Show me how, All
+done with a sticker to pick, the sticker book, a picture problem
+(fractions), Explore Numbers in Spanish.
 - `screenshots/6.3-inch/` — 1206×2622, for the "iPhone with Dynamic Island (medium display)" slot (required).
 - `screenshots/6.5-inch/` — 1284×2778, for the "iPhone 6.5" Display" slot.
 - `screenshots/6.9-inch/` — 1320×2868, for the "iPhone 6.9" Display" slot if

@@ -11,13 +11,15 @@ Kids category (ages 6–8). Kids can play without signing in; the family
 account is optional and only for grown-ups.
 
 How to use it:
-- Choose a grade with the "Grade" button at the top of the home page. The
-  topic cards change to fit that grade.
-- Tap any card to start a round of ten problems. Answer by tapping a choice,
-  typing, or writing the number with a finger (⚙️ Settings on the home page
-  switches between these). Tap the problem to hear it read aloud.
-- Explore Numbers lets the child tap numbers and hear each one in English,
-  Japanese, Cantonese or Mandarin.
+- Each player's grade and how they answer (tap a choice, type, or write
+  with a finger) are set in Players & grades, from the player button at the
+  top. The home page shows a "Today's practice" list (mistakes to fix, a
+  topic to work on, something new) and a tile for each section.
+- Tap any item or topic to start a round of ten problems. Tap the problem
+  to hear it read aloud; "Show me how" talks the child through it step by
+  step. Each finished round earns a sticker for the sticker book.
+- Explore Numbers lets the child tap numbers and hear each one in 23
+  languages, using the iPhone's built-in voices.
 
 Family account (optional):
 - Tap "Sign in or create account" at the top right, then sign in with the
