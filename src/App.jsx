@@ -1711,15 +1711,21 @@ export default function App() {
               <span className="feedback-icon">{answerCorrect ? <CheckIcon /> : <XIcon />}</span>
             </div>
             <h2 className="screen-title">{answerCorrect ? 'Great job!' : 'Not quite!'}</h2>
-            <p className="screen-sub">
-              {answerCorrect ? "That's right!" : `You picked ${chosen}. The correct answer is:`}
-            </p>
-            <div className="answer-card" style={{ background: ALL_META[problem.op].color }}>
-              <div className="answer-equation">{problemAnswerText(problem)}</div>
-            </div>
+            {/* A wrong answer never shows the right one (they'd just go back
+                and pick it): it's Try again, with Show me how for help. */}
+            {answerCorrect ? (
+              <>
+                <p className="screen-sub">That's right!</p>
+                <div className="answer-card" style={{ background: ALL_META[problem.op].color }}>
+                  <div className="answer-equation">{problemAnswerText(problem)}</div>
+                </div>
+              </>
+            ) : (
+              <p className="screen-sub">You picked {String(chosen)}. Have another go!</p>
+            )}
             {!answerCorrect &&
               (showHelp ? (
-                <ExplainPanel problem={problem} withAnswer onClose={() => setShowHelp(false)} />
+                <ExplainPanel problem={problem} onClose={() => setShowHelp(false)} />
               ) : (
                 <button className="help-btn help-btn-show" onClick={() => { unlockAudio(); setShowHelp(true); }}>
                   🙋 Show me how

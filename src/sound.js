@@ -332,7 +332,8 @@ export function playFeedbackAndSpeak(correct, correctAnswer) {
   }
   setTimeout(() => {
     // Kids who can't read yet hear where the help is (🙋 Show me how).
-    speak(correct ? `The answer is ${correctAnswer}` : `The answer is ${correctAnswer}. Tap the hand, and I'll show you how.`);
+    // A wrong answer isn't given away: try again (and help is there).
+    speak(correct ? `The answer is ${correctAnswer}` : "Not quite. Try again! Tap the hand, and I'll show you how.");
   }, 300);
 }
 
