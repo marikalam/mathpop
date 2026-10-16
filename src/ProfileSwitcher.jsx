@@ -5,7 +5,7 @@ import { gradeInfo } from './grades.js';
 // "Playing as": the player pill in the header, next to the account button,
 // picks which player is playing (each plays at their own grade), and leads
 // to the Players & grades screen - for guests too. Same as PitchPop's.
-export default function ProfileSwitcher({ profile, profiles, onChange, onOpenSettings, onOpenAnswerSettings }) {
+export default function ProfileSwitcher({ profile, profiles, onChange, onOpenSettings }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const current = profiles.find((p) => p.id === profile) || profiles[0];
@@ -60,17 +60,6 @@ export default function ProfileSwitcher({ profile, profiles, onChange, onOpenSet
             >
               ⚙️ <span>Players &amp; grades</span>
             </button>
-            {onOpenAnswerSettings && (
-              <button
-                className="profile-settings-item"
-                onClick={() => {
-                  onOpenAnswerSettings();
-                  setOpen(false);
-                }}
-              >
-                ✏️ <span>How to answer</span>
-              </button>
-            )}
           </div>
         </div>
       )}

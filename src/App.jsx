@@ -24,6 +24,8 @@ import { earnSticker, pendingStickers, playerStickers } from './stickerStore.js'
 import Sticker from './Sticker.jsx';
 import { STICKERS } from './stickers.js';
 import { startStickerSync } from './stickerSync.js';
+import TodayPlan from './TodayPlan.jsx';
+import { recordRound } from './todayPlan.js';
 import LogoMark from './LogoMark.jsx';
 import { AccountButton, AccountScreen, AddPlayerForm, PlayerSettingsCard, SyncStatus } from './Account.jsx';
 import {
@@ -482,7 +484,6 @@ function AppHeader({ level, onBack, showBack, players }) {
             profiles={players.profiles}
             onChange={players.onChange}
             onOpenSettings={players.onOpenPlayers}
-            onOpenAnswerSettings={players.onOpenAnswerSettings}
           />
           <AccountButton user={players.user} onClick={players.onOpenAccount} />
         </div>
@@ -751,8 +752,12 @@ export default function App() {
     setView((v) => (['question', 'feedback', 'complete', 'review'].includes(v) ? 'home' : v));
   }
 
+  // How each player answers (write, pick or type), set in Players & grades.
+  // Kept on this device, per player (older versions had one setting for all).
+  const answerFor = (id) => settings.answerBy?.[id] || settings.inputMethod || 'write';
+
   function openPlayers() {
-    setDraftProfiles(profiles);
+    setDraftProfiles(profiles.map((p) => ({ ...p, answerBy: answerFor(p.id) })));
     setView('players');
   }
 
@@ -797,7 +802,14 @@ export default function App() {
   }
 
   function savePlayersScreen() {
-    const cleaned = draftProfiles.map((p) => ({ ...p, name: p.name.trim() || 'Player' }));
+    const answerBy = { ...settings.answerBy };
+    draftProfiles.forEach((p) => {
+      answerBy[p.id] = p.answerBy;
+    });
+    const newSettings = { ...settings, answerBy };
+    setSettings(newSettings);
+    saveSettings(newSettings);
+    const cleaned = draftProfiles.map(({ answerBy: _a, ...p }) => ({ ...p, name: p.name.trim() || 'Player' }));
     const keptIds = new Set(cleaned.map((p) => p.id));
     if (profileOwner === 'account') {
       cleaned.forEach(saveCloudProfile);
@@ -816,7 +828,6 @@ export default function App() {
     onChange: changeProfile,
     onOpenPlayers: openPlayers,
     onOpenAccount: openAccount,
-    onOpenAnswerSettings: () => setView('settings'),
   };
   // The loading screen shown as the app opens, while the fonts and the
   // handwriting reader get ready. At least OPENING_MIN_MS so it doesn't
@@ -975,11 +986,6 @@ export default function App() {
     saveSettings(newSettings);
   }
 
-  function updateInputMethod(method) {
-    const newSettings = { ...settings, inputMethod: method };
-    setSettings(newSettings);
-    saveSettings(newSettings);
-  }
 
   // `from` is the screen Back returns to; Play again keeps the last one.
   function startOperation(op, from) {
@@ -1067,6 +1073,7 @@ export default function App() {
     if (roundIndex + 1 >= SESSION_ROUNDS) {
       // Every finished round earns a sticker (picked on the "All done!" screen).
       if (signedIn) earnSticker(currentProfile.id);
+      recordRound(currentProfile.id, operation, gradeInfo(level).id, sessionCorrect, SESSION_ROUNDS);
       setView('complete');
       return;
     }
@@ -1176,60 +1183,60 @@ export default function App() {
               </button>
             </section>
 
-            <section className="quick-set" aria-label="Quick play">
-              <button className="home-cta" onClick={() => startOperation('random', 'home')}>
-                <span className="home-cta-icon" aria-hidden="true">
-                  🎲
-                </span>
-                <span className="home-cta-text">
-                  <span className="home-cta-title">Random Mix</span>
-                  <span className="home-cta-sub">A bit of everything</span>
-                </span>
-                <span className="home-cta-arrow" aria-hidden="true">
-                  →
-                </span>
-              </button>
-              <button className="quick-explore" onClick={() => setView('explore')}>
-                <span className="quick-explore-icon" aria-hidden="true">
-                  🔢
-                </span>
-                <span className="home-cta-text">
-                  <span className="quick-explore-title">Explore Numbers</span>
-                  <span className="quick-explore-sub">Tap a number, hear it out loud</span>
-                </span>
-                <span className="quick-explore-arrow" aria-hidden="true">
-                  →
-                </span>
-              </button>
-            </section>
+            {/* What to work on today, made from this player's history (like
+                PitchPop's Today's practice). */}
+            <TodayPlan
+              key={`${currentProfile.id}-${gradeInfo(level).id}`}
+              playerId={currentProfile.id}
+              grade={gradeInfo(level).id}
+              byOp={levelStats.byOp || {}}
+              signedIn={signedIn}
+              onOpen={(mode) => startOperation(mode, 'home')}
+              onSignIn={openAccount}
+            />
 
-            <h3 className="home-section-title">Sections</h3>
-            <div
-              className="home-grid"
-              style={{ gridTemplateRows: `repeat(${Math.ceil(gradeSections(gradeInfo(level).id).length / 2)}, minmax(0, 104px))` }}
-            >
-              {gradeSections(gradeInfo(level).id).map((section) => (
-                <button
-                  key={section.id}
-                  className="home-card section-card"
-                  style={{ '--card-from': section.from, '--card-to': section.to }}
-                  onClick={() => {
-                    setSectionId(section.id);
-                    setView('section');
+            {/* Every section, and Explore Numbers, as small tiles under it. */}
+            {(() => {
+              const sections = gradeSections(gradeInfo(level).id);
+              const n = sections.length + 1;
+              const cols = n <= 4 ? n : n <= 8 ? 4 : 5;
+              return (
+                <div
+                  className="home-tiles"
+                  style={{
+                    gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                    gridTemplateRows: `repeat(${Math.ceil(n / cols)}, minmax(0, 92px))`,
                   }}
                 >
-                  <span className="home-card-icon" aria-hidden="true">
-                    {section.icon}
-                  </span>
-                  <span className="home-card-text">
-                    <span className="home-card-title">{section.short || section.title}</span>
-                    <span className="home-card-sub">
-                      {section.topics.length} topic{section.topics.length === 1 ? '' : 's'}
+                  {sections.map((section) => (
+                    <button
+                      key={section.id}
+                      className="home-tile"
+                      style={{ '--card-from': section.from, '--card-to': section.to }}
+                      onClick={() => {
+                        setSectionId(section.id);
+                        setView('section');
+                      }}
+                    >
+                      <span className="home-tile-icon" aria-hidden="true">
+                        {section.icon}
+                      </span>
+                      <span className="home-tile-title">{section.tile || section.short || section.title}</span>
+                    </button>
+                  ))}
+                  <button
+                    className="home-tile"
+                    style={{ '--card-from': '#f7a24f', '--card-to': '#e8792f' }}
+                    onClick={() => setView('explore')}
+                  >
+                    <span className="home-tile-icon" aria-hidden="true">
+                      🔊
                     </span>
-                  </span>
-                </button>
-              ))}
-            </div>
+                    <span className="home-tile-title">Explore Numbers</span>
+                  </button>
+                </div>
+              );
+            })()}
             <p className="curriculum-note">Topics follow Singapore math and Beast Academy for {gradeInfo(level).label}.</p>
 
             {!IS_NATIVE && (
@@ -1427,7 +1434,7 @@ export default function App() {
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
             <h2 className="screen-title">Players &amp; grades</h2>
-            <p className="screen-sub">Set each player's grade here. They play at that grade, following Singapore math.</p>
+            <p className="screen-sub">Set each player's grade and how they answer. They play at that grade, following Singapore math.</p>
             <SyncStatus user={profileOwner === 'account' ? cloudUser : null} onOpenAccount={openAccount} />
             <div className="settings-list">
               {draftProfiles.map((p) => (
@@ -1442,48 +1449,13 @@ export default function App() {
               ))}
             </div>
             <AddPlayerForm onAdd={addPlayer} />
+            {voiceQuality === 'basic-system' && voiceUpgradeTip() && <p className="screen-sub voice-tip">{voiceUpgradeTip()}</p>}
             <button className="pill-btn-primary pill-btn-full" onClick={savePlayersScreen}>
               Save players &amp; grades
             </button>
             <button className="back-link back-link-center" onClick={goHome}>
               Cancel
             </button>
-          </>
-        )}
-
-        {view === 'settings' && (
-          <>
-            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
-            <h2 className="screen-title">Settings</h2>
-            <div style={{ padding: '20px', textAlign: 'center' }}>
-              <p className="screen-sub" style={{ marginBottom: '30px' }}>How do you want to answer?</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '300px', margin: '0 auto' }}>
-                <button
-                  className={`pill-btn-${settings.inputMethod === 'type' ? 'primary' : 'secondary'} pill-btn-full`}
-                  onClick={() => updateInputMethod('type')}
-                  style={{ padding: '20px', fontSize: '16px', fontWeight: '600' }}
-                >
-                  {settings.inputMethod === 'type' ? '✓ ' : ''}Type the answer
-                </button>
-                <button
-                  className={`pill-btn-${settings.inputMethod === 'choice' ? 'primary' : 'secondary'} pill-btn-full`}
-                  onClick={() => updateInputMethod('choice')}
-                  style={{ padding: '20px', fontSize: '16px', fontWeight: '600' }}
-                >
-                  {settings.inputMethod === 'choice' ? '✓ ' : ''}Pick from choices
-                </button>
-                <button
-                  className={`pill-btn-${settings.inputMethod === 'write' ? 'primary' : 'secondary'} pill-btn-full`}
-                  onClick={() => updateInputMethod('write')}
-                  style={{ padding: '20px', fontSize: '16px', fontWeight: '600' }}
-                >
-                  {settings.inputMethod === 'write' ? '✓ ' : ''}Write the answer
-                </button>
-              </div>
-              {voiceQuality === 'basic-system' && voiceUpgradeTip() && (
-                <p className="screen-sub voice-tip">{voiceUpgradeTip()}</p>
-              )}
-            </div>
           </>
         )}
 
@@ -1591,9 +1563,9 @@ export default function App() {
             )}
 
             <div className="answer-area">
-            {settings.inputMethod === 'write' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
+            {answerFor(currentProfile.id) === 'write' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
               <WritePad onSubmit={chooseAnswer} />
-            ) : settings.inputMethod === 'type' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
+            ) : answerFor(currentProfile.id) === 'type' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{
                   background: 'linear-gradient(135deg, rgba(59, 111, 239, 0.2) 0%, rgba(47, 174, 107, 0.2) 100%)',

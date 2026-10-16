@@ -81,9 +81,35 @@ export function PlayerSettingsCard({ profile, onUpdate, onRemove, canRemove, sta
           </button>
         ))}
       </div>
+      <p className="settings-help">How to answer</p>
+      <div className="answer-settings-grid" role="radiogroup" aria-label={`How ${profile.name} answers`}>
+        {ANSWER_WAYS.map((w) => (
+          <button
+            key={w.id}
+            type="button"
+            role="radio"
+            aria-checked={profile.answerBy === w.id}
+            className={`answer-setting${profile.answerBy === w.id ? ' answer-setting-active' : ''}`}
+            onClick={() => onUpdate({ answerBy: w.id })}
+          >
+            <span className="answer-setting-icon" aria-hidden="true">
+              {w.icon}
+            </span>
+            {w.label}
+          </button>
+        ))}
+      </div>
     </section>
   );
 }
+
+// How a player answers number questions (questions with picture or word
+// answers are always picked from choices).
+const ANSWER_WAYS = [
+  { id: 'write', icon: '✏️', label: 'Write' },
+  { id: 'choice', icon: '👆', label: 'Pick' },
+  { id: 'type', icon: '🔢', label: 'Type' },
+];
 
 export function AddPlayerForm({ onAdd }) {
   const [name, setName] = useState('');
