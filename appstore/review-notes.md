@@ -20,9 +20,8 @@ How to use it:
   Japanese, Cantonese or Mandarin.
 
 Family account (optional):
-- Tap "Sign in or create account" at the top right. A grown-ups-only
-  question appears first (multiply a two-digit number by a one-digit number,
-  typed in). Answer it, then sign in with the demo account above.
+- Tap "Sign in or create account" at the top right, then sign in with the
+  demo account above.
 - The account stores the grown-up's email and password plus each player's
   name and grade, so players sync across devices. Progress and settings stay
   on the device. The account is shared with our other app, PitchPop.

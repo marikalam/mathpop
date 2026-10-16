@@ -59,7 +59,7 @@ math,addition,subtraction,multiplication,times tables,tell time,kindergarten,fir
   only allows that wording for apps in the Kids category (Guideline 2.3.8).
   MathPop qualifies: in the iPhone app there are no links out of the app,
   no purchases, no ads and no analytics. The optional family account is
-  behind a parental gate (a typed two-digit × one-digit question).
+  meant for grown-ups (there's no parental gate in front of it).
 - If you'd rather not use the Kids category, rename the app first (for
   example "MathPop: Math Practice") and keep "kids" out of the subtitle,
   description and screenshots.
