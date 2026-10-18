@@ -58,6 +58,8 @@ const OLD_PROGRESS_KEY = 'mathpop-progress-v2';
 // opens with them at once and works offline. Each has a grade (grades.js).
 const GUEST_PLAYERS_KEY = 'mathpop-guest-players-v1';
 const ACCOUNT_PLAYERS_KEY = 'mathpop-account-players-v1';
+// The account players this phone has seen in the account (withUnsyncedPlayers).
+const SEEN_PLAYERS_KEY = 'mathpop-account-seen-v1';
 const ACTIVE_PLAYER_KEY = 'mathpop-active-player-v1';
 const SETTINGS_KEY = 'mathpop-settings-v1';
 const GRADE_KEY = 'mathpop-grade-v1';
@@ -577,6 +579,31 @@ export default function App() {
     saveActive(profileOwner, profile);
   }, [profile, profileOwner]);
 
+  // The account's players, plus any made on this phone that never reached
+  // the account (for example while its player list couldn't be saved):
+  // those are sent up now. The players this phone has seen in the account
+  // are remembered, so one removed on another phone isn't brought back.
+  function withUnsyncedPlayers(cloudList) {
+    const seen = new Set(readJson(SEEN_PLAYERS_KEY) || []);
+    const inCloud = new Set(cloudList.map((p) => p.id));
+    const missing = (loadAccountPlayers() || []).filter(
+      (p) => !inCloud.has(p.id) && !seen.has(p.id) && !isUntouchedStarter(p, progress),
+    );
+    missing.forEach(saveCloudProfile);
+    let merged = [...cloudList, ...missing];
+    // A brand-new "Player 1" another phone made while it couldn't see this
+    // phone's players isn't needed once they're there.
+    if (missing.length) {
+      const starters = merged.filter((p) => isUntouchedStarter(p, progress));
+      if (starters.length < merged.length) {
+        starters.forEach((p) => deleteCloudProfile(p.id));
+        merged = merged.filter((p) => !starters.includes(p));
+      }
+    }
+    writeJson(SEEN_PLAYERS_KEY, [...new Set([...seen, ...inCloud])]);
+    return merged;
+  }
+
   // Switches between the guest and account player lists, keeping whoever
   // is playing if they're in the new list.
   function showProfiles(list, owner) {
@@ -609,7 +636,8 @@ export default function App() {
           return;
         }
         setCloudUser(user);
-        if (cloudProfiles?.length) showProfiles(cloudProfiles, 'account');
+        const players = cloudProfiles ? withUnsyncedPlayers(cloudProfiles) : null;
+        if (players?.length) showProfiles(players, 'account');
         else {
           const cached = loadAccountPlayers();
           if (cached) showProfiles(cached, 'account');
@@ -634,8 +662,9 @@ export default function App() {
       const epoch = authEpoch.current;
       const cloudProfiles = await loadCloudProfiles();
       busy = false;
-      if (!cloudProfiles?.length || viewRef.current === 'players' || epoch !== authEpoch.current) return;
-      showProfiles(cloudProfiles, 'account');
+      if (!cloudProfiles || viewRef.current === 'players' || epoch !== authEpoch.current) return;
+      const players = withUnsyncedPlayers(cloudProfiles);
+      if (players.length) showProfiles(players, 'account');
     };
     const onVisible = () => {
       if (document.visibilityState === 'visible') reconnect();
@@ -692,7 +721,8 @@ export default function App() {
       showProfiles(loadGuestPlayers(), 'guest');
       return;
     }
-    const cloudProfiles = (await loadCloudProfiles()) || loadAccountPlayers() || [];
+    const fromCloud = await loadCloudProfiles();
+    const cloudProfiles = (fromCloud && withUnsyncedPlayers(fromCloud)) || loadAccountPlayers() || [];
     // Guest players on this device (other than the untouched starter):
     // offer to move them into the account.
     const guests = loadGuestPlayers().filter((p) => !isUntouchedStarter(p, progress));
@@ -738,6 +768,7 @@ export default function App() {
     authEpoch.current += 1;
     try {
       localStorage.removeItem(ACCOUNT_PLAYERS_KEY);
+      localStorage.removeItem(SEEN_PLAYERS_KEY);
     } catch {
       /* ignore */
     }
