@@ -3,6 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <script>
+      // iPad (and other big screens held upright): show the phone layout
+      // scaled up to fill the screen, rather than a narrow column in the
+      // middle. The page is laid out about 880 points tall and the screen
+      // zooms it to fit; in landscape it's already tall enough to show as
+      // it is. Phones keep the usual width=device-width.
+      (function () {
+        var meta = document.querySelector('meta[name=viewport]');
+        var base = 'user-scalable=no, viewport-fit=cover';
+        function fit() {
+          var a = screen.width, b = screen.height;
+          var portrait = window.matchMedia('(orientation: portrait)').matches;
+          var w = portrait ? Math.min(a, b) : Math.max(a, b);
+          var h = portrait ? Math.max(a, b) : Math.min(a, b);
+          var cssW = Math.round(Math.max(460, (w * 880) / h));
+          var content = Math.min(a, b) >= 600 && cssW < w - 20
+            ? 'width=' + cssW + ', ' + base
+            : 'width=device-width, initial-scale=1.0, maximum-scale=1.0, ' + base;
+          if (meta.getAttribute('content') !== content) meta.setAttribute('content', content);
+        }
+        fit();
+        window.addEventListener('orientationchange', function () { setTimeout(fit, 50); });
+        window.matchMedia('(orientation: portrait)').addEventListener('change', fit);
+      })();
+    </script>
     <title>MathPop</title>
     <link rel="icon" href="%BASE_URL%favicon.png" />
     <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />

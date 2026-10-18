@@ -78,7 +78,9 @@ done with a sticker to pick, the sticker book, a picture problem
 - `screenshots/6.5-inch/` — 1284×2778, for the "iPhone 6.5" Display" slot.
 - `screenshots/6.9-inch/` — 1320×2868, for the "iPhone 6.9" Display" slot if
   it's offered.
-Apple scales these down for smaller iPhones automatically.
+- `screenshots/13-inch-ipad/` — 2048×2732, for the "iPad 13-inch" slot
+  (needed now that MathPop runs on iPad).
+Apple scales these down for smaller iPhones and iPads automatically.
 
 ## App Privacy ("nutrition label")
 Data collection: **Yes, we collect data from this app** (only when a grown-up
