@@ -1,0 +1,16 @@
+name: Diag Supabase
+on:
+  push:
+    branches: [claude/diag-supabase]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          K=sb_publishable_hcaechWMVkIchjiS_BGQjg_E8N1XHA1; U=https://wtjhceycjiowvdpfwkjj.supabase.co
+          for q in "mathpop_profiles?select=profile_key,stickers&limit=1" "pitchpop_profiles?select=profile_key&limit=1" "pitchpop_profiles?select=practice_log,streak_days&limit=1" "pitchpop_profiles?select=stickers,round_history,settings,live_practice&limit=1"; do
+            echo "== $q"; curl -sS "$U/rest/v1/$q" -H "apikey: $K" -H "Authorization: Bearer $K"; echo
+          done
+          for f in merge_player_history merge_player_extras claim_live_practice merge_mathpop_stickers; do
+            echo "== rpc $f"; curl -sS -X POST "$U/rest/v1/rpc/$f" -H "apikey: $K" -H "Authorization: Bearer $K" -H "Content-Type: application/json" -d '{}'; echo
+          done
