@@ -125,7 +125,7 @@ for (const loc of locs) {
 // The App Store screenshots, when asked for (SCREENSHOTS=yes): the ones in
 // appstore/screenshots replace what's there, for each iPhone size.
 if (SCREENSHOTS === 'yes') {
-  const DIRS = { APP_IPHONE_67: '6.9-inch', APP_IPHONE_65: '6.5-inch' };
+  const DIRS = { APP_IPHONE_67: '6.9-inch', APP_IPHONE_65: '6.5-inch', APP_IPAD_PRO_3GEN_129: '13-inch-ipad' };
   for (const loc of locs) {
     const sets = (await api('GET', `/v1/appStoreVersionLocalizations/${loc.id}/appScreenshotSets?limit=50`)).data;
     // Older screenshots in other iPhone sizes (copied from the last
