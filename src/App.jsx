@@ -32,11 +32,14 @@ import {
   getUser,
   loadCloudProfiles,
   onAuthEvent,
+  canViewStats,
   rememberedAccount,
   saveCloudProfile,
   signInFromLink,
 } from './cloud.js';
 import { listenForAppLinks } from './appLink.js';
+import { statAppOpened, statRoundDone } from './stats.js';
+import StatsScreen from './StatsScreen.jsx';
 
 const SESSION_ROUNDS = 10;
 // The iPhone app has no link out to the other apps' website, and no printing.
@@ -144,6 +147,14 @@ const OPERATIONS = {
 };
 
 const ALL_META = { ...OPERATIONS, ...SKILL_META };
+
+// A round's game, named for the stats page.
+function statTopicName(op) {
+  if (op === 'random') return 'Random Mix';
+  if (op === 'mistakes') return 'Fix my mistakes';
+  if (op.startsWith('section:')) return `${op.slice(8).replace(/^./, (c) => c.toUpperCase())} mix`;
+  return ALL_META[op]?.label || op;
+}
 
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -575,6 +586,21 @@ export default function App() {
   useEffect(() => {
     savePlayers(profiles, profileOwner);
   }, [profiles, profileOwner]);
+
+  // Anonymous usage stats (stats.js): the app was opened.
+  useEffect(() => {
+    statAppOpened();
+  }, []);
+  // The stats page is only for the accounts allowed to see it.
+  const [statsViewer, setStatsViewer] = useState(false);
+  useEffect(() => {
+    let live = true;
+    if (cloudUser) canViewStats().then((ok) => live && setStatsViewer(ok));
+    else setStatsViewer(false);
+    return () => {
+      live = false;
+    };
+  }, [cloudUser]);
   useEffect(() => {
     saveActive(profileOwner, profile);
   }, [profile, profileOwner]);
@@ -1112,6 +1138,7 @@ export default function App() {
       // Every finished round earns a sticker (picked on the "All done!" screen).
       if (signedIn) earnSticker(currentProfile.id);
       recordRound(currentProfile.id, operation, gradeInfo(level).id, sessionCorrect, SESSION_ROUNDS);
+      statRoundDone({ grade: gradeInfo(level).id, topic: operation, lang: problem?.lang || 'en', correct: sessionCorrect, total: SESSION_ROUNDS });
       setView('complete');
       return;
     }
@@ -1457,6 +1484,14 @@ export default function App() {
           </>
         )}
 
+        {view === 'stats' && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={() => setView('account')} />
+            <h2 className="screen-title">MathPop stats</h2>
+            <StatsScreen topicName={statTopicName} gradeName={(id) => gradeInfo(id).short} />
+          </>
+        )}
+
         {view === 'account' && (
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
@@ -1467,6 +1502,7 @@ export default function App() {
               onSignedIn={handleSignedIn}
               onAccountDeleted={handleAccountDeleted}
               onOpenPlayers={openPlayers}
+              onOpenStats={statsViewer ? () => setView('stats') : null}
               onDone={goHome}
               recoveryMode={passwordRecovery}
               onPasswordUpdated={() => setPasswordRecovery(false)}

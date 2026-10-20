@@ -31,9 +31,12 @@ Family account (optional):
   and its players from our servers.
 
 Kids category notes:
-- No links out of the app, no purchases, no ads, no analytics and no
-  tracking. The only network service is Supabase, which hosts the optional
-  family account; it is never used for advertising.
+- No links out of the app, no purchases, no ads, no third-party analytics
+  and no tracking. MathPop sends its own anonymous usage counts (app opened;
+  a round's grade, game, language and score) with no account, device or
+  advertising ID, declared as Product Interaction, not linked to the user.
+  The only network service is Supabase, which hosts the optional family
+  account and these counts; it is never used for advertising.
 - The read-aloud voice is the open-source Piper text-to-speech model bundled
   inside the app; Explore Numbers' other languages use the iPhone's built-in
   voices. Handwriting is read by a small on-device model; drawings are never
