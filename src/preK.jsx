@@ -21,20 +21,28 @@ function shuffle(list) {
   return copy;
 }
 
+// [picture, one, many, Japanese]
 const THINGS = [
-  ['🍎', 'apple', 'apples'],
-  ['🐶', 'puppy', 'puppies'],
-  ['⭐', 'star', 'stars'],
-  ['🦆', 'duck', 'ducks'],
-  ['🚗', 'car', 'cars'],
-  ['🌸', 'flower', 'flowers'],
-  ['🐟', 'fish', 'fish'],
-  ['🍓', 'strawberry', 'strawberries'],
-  ['🎈', 'balloon', 'balloons'],
-  ['🐞', 'ladybug', 'ladybugs'],
+  ['🍎', 'apple', 'apples', 'りんご'],
+  ['🐶', 'puppy', 'puppies', 'わんちゃん'],
+  ['⭐', 'star', 'stars', 'ほし'],
+  ['🦆', 'duck', 'ducks', 'あひる'],
+  ['🚗', 'car', 'cars', 'くるま'],
+  ['🌸', 'flower', 'flowers', 'おはな'],
+  ['🐟', 'fish', 'fish', 'おさかな'],
+  ['🍓', 'strawberry', 'strawberries', 'いちご'],
+  ['🎈', 'balloon', 'balloons', 'ふうせん'],
+  ['🐞', 'ladybug', 'ladybugs', 'てんとうむし'],
 ];
 
 const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+
+// Japanese (`lang: 'ja'`, a player's language in Players & grades): the
+// same games, asked and explained in Japanese, in hiragana a little one
+// hears and (later) reads. Numbers as said when counting (いち, に, さん)
+// and as a count of things (ひとつ, ふたつ, みっつ).
+const JA_NUMBERS = ['ゼロ', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', 'なな', 'はち', 'きゅう', 'じゅう'];
+const JA_COUNTS = ['ゼロ', 'ひとつ', 'ふたつ', 'みっつ', 'よっつ', 'いつつ', 'むっつ', 'ななつ', 'やっつ', 'ここのつ', 'とお'];
 
 // Small numbers most of the time: a 2-3 year old counts to about 5.
 function smallNumber() {
@@ -51,17 +59,39 @@ function nearbyChoices(n, min = 1) {
   return shuffle([...pool]);
 }
 
-function countProblem() {
-  const [emoji, one, many] = pick(THINGS);
+function countProblem(lang) {
+  const [emoji, one, many, ja] = pick(THINGS);
   const n = smallNumber();
-  return {
+  const problem = {
     promptKind: 'count',
     countEmoji: emoji,
     countN: n,
-    prompt: `How many ${many}?`,
     correct: n,
     answerType: 'choice',
     choices: nearbyChoices(n),
+  };
+  if (lang === 'ja') {
+    return {
+      ...problem,
+      lang,
+      prompt: `${ja}は いくつ？`,
+      answerLabel: `${n}（${JA_COUNTS[n]}）`,
+      speech: `${ja}は いくつ かな？ いっしょに かぞえよう！`,
+      speechAnswer: JA_COUNTS[n],
+      questionTitle: 'かぞえよう！',
+      explain: [
+        `${ja}を いっしょに かぞえよう。`,
+        'ひとつずつ ゆびで さわりながら かぞえてね。',
+        ...(n >= 3 ? ['いくよ。いち、に、それから つづけて！'] : []),
+        'とばさないでね。おなじのを 2かい かぞえないでね。',
+        `${ja}は いくつ あったかな？`,
+      ],
+      explainAnswer: `${ja}は ${JA_COUNTS[n]}！`,
+    };
+  }
+  return {
+    ...problem,
+    prompt: `How many ${many}?`,
     answerLabel: `${n} ${n === 1 ? one : many}`,
     speech: `How many ${many}? Let's count them!`,
     speechAnswer: `${n} ${n === 1 ? one : many}`,
@@ -91,16 +121,42 @@ const DIGIT_LOOKS = [
   'Nine has a little circle on top and a line going down.',
   'Ten has two numbers, a one and a zero, like a stick and an egg.',
 ];
+const JA_DIGIT_LOOKS = [
+  'ゼロは たまごみたいに まるいよ。',
+  'いちは まっすぐな ぼうみたいだよ。',
+  'には うえが くるんと まがって、したが たいらだよ。はくちょうみたいだね。',
+  'さんは まるい おやまが ふたつ あるよ。',
+  'よんは とがった かどと、したに おりる せんが あるよ。',
+  'ごは うえに たいらな ぼうし、したに まるい おなかが あるよ。',
+  'ろくは くるっと まわって、したで まるに なるよ。',
+  'ななは うえが たいらで、すべりだいみたいに おりるよ。',
+  'はちは ゆきだるまみたい。まるが ふたつ かさなっているよ。',
+  'きゅうは うえに ちいさな まると、したに おりる せんが あるよ。',
+  'じゅうは いちと ゼロ、ふたつの すうじで できているよ。ぼうと たまごだね。',
+];
 
-function findNumberProblem() {
+function findNumberProblem(lang) {
   const n = Math.random() < 0.7 ? randInt(1, 5) : randInt(0, 10);
+  const problem = { promptKind: 'say', correct: n, answerType: 'choice', choices: nearbyChoices(n, 0) };
+  if (lang === 'ja') {
+    const word = JA_NUMBERS[n];
+    return {
+      ...problem,
+      lang,
+      sayText: `${word}は どれ？`,
+      prompt: `${n}を さがそう`,
+      answerLabel: `${n}は ${word}`,
+      speech: `${word}は どれかな？`,
+      speechAnswer: word,
+      questionTitle: 'すうじを さがそう',
+      explain: [`${word}を さがしているよ。`, JA_DIGIT_LOOKS[n], 'ひとつずつ、ゆっくり みてね。', `${word}は どれかな？`],
+      explainAnswer: `これが ${word}だよ！`,
+    };
+  }
   return {
-    promptKind: 'say',
+    ...problem,
     sayText: `Which one is ${NUMBER_WORDS[n]}?`,
     prompt: `Find the number ${n}`,
-    correct: n,
-    answerType: 'choice',
-    choices: nearbyChoices(n, 0),
     answerLabel: `${n} is ${NUMBER_WORDS[n]}`,
     speech: `Can you find the number ${NUMBER_WORDS[n]}?`,
     speechAnswer: NUMBER_WORDS[n],
@@ -131,24 +187,53 @@ const SHAPE_LOOKS = {
   oval: 'An oval is round but stretched out, like an egg.',
   diamond: 'A diamond has 4 sides and stands up on a point, like a kite.',
 };
+// [name, what it looks like] in Japanese.
+const JA_SHAPES = {
+  circle: ['まる', 'まるは ボールみたいに まるいよ。かどは ひとつも ないよ。'],
+  square: ['しかく', 'しかくは おなじ ながさの へんが 4つ、かどが 4つ あるよ。'],
+  triangle: ['さんかく', 'さんかくは へんが 3つ、とがった かどが 3つ あるよ。'],
+  rectangle: ['ながしかく', 'ながしかくは へんが 4つ。ながい へんが 2つ、みじかい へんが 2つ。ドアみたいだね。'],
+  star: ['ほし', 'ほしは とがった さきが 5つ あるよ。おそらの ほしみたいだね。'],
+  heart: ['ハート', 'ハートは うえに まるい やまが 2つ、したが とがっているよ。'],
+  oval: ['たまごがた', 'たまごがたは まるいけど、ながく のびているよ。たまごみたいだね。'],
+  diamond: ['ひしがた', 'ひしがたは へんが 4つ。かどで たっているよ。たこみたいだね。'],
+};
 const FIRST_SHAPES = ['circle', 'square', 'triangle', 'star', 'heart'];
 const SHAPE_COLORS = ['#EF4444', '#3B6FEF', '#2FAE6B', '#F5A623', '#8E4FD6', '#EC4899', '#14B8A6'];
 
-function shapesProblem() {
+function shapesProblem(lang) {
   // The first shapes most of the time; rectangles, ovals and diamonds too.
   const pool = Math.random() < 0.7 ? FIRST_SHAPES : Object.keys(SHAPES);
   const choices = shuffle(pool).slice(0, 3);
   const correct = pick(choices);
   const colors = shuffle(SHAPE_COLORS);
-  return {
+  const problem = {
     promptKind: 'say',
-    sayText: `Find the ${correct}!`,
-    prompt: `Find the ${correct}`,
     correct,
     answerType: 'choice',
     choiceKind: 'shape',
     shapeColors: Object.fromEntries(choices.map((s, i) => [s, colors[i]])),
     choices,
+  };
+  if (lang === 'ja') {
+    const [name, looks] = JA_SHAPES[correct];
+    return {
+      ...problem,
+      lang,
+      sayText: `${name}を さがそう！`,
+      prompt: `${name}を さがそう`,
+      answerLabel: name,
+      speech: `${name}は どれかな？`,
+      speechAnswer: name,
+      questionTitle: 'かたち',
+      explain: [`${name}を さがそう。`, looks, 'ひとつずつ みてね。どれが にているかな？'],
+      explainAnswer: `${name}は これ！`,
+    };
+  }
+  return {
+    ...problem,
+    sayText: `Find the ${correct}!`,
+    prompt: `Find the ${correct}`,
     answerLabel: correct.charAt(0).toUpperCase() + correct.slice(1),
     speech: `Can you find the ${correct}?`,
     speechAnswer: `the ${correct}`,
@@ -158,29 +243,46 @@ function shapesProblem() {
   };
 }
 
+// [picture, one, many, Japanese]
 const BIG_SMALL = [
-  ['🐘', 'elephant', 'elephants'],
-  ['🐻', 'bear', 'bears'],
-  ['🐳', 'whale', 'whales'],
-  ['🏠', 'house', 'houses'],
-  ['🌳', 'tree', 'trees'],
-  ['🐶', 'puppy', 'puppies'],
-  ['🍎', 'apple', 'apples'],
-  ['🚌', 'bus', 'buses'],
+  ['🐘', 'elephant', 'elephants', 'ぞう'],
+  ['🐻', 'bear', 'bears', 'くま'],
+  ['🐳', 'whale', 'whales', 'くじら'],
+  ['🏠', 'house', 'houses', 'おうち'],
+  ['🌳', 'tree', 'trees', 'き'],
+  ['🐶', 'puppy', 'puppies', 'わんちゃん'],
+  ['🍎', 'apple', 'apples', 'りんご'],
+  ['🚌', 'bus', 'buses', 'バス'],
 ];
 
-function bigSmallProblem() {
-  const [emoji, name, names] = pick(BIG_SMALL);
+function bigSmallProblem(lang) {
+  const [emoji, name, names, ja] = pick(BIG_SMALL);
   const correct = Math.random() < 0.5 ? 'big' : 'small';
+  const problem = { promptKind: 'say', correct, answerType: 'choice', choiceKind: 'size', sizeEmoji: emoji, choices: shuffle(['big', 'small']) };
+  if (lang === 'ja') {
+    const size = correct === 'big' ? 'おおきい' : 'ちいさい';
+    return {
+      ...problem,
+      lang,
+      sayText: `${size} ${ja}は どれ？`,
+      prompt: `${size} ${ja}は どれ？`,
+      answerLabel: `${size} ${ja}`,
+      speech: `${size} ${ja}は どれかな？`,
+      speechAnswer: `${size} ${ja}`,
+      questionTitle: 'おおきい・ちいさい',
+      explain: [
+        `${ja}が ふたつ あるね。`,
+        'ひとつは おおきくて、ひとつは ちいさいよ。',
+        correct === 'big' ? 'おおきいほうは、ばしょを たくさん とるよ。' : 'ちいさいほうは、ちょっとだけ ばしょを とるよ。',
+        `${size} ${ja}は どれかな？`,
+      ],
+      explainAnswer: `${size} ${ja}は これ！`,
+    };
+  }
   return {
-    promptKind: 'say',
+    ...problem,
     sayText: `Which ${name} is ${correct.toUpperCase()}?`,
     prompt: `Which ${name} is ${correct}?`,
-    correct,
-    answerType: 'choice',
-    choiceKind: 'size',
-    sizeEmoji: emoji,
-    choices: shuffle(['big', 'small']),
     answerLabel: `The ${correct} ${name}`,
     speech: `Which ${name} is ${correct}?`,
     speechAnswer: `the ${correct} ${name}`,
@@ -195,8 +297,8 @@ function bigSmallProblem() {
   };
 }
 
-function moreFewerProblem() {
-  const [emoji, one, many] = pick(THINGS);
+function moreFewerProblem(lang) {
+  const [emoji, one, many, ja] = pick(THINGS);
   let a = randInt(1, 6);
   let b = randInt(1, 6);
   // Easy to see: at least two apart.
@@ -206,14 +308,34 @@ function moreFewerProblem() {
   const groupB = emoji.repeat(b);
   const wantA = more ? a > b : a < b;
   const n = wantA ? a : b;
+  const problem = { promptKind: 'say', correct: wantA ? groupA : groupB, answerType: 'choice', choiceKind: 'group', choices: shuffle([groupA, groupB]) };
+  if (lang === 'ja') {
+    const word = more ? 'おおい' : 'すくない';
+    return {
+      ...problem,
+      lang,
+      sayText: `${word}のは どっち？`,
+      prompt: `${ja}が ${word}のは どっち？`,
+      answerLabel: `${JA_COUNTS[n]}の ほうが ${word}`,
+      speech: `${ja}が ${word}のは どっちかな？`,
+      speechAnswer: `${JA_COUNTS[n]}の ほう`,
+      questionTitle: word,
+      explain: [
+        `${ja}の グループを ふたつとも みてみよう。`,
+        'ひとつずつ さわりながら、それぞれ かぞえてね。',
+        more ? 'おおいって、たくさん あるほうの ことだよ。' : 'すくないって、あまり ないほうの ことだよ。',
+        more
+          ? 'ひとつずつ ならべて、ペアに してもいいよ。あまったほうが おおいよ。'
+          : 'ひとつずつ ならべて、ペアに してもいいよ。さきに なくなったほうが すくないよ。',
+        `${word}のは どっちかな？`,
+      ],
+      explainAnswer: `${JA_COUNTS[n]}の ほうが ${word}よ！`,
+    };
+  }
   return {
-    promptKind: 'say',
+    ...problem,
     sayText: more ? 'Which has MORE?' : 'Which has FEWER?',
     prompt: more ? `Which has more ${many}?` : `Which has fewer ${many}?`,
-    correct: wantA ? groupA : groupB,
-    answerType: 'choice',
-    choiceKind: 'group',
-    choices: shuffle([groupA, groupB]),
     answerLabel: `${n} ${many} is ${more ? 'more' : 'fewer'}`,
     speech: more ? `Which has more ${many}?` : `Which has fewer ${many}?`,
     speechAnswer: `${n} ${many}`,
@@ -235,24 +357,25 @@ const PATTERN_SETS = [
   ['🍎', '🍌', '🍇', '🍊'],
   ['⭐', '🌙', '☀️', '☁️'],
 ];
-// What to call each pattern picture out loud: in a list, and as the answer.
+// What to call each pattern picture out loud: in a list, as the answer,
+// and in Japanese.
 const PATTERN_NAMES = {
-  '🔴': ['red', 'the red one'],
-  '🔵': ['blue', 'the blue one'],
-  '🟡': ['yellow', 'the yellow one'],
-  '🟢': ['green', 'the green one'],
-  '🐶': ['dog', 'the dog'],
-  '🐱': ['cat', 'the cat'],
-  '🐰': ['bunny', 'the bunny'],
-  '🐸': ['frog', 'the frog'],
-  '🍎': ['apple', 'the apple'],
-  '🍌': ['banana', 'the banana'],
-  '🍇': ['grapes', 'the grapes'],
-  '🍊': ['orange', 'the orange'],
-  '⭐': ['star', 'the star'],
-  '🌙': ['moon', 'the moon'],
-  '☀️': ['sun', 'the sun'],
-  '☁️': ['cloud', 'the cloud'],
+  '🔴': ['red', 'the red one', 'あか'],
+  '🔵': ['blue', 'the blue one', 'あお'],
+  '🟡': ['yellow', 'the yellow one', 'きいろ'],
+  '🟢': ['green', 'the green one', 'みどり'],
+  '🐶': ['dog', 'the dog', 'いぬ'],
+  '🐱': ['cat', 'the cat', 'ねこ'],
+  '🐰': ['bunny', 'the bunny', 'うさぎ'],
+  '🐸': ['frog', 'the frog', 'かえる'],
+  '🍎': ['apple', 'the apple', 'りんご'],
+  '🍌': ['banana', 'the banana', 'バナナ'],
+  '🍇': ['grapes', 'the grapes', 'ぶどう'],
+  '🍊': ['orange', 'the orange', 'みかん'],
+  '⭐': ['star', 'the star', 'ほし'],
+  '🌙': ['moon', 'the moon', 'つき'],
+  '☀️': ['sun', 'the sun', 'たいよう'],
+  '☁️': ['cloud', 'the cloud', 'くも'],
 };
 const PATTERN_KINDS = [
   [0, 1],
@@ -261,7 +384,7 @@ const PATTERN_KINDS = [
   [0, 1, 2],
 ];
 
-function patternProblem() {
+function patternProblem(lang) {
   const items = shuffle(pick(PATTERN_SETS));
   // AB patterns most of the time, the longer ones for older children.
   const kind = Math.random() < 0.5 ? PATTERN_KINDS[0] : pick(PATTERN_KINDS);
@@ -272,7 +395,7 @@ function patternProblem() {
   const extra = items.find((x) => !used.includes(x));
   const choices = shuffle([...new Set([correct, ...used, extra])]).slice(0, 3);
   if (!choices.includes(correct)) choices[0] = correct;
-  return {
+  const problem = {
     promptKind: 'pattern',
     patternItems: seq,
     prompt: `${seq.join(' ')} ?`,
@@ -280,6 +403,26 @@ function patternProblem() {
     answerType: 'choice',
     choices: shuffle(choices),
     answerLabel: `${seq.join(' ')} ${correct}`,
+  };
+  if (lang === 'ja') {
+    const ja = (x) => PATTERN_NAMES[x][2];
+    return {
+      ...problem,
+      lang,
+      speech: 'つぎは なにかな？',
+      speechAnswer: ja(correct),
+      questionTitle: 'つぎは なに？',
+      explain: [
+        'いっしょに こえに だして いってみよう。',
+        `${seq.map(ja).join('、')}。`,
+        `${kind.map((k) => ja(items[k])).join('、')}、それから また はじめに もどるよ。`,
+        'もういちど いって、つづけてみよう。つぎは なにかな？',
+      ],
+      explainAnswer: `つぎは ${ja(correct)}！`,
+    };
+  }
+  return {
+    ...problem,
     speech: 'What comes next?',
     speechAnswer: 'that one',
     questionTitle: 'What comes next?',
@@ -311,13 +454,15 @@ export const PREK_SYMBOL = {
   pattern: '🔴',
 };
 
+// Built as (level, grade, lang), like the other games; only the
+// language matters here.
 export const PREK_BUILDERS = {
-  count: countProblem,
-  findNumber: findNumberProblem,
-  shapes: shapesProblem,
-  bigSmall: bigSmallProblem,
-  moreFewer: moreFewerProblem,
-  pattern: patternProblem,
+  count: (level, grade, lang) => countProblem(lang),
+  findNumber: (level, grade, lang) => findNumberProblem(lang),
+  shapes: (level, grade, lang) => shapesProblem(lang),
+  bigSmall: (level, grade, lang) => bigSmallProblem(lang),
+  moreFewer: (level, grade, lang) => moreFewerProblem(lang),
+  pattern: (level, grade, lang) => patternProblem(lang),
 };
 
 // A shape to tap: big and colorful.

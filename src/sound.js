@@ -221,6 +221,8 @@ function scoreVoiceQuality(voice) {
 export async function speakInLanguage(text, lang) {
   if (!lang || lang.startsWith('en')) return speak(text);
   if (!('speechSynthesis' in window)) return;
+  speechRun++;
+  stopCurrent();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
   const voice = await pickVoiceForLang(lang);
@@ -312,8 +314,14 @@ export async function speak(text) {
   }
 }
 
+// Japanese problems (`lang: 'ja'`) are read by the device's Japanese voice
+// (MathPop's own voice only speaks English).
+const LANG_TAGS = { ja: 'ja-JP' };
+
 export function speakProblem(problem) {
-  if (problem.type === 'sentence') {
+  if (LANG_TAGS[problem.lang]) {
+    speakInLanguage(problem.speech || problem.prompt, LANG_TAGS[problem.lang]);
+  } else if (problem.type === 'sentence') {
     speak(problem.text);
   } else if (problem.type === 'clock') {
     speak('What time is it?');
@@ -324,21 +332,29 @@ export function speakProblem(problem) {
   }
 }
 
-export function playFeedbackAndSpeak(correct, correctAnswer) {
+export function playFeedbackAndSpeak(correct, correctAnswer, lang) {
   if (correct) {
     playCorrectChime();
   } else {
     playIncorrectBuzz();
   }
   setTimeout(() => {
+    if (lang === 'ja') {
+      speakInLanguage(correct ? `せいかい！ ${correctAnswer}！` : 'おしい！ もういちど やってみよう。てのマークを おすと、やりかたを おしえるよ。', LANG_TAGS.ja);
+      return;
+    }
     // Kids who can't read yet hear where the help is (🙋 Show me how).
     // A wrong answer isn't given away: try again (and help is there).
     speak(correct ? `The answer is ${correctAnswer}` : "Not quite. Try again! Tap the hand, and I'll show you how.");
   }, 300);
 }
 
-export function speakResults(correct, total) {
+export function speakResults(correct, total, lang) {
   const wrong = total - correct;
+  if (lang === 'ja') {
+    speakInLanguage(correct === total ? `すごい！ ${total}もん ぜんぶ せいかい！` : `${total}もんちゅう ${correct}もん せいかい！ よく がんばったね！`, LANG_TAGS.ja);
+    return;
+  }
   speak(
     correct === total
       ? `Perfect! You got all ${total} correct!`
@@ -365,12 +381,13 @@ function playBuffer(audioBuffer) {
   });
 }
 
-async function speakWithWebSpeechAPIAndWait(text) {
+async function speakWithWebSpeechAPIAndWait(text, lang) {
   if (!('speechSynthesis' in window)) return;
   const utterance = new SpeechSynthesisUtterance(text);
-  const voice = await pickVoice();
+  if (lang) utterance.lang = lang;
+  const voice = lang ? await pickVoiceForLang(lang) : await pickVoice();
   if (voice) utterance.voice = voice;
-  utterance.rate = 0.92;
+  utterance.rate = lang ? 0.9 : 0.92;
   await new Promise((resolve) => {
     utterance.onend = resolve;
     utterance.onerror = resolve;
@@ -386,11 +403,13 @@ const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // tell the screen which step is being said (onStep(i)) so it can light it
 // up. The next step is made while this one plays, so there's no gap.
 // Stops if anything else starts speaking, or stopSpeaking() is called.
-export async function speakSteps(steps, onStep) {
+// In Japanese ('ja'), the device's Japanese voice says every step.
+export async function speakSteps(steps, onStep, lang) {
   const run = ++speechRun;
   stopCurrent();
-  let piper = true;
-  let nextAudio = synthesize(steps[0]).catch(() => null);
+  const langTag = LANG_TAGS[lang];
+  let piper = !langTag;
+  let nextAudio = piper ? synthesize(steps[0]).catch(() => null) : null;
   for (let i = 0; i < steps.length; i++) {
     if (run !== speechRun) return false;
     const audio = piper ? await nextAudio : null;
@@ -401,7 +420,7 @@ export async function speakSteps(steps, onStep) {
       await playBuffer(audio);
     } else {
       piper = false;
-      await speakWithWebSpeechAPIAndWait(steps[i]);
+      await speakWithWebSpeechAPIAndWait(steps[i], langTag);
     }
     if (run !== speechRun) return false;
     await pause(450);

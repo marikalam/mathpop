@@ -1157,10 +1157,11 @@ export function isSkillConcept(id) {
   return Object.prototype.hasOwnProperty.call(SKILL_META, id);
 }
 
-// `grade` (grades.js) lets the Singapore topics follow the school year.
-export function buildSkillProblem(conceptId, level, grade) {
+// `grade` (grades.js) lets the Singapore topics follow the school year;
+// `lang` is the player's language ('ja': the Pre-K games in Japanese).
+export function buildSkillProblem(conceptId, level, grade, lang) {
   const builder = BUILDERS[conceptId];
-  const problem = builder(level, grade);
+  const problem = builder(level, grade, lang);
   return {
     type: 'skill',
     concept: conceptId,
