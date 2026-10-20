@@ -64,7 +64,8 @@ math,addition,subtraction,multiplication,times tables,tell time,kindergarten,fir
 - **Made for Kids: Yes, age range 6–8.** The name says "Kids", and Apple
   only allows that wording for apps in the Kids category (Guideline 2.3.8).
   MathPop qualifies: in the iPhone app there are no links out of the app,
-  no purchases, no ads and no analytics. The optional family account is
+  no purchases, no ads and no third-party analytics (MathPop counts its
+  own anonymous usage, which the Kids category allows). The optional family account is
   meant for grown-ups (there's no parental gate in front of it).
 - If you'd rather not use the Kids category, rename the app first (for
   example "MathPop: Math Practice") and keep "kids" out of the subtitle,
@@ -90,9 +91,11 @@ creates the optional family account). Add these data types:
 |---|---|---|---|
 | Contact Info → **Email Address** | Yes | No | App Functionality |
 | User Content → **Other User Content** (player names and grades) | Yes | No | App Functionality |
+| Usage Data → **Product Interaction** (app opened, rounds played) | **No** | No | Analytics |
 
-Leave everything else unchecked: no location, identifiers, usage data,
-diagnostics, purchases or health data.
+Leave everything else unchecked: no location, identifiers, diagnostics,
+purchases or health data. (The usage counts carry no account or device ID:
+supabase/mathpop_stats.sql.)
 
 ## Pricing and availability
 Free, all regions.

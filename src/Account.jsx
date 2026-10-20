@@ -238,7 +238,7 @@ export function SyncStatus({ user, onOpenAccount }) {
   );
 }
 
-export function AccountScreen({ user, playerCount, onSignedIn, onAccountDeleted, onOpenPlayers, onDone, recoveryMode, onPasswordUpdated }) {
+export function AccountScreen({ user, playerCount, onSignedIn, onAccountDeleted, onOpenPlayers, onOpenStats, onDone, recoveryMode, onPasswordUpdated }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -400,6 +400,12 @@ export function AccountScreen({ user, playerCount, onSignedIn, onAccountDeleted,
               {playerCount} {playerCount === 1 ? 'player' : 'players'} ›
             </span>
           </button>
+          {onOpenStats && (
+            <button className="account-row account-row-button" onClick={onOpenStats}>
+              <span className="account-row-label">📊 MathPop stats</span>
+              <span className="account-row-value">›</span>
+            </button>
+          )}
         </div>
 
         <button className="account-signout" onClick={handleSignOut}>

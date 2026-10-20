@@ -345,3 +345,34 @@ export async function mergeCloudStickers(profileId, stickers) {
     return null;
   }
 }
+
+// MathPop's own anonymous usage stats (supabase/mathpop_stats.sql, sent
+// by stats.js). Never throws: stats must not get in the way of playing.
+export async function sendStatEvents(events) {
+  try {
+    const { error } = await supabase.from('mathpop_events').insert(events);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+// Whether the signed-in account may see the stats, and the stats
+// themselves (added up on the server; null if not allowed or offline).
+export async function canViewStats() {
+  try {
+    const { data, error } = await supabase.rpc('mathpop_can_view_stats');
+    return !error && data === true;
+  } catch {
+    return false;
+  }
+}
+
+export async function loadStats(days) {
+  try {
+    const { data, error } = await supabase.rpc('mathpop_stats', { days });
+    return error ? null : data;
+  } catch {
+    return null;
+  }
+}
