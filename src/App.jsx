@@ -474,10 +474,15 @@ function useCompactLogo(rowRef) {
   return compact;
 }
 
-function AppHeader({ level, onBack, showBack, players }) {
+// `logoSignal` going up (the home greeting was tapped) plays the logo's
+// animation too.
+function AppHeader({ level, onBack, showBack, players, logoSignal = 0 }) {
   const rowRef = useRef(null);
   const compact = useCompactLogo(rowRef);
   const [logoPlaying, setLogoPlaying] = useState(0);
+  useEffect(() => {
+    if (logoSignal) setLogoPlaying((n) => n + 1);
+  }, [logoSignal]);
   return (
     <>
       <div className="brand-row" ref={rowRef}>
@@ -602,6 +607,8 @@ export default function App() {
   }, []);
   // The stats page is only for the accounts allowed to see it.
   const [statsViewer, setStatsViewer] = useState(false);
+  // Goes up each time the home greeting is tapped (its animation).
+  const [heroPlaying, setHeroPlaying] = useState(0);
   // The problem whose picture is zoomed in on (ZoomView), if any.
   const [zoomed, setZoomed] = useState(null);
   useEffect(() => {
@@ -1224,8 +1231,17 @@ export default function App() {
       <div className={view === 'home' ? 'app home-fit' : 'app'}>
         {view === 'home' && (
           <>
-            <AppHeader level={level} showBack={false} players={headerPlayers} />
-            <section className="home-hero">
+            <AppHeader level={level} showBack={false} players={headerPlayers} logoSignal={heroPlaying} />
+            {/* Tapping the greeting plays the same animation as the logo:
+                the + − × ÷ tiles pop and spin, the stickers bounce (but
+                not when it's the Sticker book button that's tapped). */}
+            <section
+              className={`home-hero${heroPlaying ? ' home-hero-play' : ''}`}
+              key={`hero-${heroPlaying}`}
+              onClick={(e) => {
+                if (!e.target.closest('button, a')) setHeroPlaying((n) => n + 1);
+              }}
+            >
               {/* The player's newest stickers (or a few to start with)
                   decorate the greeting, as in PitchPop. */}
               {(() => {
@@ -1241,7 +1257,7 @@ export default function App() {
               <div className="home-hero-ops" aria-hidden="true">
                 {HERO_OPS.map((op) => (
                   <span key={op.symbol} className="home-hero-op" style={{ background: op.color }}>
-                    {op.symbol}
+                    <span className="home-hero-sign">{op.symbol}</span>
                   </span>
                 ))}
               </div>
