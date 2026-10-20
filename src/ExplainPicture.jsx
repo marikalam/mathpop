@@ -1,8 +1,11 @@
 // The picture in "Show me how" (ExplainPanel.jsx), for the problems a
 // drawing explains best: comparing numbers (place-value blocks, with the
 // place that decides it highlighted), times (rows of dots) and sharing
-// (dots in equal groups). Nothing for other problems. Before the child
+// (dots in equal groups), and shapes with their sides or corners
+// numbered, for counting them. Nothing for other problems. Before the child
 // answers (`reveal` false) it doesn't show the answer.
+
+import TopicVisual from './TopicVisual.jsx';
 
 const COLORS = { hundreds: '#8E4FD6', tens: '#3B6FEF', ones: '#F0954F' };
 const PLACE_NAMES = ['hundreds', 'tens', 'ones'];
@@ -116,6 +119,14 @@ function SharePicture({ a, b }) {
 }
 
 export default function ExplainPicture({ problem, reveal = false }) {
+  // Counting sides or corners: the shape with each one numbered.
+  if (problem.visual?.numbersInHelp) {
+    return (
+      <div className="ep-shape">
+        <TopicVisual v={{ ...problem.visual, numbers: problem.visual.numbersInHelp }} />
+      </div>
+    );
+  }
   if (problem.promptKind === 'compare') {
     const a = toInt(problem.compareLeft);
     const b = toInt(problem.compareRight);

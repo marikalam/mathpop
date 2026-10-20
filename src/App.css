@@ -4449,3 +4449,120 @@ body {
 .stats-bar-note {
   font-weight: 400;
 }
+
+/* Show me how: a shape with its sides or corners numbered. */
+.ep-shape {
+  display: flex;
+  justify-content: center;
+}
+
+.ep-shape .tv-svg-shape {
+  max-height: 200px;
+}
+
+/* Zooming into a measuring picture (ZoomView.jsx). */
+.zoom-open-btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  align-self: center;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  font: 700 15px 'IBM Plex Sans', sans-serif;
+}
+
+.zoom-view {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+}
+
+.zoom-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.zoom-btn {
+  appearance: none;
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  font: 700 28px/1 'Fredoka', ui-rounded, system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.zoom-btn:disabled {
+  opacity: 0.4;
+}
+
+.zoom-level {
+  min-width: 3.5em;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-dim);
+}
+
+.zoom-close {
+  appearance: none;
+  border: none;
+  margin-left: auto;
+  padding: 12px 22px;
+  border-radius: 999px;
+  background: var(--accent-blue);
+  color: #fff;
+  font: 700 16px 'IBM Plex Sans', sans-serif;
+  cursor: pointer;
+}
+
+.zoom-box {
+  flex: 1;
+  overflow: auto;
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.zoom-content {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.zoom-content .tv {
+  max-width: none;
+  width: 100%;
+  padding: 0;
+}
+
+.zoom-content .tv-svg,
+.zoom-content .tv-svg-shape,
+.zoom-content .clock-face {
+  width: 100%;
+  height: auto;
+  max-height: none;
+  max-width: none;
+}
+
+.zoom-tip {
+  margin: 8px 0 0;
+  text-align: center;
+  color: var(--ink-dim);
+  font-size: 13px;
+}

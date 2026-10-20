@@ -1,3 +1,5 @@
+import { playerName } from './storyNames.js';
+
 let audioCtx = null;
 
 function ensureAudio() {
@@ -318,17 +320,23 @@ export async function speak(text) {
 // (MathPop's own voice only speaks English).
 const LANG_TAGS = { ja: 'ja-JP' };
 
+// Asked by name ("Marcus, what is 5 plus 3?") when the problem says so
+// (`callName`, about half of them).
 export function speakProblem(problem) {
+  const name = problem.callName ? playerName() : null;
   if (LANG_TAGS[problem.lang]) {
-    speakInLanguage(problem.speech || problem.prompt, LANG_TAGS[problem.lang]);
+    const text = problem.speech || problem.prompt;
+    speakInLanguage(name ? `${name}、${text}` : text, LANG_TAGS[problem.lang]);
   } else if (problem.type === 'sentence') {
     speak(problem.text);
   } else if (problem.type === 'clock') {
-    speak('What time is it?');
+    speak(name ? `${name}, what time is it?` : 'What time is it?');
   } else if (problem.type === 'skill') {
-    speak(problem.speech || problem.prompt);
+    const text = problem.speech || problem.prompt;
+    speak(name ? `${name}, ${text}` : text);
   } else {
-    speak(`${problem.a} ${OPERATION_WORDS[problem.symbol]} ${problem.b}`);
+    const sum = `${problem.a} ${OPERATION_WORDS[problem.symbol]} ${problem.b}`;
+    speak(name ? `${name}, what is ${sum}?` : sum);
   }
 }
 
@@ -339,8 +347,19 @@ export function playFeedbackAndSpeak(correct, correctAnswer, lang) {
     playIncorrectBuzz();
   }
   setTimeout(() => {
+    // Often by name: "Great job, Marcus!"
+    const name = Math.random() < 0.5 ? playerName() : null;
     if (lang === 'ja') {
-      speakInLanguage(correct ? `せいかい！ ${correctAnswer}！` : 'おしい！ もういちど やってみよう。てのマークを おすと、やりかたを おしえるよ。', LANG_TAGS.ja);
+      speakInLanguage(
+        correct
+          ? `${name ? `${name}、` : ''}せいかい！ ${correctAnswer}！`
+          : `おしい！ ${name ? `${name}、` : ''}もういちど やってみよう。てのマークを おすと、やりかたを おしえるよ。`,
+        LANG_TAGS.ja,
+      );
+      return;
+    }
+    if (name) {
+      speak(correct ? `Great job, ${name}! The answer is ${correctAnswer}` : `Not quite, ${name}. Try again! Tap the hand, and I'll show you how.`);
       return;
     }
     // Kids who can't read yet hear where the help is (🙋 Show me how).
@@ -351,14 +370,16 @@ export function playFeedbackAndSpeak(correct, correctAnswer, lang) {
 
 export function speakResults(correct, total, lang) {
   const wrong = total - correct;
+  const name = playerName();
   if (lang === 'ja') {
-    speakInLanguage(correct === total ? `すごい！ ${total}もん ぜんぶ せいかい！` : `${total}もんちゅう ${correct}もん せいかい！ よく がんばったね！`, LANG_TAGS.ja);
+    const you = name ? `${name}、` : '';
+    speakInLanguage(correct === total ? `${you}すごい！ ${total}もん ぜんぶ せいかい！` : `${you}${total}もんちゅう ${correct}もん せいかい！ よく がんばったね！`, LANG_TAGS.ja);
     return;
   }
   speak(
     correct === total
-      ? `Perfect! You got all ${total} correct!`
-      : `You got ${correct} correct and ${wrong} wrong.`
+      ? `Perfect${name ? `, ${name}` : ''}! You got all ${total} correct!`
+      : `${name ? `Well done, ${name}! ` : ''}You got ${correct} correct and ${wrong} wrong.`
   );
 }
 
