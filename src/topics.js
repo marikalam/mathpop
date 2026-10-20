@@ -2061,7 +2061,7 @@ function shapeSidesProblem(tier, grade) {
         'Which name matches the number of sides you counted?',
       ],
       explainAnswer: `It’s ${correct === 'octagon' ? 'an' : 'a'} ${correct}! It has ${n} sides.`,
-      visual: { kind: 'polygon', sides: n },
+      visual: { kind: 'polygon', sides: n, numbers: 'sides' },
       prompt: 'What is this shape called?',
       correct,
       answerType: 'choice',
@@ -2081,7 +2081,8 @@ function shapeSidesProblem(tier, grade) {
       `Then go around, touching each ${what} as you count, until you get back to the start.`,
       `How many ${what}s did you count?`,
     ],
-    visual: { kind: 'polygon', sides: n },
+    // Numbered only in Show me how: here the count is the answer.
+    visual: { kind: 'polygon', sides: n, numbersInHelp: corners ? 'corners' : 'sides' },
     prompt: `How many ${corners ? 'corners' : 'sides'} does it have?`,
     correct: n,
     answerType: 'numeric',

@@ -46,7 +46,7 @@ function Ruler({ start, len, color }) {
   const total = 14;
   const x0 = 10;
   return (
-    <svg viewBox={`0 0 ${total * cm + 20} 78`} className="tv-svg" role="img" aria-label="A ruler">
+    <svg viewBox={`0 0 ${total * cm + 40} 78`} className="tv-svg" role="img" aria-label="A ruler">
       <rect x={x0 + start * cm} y="6" width={len * cm} height="16" rx="8" fill={color} />
       <rect x={x0 - 6} y="30" width={total * cm + 12} height="44" rx="4" fill="#FFE9A8" stroke="#D9B44A" />
       {Array.from({ length: total * 2 + 1 }, (_, i) => {
@@ -63,7 +63,7 @@ function Ruler({ start, len, color }) {
           </g>
         );
       })}
-      <text x={total * cm + 8} y="64" fontSize="10" textAnchor="end" fill={INK}>
+      <text x={x0 + total * cm + 10} y="64" fontSize="11" fill={INK}>
         cm
       </text>
     </svg>
@@ -224,11 +224,36 @@ const TRIANGLE_POINTS = {
   right: '40,15 40,128 170,128',
 };
 
-function Shape({ points, children }) {
+// Where the numbers go on a numbered shape: by each side (the middle of
+// it) or each corner, a little way out from the middle of the shape.
+function numberSpots(points, what) {
+  const pts = points.split(' ').map((p) => p.split(',').map(Number));
+  const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+  const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+  return pts.map((p, i) => {
+    const q = pts[(i + 1) % pts.length];
+    const [x, y] = what === 'corners' ? p : [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+    const len = Math.hypot(x - cx, y - cy) || 1;
+    return [x + ((x - cx) / len) * 17, y + ((y - cy) / len) * 17];
+  });
+}
+
+// `numbers`: 'sides' or 'corners' numbers each one, 1, 2, 3..., for
+// counting them.
+function Shape({ points, numbers, children }) {
   return (
-    <svg viewBox="0 0 190 140" className="tv-svg tv-svg-shape" role="img" aria-label="A shape">
+    <svg viewBox={numbers ? '-22 -22 234 184' : '0 0 190 140'} className="tv-svg tv-svg-shape" role="img" aria-label="A shape">
       <polygon points={points} fill="#DCE6FD" stroke={BLUE} strokeWidth="4" strokeLinejoin="round" />
       {children}
+      {numbers &&
+        numberSpots(points, numbers).map(([x, y], i) => (
+          <g key={i}>
+            <circle cx={x} cy={y} r="11" fill="#F5A524" />
+            <text x={x} y={y + 5} fontSize="14" fontWeight="700" textAnchor="middle" fill="#fff">
+              {i + 1}
+            </text>
+          </g>
+        ))}
     </svg>
   );
 }
@@ -488,19 +513,19 @@ export default function TopicVisual({ v }) {
     case 'polygon':
       return (
         <Panel>
-          <Shape points={polygonPoints(v.sides, 95, v.sides === 3 ? 80 : 70, 62, v.sides === 4 ? -45 : -90)} />
+          <Shape points={polygonPoints(v.sides, 95, v.sides === 3 ? 80 : 70, 62, v.sides === 4 ? -45 : -90)} numbers={v.numbers} />
         </Panel>
       );
     case 'quad':
       return v.shape ? (
         <Panel>
-          <Shape points={QUAD_POINTS[v.shape]} />
+          <Shape points={QUAD_POINTS[v.shape]} numbers="sides" />
         </Panel>
       ) : null;
     case 'triangle':
       return (
         <Panel>
-          <Shape points={TRIANGLE_POINTS[v.type]}>
+          <Shape points={TRIANGLE_POINTS[v.type]} numbers="sides">
             {v.type === 'right' && <path d="M40 112 H56 V128" fill="none" stroke={INK} strokeWidth="2" />}
           </Shape>
         </Panel>

@@ -40,6 +40,7 @@ import {
 import { listenForAppLinks } from './appLink.js';
 import { statAppOpened, statRoundDone } from './stats.js';
 import StatsScreen from './StatsScreen.jsx';
+import ZoomView from './ZoomView.jsx';
 
 const SESSION_ROUNDS = 10;
 // The iPhone app has no link out to the other apps' website, and no printing.
@@ -147,6 +148,13 @@ const OPERATIONS = {
 };
 
 const ALL_META = { ...OPERATIONS, ...SKILL_META };
+
+// The measuring pictures, which can be opened up big to look closely
+// (ZoomView.jsx): rulers, sides, areas, angles, coins - and clocks.
+const ZOOM_KINDS = new Set(['ruler', 'rect', 'lshape', 'grid', 'angle', 'angleSplit', 'compass', 'money']);
+function canZoom(problem) {
+  return problem.type === 'clock' || (problem.type === 'skill' && ZOOM_KINDS.has(problem.visual?.kind));
+}
 
 // A round's game, named for the stats page.
 function statTopicName(op) {
@@ -580,8 +588,9 @@ export default function App() {
   const currentProfile = profiles.find((p) => p.id === profile) || profiles[0];
   // Each player plays at their own grade.
   const level = gradeInfo(currentProfile.grade).id;
-  // Signed in: the player's own name turns up in word problems.
-  setStoryPlayer(cloudUser ? currentProfile.name : null);
+  // The player's own name turns up in word problems, and MathPop calls
+  // them by it.
+  setStoryPlayer(currentProfile.name);
 
   useEffect(() => {
     savePlayers(profiles, profileOwner);
@@ -593,6 +602,8 @@ export default function App() {
   }, []);
   // The stats page is only for the accounts allowed to see it.
   const [statsViewer, setStatsViewer] = useState(false);
+  // The problem whose picture is zoomed in on (ZoomView), if any.
+  const [zoomed, setZoomed] = useState(null);
   useEffect(() => {
     let live = true;
     if (cloudUser) canViewStats().then((ok) => live && setStatsViewer(ok));
@@ -1037,7 +1048,14 @@ export default function App() {
   // lately, newest first, then more of the same topics to make ten.
   const mistakeQueue = useRef([]);
   const mistakeOps = useRef([]);
+  // About half the questions are asked by name ("Marcus, how many
+  // apples?"), when they're read out (sound.js).
   function roundProblem(op) {
+    const p = nextRoundProblem(op);
+    return p.type === 'sentence' ? p : { ...p, callName: Math.random() < 0.5 };
+  }
+
+  function nextRoundProblem(op) {
     const lang = langFor(currentProfile.id);
     if (op !== 'mistakes') return makeProblem(op, level, lang);
     if (mistakeQueue.current.length) return mistakeQueue.current.shift();
@@ -1546,6 +1564,21 @@ export default function App() {
             <h2 className="screen-title">
               {problem.questionTitle || (problem.type === 'clock' ? 'What time is it?' : "What's the answer?")}
             </h2>
+            {/* "Show me how": talks this problem through out loud. For
+                adding up to two digits, the make-a-ten blocks show too.
+                It sits above the problem, away from the answer buttons at
+                the bottom, so it isn't tapped by mistake when answering. */}
+            {showHelp ? (
+              <ExplainPanel problem={problem} onClose={() => setShowHelp(false)}>
+                {problem.op === 'add' && problem.type !== 'sentence' && problem.type !== 'skill' && problem.a < 100 && problem.b < 100 && (
+                  <AdditionHelp a={problem.a} b={problem.b} bare />
+                )}
+              </ExplainPanel>
+            ) : (
+              <button className="help-btn help-btn-show help-btn-top" onClick={() => { unlockAudio(); setShowHelp(true); }}>
+                🙋 {tr('Show me how', 'やりかたを みせて')}
+              </button>
+            )}
             <button
               className="problem-card"
               style={{ background: ALL_META[problem.op].color }}
@@ -1617,23 +1650,18 @@ export default function App() {
                 </span>
               )}
             </button>
-            {problem.type === 'skill' && problem.hint && <p className="screen-sub skill-hint">💡 {problem.hint}</p>}
-            <p className="screen-sub tap-to-hear">{tr('Tap the problem to hear it', 'もんだいを タップすると きこえるよ')}</p>
-            {/* The make-a-ten help opens right here, under the problem (for
-                sums up to two digits, which the blocks can show). */}
-            {/* "Show me how": talks this problem through out loud. For
-                adding up to two digits, the make-a-ten blocks show too. */}
-            {showHelp ? (
-              <ExplainPanel problem={problem} onClose={() => setShowHelp(false)}>
-                {problem.op === 'add' && problem.type !== 'sentence' && problem.type !== 'skill' && problem.a < 100 && problem.b < 100 && (
-                  <AdditionHelp a={problem.a} b={problem.b} bare />
-                )}
-              </ExplainPanel>
-            ) : (
-              <button className="help-btn help-btn-show" onClick={() => { unlockAudio(); setShowHelp(true); }}>
-                🙋 {tr('Show me how', 'やりかたを みせて')}
+            {canZoom(problem) && (
+              <button className="zoom-open-btn" onClick={() => setZoomed(problem)}>
+                🔍 {tr('Zoom in', 'おおきく する')}
               </button>
             )}
+            {zoomed === problem && (
+              <ZoomView onClose={() => setZoomed(null)}>
+                {problem.type === 'clock' ? <ClockFace hour={problem.hour} minute={problem.minute} /> : <TopicVisual v={problem.visual} />}
+              </ZoomView>
+            )}
+            {problem.type === 'skill' && problem.hint && <p className="screen-sub skill-hint">💡 {problem.hint}</p>}
+            <p className="screen-sub tap-to-hear">{tr('Tap the problem to hear it', 'もんだいを タップすると きこえるよ')}</p>
             {/* Printing doesn't work inside the iPhone app's web view, so the
                 worksheet is a website-only extra. */}
             {!IS_NATIVE && (
