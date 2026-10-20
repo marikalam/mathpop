@@ -99,6 +99,25 @@ export function PlayerSettingsCard({ profile, onUpdate, onRemove, canRemove, sta
           </button>
         ))}
       </div>
+      <p className="settings-help">Language</p>
+      <div className="answer-settings-grid" role="radiogroup" aria-label={`${profile.name} language`}>
+        {LANGUAGES.map((l) => (
+          <button
+            key={l.id}
+            type="button"
+            role="radio"
+            aria-checked={profile.lang === l.id}
+            className={`answer-setting${profile.lang === l.id ? ' answer-setting-active' : ''}`}
+            onClick={() => onUpdate({ lang: l.id })}
+          >
+            <span className="answer-setting-icon" aria-hidden="true">
+              {l.icon}
+            </span>
+            {l.label}
+          </button>
+        ))}
+      </div>
+      {profile.lang === 'ja' && <p className="settings-help settings-note">Pre-K games are asked and explained in Japanese. More grades coming.</p>}
     </section>
   );
 }
@@ -109,6 +128,13 @@ const ANSWER_WAYS = [
   { id: 'write', icon: '✏️', label: 'Write' },
   { id: 'choice', icon: '👆', label: 'Pick' },
   { id: 'type', icon: '🔢', label: 'Type' },
+];
+
+// The language a player hears and reads their games in. Japanese covers
+// the Pre-K games so far; other grades stay in English.
+const LANGUAGES = [
+  { id: 'en', icon: '🇺🇸', label: 'English' },
+  { id: 'ja', icon: '🇯🇵', label: '日本語' },
 ];
 
 export function AddPlayerForm({ onAdd }) {

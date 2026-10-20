@@ -13,7 +13,7 @@
 export function explainSteps(problem, withAnswer) {
   const steps = baseSteps(problem);
   if (!withAnswer) return steps;
-  return [...steps, answerStep(problem), 'Now you try it!'];
+  return [...steps, answerStep(problem), problem.lang === 'ja' ? 'こんどは じぶんで やってみてね！' : 'Now you try it!'];
 }
 
 function answerStep(problem) {

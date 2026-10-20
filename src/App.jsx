@@ -256,7 +256,7 @@ function buildOptions(problem) {
   return shuffle([correct, ...distractors.slice(0, 3)]);
 }
 
-function makeProblem(op, grade) {
+function makeProblem(op, grade, lang) {
   // Pre-K's Random Mix: one of its picture games each time.
   if (op === 'random' && gradeInfo(grade).id === 'p') op = shuffle(PREK_CONCEPTS.map((c) => c.id))[0];
   // Random Mix: any topic from the grade's sections; a section's Mix: any
@@ -266,17 +266,17 @@ function makeProblem(op, grade) {
     const section = gradeSection(gradeInfo(grade).id, op.slice(8));
     op = shuffle(section ? section.topics.map((t) => t.id) : gradeOps(grade))[0];
   }
-  if (isSkillConcept(op)) return buildSkillProblem(op, gradeTier(grade), gradeInfo(grade).id);
+  if (isSkillConcept(op)) return buildSkillProblem(op, gradeTier(grade), gradeInfo(grade).id, lang);
   return buildProblem(op, grade);
 }
 
 // A worksheet's worth of problems, skipping exact repeats where it can
 // (easy levels have few possible problems, so some repeats are allowed).
-function makeWorksheet(op, level, count) {
+function makeWorksheet(op, level, count, lang) {
   const seen = new Set();
   const problems = [];
   for (let tries = 0; problems.length < count && tries < count * 20; tries++) {
-    const p = makeProblem(op, level);
+    const p = makeProblem(op, level, lang);
     const key = JSON.stringify(p);
     if (seen.has(key) && tries < count * 10) continue;
     seen.add(key);
@@ -785,9 +785,11 @@ export default function App() {
   // How each player answers (write, pick or type), set in Players & grades.
   // Kept on this device, per player (older versions had one setting for all).
   const answerFor = (id) => settings.answerBy?.[id] || settings.inputMethod || 'write';
+  // And the language they play in (English, or Japanese for Pre-K).
+  const langFor = (id) => settings.langBy?.[id] || 'en';
 
   function openPlayers() {
-    setDraftProfiles(profiles.map((p) => ({ ...p, answerBy: answerFor(p.id) })));
+    setDraftProfiles(profiles.map((p) => ({ ...p, answerBy: answerFor(p.id), lang: langFor(p.id) })));
     setView('players');
   }
 
@@ -818,13 +820,15 @@ export default function App() {
 
   function savePlayersScreen() {
     const answerBy = { ...settings.answerBy };
+    const langBy = { ...settings.langBy };
     draftProfiles.forEach((p) => {
       answerBy[p.id] = p.answerBy;
+      langBy[p.id] = p.lang;
     });
-    const newSettings = { ...settings, answerBy };
+    const newSettings = { ...settings, answerBy, langBy };
     setSettings(newSettings);
     saveSettings(newSettings);
-    const cleaned = draftProfiles.map(({ answerBy: _a, ...p }) => ({ ...p, name: p.name.trim() || 'Player' }));
+    const cleaned = draftProfiles.map(({ answerBy: _a, lang: _l, ...p }) => ({ ...p, name: p.name.trim() || 'Player' }));
     const keptIds = new Set(cleaned.map((p) => p.id));
     if (profileOwner === 'account') {
       cleaned.forEach(saveCloudProfile);
@@ -916,7 +920,7 @@ export default function App() {
   }, [view, problem]);
 
   useEffect(() => {
-    if (view === 'complete') speakResults(sessionCorrect, SESSION_ROUNDS);
+    if (view === 'complete') speakResults(sessionCorrect, SESSION_ROUNDS, problem?.lang);
   }, [view]);
 
   function goHome() {
@@ -1008,9 +1012,10 @@ export default function App() {
   const mistakeQueue = useRef([]);
   const mistakeOps = useRef([]);
   function roundProblem(op) {
-    if (op !== 'mistakes') return makeProblem(op, level);
+    const lang = langFor(currentProfile.id);
+    if (op !== 'mistakes') return makeProblem(op, level, lang);
     if (mistakeQueue.current.length) return mistakeQueue.current.shift();
-    return makeProblem(mistakeOps.current.length ? shuffle(mistakeOps.current)[0] : 'random', level);
+    return makeProblem(mistakeOps.current.length ? shuffle(mistakeOps.current)[0] : 'random', level, lang);
   }
 
   function startOperation(op, from) {
@@ -1039,7 +1044,7 @@ export default function App() {
     setChosen(value);
     setAnswerCorrect(correct);
     setShowHelp(false);
-    playFeedbackAndSpeak(correct, problem.speechAnswer ?? problem.correct);
+    playFeedbackAndSpeak(correct, problem.speechAnswer ?? problem.correct, problem.lang);
     if (navigator.vibrate) navigator.vibrate(correct ? 20 : [20, 40, 20]);
 
     // Only the first attempt at a problem counts toward the score and log —
@@ -1129,8 +1134,12 @@ export default function App() {
 
   function printWorksheet() {
     setPrintPanel(false);
-    setPrintSet({ problems: makeWorksheet(operation, level, printCount), withKey: printKey, id: Date.now() });
+    setPrintSet({ problems: makeWorksheet(operation, level, printCount, langFor(currentProfile.id)), withKey: printKey, id: Date.now() });
   }
+
+  // A round in Japanese (Pre-K, for a player set to 日本語) has its
+  // buttons and messages in Japanese too.
+  const tr = (en, ja) => (problem?.lang === 'ja' ? ja : en);
 
   const modeLabel = isSkillConcept(operation)
     ? SKILL_META[operation].label.toLowerCase()
@@ -1573,7 +1582,7 @@ export default function App() {
               )}
             </button>
             {problem.type === 'skill' && problem.hint && <p className="screen-sub skill-hint">💡 {problem.hint}</p>}
-            <p className="screen-sub tap-to-hear">Tap the problem to hear it</p>
+            <p className="screen-sub tap-to-hear">{tr('Tap the problem to hear it', 'もんだいを タップすると きこえるよ')}</p>
             {/* The make-a-ten help opens right here, under the problem (for
                 sums up to two digits, which the blocks can show). */}
             {/* "Show me how": talks this problem through out loud. For
@@ -1586,7 +1595,7 @@ export default function App() {
               </ExplainPanel>
             ) : (
               <button className="help-btn help-btn-show" onClick={() => { unlockAudio(); setShowHelp(true); }}>
-                🙋 Show me how
+                🙋 {tr('Show me how', 'やりかたを みせて')}
               </button>
             )}
             {/* Printing doesn't work inside the iPhone app's web view, so the
@@ -1741,34 +1750,34 @@ export default function App() {
               )}
               <span className="feedback-icon">{answerCorrect ? <CheckIcon /> : <XIcon />}</span>
             </div>
-            <h2 className="screen-title">{answerCorrect ? 'Great job!' : 'Not quite!'}</h2>
+            <h2 className="screen-title">{answerCorrect ? tr('Great job!', 'すごい！') : tr('Not quite!', 'おしい！')}</h2>
             {/* A wrong answer never shows the right one (they'd just go back
                 and pick it): it's Try again, with Show me how for help. */}
             {answerCorrect ? (
               <>
-                <p className="screen-sub">That's right!</p>
+                <p className="screen-sub">{tr("That's right!", 'せいかい！')}</p>
                 <div className="answer-card" style={{ background: ALL_META[problem.op].color }}>
                   <div className="answer-equation">{problemAnswerText(problem)}</div>
                 </div>
               </>
             ) : (
-              <p className="screen-sub">You picked {String(chosen)}. Have another go!</p>
+              <p className="screen-sub">{tr(`You picked ${String(chosen)}. Have another go!`, 'もういちど やってみよう！')}</p>
             )}
             {!answerCorrect &&
               (showHelp ? (
                 <ExplainPanel problem={problem} onClose={() => setShowHelp(false)} />
               ) : (
                 <button className="help-btn help-btn-show" onClick={() => { unlockAudio(); setShowHelp(true); }}>
-                  🙋 Show me how
+                  🙋 {tr('Show me how', 'やりかたを みせて')}
                 </button>
               ))}
             {answerCorrect ? (
               <button className="pill-btn-primary pill-btn-full" onClick={nextProblem}>
-                {roundIndex + 1 >= SESSION_ROUNDS ? 'Finish' : 'Next problem'} →
+                {roundIndex + 1 >= SESSION_ROUNDS ? tr('Finish', 'おわり') : tr('Next problem', 'つぎの もんだい')} →
               </button>
             ) : (
               <button className="pill-btn-primary pill-btn-full" onClick={() => { setChosen(null); setTypedAnswer(''); setShowHelp(false); setView('question'); }}>
-                Try again →
+                {tr('Try again', 'もういちど')} →
               </button>
             )}
           </>
@@ -1779,9 +1788,9 @@ export default function App() {
             <AppHeader level={level} players={headerPlayers} showBack onBack={sessionBack} />
             <div className="complete-wrap">
               <div className="complete-emoji">🎉</div>
-              <h2 className="screen-title">All done!</h2>
+              <h2 className="screen-title">{tr('All done!', 'できた！')}</h2>
               <p className="screen-sub">
-                You went through {SESSION_ROUNDS} {modeLabel} problems.
+                {tr(`You went through ${SESSION_ROUNDS} ${modeLabel} problems.`, `${SESSION_ROUNDS}もん ぜんぶ おわったよ！`)}
               </p>
               <div className="results-score-ring">
                 <span className="results-score-number">{sessionCorrect}</span>

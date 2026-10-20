@@ -9,6 +9,7 @@ import { speakSteps, stopSpeaking } from './sound.js';
 // (after a wrong try) finishes with the answer.
 export default function ExplainPanel({ problem, withAnswer = false, onClose, children }) {
   const steps = explainSteps(problem, withAnswer);
+  const ja = problem.lang === 'ja';
   const [current, setCurrent] = useState(-1);
   const [playing, setPlaying] = useState(false);
   const [round, setRound] = useState(0);
@@ -21,7 +22,7 @@ export default function ExplainPanel({ problem, withAnswer = false, onClose, chi
   useEffect(() => {
     let live = true;
     setPlaying(true);
-    speakSteps(steps, (i) => live && setCurrent(i)).then(() => {
+    speakSteps(steps, (i) => live && setCurrent(i), problem.lang).then(() => {
       if (live) {
         setPlaying(false);
         setCurrent(-1);
@@ -41,7 +42,7 @@ export default function ExplainPanel({ problem, withAnswer = false, onClose, chi
         <span className={`explain-speaker${playing ? ' explain-speaker-on' : ''}`} aria-hidden="true">
           🙋
         </span>
-        <h3 className="explain-title">Let me show you!</h3>
+        <h3 className="explain-title">{ja ? 'いっしょに やってみよう！' : 'Let me show you!'}</h3>
         <button className="explain-close" onClick={onClose} aria-label="Close">
           ✕
         </button>
@@ -59,7 +60,7 @@ export default function ExplainPanel({ problem, withAnswer = false, onClose, chi
       </ol>
       {children}
       <button className="pill-btn-secondary pill-btn-full explain-again" onClick={() => setRound((r) => r + 1)}>
-        🔁 Say it again
+        🔁 {ja ? 'もういちど きく' : 'Say it again'}
       </button>
     </div>
   );
