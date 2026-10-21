@@ -1577,10 +1577,19 @@ export default function App() {
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={sessionBack} />
             <ProgressDots current={roundIndex + 1} total={SESSION_ROUNDS} />
-            <h2 className="screen-title">
-              {problem.questionTitle || (problem.type === 'clock' ? 'What time is it?' : "What's the answer?")}
-            </h2>
-            {/* "Show me how": talks this problem through out loud. For
+            <div className="question-title-row">
+              <h2 className="screen-title">
+                {problem.questionTitle || (problem.type === 'clock' ? 'What time is it?' : "What's the answer?")}
+              </h2>
+              {/* Printing doesn't work inside the iPhone app's web view, so
+                  the worksheet is a website-only extra, tucked in the corner. */}
+              {!IS_NATIVE && (
+                <button className="print-open-btn" onClick={() => setPrintPanel(true)} aria-label="Print a worksheet" title="Print a worksheet">
+                  🖨️
+                </button>
+              )}
+            </div>
+            {/* "Show me how: talks this problem through out loud. For
                 adding up to two digits, the make-a-ten blocks show too.
                 It sits above the problem, away from the answer buttons at
                 the bottom, so it isn't tapped by mistake when answering. */}
@@ -1591,8 +1600,9 @@ export default function App() {
                 )}
               </ExplainPanel>
             ) : (
-              <button className="help-btn help-btn-show help-btn-top" onClick={() => { unlockAudio(); setShowHelp(true); }}>
-                🙋 {tr('Show me how', 'やりかたを みせて')}
+              <button className="help-btn help-btn-soft" onClick={() => { unlockAudio(); setShowHelp(true); }}>
+                <span className="help-btn-icon" aria-hidden="true">🙋</span>
+                {tr('Show me how', 'やりかたを みせて')}
               </button>
             )}
             <button
@@ -1678,13 +1688,6 @@ export default function App() {
             )}
             {problem.type === 'skill' && problem.hint && <p className="screen-sub skill-hint">💡 {problem.hint}</p>}
             <p className="screen-sub tap-to-hear">{tr('Tap the problem to hear it', 'もんだいを タップすると きこえるよ')}</p>
-            {/* Printing doesn't work inside the iPhone app's web view, so the
-                worksheet is a website-only extra. */}
-            {!IS_NATIVE && (
-              <button className="print-open-btn" onClick={() => setPrintPanel(true)}>
-                🖨️ Print worksheet
-              </button>
-            )}
 
             <div className="answer-area">
             {answerFor(currentProfile.id) === 'write' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
@@ -1847,8 +1850,9 @@ export default function App() {
               (showHelp ? (
                 <ExplainPanel problem={problem} onClose={() => setShowHelp(false)} />
               ) : (
-                <button className="help-btn help-btn-show" onClick={() => { unlockAudio(); setShowHelp(true); }}>
-                  🙋 {tr('Show me how', 'やりかたを みせて')}
+                <button className="help-btn help-btn-soft" onClick={() => { unlockAudio(); setShowHelp(true); }}>
+                  <span className="help-btn-icon" aria-hidden="true">🙋</span>
+                  {tr('Show me how', 'やりかたを みせて')}
                 </button>
               ))}
             {answerCorrect ? (
