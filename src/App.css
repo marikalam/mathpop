@@ -1251,15 +1251,37 @@ body {
 }
 
 /* ---------- Print worksheet ---------- */
+/* The question's title, with the (website-only) print button small in
+   the right-hand corner. */
+.question-title-row {
+  position: relative;
+  align-self: stretch;
+}
+
+.question-title-row .screen-title {
+  padding: 0 44px;
+}
+
 .print-open-btn {
   appearance: none;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
   border: none;
+  border-radius: 50%;
   cursor: pointer;
-  align-self: center;
-  background: none;
-  color: var(--ink-dim, #6b7187);
-  font: 700 14px 'IBM Plex Sans', sans-serif;
-  padding: 8px 14px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  font-size: 17px;
+  line-height: 1;
+  padding: 0;
+  opacity: 0.8;
 }
 
 .print-panel-backdrop {
@@ -4626,4 +4648,33 @@ body {
   .home-hero-play {
     animation: none !important;
   }
+}
+
+/* "Show me how": a small, friendly pill (not a big button kids could
+   mistake for Submit). */
+.help-btn-soft {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px 6px 6px;
+  font-size: 15px;
+  color: #c2571a;
+  background: #fff7ee;
+  border: 2px solid #f8cfa6;
+  box-shadow: none;
+}
+
+.help-btn-soft:active {
+  transform: scale(0.97);
+}
+
+.help-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f5a524 0%, #e0793a 100%);
+  font-size: 16px;
 }
