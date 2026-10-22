@@ -240,8 +240,10 @@ try {
     },
   });
 } catch (err) {
-  // Already in this submission from an earlier try.
+  // Already in this submission from an earlier try is fine; anything else
+  // (something Apple still needs before review) is shown as it is.
   if (!String(err).includes('409')) throw err;
+  console.log(`Adding the version to the submission: ${err.message}`);
 }
 await api('PATCH', `/v1/reviewSubmissions/${submission.id}`, {
   type: 'reviewSubmissions',
