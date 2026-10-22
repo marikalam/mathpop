@@ -104,7 +104,8 @@ for (const plan of PLANS) {
         });
         n++;
       } catch (err) {
-        console.log(`${plan.name}: no price in ${territory} (${String(err).split('\n')[0]})`);
+        // The first refusal in full (Apple says why), then one line each.
+        console.log(n === 0 && territory === 'USA' ? `${plan.name}: no price in USA: ${err.message}` : `${plan.name}: no price in ${territory}`);
       }
     }
     console.log(`${plan.name}: priced in ${n} countries ($${plan.price} in the US)`);
