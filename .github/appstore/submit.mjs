@@ -79,24 +79,83 @@ if (!version) {
 
 await api('PATCH', `/v1/appStoreVersions/${version.id}/relationships/build`, { type: 'builds', id: build.id });
 
-// The description and promotional text, from appstore/listing.md (the text
-// under each '## ...' heading, up to the next one).
-const listing = readFileSync(new URL('../../appstore/listing.md', import.meta.url), 'utf8');
-const section = (title) => {
-  const m = listing.match(new RegExp(`^## ${title}[^\\n]*\\n([\\s\\S]*?)(?=^## )`, 'm'));
-  return m ? m[1].trim() : undefined;
-};
-const description = section('Description');
-const promotionalText = section('Promotional text');
+// The listing, from appstore/listing.md (English) and listing-ja.md
+// (Japanese): the text under each '## ...' heading, up to the next one.
+function readListing(file) {
+  const text = readFileSync(new URL(`../../appstore/${file}`, import.meta.url), 'utf8') + '\n## end';
+  return (title) => {
+    const m = text.match(new RegExp(`^## ${title}[^\\n]*\\n([\\s\\S]*?)(?=^## )`, 'm'));
+    return m ? m[1].trim() : undefined;
+  };
+}
+const en = readListing('listing.md');
+const ja = readListing('listing-ja.md');
+const description = en('Description');
+const promotionalText = en('Promotional text');
+const keywords = en('Keywords');
 
 const locs = (await api('GET', `/v1/appStoreVersions/${version.id}/appStoreVersionLocalizations`)).data;
 for (const loc of locs) {
+  const isJa = loc.attributes.locale === 'ja';
+  const text = isJa
+    ? { whatsNew: ja("What's New"), description: ja('Description'), promotionalText: ja('Promotional text'), keywords: ja('Keywords') }
+    : { whatsNew: WHATS_NEW, description, promotionalText, keywords };
   await api('PATCH', `/v1/appStoreVersionLocalizations/${loc.id}`, {
     type: 'appStoreVersionLocalizations',
     id: loc.id,
-    attributes: { whatsNew: WHATS_NEW, ...(description && { description }), ...(promotionalText && { promotionalText }) },
+    attributes: Object.fromEntries(Object.entries(text).filter(([, v]) => v)),
   });
-  console.log(`What's New set (${loc.attributes.locale})`);
+  console.log(`Listing and What's New set (${loc.attributes.locale})`);
+}
+
+// Japanese, the first time: the version's text, plus the name and subtitle.
+// Without Japanese screenshots, the App Store shows the English ones.
+if (!locs.some((loc) => loc.attributes.locale === 'ja')) {
+  await api('POST', '/v1/appStoreVersionLocalizations', {
+    type: 'appStoreVersionLocalizations',
+    attributes: {
+      locale: 'ja',
+      whatsNew: ja("What's New"),
+      description: ja('Description'),
+      promotionalText: ja('Promotional text'),
+      keywords: ja('Keywords'),
+    },
+    relationships: { appStoreVersion: { data: { type: 'appStoreVersions', id: version.id } } },
+  });
+  console.log('Listing added in Japanese (ja)');
+}
+
+// The name and subtitle live on the app's info (the one being edited for
+// this version): the English subtitle, and the Japanese name and subtitle.
+const infos = (await api('GET', `/v1/apps/${app.id}/appInfos`)).data;
+const info = infos.find((i) => !['READY_FOR_DISTRIBUTION', 'READY_FOR_SALE'].includes(i.attributes.appStoreState || i.attributes.state)) || infos[0];
+const infoLocs = (await api('GET', `/v1/appInfos/${info.id}/appInfoLocalizations`)).data;
+const subtitleEn = en('Subtitle');
+for (const loc of infoLocs) {
+  const attributes = loc.attributes.locale === 'ja' ? { name: ja('Name'), subtitle: ja('Subtitle') } : { subtitle: subtitleEn };
+  try {
+    await api('PATCH', `/v1/appInfoLocalizations/${loc.id}`, { type: 'appInfoLocalizations', id: loc.id, attributes });
+    console.log(`Name and subtitle set (${loc.attributes.locale})`);
+  } catch (err) {
+    console.log(`Couldn't set the subtitle (${loc.attributes.locale}): ${String(err).split('\n')[0]}`);
+  }
+}
+if (!infoLocs.some((loc) => loc.attributes.locale === 'ja')) {
+  try {
+    await api('POST', '/v1/appInfoLocalizations', {
+      type: 'appInfoLocalizations',
+      attributes: {
+        locale: 'ja',
+        name: ja('Name'),
+        subtitle: ja('Subtitle'),
+        privacyPolicyUrl: 'https://marikalam.github.io/apps/mathpop/privacy.html',
+      },
+      relationships: { appInfo: { data: { type: 'appInfos', id: info.id } } },
+    });
+    console.log('Name and subtitle added in Japanese (ja)');
+  } catch (err) {
+    console.log(`Couldn't add the Japanese name: ${String(err).split('\n')[0]}`);
+  }
 }
 
 // The App Store screenshots, when asked for (SCREENSHOTS=yes): the ones in

@@ -24,7 +24,7 @@ import Sticker from './Sticker.jsx';
 import { STICKERS } from './stickers.js';
 import { startStickerSync } from './stickerSync.js';
 import TodayPlan from './TodayPlan.jsx';
-import { clearMistake, mistakeRound, recordMistake, recordRound } from './todayPlan.js';
+import { clearMistake, mistakeRound, recordMistake, recordRound, streakDays } from './todayPlan.js';
 import LogoMark from './LogoMark.jsx';
 import { AccountButton, AccountScreen, AddPlayerForm, PlayerSettingsCard, SyncStatus } from './Account.jsx';
 import {
@@ -41,6 +41,9 @@ import { listenForAppLinks } from './appLink.js';
 import { statAppOpened, statRoundDone } from './stats.js';
 import StatsScreen from './StatsScreen.jsx';
 import ZoomView from './ZoomView.jsx';
+import ParentGate from './ParentGate.jsx';
+import WeekCard from './WeekCard.jsx';
+import WelcomeCard from './WelcomeCard.jsx';
 
 const SESSION_ROUNDS = 10;
 // The iPhone app has no link out to the other apps' website, and no printing.
@@ -64,6 +67,7 @@ const GUEST_PLAYERS_KEY = 'mathpop-guest-players-v1';
 const ACCOUNT_PLAYERS_KEY = 'mathpop-account-players-v1';
 // The account players this phone has seen in the account (withUnsyncedPlayers).
 const SEEN_PLAYERS_KEY = 'mathpop-account-seen-v1';
+const WELCOME_KEY = 'mathpop-welcomed-v1';
 const ACTIVE_PLAYER_KEY = 'mathpop-active-player-v1';
 const SETTINGS_KEY = 'mathpop-settings-v1';
 const GRADE_KEY = 'mathpop-grade-v1';
@@ -154,6 +158,16 @@ const ALL_META = { ...OPERATIONS, ...SKILL_META };
 const ZOOM_KINDS = new Set(['ruler', 'rect', 'lshape', 'grid', 'angle', 'angleSplit', 'compass', 'money']);
 function canZoom(problem) {
   return problem.type === 'clock' || (problem.type === 'skill' && ZOOM_KINDS.has(problem.visual?.kind));
+}
+
+// MathPop on the App Store (rating it, and in shared messages).
+const APP_STORE_URL = 'https://apps.apple.com/app/id6819345004';
+
+// Opens a page outside MathPop: in the iPhone app, setting the address
+// hands it to iOS (Safari, or the App Store app for App Store links).
+function openOutside(url) {
+  if (IS_NATIVE) window.location.href = url;
+  else window.open(url, '_blank', 'noopener');
 }
 
 // A round's game, named for the stats page.
@@ -607,6 +621,45 @@ export default function App() {
   }, []);
   // The stats page is only for the accounts allowed to see it.
   const [statsViewer, setStatsViewer] = useState(false);
+  // The grown-ups check before leaving the app (rating, sharing): what it's
+  // for, and what to do once it's passed.
+  const [gate, setGate] = useState(null);
+  const [shareNote, setShareNote] = useState('');
+
+  function rateApp() {
+    setGate({ reason: 'To rate MathPop on the App Store', then: () => openOutside(`${APP_STORE_URL}?action=write-review`) });
+  }
+
+  function shareWeek(text) {
+    setGate({
+      reason: 'To share this',
+      then: async () => {
+        try {
+          if (navigator.share) {
+            await navigator.share({ text, url: APP_STORE_URL });
+            return;
+          }
+          await navigator.clipboard.writeText(`${text} ${APP_STORE_URL}`);
+          setShareNote('Copied! Paste it into a message.');
+        } catch {
+          /* closed the share sheet */
+        }
+      },
+    });
+  }
+
+  // The first time MathPop opens (a guest with only the untouched
+  // "Player 1"): ask who's playing and their grade.
+  const [welcomeDone, setWelcomeDone] = useState(() => Boolean(readJson(WELCOME_KEY)));
+  const showWelcome =
+    !welcomeDone && view === 'home' && profileOwner === 'guest' && profiles.length === 1 && isUntouchedStarter(profiles[0], progress);
+
+  function finishWelcome(name, grade) {
+    if (name) setProfiles((prev) => prev.map((p, i) => (i === 0 ? { ...p, name, grade } : p)));
+    writeJson(WELCOME_KEY, true);
+    setWelcomeDone(true);
+  }
+
   // Goes up each time the home greeting is tapped (its animation).
   const [heroPlaying, setHeroPlaying] = useState(0);
   // The problem whose picture is zoomed in on (ZoomView), if any.
@@ -1269,7 +1322,12 @@ export default function App() {
                 <LevelSwitcher level={level} readOnly />
                 {levelStats.total ? (
                   <>
-                    <span className="home-stat">✅ {levelStats.total} solved</span>
+                    {/* Days in a row, once there's a streak to keep going. */}
+                    {streakDays(currentProfile.id) >= 2 ? (
+                      <span className="home-stat home-stat-streak">🔥 {streakDays(currentProfile.id)} days in a row</span>
+                    ) : (
+                      <span className="home-stat">✅ {levelStats.total} solved</span>
+                    )}
                     <span className="home-stat">🎯 {Math.round((levelStats.correct / levelStats.total) * 100)}% right</span>
                   </>
                 ) : (
@@ -1569,6 +1627,22 @@ export default function App() {
             </button>
             <button className="back-link back-link-center" onClick={goHome}>
               Cancel
+            </button>
+            {/* For grown-ups: each player's week, and rating MathPop. */}
+            <h3 className="section-label">📈 This week</h3>
+            <div className="week-cards">
+              {profiles.map((p) => (
+                <WeekCard key={p.id} player={p} topicName={statTopicName} onShare={shareWeek} />
+              ))}
+            </div>
+            {shareNote && <p className="share-note">{shareNote}</p>}
+            <button className="rate-row" onClick={rateApp}>
+              <span className="rate-row-stars" aria-hidden="true">
+                ⭐
+              </span>
+              <span>
+                <strong>Enjoying MathPop?</strong>A rating on the App Store helps other families find it.
+              </span>
             </button>
           </>
         )}
@@ -2027,6 +2101,17 @@ export default function App() {
         </div>
       )}
       <EmailHandoff />
+      {showWelcome && <WelcomeCard grade={profiles[0].grade} onDone={finishWelcome} onSkip={() => finishWelcome()} />}
+      {gate && (
+        <ParentGate
+          reason={gate.reason}
+          onPass={() => {
+            setGate(null);
+            gate.then();
+          }}
+          onCancel={() => setGate(null)}
+        />
+      )}
     </div>
   );
 }
