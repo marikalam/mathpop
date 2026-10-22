@@ -376,3 +376,34 @@ export async function loadStats(days) {
     return null;
   }
 }
+
+// MathPop Plus (supabase/plus_setup.sql): the day Plus starts (null until
+// it's set: everyone has everything), what the signed-in family has, and
+// sending an App Store purchase to be checked (the verify-plus function).
+// Each returns null when it can't reach the account (offline).
+export async function loadPlusStart() {
+  try {
+    const { data, error } = await supabase.from('plus_config').select('plus_starts').eq('id', 1).maybeSingle();
+    return error ? null : { plusStarts: data?.plus_starts ?? null };
+  } catch {
+    return null;
+  }
+}
+
+export async function loadFamilyPlus() {
+  try {
+    const { data, error } = await supabase.rpc('my_plus');
+    return error ? null : data;
+  } catch {
+    return null;
+  }
+}
+
+export async function verifyPlusPurchase(jws) {
+  try {
+    const { data, error } = await supabase.functions.invoke('verify-plus', { body: { jws } });
+    return error ? null : data;
+  } catch {
+    return null;
+  }
+}

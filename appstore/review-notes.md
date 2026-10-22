@@ -35,7 +35,14 @@ Kids category notes:
   "Rate MathPop" (opens the App Store) and "Share <child>'s week" (the share
   sheet). Both ask a grown-ups-only question first (type the answer to a
   two-digit by one-digit multiplication).
-- No purchases, no ads, no third-party analytics
+- MathPop Plus (optional auto-renewing subscription, monthly or yearly,
+  7-day free trial) is only offered to grown-ups: Players & grades ->
+  MathPop Plus, behind the same grown-ups check. It unlocks grown-up
+  features only (the full progress report and assigning practice); kids'
+  practice is all free and never shows an offer. In TestFlight/sandbox the
+  "founding family" check (free Plus for families from before Plus) is
+  skipped so the purchase can be tested.
+- No ads, no third-party analytics
   and no tracking. MathPop sends its own anonymous usage counts (app opened;
   a round's grade, game, language and score) with no account, device or
   advertising ID, declared as Product Interaction, not linked to the user.

@@ -10,7 +10,7 @@ export function weekText(name, week) {
   return `${name}'s math week on MathPop: ${parts.join(', ')}${week.streak >= 2 ? `, and a ${week.streak}-day streak` : ''}! 🎉`;
 }
 
-export default function WeekCard({ player, topicName, onShare }) {
+export default function WeekCard({ player, topicName, onShare, onReport }) {
   const week = weekSummary(player.id);
   const pct = week.total ? Math.round((week.correct / week.total) * 100) : null;
   return (
@@ -38,11 +38,18 @@ export default function WeekCard({ player, topicName, onShare }) {
             </span>
           </div>
           <p className="week-games">Played most: {week.topGames.map((g) => topicName(g.mode)).join(', ')}</p>
-          {onShare && (
-            <button className="week-share" onClick={() => onShare(weekText(player.name, week))}>
-              Share {player.name}’s week
-            </button>
-          )}
+          <div className="week-actions">
+            {onReport && (
+              <button className="week-share" onClick={() => onReport(player)}>
+                ✨ Full report
+              </button>
+            )}
+            {onShare && (
+              <button className="week-share" onClick={() => onShare(weekText(player.name, week))}>
+                Share {player.name}’s week
+              </button>
+            )}
+          </div>
         </>
       )}
     </section>

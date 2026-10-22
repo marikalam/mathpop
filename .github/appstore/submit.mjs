@@ -10,7 +10,7 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { api, BUNDLE_ID } from './asc.mjs';
 
-const { VERSION, BUILD, WHATS_NEW, RELEASE, SCREENSHOTS } = process.env;
+const { VERSION, BUILD, WHATS_NEW, RELEASE, SCREENSHOTS, SUBSCRIPTIONS } = process.env;
 
 const app = (await api('GET', `/v1/apps?filter[bundleId]=${BUNDLE_ID}`)).data[0];
 if (!app) throw new Error(`No app with bundle ID ${BUNDLE_ID}`);
@@ -219,6 +219,24 @@ if (SCREENSHOTS === 'yes') {
   }
   // Apple checks each upload before the version can be submitted.
   await new Promise((r) => setTimeout(r, 30000));
+}
+
+// MathPop Plus's subscriptions, when asked for (SUBSCRIPTIONS=yes): the
+// first time, Apple reviews them together with this version.
+if (SUBSCRIPTIONS === 'yes') {
+  for (const group of (await api('GET', `/v1/apps/${app.id}/subscriptionGroups?limit=50`)).data) {
+    for (const sub of (await api('GET', `/v1/subscriptionGroups/${group.id}/subscriptions?limit=50`)).data) {
+      if (sub.attributes.state !== 'READY_TO_SUBMIT') {
+        console.log(`Subscription ${sub.attributes.productId}: ${sub.attributes.state}`);
+        continue;
+      }
+      await api('POST', '/v1/subscriptionSubmissions', {
+        type: 'subscriptionSubmissions',
+        relationships: { subscription: { data: { type: 'subscriptions', id: sub.id } } },
+      });
+      console.log(`Subscription ${sub.attributes.productId} sent for review with this version`);
+    }
+  }
 }
 
 // Submit: reuse a submission that hasn't been sent yet, or start one.

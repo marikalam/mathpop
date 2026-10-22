@@ -4844,3 +4844,177 @@ body {
 .home-stat-streak {
   color: #c2571a;
 }
+
+/* MathPop Plus (PlusScreen.jsx) and the full report (ReportScreen.jsx) */
+.week-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.plus-row {
+  background: linear-gradient(135deg, #eef2ff 0%, #f6ecff 100%);
+}
+
+.plus-screen,
+.report {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.plus-hero {
+  padding: 18px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #3b6fef 0%, #8e4fd6 100%);
+  color: #fff;
+  text-align: center;
+}
+
+.plus-hero-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  font: 700 15px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+
+.plus-hero-text {
+  margin: 10px 0 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.plus-features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.plus-features li {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+  font-size: 14px;
+  color: var(--ink-dim);
+}
+
+.plus-features strong {
+  display: block;
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.plus-feature-icon {
+  font-size: 24px;
+}
+
+.plus-buy {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.plus-buy-btn {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border: none;
+  border-radius: 18px;
+  background: var(--accent-blue);
+  color: #fff;
+  font: 600 14px 'IBM Plex Sans', sans-serif;
+  cursor: pointer;
+}
+
+.plus-buy-btn strong {
+  font-size: 18px;
+}
+
+.plus-buy-btn:disabled {
+  opacity: 0.6;
+}
+
+.plus-signin {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #fff7e0;
+  font-size: 14px;
+  text-align: center;
+}
+
+.plus-signin p {
+  margin: 0 0 8px;
+}
+
+.plus-note,
+.plus-legal {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-dim);
+}
+
+.plus-legal {
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.plus-link {
+  appearance: none;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent-blue);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.report-bar-low {
+  background: #f0954f;
+}
+
+.report-not-yet {
+  margin-top: 10px;
+}
+
+.report-mistakes {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.report-assign {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.report-assign-chip {
+  appearance: none;
+  padding: 8px 12px;
+  border: 2px solid #e1e5f0;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font: 600 14px 'IBM Plex Sans', sans-serif;
+  cursor: pointer;
+}
+
+.report-assign-chip-on {
+  border-color: var(--accent-blue);
+  background: #eef2ff;
+  color: var(--accent-blue);
+}

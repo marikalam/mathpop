@@ -44,6 +44,9 @@ import ZoomView from './ZoomView.jsx';
 import ParentGate from './ParentGate.jsx';
 import WeekCard from './WeekCard.jsx';
 import WelcomeCard from './WelcomeCard.jsx';
+import PlusScreen from './PlusScreen.jsx';
+import ReportScreen from './ReportScreen.jsx';
+import { cachedPlus, refreshPlus } from './plus.js';
 
 const SESSION_ROUNDS = 10;
 // The iPhone app has no link out to the other apps' website, and no printing.
@@ -646,6 +649,31 @@ export default function App() {
         }
       },
     });
+  }
+
+  // MathPop Plus (plus.js): whether this family has it, and why.
+  const [plusStatus, setPlusStatus] = useState(cachedPlus);
+  useEffect(() => {
+    let live = true;
+    refreshPlus(cloudUser).then((s) => live && setPlusStatus(s));
+    return () => {
+      live = false;
+    };
+  }, [cloudUser]);
+  // The player whose full report is open.
+  const [reportFor, setReportFor] = useState(null);
+
+  // Plus itself is for grown-ups: the grown-ups check first when it can
+  // be bought.
+  function openPlus() {
+    if (plusStatus.plus) setView('plus');
+    else setGate({ reason: 'To see MathPop Plus', then: () => setView('plus') });
+  }
+
+  function openReport(player) {
+    if (!plusStatus.plus) return openPlus();
+    setReportFor(player);
+    setView('report');
   }
 
   // The first time MathPop opens (a guest with only the untouched
@@ -1576,6 +1604,27 @@ export default function App() {
           </>
         )}
 
+        {view === 'plus' && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={() => setView('players')} />
+            <h2 className="screen-title">MathPop Plus</h2>
+            <PlusScreen status={plusStatus} user={cloudUser} onStatus={setPlusStatus} onSignIn={openAccount} openOutside={openOutside} />
+          </>
+        )}
+
+        {view === 'report' && reportFor && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={() => setView('players')} />
+            <h2 className="screen-title">{reportFor.name}’s report</h2>
+            <ReportScreen
+              player={reportFor}
+              grade={gradeInfo(reportFor.grade).id}
+              gradeName={gradeInfo(reportFor.grade).label}
+              progress={(progress[reportFor.id] || {})[gradeInfo(reportFor.grade).id]}
+            />
+          </>
+        )}
+
         {view === 'stats' && (
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={() => setView('account')} />
@@ -1632,10 +1681,25 @@ export default function App() {
             <h3 className="section-label">📈 This week</h3>
             <div className="week-cards">
               {profiles.map((p) => (
-                <WeekCard key={p.id} player={p} topicName={statTopicName} onShare={shareWeek} />
+                <WeekCard key={p.id} player={p} topicName={statTopicName} onShare={shareWeek} onReport={openReport} />
               ))}
             </div>
             {shareNote && <p className="share-note">{shareNote}</p>}
+            <button className="rate-row plus-row" onClick={openPlus}>
+              <span className="rate-row-stars" aria-hidden="true">
+                ✨
+              </span>
+              <span>
+                <strong>MathPop Plus</strong>
+                {plusStatus.why === 'founder'
+                  ? 'Free for you, for good: you’re a founding family.'
+                  : plusStatus.why === 'paid'
+                    ? 'On: the full report and assigned practice.'
+                    : plusStatus.why === 'early'
+                      ? 'Free for everyone right now: the full report and assigned practice.'
+                      : 'The full progress report and assigned practice.'}
+              </span>
+            </button>
             <button className="rate-row" onClick={rateApp}>
               <span className="rate-row-stars" aria-hidden="true">
                 ⭐

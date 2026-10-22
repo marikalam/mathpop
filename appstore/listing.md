@@ -51,7 +51,7 @@ FAMILY ACCOUNT (OPTIONAL)
 Kids can play right away with no sign-in. Grown-ups can create a free family account to keep players and grades in sync across devices. The same account works in PitchPop.
 
 PRIVATE BY DESIGN
-No ads, no in-app purchases and no tracking. Without an account, everything MathPop remembers stays on your device.
+No ads and no tracking. Everything kids play is free; MathPop Plus is an optional subscription for grown-ups (the full progress report and assigned practice), and families who used MathPop before Plus keep it free. Without an account, everything MathPop remembers stays on your device.
 
 ## Keywords (100, comma-separated)
 singapore,kindergarten,preschool,homeschool,addition,subtraction,times tables,counting,first grade
@@ -71,7 +71,8 @@ singapore,kindergarten,preschool,homeschool,addition,subtraction,times tables,co
   only allows that wording for apps in the Kids category (Guideline 2.3.8).
   MathPop qualifies: in the iPhone app the only links out (rating and sharing)
   are behind a grown-ups check, and there are
-  no purchases, no ads and no third-party analytics (MathPop counts its
+  no ads and no third-party analytics, and the optional MathPop Plus
+  subscription is only offered to grown-ups behind the check (MathPop counts its
   own anonymous usage, which the Kids category allows). The optional family account is
   meant for grown-ups (there's no parental gate in front of it).
 - If you'd rather not use the Kids category, rename the app first (for
