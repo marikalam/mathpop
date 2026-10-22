@@ -89,6 +89,8 @@ function readListing(file) {
   };
 }
 const en = readListing('listing.md');
+// The Japanese page needs its own links (the same as the English ones).
+const JA_URLS = { supportUrl: 'https://marikalam.github.io/', marketingUrl: 'https://marikalam.github.io/apps/mathpop/' };
 const ja = readListing('listing-ja.md');
 const description = en('Description');
 const promotionalText = en('Promotional text');
@@ -98,7 +100,7 @@ const locs = (await api('GET', `/v1/appStoreVersions/${version.id}/appStoreVersi
 for (const loc of locs) {
   const isJa = loc.attributes.locale === 'ja';
   const text = isJa
-    ? { whatsNew: ja("What's New"), description: ja('Description'), promotionalText: ja('Promotional text'), keywords: ja('Keywords') }
+    ? { whatsNew: ja("What's New"), description: ja('Description'), promotionalText: ja('Promotional text'), keywords: ja('Keywords'), ...JA_URLS }
     : { whatsNew: WHATS_NEW, description, promotionalText, keywords };
   await api('PATCH', `/v1/appStoreVersionLocalizations/${loc.id}`, {
     type: 'appStoreVersionLocalizations',
@@ -119,6 +121,7 @@ if (!locs.some((loc) => loc.attributes.locale === 'ja')) {
       description: ja('Description'),
       promotionalText: ja('Promotional text'),
       keywords: ja('Keywords'),
+      ...JA_URLS,
     },
     relationships: { appStoreVersion: { data: { type: 'appStoreVersions', id: version.id } } },
   });
@@ -240,8 +243,10 @@ try {
     },
   });
 } catch (err) {
-  // Already in this submission from an earlier try.
+  // Already in this submission from an earlier try is fine; anything else
+  // (something Apple still needs before review) is shown as it is.
   if (!String(err).includes('409')) throw err;
+  console.log(`Adding the version to the submission: ${err.message}`);
 }
 await api('PATCH', `/v1/reviewSubmissions/${submission.id}`, {
   type: 'reviewSubmissions',
