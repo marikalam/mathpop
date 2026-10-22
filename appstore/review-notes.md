@@ -31,7 +31,11 @@ Family account (optional):
   and its players from our servers.
 
 Kids category notes:
-- No links out of the app, no purchases, no ads, no third-party analytics
+- The only ways out of the app are for grown-ups, in Players & grades:
+  "Rate MathPop" (opens the App Store) and "Share <child>'s week" (the share
+  sheet). Both ask a grown-ups-only question first (type the answer to a
+  two-digit by one-digit multiplication).
+- No purchases, no ads, no third-party analytics
   and no tracking. MathPop sends its own anonymous usage counts (app opened;
   a round's grade, game, language and score) with no account, device or
   advertising ID, declared as Product Interaction, not linked to the user.

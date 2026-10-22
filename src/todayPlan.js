@@ -17,6 +17,7 @@ const PLAN_KEY = 'mathpop-today-plan-v2';
 const MISTAKES_KEY = 'mathpop-mistakes-v1';
 const KEEP_MISTAKES = 40;
 const BONUS_KEY = 'mathpop-today-bonus-v1';
+const FIXED_KEY = 'mathpop-mistakes-fixed-v1';
 const KEEP_ROUNDS = 200;
 // A topic counts as tricky once tried this many times with fewer right.
 const MIN_TRIES = 5;
@@ -88,6 +89,15 @@ export function clearMistake(playerId, problem) {
   const key = mistakeKey(problem);
   if (!(all[playerId] || []).some((m) => m.key === key)) return;
   write(MISTAKES_KEY, { ...all, [playerId]: all[playerId].filter((m) => m.key !== key) });
+  // Counted for the grown-ups' weekly card (weekSummary).
+  const fixed = read(FIXED_KEY);
+  const mine = { ...(fixed[playerId] || {}) };
+  const today = dayKey();
+  mine[today] = (mine[today] || 0) + 1;
+  // Only the last few weeks are kept.
+  const oldest = dayKey(new Date(Date.now() - 35 * 86400000));
+  for (const day of Object.keys(mine)) if (day < oldest) delete mine[day];
+  write(FIXED_KEY, { ...fixed, [playerId]: mine });
 }
 
 // The problems for a Fix my mistakes round: the newest mistakes first.
@@ -202,4 +212,47 @@ export function giveBonusIfDone(playerId, items) {
 
 export function bonusGivenToday(playerId) {
   return read(BONUS_KEY)[playerId] === dayKey();
+}
+
+// ---------- Streak and the week, for the home page and grown-ups ----------
+
+function daysAgo(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return dayKey(d);
+}
+
+// Days in a row with at least one finished round, up to today (or up to
+// yesterday, if they haven't played yet today: the streak isn't lost
+// until today is over).
+export function streakDays(playerId) {
+  const days = new Set((read(LOG_KEY)[playerId] || []).map((r) => r.day));
+  const start = days.has(daysAgo(0)) ? 0 : 1;
+  let n = 0;
+  while (days.has(daysAgo(start + n))) n++;
+  return n;
+}
+
+// The last 7 days for one player: rounds, days played, how many right,
+// the games played most, and the mistakes they fixed.
+export function weekSummary(playerId) {
+  const since = daysAgo(6);
+  const rounds = (read(LOG_KEY)[playerId] || []).filter((r) => r.day >= since);
+  const fixed = Object.entries(read(FIXED_KEY)[playerId] || {})
+    .filter(([day]) => day >= since)
+    .reduce((sum, [, n]) => sum + n, 0);
+  const games = {};
+  for (const r of rounds) games[r.mode] = (games[r.mode] || 0) + 1;
+  return {
+    rounds: rounds.length,
+    days: new Set(rounds.map((r) => r.day)).size,
+    correct: rounds.reduce((s, r) => s + r.correct, 0),
+    total: rounds.reduce((s, r) => s + r.total, 0),
+    topGames: Object.entries(games)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([mode, n]) => ({ mode, rounds: n })),
+    fixed,
+    streak: streakDays(playerId),
+  };
 }
