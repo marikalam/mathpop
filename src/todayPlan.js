@@ -18,6 +18,8 @@ const MISTAKES_KEY = 'mathpop-mistakes-v1';
 const KEEP_MISTAKES = 40;
 const BONUS_KEY = 'mathpop-today-bonus-v1';
 const FIXED_KEY = 'mathpop-mistakes-fixed-v1';
+const ASSIGN_KEY = 'mathpop-assigned-v1';
+const MAX_ASSIGNED = 3;
 const KEEP_ROUNDS = 200;
 // A topic counts as tricky once tried this many times with fewer right.
 const MIN_TRIES = 5;
@@ -108,7 +110,7 @@ export function mistakeRound(playerId, grade, count) {
     .map((m) => m.problem);
 }
 
-function gradeTopicList(grade) {
+export function gradeTopicList(grade) {
   const seen = new Set();
   const list = [];
   gradeSections(grade).forEach((section) =>
@@ -126,6 +128,11 @@ function makePlan(playerId, grade, byOp) {
   const rounds = (read(LOG_KEY)[playerId] || []).filter((r) => r.grade === grade);
   const items = [];
 
+  // Practice a grown-up picked (MathPop Plus) comes first.
+  assignedTopics(playerId, grade).forEach((t, i) => {
+    items.push({ id: `assigned${i}`, mode: t.id, icon: t.icon, title: `From a grown-up: ${t.title}`, sub: `${t.sub} · 1 round of 10` });
+  });
+
   const mistakes = loadMistakes(playerId, grade);
   if (mistakes.length) {
     items.push({ id: 'mistakes', mode: 'mistakes', icon: '🔁', title: 'Fix my mistakes', sub: '' });
@@ -133,6 +140,7 @@ function makePlan(playerId, grade, byOp) {
 
   const tricky = topics
     .map((t) => ({ t, s: byOp[t.id] }))
+    .filter(({ t }) => !items.some((i) => i.mode === t.id))
     .filter(({ s }) => s && s.total >= MIN_TRIES && s.correct / s.total < GOOD_ENOUGH)
     .sort((a, b) => a.s.correct / a.s.total - b.s.correct / b.s.total)[0];
   if (tricky) {
@@ -152,8 +160,8 @@ function makePlan(playerId, grade, byOp) {
   const lastPlayed = (id) => rounds.reduce((last, r, i) => (r.mode === id ? i : last), -1);
   const oldest = topics.filter((t) => !used.has(t.id)).sort((a, b) => lastPlayed(a.id) - lastPlayed(b.id));
   const newOnes = untried.length ? untried : oldest;
-  // Three in all, with the Random Mix last.
-  const wanted = Math.max(0, 2 - items.length);
+  // Three in all (plus any a grown-up picked), with the Random Mix last.
+  const wanted = Math.max(0, 2 - items.filter((i) => !i.id.startsWith('assigned')).length);
   newOnes.slice(0, wanted).forEach((t, i) => {
     items.push({
       id: `next${i}`,
@@ -177,8 +185,10 @@ export function todayPlan(playerId, grade, byOp = {}) {
   // A new day or grade gets a new list; so does one with mistakes to fix
   // that the list doesn't have yet, as long as nothing on it is done.
   const needsMistakes = plan && !plan.items.some((i) => i.id === 'mistakes') && loadMistakes(playerId, grade).length && !playedSoFar;
-  if (!plan || plan.day !== today || plan.grade !== grade || needsMistakes) {
-    plan = { day: today, grade, items: makePlan(playerId, grade, byOp) };
+  // A grown-up changing the assigned practice remakes it too.
+  const assigned = assignedTopics(playerId, grade).map((t) => t.id).join(',');
+  if (!plan || plan.day !== today || plan.grade !== grade || needsMistakes || (plan.assigned || '') !== assigned) {
+    plan = { day: today, grade, assigned, items: makePlan(playerId, grade, byOp) };
     try {
       localStorage.setItem(PLAN_KEY, JSON.stringify({ ...plans, [playerId]: plan }));
     } catch {
@@ -255,4 +265,37 @@ export function weekSummary(playerId) {
     fixed,
     streak: streakDays(playerId),
   };
+}
+
+// ---------- Practice a grown-up picked (MathPop Plus) ----------
+
+// The topics a grown-up assigned a player (up to three), at their grade.
+export function assignedTopics(playerId, grade) {
+  const ids = read(ASSIGN_KEY)[playerId] || [];
+  const topics = gradeTopicList(grade);
+  return ids.map((id) => topics.find((t) => t.id === id)).filter(Boolean);
+}
+
+export function setAssignedTopics(playerId, ids) {
+  write(ASSIGN_KEY, { ...read(ASSIGN_KEY), [playerId]: ids.slice(0, MAX_ASSIGNED) });
+}
+
+export { MAX_ASSIGNED };
+
+// Rounds week by week, newest last (the full progress report).
+export function weeklyRounds(playerId, weeks = 4) {
+  const log = read(LOG_KEY)[playerId] || [];
+  return Array.from({ length: weeks }, (_, k) => {
+    const back = weeks - 1 - k;
+    const from = daysAgo(back * 7 + 6);
+    const to = daysAgo(back * 7);
+    const rounds = log.filter((r) => r.day >= from && r.day <= to);
+    return {
+      from,
+      to,
+      rounds: rounds.length,
+      correct: rounds.reduce((s, r) => s + r.correct, 0),
+      total: rounds.reduce((s, r) => s + r.total, 0),
+    };
+  });
 }
