@@ -10,15 +10,15 @@
 
 // `short` is the name on the home page's card.
 const SECTION_STYLE = {
-  numbers: { icon: '🔢', short: 'Numbers', from: '#6585ab', to: '#56739a' },
-  addsub: { icon: '➕', short: 'Add & Subtract', from: '#6c8a67', to: '#5e7d59' },
-  muldiv: { icon: '✖️', short: 'Multiply & Divide', from: '#8d7294', to: '#7f6386' },
-  fractions: { icon: '🍕', short: 'Fractions', from: '#5a8580', to: '#4f7a75' },
-  decimals: { icon: '🔟', short: 'Decimals', from: '#5a8585', to: '#4c7676' },
-  measure: { icon: '📏', short: 'Measurement', tile: 'Measure', from: '#a87e32', to: '#9a7128' },
-  shapes: { icon: '🔺', short: 'Shapes', from: '#b06a77', to: '#a05c69' },
-  data: { icon: '📊', short: 'Graphs', from: '#b5643f', to: '#a85a38' },
-  puzzles: { icon: '🧠', short: 'Puzzles', from: '#7d6a8a', to: '#6e5d7b' },
+  numbers: { icon: '🔢', short: 'Numbers', from: '#4e8ff7', to: '#3a6fd8' },
+  addsub: { icon: '➕', short: 'Add & Subtract', from: '#38c07f', to: '#2a9e60' },
+  muldiv: { icon: '✖️', short: 'Multiply & Divide', from: '#a065e6', to: '#7c3fc4' },
+  fractions: { icon: '🍕', short: 'Fractions', from: '#14b8a6', to: '#0f9384' },
+  decimals: { icon: '🔟', short: 'Decimals', from: '#1fb6ba', to: '#14898c' },
+  measure: { icon: '📏', short: 'Measurement', tile: 'Measure', from: '#f5a524', to: '#e08a12' },
+  shapes: { icon: '🔺', short: 'Shapes', from: '#e0577f', to: '#c43c66' },
+  data: { icon: '📊', short: 'Graphs', from: '#f0954f', to: '#e0793a' },
+  puzzles: { icon: '🧠', short: 'Puzzles', from: '#8e4fd6', to: '#6f35b8' },
 };
 
 // Each topic's picture on its card.

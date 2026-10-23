@@ -4,12 +4,12 @@
 // Word Problems, Tell Time and the skill games are written for. `sg` is
 // the matching Singapore school year.
 export const GRADES = [
-  { id: 'p', short: 'Pre-K', label: 'Pre-K (ages 2–5)', color: '#c89a45', tier: 'easy', sg: 'Nursery' },
-  { id: 'k', short: 'K', label: 'Kindergarten', color: '#c27f8c', tier: 'easy', sg: 'K2' },
-  { id: '1', short: '1st', label: '1st grade', color: '#c9774f', tier: 'easy', sg: 'Primary 1' },
-  { id: '2', short: '2nd', label: '2nd grade', color: '#6c8a67', tier: 'medium', sg: 'Primary 2' },
-  { id: '3', short: '3rd', label: '3rd grade', color: '#5f7ea2', tier: 'hard', sg: 'Primary 3' },
-  { id: '4', short: '4th', label: '4th grade', color: '#876b8f', tier: 'hard', sg: 'Primary 4' },
+  { id: 'p', short: 'Pre-K', label: 'Pre-K (ages 2–5)', color: '#F59E0B', tier: 'easy', sg: 'Nursery' },
+  { id: 'k', short: 'K', label: 'Kindergarten', color: '#F06F9A', tier: 'easy', sg: 'K2' },
+  { id: '1', short: '1st', label: '1st grade', color: '#F0954F', tier: 'easy', sg: 'Primary 1' },
+  { id: '2', short: '2nd', label: '2nd grade', color: '#2FAE6B', tier: 'medium', sg: 'Primary 2' },
+  { id: '3', short: '3rd', label: '3rd grade', color: '#3B6FEF', tier: 'hard', sg: 'Primary 3' },
+  { id: '4', short: '4th', label: '4th grade', color: '#8E4FD6', tier: 'hard', sg: 'Primary 4' },
 ];
 
 export const DEFAULT_GRADE = '2';
