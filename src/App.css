@@ -1,15 +1,15 @@
 :root {
-  --bg: #f4efe4;
+  --bg: #f2f4f9;
   --card-bg: #ffffff;
-  --ink: #36332d;
-  --ink-dim: #6b6255;
-  --accent-blue: #5f7ea2;
-  --accent-green: #6c8a67;
-  --accent-purple: #876b8f;
+  --ink: #171a2b;
+  --ink-dim: #7a8099;
+  --accent-blue: #3b6fef;
+  --accent-green: #2fae6b;
+  --accent-purple: #8e4fd6;
   --accent-amber: #e0a53b;
-  --accent-red: #b0553f;
-  --shadow: 0 10px 24px -12px rgba(70, 56, 36, 0.18), 0 2px 6px rgba(70, 56, 36, 0.06);
-  --shadow-sm: 0 4px 10px -4px rgba(70, 56, 36, 0.16);
+  --accent-red: #e5484d;
+  --shadow: 0 10px 24px -12px rgba(23, 26, 43, 0.18), 0 2px 6px rgba(23, 26, 43, 0.06);
+  --shadow-sm: 0 4px 10px -4px rgba(23, 26, 43, 0.16);
 }
 
 * {
@@ -29,7 +29,7 @@ html, body {
 body {
   margin: 0;
   background: var(--bg);
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
 }
 
 .page {
@@ -75,7 +75,7 @@ body {
 .logo {
   display: flex;
   align-items: center;
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: 26px;
   margin: 0;
@@ -117,7 +117,7 @@ body {
   background: none;
   padding: 6px 2px;
   color: var(--ink-dim);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-weight: 600;
   font-size: 14px;
 }
@@ -201,7 +201,7 @@ body {
   gap: 10px;
   padding: 8px 10px;
   border-radius: 10px;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-weight: 600;
   font-size: 14px;
   color: var(--ink);
@@ -214,7 +214,7 @@ body {
 
 .explore-counter {
   align-self: center;
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: 20px;
   color: var(--ink-dim);
@@ -272,7 +272,7 @@ body {
   background: var(--card-bg);
   box-shadow: var(--shadow-sm);
   color: var(--ink);
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: 15px;
   -webkit-tap-highlight-color: transparent;
@@ -288,7 +288,7 @@ body {
 }
 
 .explore-lang-name {
-  font: 600 11px 'Nunito', sans-serif;
+  font: 600 11px 'IBM Plex Sans', sans-serif;
   opacity: 0.7;
   white-space: nowrap;
 }
@@ -301,7 +301,7 @@ body {
   border-radius: 24px;
   box-shadow: var(--shadow);
   color: #fff;
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -377,7 +377,7 @@ body {
 }
 
 .skill-unit-title {
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: 15px;
   color: var(--ink-dim);
@@ -417,7 +417,7 @@ body {
 }
 
 .skill-card-title {
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: 16px;
 }
@@ -431,7 +431,7 @@ body {
   max-width: 320px;
   margin: 24px auto 0;
   padding: 12px 14px;
-  background: #f6ecd8;
+  background: #fff7e0;
   color: #8a6a1f;
   border-radius: 12px;
   font-weight: 600;
@@ -440,7 +440,7 @@ body {
 }
 
 .skill-hint {
-  background: #f6ecd8;
+  background: #fff7e0;
   color: #8a6a1f;
   border-radius: 12px;
   padding: 8px 12px;
@@ -463,7 +463,7 @@ body {
   background: #fff;
   box-shadow: var(--shadow-sm);
   color: var(--ink);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-weight: 700;
   font-size: 14px;
   padding: 10px 18px;
@@ -479,7 +479,7 @@ body {
   padding: 14px;
   border-radius: 20px;
   background: var(--card-bg, #fff);
-  box-shadow: var(--shadow-sm, 0 4px 10px -4px rgba(70, 56, 36, 0.16));
+  box-shadow: var(--shadow-sm, 0 4px 10px -4px rgba(23, 26, 43, 0.16));
   animation: help-open 0.2s ease-out;
 }
 
@@ -492,7 +492,7 @@ body {
 
 .help-title {
   margin: 0;
-  font: 700 18px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
 }
 
 .help-step {
@@ -512,7 +512,7 @@ body {
 }
 
 .help-plus {
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: 20px;
   color: var(--ink-dim);
@@ -525,7 +525,7 @@ body {
 }
 
 .help-equation {
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: clamp(18px, 5vw, 22px);
   text-align: center;
@@ -581,7 +581,7 @@ body {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-end;
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: clamp(30px, 10vw, 42px);
   letter-spacing: 0.02em;
@@ -610,7 +610,7 @@ body {
 }
 
 .screen-title {
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: clamp(20px, 6vw, 24px);
   text-align: center;
@@ -652,7 +652,7 @@ body {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #ddd3c1;
+  background: #d7dceb;
 }
 
 .progress-dot-filled {
@@ -662,7 +662,7 @@ body {
 .progress-line {
   flex: 1;
   height: 2px;
-  background: #ddd3c1;
+  background: #d7dceb;
 }
 
 .progress-line-filled {
@@ -694,7 +694,7 @@ body {
 }
 
 .problem-text {
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: clamp(40px, 14vw, 56px);
   letter-spacing: 0.02em;
@@ -734,7 +734,7 @@ body {
   box-shadow: var(--shadow);
   background: var(--card-bg);
   color: var(--ink);
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: 26px;
   font-variant-numeric: tabular-nums;
@@ -831,7 +831,7 @@ body {
   animation-delay: 0.07s;
 }
 .feedback-confetti span:nth-child(8) {
-  background: #6c8a67;
+  background: #2fae6b;
   --tx: 15px;
   --ty: -85px;
   --rot: -45deg;
@@ -858,7 +858,7 @@ body {
 }
 
 .answer-equation {
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: clamp(26px, 9vw, 34px);
   font-variant-numeric: tabular-nums;
@@ -877,7 +877,7 @@ body {
   align-self: center;
   padding: 13px;
   border-radius: 999px;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-weight: 700;
   font-size: 14px;
 }
@@ -910,7 +910,7 @@ body {
   align-self: center;
   padding: 13px;
   border-radius: 999px;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-weight: 700;
   font-size: 14px;
   background: var(--accent-amber);
@@ -950,7 +950,7 @@ body {
 }
 
 .stat-number {
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: 30px;
   font-variant-numeric: tabular-nums;
@@ -987,7 +987,7 @@ body {
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: 17px;
 }
@@ -1022,14 +1022,14 @@ body {
 }
 
 .results-score-number {
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: 48px;
   color: var(--ink);
 }
 
 .results-score-total {
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 600;
   font-size: 20px;
   color: var(--ink-dim);
@@ -1088,11 +1088,11 @@ body {
 }
 
 .result-correct {
-  color: #6c8a67;
+  color: #2fae6b;
 }
 
 .result-wrong {
-  color: #b0553f;
+  color: #e5484d;
 }
 
 .review-list {
@@ -1205,10 +1205,10 @@ body {
   box-shadow: var(--shadow);
   touch-action: none;
   cursor: crosshair;
-  background-color: #fbf8f1;
+  background-color: #fffdf7;
   background-image:
-    linear-gradient(to bottom, transparent 0, transparent 39px, #d9cdb8 39px, #d9cdb8 41px, transparent 41px),
-    repeating-linear-gradient(to right, transparent 0, transparent 66px, #ddd0c4 66px, #ddd0c4 68px),
+    linear-gradient(to bottom, transparent 0, transparent 39px, #cdd8ef 39px, #cdd8ef 41px, transparent 41px),
+    repeating-linear-gradient(to right, transparent 0, transparent 66px, #d8c7f0 66px, #d8c7f0 68px),
     linear-gradient(to right, transparent 0, transparent 22px, #f3b9bb 22px, #f3b9bb 24px, transparent 24px);
   background-size: 100% 40px, 100% 100%, 100% 100%;
   background-repeat: repeat-y, repeat-x, no-repeat;
@@ -1230,7 +1230,7 @@ body {
 }
 
 .write-pad-preview strong {
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-size: 20px;
 }
 
@@ -1304,20 +1304,20 @@ body {
   padding: 22px 20px 16px;
   border-radius: 24px;
   background: #fff;
-  color: #36332d;
+  color: #1b1d2a;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
 }
 
 .print-panel-title {
   margin: 0;
   text-align: center;
-  font: 700 20px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 20px 'Fredoka', ui-rounded, system-ui, sans-serif;
 }
 
 .print-panel-sub {
   margin: -6px 0 0;
   text-align: center;
-  color: #6b6255;
+  color: #6b7187;
   font-size: 14px;
 }
 
@@ -1326,7 +1326,7 @@ body {
   gap: 4px;
   padding: 4px;
   border-radius: 14px;
-  background: #efe8da;
+  background: #eef1f7;
 }
 
 .print-count-btn {
@@ -1337,14 +1337,14 @@ body {
   padding: 12px 6px;
   border-radius: 11px;
   background: none;
-  color: #6b6255;
-  font: 700 15px 'Nunito', sans-serif;
+  color: #6b7187;
+  font: 700 15px 'IBM Plex Sans', sans-serif;
 }
 
 .print-count-btn-active {
   background: #fff;
-  color: #5f7ea2;
-  box-shadow: 0 1px 4px rgba(70, 56, 36, 0.14);
+  color: #3b6fef;
+  box-shadow: 0 1px 4px rgba(23, 26, 43, 0.14);
 }
 
 .print-key-toggle {
@@ -1352,18 +1352,18 @@ body {
   align-items: center;
   gap: 10px;
   font-size: 14px;
-  color: #36332d;
+  color: #1b1d2a;
 }
 
 .print-key-toggle input {
   width: 20px;
   height: 20px;
-  accent-color: #5f7ea2;
+  accent-color: #3b6fef;
 }
 
 .print-go {
   width: 100%;
-  background: #5f7ea2;
+  background: #3b6fef;
   color: #fff;
   font-size: 16px;
 }
@@ -1373,8 +1373,8 @@ body {
   border: none;
   cursor: pointer;
   background: none;
-  color: #6b6255;
-  font: 700 14px 'Nunito', sans-serif;
+  color: #6b7187;
+  font: 700 14px 'IBM Plex Sans', sans-serif;
   padding: 6px;
 }
 
@@ -1401,7 +1401,7 @@ body {
   .print-sheet {
     display: block;
     color: #000;
-    font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
     font-size: 15pt;
   }
 
@@ -1414,7 +1414,7 @@ body {
   }
 
   .ws-title {
-    font: 700 20pt 'Nunito', ui-rounded, system-ui, sans-serif;
+    font: 700 20pt 'Fredoka', ui-rounded, system-ui, sans-serif;
   }
 
   .ws-level {
@@ -1587,7 +1587,7 @@ body {
   gap: 6px;
   padding: 18px 18px 18px;
   border-radius: 28px;
-  background: radial-gradient(120% 90% at 50% 0%, #f6eedd 0%, #eaefe3 45%, #efeadf 100%);
+  background: radial-gradient(120% 90% at 50% 0%, #fff7e8 0%, #eefaf3 45%, #eef3ff 100%);
   box-shadow: var(--shadow);
   text-align: center;
 }
@@ -1606,7 +1606,7 @@ body {
   height: 44px;
   border-radius: 14px;
   color: #fff;
-  font: 700 28px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 28px 'Fredoka', ui-rounded, system-ui, sans-serif;
   line-height: 1;
   box-shadow: var(--shadow-sm);
 }
@@ -1621,7 +1621,7 @@ body {
 
 .home-hello {
   margin: 4px 0 0;
-  font: 700 clamp(22px, 7vw, 28px) 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 clamp(22px, 7vw, 28px) 'Fredoka', ui-rounded, system-ui, sans-serif;
   text-wrap: balance;
 }
 
@@ -1647,7 +1647,7 @@ body {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.85);
   box-shadow: var(--shadow-sm);
-  font: 700 13px 'Nunito', sans-serif;
+  font: 700 13px 'IBM Plex Sans', sans-serif;
   color: var(--ink);
 }
 
@@ -1660,7 +1660,7 @@ body {
   border-radius: 28px;
   background:
     linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
-    linear-gradient(135deg, #6c8a67, #5f7ea2, #876b8f) border-box;
+    linear-gradient(135deg, #2fae6b, #3b6fef, #8e4fd6) border-box;
   box-shadow: var(--shadow-sm);
 }
 
@@ -1674,7 +1674,7 @@ body {
   width: 100%;
   padding: 16px 18px;
   border-radius: 22px;
-  background: linear-gradient(135deg, #6c8a67 0%, #5f7ea2 55%, #876b8f 100%);
+  background: linear-gradient(135deg, #2fae6b 0%, #3b6fef 55%, #8e4fd6 100%);
   color: #fff;
   box-shadow: 0 14px 28px -14px rgba(59, 111, 239, 0.7);
   text-align: left;
@@ -1707,12 +1707,12 @@ body {
 }
 
 .home-cta-title {
-  font: 700 22px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 22px 'Fredoka', ui-rounded, system-ui, sans-serif;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 
 .home-cta-sub {
-  font: 600 13.5px 'Nunito', sans-serif;
+  font: 600 13.5px 'IBM Plex Sans', sans-serif;
   opacity: 0.95;
 }
 
@@ -1749,25 +1749,25 @@ body {
 }
 
 .quick-explore-title {
-  font: 700 18px 'Nunito', ui-rounded, system-ui, sans-serif;
-  color: #b5643f;
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #e0793a;
 }
 
 .quick-explore-sub {
-  font: 600 13px 'Nunito', sans-serif;
+  font: 600 13px 'IBM Plex Sans', sans-serif;
   color: var(--ink-dim);
 }
 
 .quick-explore-arrow {
   font-size: 22px;
   font-weight: 700;
-  color: #b5643f;
+  color: #e0793a;
 }
 
 .home-section-title {
   margin: 4px 0 -6px;
   padding: 0 4px;
-  font: 700 17px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
   color: var(--ink);
 }
 
@@ -1809,7 +1809,7 @@ body {
   margin-bottom: 4px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.25);
-  font: 700 24px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 24px 'Fredoka', ui-rounded, system-ui, sans-serif;
   line-height: 1;
 }
 
@@ -1820,12 +1820,12 @@ body {
 }
 
 .home-card-title {
-  font: 700 17px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
   line-height: 1.15;
 }
 
 .home-card-sub {
-  font: 600 12.5px 'Nunito', sans-serif;
+  font: 600 12.5px 'IBM Plex Sans', sans-serif;
   line-height: 1.3;
   opacity: 0.92;
 }
@@ -1834,7 +1834,7 @@ body {
   align-self: center;
   padding: 6px 12px;
   color: var(--ink-dim);
-  font: 600 14px 'Nunito', sans-serif;
+  font: 600 14px 'IBM Plex Sans', sans-serif;
   text-decoration: none;
 }
 
@@ -2115,7 +2115,7 @@ body {
 
 .bond-text {
   text-anchor: middle;
-  font: 700 30px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 30px 'Fredoka', ui-rounded, system-ui, sans-serif;
   fill: #c43c66;
 }
 
@@ -2159,7 +2159,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: 700 13px 'Nunito', sans-serif;
+  font: 700 13px 'IBM Plex Sans', sans-serif;
   color: var(--ink);
 }
 
@@ -2193,7 +2193,7 @@ body {
   gap: 10px;
   padding: 8px 10px;
   border-radius: 10px;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-weight: 600;
   font-size: 14px;
   color: var(--ink);
@@ -2216,13 +2216,13 @@ body {
   flex-direction: column;
   margin-top: 4px;
   padding-top: 4px;
-  border-top: 1px solid #ece5d6;
+  border-top: 1px solid #edf0f6;
 }
 
 .profile-menu-heading {
   padding: 4px 10px 0;
   color: var(--ink-dim);
-  font: 700 10.5px 'Nunito', sans-serif;
+  font: 700 10.5px 'IBM Plex Sans', sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -2236,7 +2236,7 @@ body {
 .profile-settings-item {
   appearance: none;
   border: none;
-  border-top: 1px solid #ece5d6;
+  border-top: 1px solid #edf0f6;
   cursor: pointer;
   background: none;
   display: flex;
@@ -2245,7 +2245,7 @@ body {
   margin-top: 4px;
   padding: 10px;
   color: var(--accent-blue);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-weight: 700;
   font-size: 13px;
   text-align: left;
@@ -2281,9 +2281,9 @@ body {
   border-radius: 9px;
   cursor: pointer;
   padding: 9px 10px;
-  background: #f8ece6;
-  color: #9a4632;
-  font: 700 12px 'Nunito', sans-serif;
+  background: #fff5f5;
+  color: #bb3036;
+  font: 700 12px 'IBM Plex Sans', sans-serif;
 }
 
 .remove-player-btn:disabled {
@@ -2294,12 +2294,12 @@ body {
 .profile-name-input,
 .add-profile input {
   width: 100%;
-  border: 1px solid #ddd3c1;
+  border: 1px solid #d9deeb;
   border-radius: 10px;
   padding: 10px 12px;
   color: var(--ink);
-  background: #fbf8f1;
-  font: 700 15px 'Nunito', sans-serif;
+  background: #fbfcff;
+  font: 700 15px 'IBM Plex Sans', sans-serif;
 }
 
 .player-history {
@@ -2369,7 +2369,7 @@ body {
   appearance: none;
   border: none;
   cursor: pointer;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-weight: 700;
 }
 
@@ -2411,14 +2411,14 @@ body {
   gap: 8px;
   padding: 11px 14px;
   border-radius: 14px;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-size: 13px;
   text-align: left;
 }
 
 .sync-status-on {
-  background: #e5ecdf;
-  color: #4f6a4b;
+  background: #e8f6ee;
+  color: #1f6b43;
   overflow-wrap: anywhere;
 }
 
@@ -2427,7 +2427,7 @@ body {
   border: none;
   cursor: pointer;
   justify-content: space-between;
-  background: #efe8da;
+  background: #eef1f7;
   color: var(--ink-dim);
 }
 
@@ -2462,7 +2462,7 @@ body {
 
 .auth-title {
   margin: 0;
-  font: 700 21px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 21px 'Fredoka', ui-rounded, system-ui, sans-serif;
   text-align: center;
 }
 
@@ -2480,7 +2480,7 @@ body {
   padding: 4px;
   margin-bottom: 16px;
   border-radius: 12px;
-  background: #efe8da;
+  background: #eef1f7;
 }
 
 .auth-tab {
@@ -2491,7 +2491,7 @@ body {
   border-radius: 9px;
   background: none;
   color: var(--ink-dim);
-  font: 700 13px 'Nunito', sans-serif;
+  font: 700 13px 'IBM Plex Sans', sans-serif;
 }
 
 .auth-tab-active {
@@ -2510,17 +2510,17 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font: 600 12px 'Nunito', sans-serif;
+  font: 600 12px 'IBM Plex Sans', sans-serif;
   color: var(--ink-dim);
 }
 
 .auth-field input {
-  border: 1px solid #ddd3c1;
+  border: 1px solid #d9deeb;
   border-radius: 12px;
   padding: 12px 14px;
-  background: #fbf8f1;
+  background: #fbfcff;
   color: var(--ink);
-  font: 15px 'Nunito', sans-serif;
+  font: 15px 'IBM Plex Sans', sans-serif;
 }
 
 .auth-field input:focus {
@@ -2568,7 +2568,7 @@ body {
   background: none;
   border: none;
   padding: 0;
-  font: 600 12px 'Nunito', sans-serif;
+  font: 600 12px 'IBM Plex Sans', sans-serif;
   color: var(--accent-blue);
   cursor: pointer;
 }
@@ -2586,8 +2586,8 @@ body {
 }
 
 .auth-notice {
-  background: #e5ecdf;
-  color: #4f6a4b;
+  background: #e8f6ee;
+  color: #1f6b43;
 }
 
 .account-profile {
@@ -2607,7 +2607,7 @@ body {
   justify-content: center;
   background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
   color: #fff;
-  font: 700 30px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 30px 'Fredoka', ui-rounded, system-ui, sans-serif;
   box-shadow: var(--shadow);
 }
 
@@ -2624,8 +2624,8 @@ body {
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: #e5ecdf;
-  color: #4f6a4b;
+  background: #e8f6ee;
+  color: #1f6b43;
   font-size: 12px;
   font-weight: 700;
 }
@@ -2641,7 +2641,7 @@ body {
   gap: 12px;
   width: 100%;
   padding: 14px 0;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-size: 15px;
 }
 
@@ -2676,9 +2676,9 @@ body {
   padding: 13px;
   border: 1px solid #f1b8bb;
   border-radius: 999px;
-  background: #f8ece6;
-  color: #9a4632;
-  font: 700 14px 'Nunito', sans-serif;
+  background: #fff5f5;
+  color: #bb3036;
+  font: 700 14px 'IBM Plex Sans', sans-serif;
 }
 
 .account-delete {
@@ -2689,7 +2689,7 @@ body {
   border: none;
   background: none;
   color: var(--ink-dim);
-  font: 600 13px 'Nunito', sans-serif;
+  font: 600 13px 'IBM Plex Sans', sans-serif;
   text-decoration: underline;
 }
 
@@ -2729,7 +2729,7 @@ body {
 
 .handoff-title {
   margin: 0;
-  font: 700 22px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 22px 'Fredoka', ui-rounded, system-ui, sans-serif;
   color: var(--ink);
 }
 
@@ -2751,7 +2751,7 @@ body {
   cursor: pointer;
   padding: 8px;
   color: var(--ink-dim);
-  font: 600 14px 'Nunito', sans-serif;
+  font: 600 14px 'IBM Plex Sans', sans-serif;
 }
 
 /* Signed in without internet (SyncStatus) */
@@ -2777,7 +2777,7 @@ body {
   padding: 8px 2px;
   border: 2px solid transparent;
   border-radius: 12px;
-  background: #efe8da;
+  background: #eef1f7;
   color: var(--ink);
   -webkit-tap-highlight-color: transparent;
 }
@@ -2789,7 +2789,7 @@ body {
 }
 
 .grade-setting-name {
-  font: 700 16px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 16px 'Fredoka', ui-rounded, system-ui, sans-serif;
 }
 
 .grade-setting-sg {
@@ -2804,7 +2804,7 @@ body {
   padding: 2px 8px;
   border-radius: 999px;
   color: #fff;
-  font: 700 12px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 12px 'Fredoka', ui-rounded, system-ui, sans-serif;
 }
 
 /* Header: the logo on the left (just the icon on a narrow phone), the
@@ -2866,11 +2866,11 @@ body {
   border: 3px dashed rgba(255, 255, 255, 0.9);
   border-radius: 12px;
   color: #fff;
-  font: 700 30px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 30px 'Fredoka', ui-rounded, system-ui, sans-serif;
 }
 
 .prek-say {
-  font: 700 30px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 30px 'Fredoka', ui-rounded, system-ui, sans-serif;
   color: #fff;
   text-align: center;
 }
@@ -2998,7 +2998,7 @@ body {
 .curriculum-note {
   margin: 10px 4px 0;
   font-size: 13px;
-  color: var(--ink-soft, #6b6255);
+  color: var(--ink-soft, #6b7090);
   text-align: center;
 }
 .section-mix {
@@ -3040,7 +3040,7 @@ body {
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: 22px;
 }
@@ -3051,13 +3051,13 @@ body {
   flex-direction: column;
 }
 .topic-card-title {
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 600;
   font-size: 17px;
 }
 .topic-card-sub {
   font-size: 13px;
-  color: var(--ink-soft, #6b6255);
+  color: var(--ink-soft, #6b7090);
 }
 .topic-card-side {
   flex: none;
@@ -3069,7 +3069,7 @@ body {
 .topic-card-from {
   font-size: 11px;
   font-weight: 600;
-  color: var(--ink-soft, #6b6255);
+  color: var(--ink-soft, #6b7090);
   background: var(--chip-bg, rgba(0, 0, 0, 0.05));
   border-radius: 999px;
   padding: 2px 8px;
@@ -3094,7 +3094,7 @@ body {
   justify-content: center;
   align-items: center;
   background: #fff;
-  color: #36332d;
+  color: #1f2340;
   border-radius: 16px;
   padding: 10px;
   max-width: 260px;
@@ -3134,7 +3134,7 @@ body {
 .tv-line-left {
   font-size: 11px;
   font-weight: 700;
-  color: #6b6255;
+  color: #6b7090;
   text-transform: uppercase;
   margin-right: 2px;
 }
@@ -3172,11 +3172,11 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: 13px;
   color: #5b4a12;
-  background: radial-gradient(circle at 35% 30%, #fff6cc, #c9a35a);
+  background: radial-gradient(circle at 35% 30%, #fff6cc, #e3c35a);
   border: 2px solid #c9a63c;
   width: 40px;
   height: 40px;
@@ -3210,10 +3210,10 @@ body {
   height: 36px;
   border-radius: 6px;
   border: 2px solid rgba(0, 0, 0, 0.15);
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: 15px;
-  color: #36332d;
+  color: #1f2340;
 }
 .tv-graph {
   display: flex;
@@ -3223,7 +3223,7 @@ body {
   gap: 4px;
 }
 .tv-graph-title {
-  font-family: 'Nunito', ui-rounded, system-ui, sans-serif;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 600;
   font-size: 15px;
   text-align: center;
@@ -3244,7 +3244,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
-  color: #5f7ea2;
+  color: #3b6fef;
   font-size: 20px;
   line-height: 1;
 }
@@ -3252,7 +3252,7 @@ body {
   font-size: 13px;
   font-weight: 600;
   text-align: right;
-  color: #5f7ea2;
+  color: #3b6fef;
 }
 .tv-table {
   display: grid;
@@ -3263,7 +3263,7 @@ body {
 .tv-table-head {
   font-size: 12px;
   font-weight: 700;
-  color: #6b6255;
+  color: #6b7090;
   padding: 0 4px;
 }
 .tv-table-cell {
@@ -3277,11 +3277,11 @@ body {
   border-radius: 8px;
 }
 .tv-letter {
-  font-family: 'Nunito', system-ui, sans-serif;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-weight: 700;
   font-size: 96px;
   line-height: 1;
-  color: #5f7ea2;
+  color: #3b6fef;
 }
 
 /* Answer buttons with words, pictures or fractions. */
@@ -3304,7 +3304,7 @@ body {
   font-size: 17px;
   padding: 12px 22px;
   color: #fff;
-  background: linear-gradient(135deg, #c89a45 0%, #b5643f 100%);
+  background: linear-gradient(135deg, #f5a524 0%, #e0793a 100%);
   box-shadow: 0 6px 16px -6px rgba(224, 121, 58, 0.6);
 }
 
@@ -3315,7 +3315,7 @@ body {
   padding: 14px 14px 16px;
   border-radius: 20px;
   background: var(--card-bg, #fff);
-  box-shadow: var(--shadow-sm, 0 4px 10px -4px rgba(70, 56, 36, 0.16));
+  box-shadow: var(--shadow-sm, 0 4px 10px -4px rgba(23, 26, 43, 0.16));
   animation: help-open 0.2s ease-out;
   text-align: left;
 }
@@ -3348,7 +3348,7 @@ body {
 .explain-title {
   flex: 1;
   margin: 0;
-  font: 700 20px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 20px 'Fredoka', ui-rounded, system-ui, sans-serif;
   color: var(--ink);
 }
 
@@ -3376,14 +3376,14 @@ body {
 .explain-step {
   padding: 8px 12px;
   border-radius: 14px;
-  font: 600 18px/1.35 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 600 18px/1.35 'Fredoka', ui-rounded, system-ui, sans-serif;
   color: var(--ink);
   transition: background 0.2s, opacity 0.2s, transform 0.2s;
 }
 
 .explain-step-now {
   background: rgba(245, 165, 36, 0.2);
-  box-shadow: inset 4px 0 0 #c89a45;
+  box-shadow: inset 4px 0 0 #f5a524;
 }
 
 .explain-step-later {
@@ -3469,7 +3469,7 @@ body {
   min-width: 0;
 }
 .ep-number-label {
-  font: 700 26px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 26px 'Fredoka', ui-rounded, system-ui, sans-serif;
   color: var(--ink);
 }
 .ep-groups {
@@ -3488,7 +3488,7 @@ body {
 }
 .ep-group-now {
   background: rgba(245, 165, 36, 0.22);
-  box-shadow: inset 0 0 0 2px #c89a45;
+  box-shadow: inset 0 0 0 2px #f5a524;
 }
 .ep-group-items {
   display: flex;
@@ -3498,8 +3498,8 @@ body {
   max-width: 140px;
 }
 .ep-group-label {
-  font: 600 13px 'Nunito', sans-serif;
-  color: var(--ink-dim, #6b6255);
+  font: 600 13px 'IBM Plex Sans', sans-serif;
+  color: var(--ink-dim, #6b7090);
 }
 .ep-flat {
   width: 34px;
@@ -3526,11 +3526,11 @@ body {
 }
 .ep-sign {
   align-self: center;
-  font: 700 34px 'Nunito', ui-rounded, system-ui, sans-serif;
-  color: #c89a45;
+  font: 700 34px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #f5a524;
 }
 .ep-caption {
-  font: 600 15px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 600 15px 'Fredoka', ui-rounded, system-ui, sans-serif;
   color: var(--ink);
   text-align: center;
 }
@@ -3540,8 +3540,8 @@ body {
   align-items: center;
 }
 .ep-row-count {
-  font: 600 12px 'Nunito', sans-serif;
-  color: var(--ink-dim, #6b6255);
+  font: 600 12px 'IBM Plex Sans', sans-serif;
+  color: var(--ink-dim, #6b7090);
   padding-right: 6px;
   text-align: right;
 }
@@ -3549,7 +3549,7 @@ body {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #5f7ea2;
+  background: #3b6fef;
 }
 .ep-share {
   display: flex;
@@ -3586,7 +3586,7 @@ body {
   gap: 12px;
   padding: 12px 16px;
   border-radius: 20px;
-  background: linear-gradient(135deg, #f6ede8, #efeadf);
+  background: linear-gradient(135deg, #fff4fb, #eef3ff);
   box-shadow: var(--shadow-sm);
 }
 .sticker-won-emoji {
@@ -3671,7 +3671,7 @@ body {
 .sticker-pick {
   padding: 12px 14px 14px;
   border-radius: 20px;
-  background: linear-gradient(135deg, #f6ede8, #efeadf);
+  background: linear-gradient(135deg, #fff4fb, #eef3ff);
   box-shadow: var(--shadow-sm);
   text-align: center;
 }
@@ -3693,7 +3693,7 @@ body {
   transition: transform 0.15s;
 }
 .sticker-pick-btn.is-chosen {
-  border-color: #9a83a6;
+  border-color: #9775fa;
   background: #fff;
   transform: scale(1.18);
 }
@@ -3735,8 +3735,8 @@ body {
   position: relative;
   padding: 10px 10px 12px 26px;
   border-radius: 22px;
-  background: linear-gradient(135deg, #9a83a6, #c98a96);
-  box-shadow: 0 18px 30px -18px #7f6386;
+  background: linear-gradient(135deg, #9775fa, #f783ac);
+  box-shadow: 0 18px 30px -18px #7048e8;
 }
 .sbook-rings {
   position: absolute;
@@ -3751,7 +3751,7 @@ body {
   width: 26px;
   height: 10px;
   border-radius: 6px;
-  background: linear-gradient(#ede6d8, #adb5bd);
+  background: linear-gradient(#f1f3f5, #adb5bd);
   box-shadow: 0 2px 2px rgba(0, 0, 0, 0.25);
 }
 .sbook-page {
@@ -3759,13 +3759,13 @@ body {
   border-radius: 14px;
   background:
     radial-gradient(circle, #e9e4f7 1.2px, transparent 1.4px) 0 0 / 16px 16px,
-    #fbf8f1;
+    #fffdf7;
   text-align: center;
 }
 .sbook-title {
   margin: 0;
-  font: 700 23px 'Nunito', ui-rounded, system-ui, sans-serif;
-  color: #6e5576;
+  font: 700 23px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #5f3dc4;
 }
 .sbook-count {
   margin: 2px 0 10px;
@@ -3808,7 +3808,7 @@ body {
   transition: transform 0.15s, opacity 0.15s;
 }
 .sbook-shadow-btn.is-chosen {
-  border-color: #9a83a6;
+  border-color: #9775fa;
   background: #fff;
   filter: none;
   opacity: 1;
@@ -3830,8 +3830,8 @@ body {
 }
 .sbook-done {
   margin: 12px 0 0;
-  font: 700 18px 'Nunito', ui-rounded, system-ui, sans-serif;
-  color: #6e5576;
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #5f3dc4;
   animation: sticker-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
 }
 .sbook-signin {
@@ -3887,7 +3887,7 @@ body {
   content: '';
   position: absolute;
   inset: -6px;
-  border: 3px solid #d8a64a;
+  border: 3px solid #ffd43b;
   border-radius: 50%;
   animation: sbook-ring 0.7s ease-out both;
   pointer-events: none;
@@ -3923,9 +3923,9 @@ body {
   padding: 7px 14px;
   border: none;
   border-radius: 999px;
-  background: #6e5576;
+  background: #5f3dc4;
   color: #fff;
-  font: 600 14px 'Nunito', sans-serif;
+  font: 600 14px 'IBM Plex Sans', sans-serif;
   cursor: pointer;
 }
 
@@ -3958,7 +3958,7 @@ body {
   content: '';
   position: absolute;
   inset: -4px;
-  border: 3px solid #d8a64a;
+  border: 3px solid #ffd43b;
   border-radius: 50%;
   animation: sbook-ring 0.6s ease-out 0.3s both;
   pointer-events: none;
@@ -4026,10 +4026,10 @@ body {
   margin: 2px auto 0;
   padding: 10px 22px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #b3a0bb, #c98a96);
+  background: linear-gradient(135deg, #b197fc, #f783ac);
   box-shadow: 0 10px 20px -12px #cc5de8;
   color: #fff;
-  font: 700 17px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.08s ease;
 }
@@ -4095,9 +4095,9 @@ body {
   padding: 10px 4px;
   border: 2px solid transparent;
   border-radius: 12px;
-  background: #efe8da;
+  background: #eef1f7;
   color: var(--ink);
-  font: 700 15px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 15px 'Fredoka', ui-rounded, system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 .answer-setting-active {
@@ -4119,7 +4119,7 @@ body {
   box-shadow: var(--shadow);
 }
 .today-all-done {
-  border-color: #b9cdb3;
+  border-color: #8ce99a;
 }
 .today-head {
   display: flex;
@@ -4128,11 +4128,11 @@ body {
 }
 .today-title {
   margin: 0;
-  font: 700 18px 'Nunito', ui-rounded, system-ui, sans-serif;
-  color: #36332d;
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #17192b;
 }
 .today-count {
-  font: 700 14px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 14px 'Fredoka', ui-rounded, system-ui, sans-serif;
   color: #e8792f;
 }
 .today-list {
@@ -4183,14 +4183,14 @@ body {
 }
 .today-item-title {
   display: block;
-  font: 700 15.5px 'Nunito', ui-rounded, system-ui, sans-serif;
-  color: #36332d;
+  font: 700 15.5px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #17192b;
   line-height: 1.2;
 }
 .today-item-sub {
   display: block;
-  font: 600 12.5px 'Nunito', sans-serif;
-  color: #6b6255;
+  font: 600 12.5px 'IBM Plex Sans', sans-serif;
+  color: #7a8099;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4207,14 +4207,14 @@ body {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #6c8a67;
+  background: #40c057;
   color: #fff;
   font: 700 16px system-ui, sans-serif;
 }
 .today-arrow {
   flex: none;
-  color: #7f6386;
-  font: 700 22px 'Nunito', ui-rounded, system-ui, sans-serif;
+  color: #7048e8;
+  font: 700 22px 'Fredoka', ui-rounded, system-ui, sans-serif;
 }
 .today-lock {
   flex: none;
@@ -4224,30 +4224,30 @@ body {
   height: 8px;
   margin-top: 6px;
   border-radius: 4px;
-  background: #ede6d8;
+  background: #f1f3f5;
   overflow: hidden;
 }
 .today-bar span {
   display: block;
   height: 100%;
   border-radius: 4px;
-  background: linear-gradient(90deg, #d8a64a, #c9774f);
+  background: linear-gradient(90deg, #ffd43b, #ff922b);
   transition: width 0.4s ease;
 }
 .today-all-done .today-bar span {
-  background: linear-gradient(90deg, #b9cdb3, #6c8a67);
+  background: linear-gradient(90deg, #8ce99a, #40c057);
 }
 .today-note {
   margin: 5px 0 0;
-  font: 600 12.5px 'Nunito', sans-serif;
-  color: #6b6255;
+  font: 600 12.5px 'IBM Plex Sans', sans-serif;
+  color: #7a8099;
 }
 .today-signin {
   appearance: none;
   padding: 0;
   border: none;
   background: none;
-  color: #7f6386;
+  color: #7048e8;
   font: inherit;
   font-weight: 700;
   text-decoration: underline;
@@ -4285,7 +4285,7 @@ body {
   line-height: 1;
 }
 .home-tile-title {
-  font: 700 12.5px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 12.5px 'Fredoka', ui-rounded, system-ui, sans-serif;
   line-height: 1.1;
   text-align: center;
 }
@@ -4393,7 +4393,7 @@ body {
   align-items: flex-end;
   gap: 2px;
   height: 140px;
-  border-bottom: 1px solid rgba(70, 56, 36, 0.12);
+  border-bottom: 1px solid rgba(23, 26, 43, 0.12);
 }
 
 .stats-col {
@@ -4451,7 +4451,7 @@ body {
 .stats-bar-track {
   height: 10px;
   border-radius: 999px;
-  background: rgba(70, 56, 36, 0.06);
+  background: rgba(23, 26, 43, 0.06);
 }
 
 .stats-bar-fill {
@@ -4493,7 +4493,7 @@ body {
   background: #fff;
   box-shadow: var(--shadow-sm);
   color: var(--ink);
-  font: 700 15px 'Nunito', sans-serif;
+  font: 700 15px 'IBM Plex Sans', sans-serif;
 }
 
 .zoom-view {
@@ -4522,7 +4522,7 @@ body {
   background: #fff;
   box-shadow: var(--shadow-sm);
   color: var(--ink);
-  font: 700 28px/1 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 28px/1 'Fredoka', ui-rounded, system-ui, sans-serif;
   cursor: pointer;
 }
 
@@ -4546,7 +4546,7 @@ body {
   border-radius: 999px;
   background: var(--accent-blue);
   color: #fff;
-  font: 700 16px 'Nunito', sans-serif;
+  font: 700 16px 'IBM Plex Sans', sans-serif;
   cursor: pointer;
 }
 
@@ -4658,9 +4658,9 @@ body {
   gap: 8px;
   padding: 6px 16px 6px 6px;
   font-size: 15px;
-  color: #a8552f;
-  background: #f7ede2;
-  border: 2px solid #e6c3a8;
+  color: #c2571a;
+  background: #fff7ee;
+  border: 2px solid #f8cfa6;
   box-shadow: none;
 }
 
@@ -4675,7 +4675,7 @@ body {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #c89a45 0%, #b5643f 100%);
+  background: linear-gradient(135deg, #f5a524 0%, #e0793a 100%);
   font-size: 16px;
 }
 
@@ -4687,7 +4687,7 @@ body {
   border-radius: 14px;
   background: transparent;
   color: var(--ink);
-  font: 700 26px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 26px 'Fredoka', ui-rounded, system-ui, sans-serif;
   text-align: center;
 }
 
@@ -4715,14 +4715,14 @@ body {
 
 .week-card-title {
   margin: 0;
-  font: 700 17px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
 }
 
 .week-streak {
   padding: 4px 10px;
   border-radius: 999px;
-  background: #f3e3d6;
-  color: #a8552f;
+  background: #fff1e4;
+  color: #c2571a;
   font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
@@ -4753,11 +4753,11 @@ body {
   appearance: none;
   margin-top: 10px;
   padding: 8px 14px;
-  border: 2px solid #e0d6c4;
+  border: 2px solid #d7e1fb;
   border-radius: 999px;
-  background: #f3eee3;
+  background: #f3f6ff;
   color: var(--accent-blue);
-  font: 700 14px 'Nunito', sans-serif;
+  font: 700 14px 'IBM Plex Sans', sans-serif;
   cursor: pointer;
 }
 
@@ -4771,10 +4771,10 @@ body {
   padding: 14px 16px;
   border: none;
   border-radius: 18px;
-  background: linear-gradient(135deg, #f6ecd8 0%, #f5e9e4 100%);
+  background: linear-gradient(135deg, #fff7e0 0%, #ffeef4 100%);
   box-shadow: var(--shadow-sm);
   color: var(--ink);
-  font: 600 15px 'Nunito', sans-serif;
+  font: 600 15px 'IBM Plex Sans', sans-serif;
   text-align: left;
   cursor: pointer;
 }
@@ -4798,7 +4798,7 @@ body {
 .section-label {
   align-self: flex-start;
   margin: 12px 0 0;
-  font: 700 18px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
 }
 
 /* First open: who's playing (WelcomeCard.jsx) */
@@ -4810,11 +4810,11 @@ body {
 .welcome-name {
   width: 100%;
   padding: 12px 14px;
-  border: 2px solid #ddd3c1;
+  border: 2px solid #d7dcec;
   border-radius: 14px;
   background: #fff;
   color: var(--ink);
-  font: 600 18px 'Nunito', sans-serif;
+  font: 600 18px 'IBM Plex Sans', sans-serif;
   text-align: center;
 }
 
@@ -4830,9 +4830,9 @@ body {
   padding: 10px 0;
   border: 2px solid transparent;
   border-radius: 14px;
-  background: #ebe2d1;
+  background: #f1f3f9;
   color: var(--ink);
-  font: 700 17px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
   cursor: pointer;
 }
 
@@ -4842,7 +4842,7 @@ body {
 }
 
 .home-stat-streak {
-  color: #a8552f;
+  color: #c2571a;
 }
 
 /* MathPop Plus (PlusScreen.jsx) and the full report (ReportScreen.jsx) */
@@ -4853,7 +4853,7 @@ body {
 }
 
 .plus-row {
-  background: linear-gradient(135deg, #efeadf 0%, #f0e8ee 100%);
+  background: linear-gradient(135deg, #eef2ff 0%, #f6ecff 100%);
 }
 
 .plus-screen,
@@ -4867,7 +4867,7 @@ body {
 .plus-hero {
   padding: 18px;
   border-radius: 20px;
-  background: linear-gradient(135deg, #5f7ea2 0%, #876b8f 100%);
+  background: linear-gradient(135deg, #3b6fef 0%, #8e4fd6 100%);
   color: #fff;
   text-align: center;
 }
@@ -4877,7 +4877,7 @@ body {
   padding: 4px 12px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.2);
-  font: 700 15px 'Nunito', ui-rounded, system-ui, sans-serif;
+  font: 700 15px 'Fredoka', ui-rounded, system-ui, sans-serif;
 }
 
 .plus-hero-text {
@@ -4932,7 +4932,7 @@ body {
   border-radius: 18px;
   background: var(--accent-blue);
   color: #fff;
-  font: 600 14px 'Nunito', sans-serif;
+  font: 600 14px 'IBM Plex Sans', sans-serif;
   cursor: pointer;
 }
 
@@ -4947,7 +4947,7 @@ body {
 .plus-signin {
   padding: 12px 14px;
   border-radius: 16px;
-  background: #f6ecd8;
+  background: #fff7e0;
   font-size: 14px;
   text-align: center;
 }
@@ -4981,7 +4981,7 @@ body {
 }
 
 .report-bar-low {
-  background: #c9774f;
+  background: #f0954f;
 }
 
 .report-not-yet {
@@ -5005,16 +5005,16 @@ body {
 .report-assign-chip {
   appearance: none;
   padding: 8px 12px;
-  border: 2px solid #e0d6c4;
+  border: 2px solid #e1e5f0;
   border-radius: 999px;
   background: #fff;
   color: var(--ink);
-  font: 600 14px 'Nunito', sans-serif;
+  font: 600 14px 'IBM Plex Sans', sans-serif;
   cursor: pointer;
 }
 
 .report-assign-chip-on {
   border-color: var(--accent-blue);
-  background: #efeadf;
+  background: #eef2ff;
   color: var(--accent-blue);
 }

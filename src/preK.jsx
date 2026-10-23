@@ -199,7 +199,7 @@ const JA_SHAPES = {
   diamond: ['ひしがた', 'ひしがたは へんが 4つ。かどで たっているよ。たこみたいだね。'],
 };
 const FIRST_SHAPES = ['circle', 'square', 'triangle', 'star', 'heart'];
-const SHAPE_COLORS = ['#c25b45', '#5f7ea2', '#6c8a67', '#d1a03f', '#876b8f', '#c47a8a', '#5a8580'];
+const SHAPE_COLORS = ['#EF4444', '#3B6FEF', '#2FAE6B', '#F5A623', '#8E4FD6', '#EC4899', '#14B8A6'];
 
 function shapesProblem(lang) {
   // The first shapes most of the time; rectangles, ovals and diamonds too.
