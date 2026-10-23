@@ -86,7 +86,7 @@ export const SINGAPORE_CONCEPTS = [
   { id: 'factors', title: 'Factors & Multiples', sub: 'What goes into what' },
 ];
 
-const UNIT_COLOR = { A: '#4E8FF7', B: '#8B5CF6', C: '#F5A623', D: '#14B8A6', SG: '#E0577F', PK: '#F59E0B' };
+const UNIT_COLOR = { A: '#56739a', B: '#7f6386', C: '#9a7128', D: '#4f7a75', SG: '#a8606e', PK: '#a85a38' };
 const CONCEPT_SYMBOL = {
   placeValue: '🔢',
   compare: '⚖️',
