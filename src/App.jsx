@@ -53,10 +53,10 @@ const SESSION_ROUNDS = 10;
 const IS_NATIVE = Capacitor.isNativePlatform();
 // The four operation tiles across the top of the home page.
 const HERO_OPS = [
-  { symbol: '+', color: '#2fae6b' },
-  { symbol: '−', color: '#8e4fd6' },
-  { symbol: '×', color: '#3b6fef' },
-  { symbol: '÷', color: '#f0954f' },
+  { symbol: '+', color: '#6c8a67' },
+  { symbol: '−', color: '#876b8f' },
+  { symbol: '×', color: '#5f7ea2' },
+  { symbol: '÷', color: '#b5643f' },
 ];
 // Progress per player and grade: { playerId: { grade: { total, correct, byOp } } }.
 // The older one (v2) was per grade only, for the whole phone; it becomes
@@ -147,11 +147,11 @@ function saveSettings(settings) {
 }
 
 const OPERATIONS = {
-  multiply: { symbol: '×', label: 'Multiplication', color: '#3B6FEF' },
-  add: { symbol: '+', label: 'Addition', color: '#2FAE6B' },
-  subtract: { symbol: '−', label: 'Subtraction', color: '#8E4FD6' },
-  divide: { symbol: '÷', label: 'Division', color: '#E0793A' },
-  clock: { symbol: '🕐', label: 'Clock', color: '#E0793A' },
+  multiply: { symbol: '×', label: 'Multiplication', color: '#56739a' },
+  add: { symbol: '+', label: 'Addition', color: '#5e7d59' },
+  subtract: { symbol: '−', label: 'Subtraction', color: '#7f6386' },
+  divide: { symbol: '÷', label: 'Division', color: '#a85a38' },
+  clock: { symbol: '🕐', label: 'Clock', color: '#a85a38' },
 };
 
 const ALL_META = { ...OPERATIONS, ...SKILL_META };
@@ -1417,7 +1417,7 @@ export default function App() {
                   ))}
                   <button
                     className="home-tile"
-                    style={{ '--card-from': '#f7a24f', '--card-to': '#e8792f' }}
+                    style={{ '--card-from': '#c9774f', '--card-to': '#b5643f' }}
                     onClick={() => setView('explore')}
                   >
                     <span className="home-tile-icon" aria-hidden="true">
@@ -1745,7 +1745,7 @@ export default function App() {
             )}
             <button
               className="problem-card"
-              style={{ background: ALL_META[problem.op].color }}
+              style={{ '--card-to': ALL_META[problem.op].color }}
               onClick={() => speakProblem(problem)}
               aria-label={
                 problem.type === 'sentence'
@@ -1977,7 +1977,7 @@ export default function App() {
             {answerCorrect ? (
               <>
                 <p className="screen-sub">{tr("That's right!", 'せいかい！')}</p>
-                <div className="answer-card" style={{ background: ALL_META[problem.op].color }}>
+                <div className="answer-card" style={{ '--card-to': ALL_META[problem.op].color }}>
                   <div className="answer-equation">{problemAnswerText(problem)}</div>
                 </div>
               </>

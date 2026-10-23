@@ -2,10 +2,10 @@
 // coins, rulers, shapes, angles, graphs... Drawn on a white panel so it
 // reads the same on every card colour, and on printed worksheets.
 
-const INK = '#1F2340';
+const INK = '#36332d';
 const SOFT = '#C9CEE0';
-const BLUE = '#3B6FEF';
-const FILL = '#7FA3F7';
+const BLUE = '#5f7ea2';
+const FILL = '#a9bcd3';
 
 function Panel({ children, wide }) {
   return <span className={`tv${wide ? ' tv-wide' : ''}`}>{children}</span>;
