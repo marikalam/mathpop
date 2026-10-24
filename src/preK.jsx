@@ -4,8 +4,6 @@
 // shapes, big and small, more or fewer, and patterns. The problems go
 // through the same game screens as the other grades (skillBuilders.js).
 
-import { isForest } from './look.js';
-
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -37,24 +35,6 @@ const THINGS = [
   ['🐞', 'ladybug', 'ladybugs', 'てんとうむし'],
 ];
 
-// In the forest look (look.js), things you'd find on a forest walk.
-const FOREST_THINGS = [
-  ['🌰', 'acorn', 'acorns', 'どんぐり'],
-  ['🍂', 'leaf', 'leaves', 'はっぱ'],
-  ['🍄', 'mushroom', 'mushrooms', 'きのこ'],
-  ['🐞', 'ladybug', 'ladybugs', 'てんとうむし'],
-  ['🌲', 'tree', 'trees', 'き'],
-  ['🐿️', 'squirrel', 'squirrels', 'りす'],
-  ['🦔', 'hedgehog', 'hedgehogs', 'はりねずみ'],
-  ['🐌', 'snail', 'snails', 'かたつむり'],
-  ['🦋', 'butterfly', 'butterflies', 'ちょうちょ'],
-  ['🐸', 'frog', 'frogs', 'かえる'],
-];
-
-function things() {
-  return isForest() ? FOREST_THINGS : THINGS;
-}
-
 const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 
 // Japanese (`lang: 'ja'`, a player's language in Players & grades): the
@@ -80,7 +60,7 @@ function nearbyChoices(n, min = 1) {
 }
 
 function countProblem(lang) {
-  const [emoji, one, many, ja] = pick(things());
+  const [emoji, one, many, ja] = pick(THINGS);
   const n = smallNumber();
   const problem = {
     promptKind: 'count',
@@ -318,7 +298,7 @@ function bigSmallProblem(lang) {
 }
 
 function moreFewerProblem(lang) {
-  const [emoji, one, many, ja] = pick(things());
+  const [emoji, one, many, ja] = pick(THINGS);
   let a = randInt(1, 6);
   let b = randInt(1, 6);
   // Easy to see: at least two apart.

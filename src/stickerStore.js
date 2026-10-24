@@ -31,14 +31,8 @@ function write(key, value) {
 
 const byTime = (a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0);
 
-// Every sticker in a player's book, oldest first (not the forest look's
-// treasures, which share the list: treasures.js).
+// Every sticker in a player's book, oldest first.
 export function playerStickers(playerId) {
-  return savedEntries(playerId).filter((s) => !s.treasure);
-}
-
-// Everything saved in the list, stickers and treasures, for syncing.
-export function savedEntries(playerId) {
   return [...(read(STICKERS_KEY)[playerId] || [])].sort(byTime);
 }
 
