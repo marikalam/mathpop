@@ -117,7 +117,7 @@ export function PlayerSettingsCard({ profile, onUpdate, onRemove, canRemove, sta
           </button>
         ))}
       </div>
-      {profile.lang === 'ja' && <p className="settings-help settings-note">Pre-K games are asked and explained in Japanese. More grades coming.</p>}
+      {profile.lang === 'ja' && <p className="settings-help settings-note">Toddler games are asked and explained in Japanese. More grades coming.</p>}
     </section>
   );
 }
