@@ -1,0 +1,272 @@
+/* The forest look (look.js): earthy colors from the woods - moss, pine,
+   bark, ochre and clay on a warm paper ground - with drawn ink outlines,
+   like the forest map on the home page. Everything here applies only
+   under <html data-look="forest">, so the classic look is untouched. */
+
+[data-look='forest'] {
+  --bg: #efe8d6;
+  --card-bg: #fffaf0;
+  --ink: #3a3428;
+  --ink-dim: #7a7060;
+  --accent-blue: #4f7a52;
+  --accent-green: #5e8a4a;
+  --accent-purple: #8b5e3c;
+  --accent-amber: #d99a2b;
+  --accent-red: #c8643f;
+  --forest-line: 2.5px solid #3a3428;
+  --shadow: 0 3px 0 rgba(58, 52, 40, 0.22);
+  --shadow-sm: 0 2px 0 rgba(58, 52, 40, 0.18);
+}
+
+/* Drawn outlines on the cards and buttons. */
+[data-look='forest'] .problem-card,
+[data-look='forest'] .option-btn,
+[data-look='forest'] .answer-card,
+[data-look='forest'] .topic-card,
+[data-look='forest'] .home-cta,
+[data-look='forest'] .today,
+[data-look='forest'] .week-card,
+[data-look='forest'] .settings-card,
+[data-look='forest'] .rate-row,
+[data-look='forest'] .stat-tile,
+[data-look='forest'] .home-stickers,
+[data-look='forest'] .skill-card {
+  border: var(--forest-line);
+}
+
+/* The problem sits on a mossy board; the answer on bark-brown. */
+[data-look='forest'] .problem-card {
+  background: #4f7a52 !important;
+  color: #fffaf0;
+}
+[data-look='forest'] .answer-card {
+  background: #4f7a52 !important;
+  color: #fffaf0;
+}
+[data-look='forest'] .option-btn {
+  background: #fffaf0;
+}
+
+[data-look='forest'] .home-cta {
+  background: #c8643f;
+  box-shadow: var(--shadow);
+}
+[data-look='forest'] .topic-card-icon {
+  background: #8fae6b !important;
+  border: 2px solid #3a3428;
+}
+
+[data-look='forest'] .pill-btn-secondary {
+  background: #e6dcc6;
+}
+
+[data-look='forest'] .today {
+  background: #fffaf0;
+}
+[data-look='forest'] .today-all-done {
+  border-color: #4f7a52;
+}
+[data-look='forest'] .today-title {
+  color: #3a3428;
+}
+[data-look='forest'] .today-count {
+  color: #c8643f;
+}
+[data-look='forest'] .today-item {
+  border-top-color: #efe8d6;
+}
+[data-look='forest'] .today-item-icon {
+  background: #efe8d6;
+}
+
+[data-look='forest'] .home-stickers {
+  background: #e0a83e;
+  box-shadow: var(--shadow-sm);
+  color: #3a3428;
+}
+[data-look='forest'] .home-stickers-badge {
+  color: #c8643f;
+}
+
+[data-look='forest'] .rate-row {
+  background: #f5ecd6;
+}
+
+[data-look='forest'] .home-stat {
+  background: #fffaf0;
+  border: 2px solid #3a3428;
+  box-shadow: none;
+}
+
+/* Home: the greeting, then the forest map filling the rest of the screen. */
+.forest-hello {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.forest-hello .home-hello {
+  margin: 0;
+}
+.forest-hello .home-stickers {
+  margin: 0;
+  padding: 7px 14px;
+  font-size: 15px;
+}
+
+.home-fit > .forest-map,
+.forest-map {
+  flex: 1 1 auto;
+  min-height: 300px;
+  display: flex;
+  border: 3px solid #3a3428;
+  border-radius: 24px;
+  background: #e4e6c3;
+  overflow: hidden;
+}
+.forest-map svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.forest-spot {
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.forest-spot-art {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.1s ease;
+}
+.forest-spot:active .forest-spot-art {
+  transform: scale(0.92);
+}
+.forest-spot:focus-visible .forest-spot-art {
+  filter: drop-shadow(0 0 4px #e0a83e);
+}
+.forest-map-sign,
+.forest-map-digit,
+.forest-map-stone {
+  stroke: none;
+  fill: #3a3428;
+  text-anchor: middle;
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  font-weight: 700;
+}
+.forest-map-sign {
+  font-size: 13px;
+}
+.forest-map-digit {
+  font-size: 15px;
+}
+.forest-map-stone {
+  font-size: 11px;
+}
+
+/* "Try it outside": a forest-school idea for the day (tap to hear it). */
+.forest-outside {
+  appearance: none;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 2.5px solid #3a3428;
+  border-radius: 18px;
+  background: #dbe6c8;
+  color: #3a3428;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.forest-outside svg {
+  flex: none;
+}
+.forest-outside-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.forest-outside-title {
+  font: 700 15px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #35593f;
+}
+.forest-outside-sub {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+/* Players & grades: choosing the look (shown in both looks). */
+.look-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.look-option {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 2.5px solid transparent;
+  border-radius: 18px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  font: 600 13px 'IBM Plex Sans', sans-serif;
+}
+.look-option strong {
+  font: 700 16px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.look-option span {
+  color: var(--ink-dim);
+}
+.look-option-on {
+  border-color: var(--accent-green);
+}
+[data-look='forest'] .look-option {
+  border-color: #d6cbb2;
+}
+[data-look='forest'] .look-option-on {
+  border-color: #3a3428;
+  background: #dbe6c8;
+}
+
+/* The rest of the bright accents, in forest colors. */
+[data-look='forest'] .today-arrow,
+[data-look='forest'] .today-signin {
+  color: #4f7a52;
+}
+[data-look='forest'] .today-item-sub,
+[data-look='forest'] .topic-card-from {
+  color: #7a7060;
+}
+[data-look='forest'] .topic-card-from {
+  background: #efe8d6;
+}
+[data-look='forest'] .topic-card-score {
+  color: #4f7a52;
+}
+[data-look='forest'] .help-btn-soft {
+  color: #35593f;
+  background: #dbe6c8;
+  border-color: #3a3428;
+}
+[data-look='forest'] .help-btn-icon {
+  background: #e0a83e;
+}
+[data-look='forest'] .progress-dot,
+[data-look='forest'] .progress-line {
+  background: #ddd3bc;
+}
+.forest-map-sign-sym {
+  font-size: 19px;
+}
