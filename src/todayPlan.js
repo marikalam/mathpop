@@ -1,7 +1,5 @@
 import { TOPIC_ICONS, gradeSections } from './curriculum.js';
 import { earnSticker } from './stickerStore.js';
-import { isForest } from './look.js';
-import { findTreasure } from './treasures.js';
 
 // "Today's practice" on the home page (like PitchPop's): three rounds for
 // each player, made from how they've done at their grade:
@@ -218,9 +216,7 @@ export function giveBonusIfDone(playerId, items) {
   const given = read(BONUS_KEY);
   if (given[playerId] === dayKey()) return false;
   write(BONUS_KEY, { ...given, [playerId]: dayKey() });
-  // In the forest look, a bonus treasure instead (it waits in the box).
-  if (isForest()) findTreasure(playerId, 'today');
-  else earnSticker(playerId);
+  earnSticker(playerId);
   return true;
 }
 

@@ -47,11 +47,6 @@ import WelcomeCard from './WelcomeCard.jsx';
 import PlusScreen from './PlusScreen.jsx';
 import ReportScreen from './ReportScreen.jsx';
 import { cachedPlus, refreshPlus } from './plus.js';
-import { ForestMap, ForestPath, OutsideCard } from './ForestHome.jsx';
-import { isForest, loadLook, saveLook } from './look.js';
-import { addForestRound, forestAnimals, friendLine, nextAnimal } from './forestFriends.js';
-import TreasureBox, { TreasureChest } from './TreasureBox.jsx';
-import { findTreasure, newTreasures, withArticle } from './treasures.js';
 
 const SESSION_ROUNDS = 10;
 // The iPhone app has no link out to the other apps' website, and no printing.
@@ -572,8 +567,6 @@ function NumberBond({ whole, parts }) {
 }
 
 function ProgressDots({ current, total }) {
-  // The forest look's stepping stones to a treasure chest.
-  if (isForest()) return <ForestPath current={current} total={total} />;
   const items = [];
   for (let i = 1; i <= total; i++) {
     items.push(<span key={`d${i}`} className={`progress-dot${i <= current ? ' progress-dot-filled' : ''}`} />);
@@ -1003,18 +996,6 @@ export default function App() {
     };
   }, []);
   const [settings, setSettings] = useState(loadSettings);
-  // The forest look or the classic one (look.js), switched in Players & grades.
-  const [look, setLook] = useState(loadLook);
-  function changeLook(next) {
-    saveLook(next);
-    setLook(next);
-  }
-  // The forest friend's words after an answer, and the animal that moved
-  // in at the end of a round (forestFriends.js).
-  const [friendSays, setFriendSays] = useState(null);
-  const [newAnimal, setNewAnimal] = useState(null);
-  // The forest look's treasure from the chest at the end of a round.
-  const [foundTreasure, setFoundTreasure] = useState(null);
   const playerProgress = progress[currentProfile.id] || {};
   const levelStats = playerProgress[level] || { total: 0, correct: 0 };
 
@@ -1064,10 +1045,7 @@ export default function App() {
   }, [view, problem]);
 
   useEffect(() => {
-    if (view === 'complete') {
-      const moved = look === 'forest' && newAnimal ? `${withArticle(newAnimal.name).replace(/^a/, 'A')} moved into your forest!` : null;
-      speakResults(sessionCorrect, SESSION_ROUNDS, problem?.lang, moved);
-    }
+    if (view === 'complete') speakResults(sessionCorrect, SESSION_ROUNDS, problem?.lang);
   }, [view]);
 
   function goHome() {
@@ -1198,9 +1176,7 @@ export default function App() {
     setChosen(value);
     setAnswerCorrect(correct);
     setShowHelp(false);
-    const line = look === 'forest' && problem.lang !== 'ja' ? friendLine(correct, Math.random() < 0.6 ? currentProfile.name : null) : null;
-    setFriendSays(line);
-    playFeedbackAndSpeak(correct, problem.speechAnswer ?? problem.correct, problem.lang, line);
+    playFeedbackAndSpeak(correct, problem.speechAnswer ?? problem.correct, problem.lang);
     if (navigator.vibrate) navigator.vibrate(correct ? 20 : [20, 40, 20]);
 
     // Only the first attempt at a problem counts toward the score and log —
@@ -1265,13 +1241,10 @@ export default function App() {
 
   function nextProblem() {
     if (roundIndex + 1 >= SESSION_ROUNDS) {
-      // Every finished round earns a sticker (picked on the "All done!"
-      // screen), or in the forest look a treasure from the chest.
-      if (look === 'forest') setFoundTreasure(findTreasure(currentProfile.id, operation));
-      else if (signedIn) earnSticker(currentProfile.id);
+      // Every finished round earns a sticker (picked on the "All done!" screen).
+      if (signedIn) earnSticker(currentProfile.id);
       recordRound(currentProfile.id, operation, gradeInfo(level).id, sessionCorrect, SESSION_ROUNDS);
       statRoundDone({ grade: gradeInfo(level).id, topic: operation, lang: problem?.lang || 'en', correct: sessionCorrect, total: SESSION_ROUNDS });
-      setNewAnimal(addForestRound(currentProfile.id));
       setView('complete');
       return;
     }
@@ -1337,60 +1310,7 @@ export default function App() {
     // share whatever height is left (it still scrolls on a very short one).
     <div className={view === 'home' ? 'page page-fit' : 'page'}>
       <div className={view === 'home' ? 'app home-fit' : 'app'}>
-        {view === 'home' && look === 'forest' && (
-          <>
-            <AppHeader level={level} showBack={false} players={headerPlayers} logoSignal={heroPlaying} />
-            <section className="forest-hello">
-              <h2 className="home-hello">Ready to pop some math, {currentProfile.name}?</h2>
-              <div className="home-hero-row">
-                <LevelSwitcher level={level} readOnly />
-                {levelStats.total ? (
-                  streakDays(currentProfile.id) >= 2 ? (
-                    <span className="home-stat home-stat-streak">🔥 {streakDays(currentProfile.id)} days</span>
-                  ) : (
-                    <span className="home-stat">✅ {levelStats.total} solved</span>
-                  )
-                ) : null}
-                <button className="home-stickers" onClick={() => setView('treasures')}>
-                  <span aria-hidden="true">🧺</span>
-                  Treasures
-                  {newTreasures(currentProfile.id) > 0 && (
-                    <span className="home-stickers-badge" aria-label={`${newTreasures(currentProfile.id)} new`}>
-                      ✨ {newTreasures(currentProfile.id)}
-                    </span>
-                  )}
-                </button>
-              </div>
-            </section>
-            {/* Tap a spot in the woods to play that section. */}
-            <ForestMap
-              sections={gradeSections(gradeInfo(level).id)}
-              animals={forestAnimals(currentProfile.id)}
-              onOpenSection={(id) => {
-                setSectionId(id);
-                setView('section');
-              }}
-              onExplore={() => setView('explore')}
-            />
-            <TodayPlan
-              key={`${currentProfile.id}-${gradeInfo(level).id}`}
-              playerId={currentProfile.id}
-              grade={gradeInfo(level).id}
-              byOp={levelStats.byOp || {}}
-              signedIn={signedIn}
-              onOpen={(mode) => startOperation(mode, 'home')}
-              onSignIn={openAccount}
-            />
-            <OutsideCard grade={gradeInfo(level).id} />
-            {!IS_NATIVE && (
-              <a className="all-apps-link" href="https://marikalam.github.io/apps/">
-                ← More apps
-              </a>
-            )}
-          </>
-        )}
-
-        {view === 'home' && look !== 'forest' && (
+        {view === 'home' && (
           <>
             <AppHeader level={level} showBack={false} players={headerPlayers} logoSignal={heroPlaying} />
             {/* Tapping the greeting plays the same animation as the logo:
@@ -1515,13 +1435,6 @@ export default function App() {
                 ← More apps
               </a>
             )}
-          </>
-        )}
-
-        {view === 'treasures' && (
-          <>
-            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
-            <TreasureBox key={currentProfile.id} player={currentProfile} />
           </>
         )}
 
@@ -1764,35 +1677,6 @@ export default function App() {
             <button className="back-link back-link-center" onClick={goHome}>
               Cancel
             </button>
-            {/* How MathPop looks, for everyone on this device (look.js). */}
-            <h3 className="section-label">🌲 App look</h3>
-            <div className="look-choice" role="radiogroup" aria-label="App look">
-              {[
-                ['forest', '🌲 Forest', 'Woods, pinecones and earthy colors'],
-                ['classic', '🎈 Classic', 'The original bright look'],
-              ].map(([id, name, sub]) => (
-                <button
-                  key={id}
-                  role="radio"
-                  aria-checked={look === id}
-                  className={`look-option${look === id ? ' look-option-on' : ''}`}
-                  onClick={() => changeLook(id)}
-                >
-                  <strong>{name}</strong>
-                  <span>{sub}</span>
-                </button>
-              ))}
-            </div>
-            {look === 'forest' && (
-              <button className="rate-row" onClick={() => openStickerBook()}>
-                <span className="rate-row-stars" aria-hidden="true">
-                  📒
-                </span>
-                <span>
-                  <strong>Sticker book</strong>The stickers from before the forest look.
-                </span>
-              </button>
-            )}
             {/* For grown-ups: each player's week, and rating MathPop. */}
             <h3 className="section-label">📈 This week</h3>
             <div className="week-cards">
@@ -2072,14 +1956,6 @@ export default function App() {
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={sessionBack} />
             <ProgressDots current={roundIndex + 1} total={SESSION_ROUNDS} />
-            {look === 'forest' && friendSays ? (
-              <div className={`forest-friend${answerCorrect ? ' forest-friend-happy' : ''}`} key={`${roundIndex}-${friendSays}`}>
-                <span className="forest-friend-face" aria-hidden="true">
-                  🦔
-                </span>
-                <p className="forest-friend-say">{friendSays}</p>
-              </div>
-            ) : (
             <div className={`feedback-icon-wrap${answerCorrect ? ' feedback-correct' : ' feedback-incorrect'}`}>
               {answerCorrect && (
                 <div className="feedback-confetti" aria-hidden="true">
@@ -2095,7 +1971,6 @@ export default function App() {
               )}
               <span className="feedback-icon">{answerCorrect ? <CheckIcon /> : <XIcon />}</span>
             </div>
-            )}
             <h2 className="screen-title">{answerCorrect ? tr('Great job!', 'すごい！') : tr('Not quite!', 'おしい！')}</h2>
             {/* A wrong answer never shows the right one (they'd just go back
                 and pick it): it's Try again, with Show me how for help. */}
@@ -2143,36 +2018,14 @@ export default function App() {
                 <span className="results-score-number">{sessionCorrect}</span>
                 <span className="results-score-total">/ {SESSION_ROUNDS}</span>
               </div>
-              {look === 'forest' &&
-                (newAnimal ? (
-                  <div className="forest-moved-in">
-                    <span className="forest-moved-in-animal" aria-hidden="true">
-                      {newAnimal.emoji}
-                    </span>
-                    <span>
-                      <strong>{withArticle(newAnimal.name).replace(/^a/, 'A')} moved into your forest!</strong>
-                      Go home to find it on the map.
-                    </span>
-                  </div>
-                ) : (
-                  nextAnimal(currentProfile.id) && (
-                    <p className="forest-next">
-                      🌱 {nextAnimal(currentProfile.id).left} more {nextAnimal(currentProfile.id).left === 1 ? 'round' : 'rounds'} until someone new moves in!
-                    </p>
-                  )
-                ))}
-              {look === 'forest' ? (
-                <TreasureChest treasure={foundTreasure} onOpenBox={() => setView('treasures')} />
-              ) : (
-                <StickerPicker
-                  key={`${currentProfile.id}-${roundIndex}`}
-                  playerId={currentProfile.id}
-                  signedIn={signedIn}
-                  from={operation}
-                  onStick={(index) => openStickerBook(index)}
-                  onSignIn={openAccount}
-                />
-              )}
+              <StickerPicker
+                key={`${currentProfile.id}-${roundIndex}`}
+                playerId={currentProfile.id}
+                signedIn={signedIn}
+                from={operation}
+                onStick={(index) => openStickerBook(index)}
+                onSignIn={openAccount}
+              />
               {Object.keys(sessionResults).length > 0 && (
                 <div className="result-breakdown">
                   <p className="result-label">By operation:</p>
