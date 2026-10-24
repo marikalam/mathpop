@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { gradeTier } from './grades.js';
 import { playStickerPick, speak } from './sound.js';
+import { withArticle } from './treasures.js';
 
 // The forest look's home page (look.js): a drawn woodland where each spot
 // is one of the grade's sections - pinecones on a log for Numbers, a stick
@@ -290,9 +291,7 @@ export function ForestMap({ sections, animals = [], onOpenSection, onExplore }) 
           <Toy x={120} y={262}>
             <Pine x={0} y={0} s={0.6} />
           </Toy>
-          <Toy x={240} y={414}>
-            <Pine x={0} y={0} s={0.6} />
-          </Toy>
+
           {SPOTS.map((spot) => {
             const id = spot.ids.find((sid) => sid === 'explore' || have.has(sid));
             if (!id) {
@@ -316,7 +315,7 @@ export function ForestMap({ sections, animals = [], onOpenSection, onExplore }) 
           })}
           {/* The animals that have moved in (forestFriends.js). */}
           {animals.map((a) => (
-            <Toy key={a.name} x={a.x} y={a.y} hop say={`A ${a.name}!`}>
+            <Toy key={a.name} x={a.x} y={a.y} hop say={`${withArticle(a.name).replace(/^a/, 'A')}!`}>
               <text className="forest-animal">{a.emoji}</text>
             </Toy>
           ))}
