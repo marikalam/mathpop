@@ -4,7 +4,7 @@
 // Word Problems, Tell Time and the skill games are written for. `sg` is
 // the matching Singapore school year.
 export const GRADES = [
-  { id: 'p', short: 'Pre-K', label: 'Pre-K (ages 2–5)', color: '#F59E0B', tier: 'easy', sg: 'Nursery' },
+  { id: 'p', short: 'Toddler', label: 'Toddler (ages 2–5)', color: '#F59E0B', tier: 'easy', sg: 'Nursery' },
   { id: 'k', short: 'K', label: 'Kindergarten', color: '#F06F9A', tier: 'easy', sg: 'K2' },
   { id: '1', short: '1st', label: '1st grade', color: '#F0954F', tier: 'easy', sg: 'Primary 1' },
   { id: '2', short: '2nd', label: '2nd grade', color: '#2FAE6B', tier: 'medium', sg: 'Primary 2' },
