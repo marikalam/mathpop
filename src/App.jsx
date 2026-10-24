@@ -50,6 +50,8 @@ import { cachedPlus, refreshPlus } from './plus.js';
 import { ForestMap, ForestPath, OutsideCard } from './ForestHome.jsx';
 import { isForest, loadLook, saveLook } from './look.js';
 import { addForestRound, forestAnimals, friendLine, nextAnimal } from './forestFriends.js';
+import TreasureBox, { TreasureChest } from './TreasureBox.jsx';
+import { findTreasure, newTreasures, withArticle } from './treasures.js';
 
 const SESSION_ROUNDS = 10;
 // The iPhone app has no link out to the other apps' website, and no printing.
@@ -1011,6 +1013,8 @@ export default function App() {
   // in at the end of a round (forestFriends.js).
   const [friendSays, setFriendSays] = useState(null);
   const [newAnimal, setNewAnimal] = useState(null);
+  // The forest look's treasure from the chest at the end of a round.
+  const [foundTreasure, setFoundTreasure] = useState(null);
   const playerProgress = progress[currentProfile.id] || {};
   const levelStats = playerProgress[level] || { total: 0, correct: 0 };
 
@@ -1061,7 +1065,7 @@ export default function App() {
 
   useEffect(() => {
     if (view === 'complete') {
-      const moved = look === 'forest' && newAnimal ? `A ${newAnimal.name} moved into your forest!` : null;
+      const moved = look === 'forest' && newAnimal ? `${withArticle(newAnimal.name).replace(/^a/, 'A')} moved into your forest!` : null;
       speakResults(sessionCorrect, SESSION_ROUNDS, problem?.lang, moved);
     }
   }, [view]);
@@ -1261,8 +1265,10 @@ export default function App() {
 
   function nextProblem() {
     if (roundIndex + 1 >= SESSION_ROUNDS) {
-      // Every finished round earns a sticker (picked on the "All done!" screen).
-      if (signedIn) earnSticker(currentProfile.id);
+      // Every finished round earns a sticker (picked on the "All done!"
+      // screen), or in the forest look a treasure from the chest.
+      if (look === 'forest') setFoundTreasure(findTreasure(currentProfile.id, operation));
+      else if (signedIn) earnSticker(currentProfile.id);
       recordRound(currentProfile.id, operation, gradeInfo(level).id, sessionCorrect, SESSION_ROUNDS);
       statRoundDone({ grade: gradeInfo(level).id, topic: operation, lang: problem?.lang || 'en', correct: sessionCorrect, total: SESSION_ROUNDS });
       setNewAnimal(addForestRound(currentProfile.id));
@@ -1345,12 +1351,12 @@ export default function App() {
                     <span className="home-stat">✅ {levelStats.total} solved</span>
                   )
                 ) : null}
-                <button className="home-stickers" onClick={() => openStickerBook()}>
-                  <span aria-hidden="true">📒</span>
-                  Stickers
-                  {signedIn && pendingStickers(currentProfile.id) > 0 && (
-                    <span className="home-stickers-badge" aria-label={`${pendingStickers(currentProfile.id)} waiting`}>
-                      🎁 {pendingStickers(currentProfile.id)}
+                <button className="home-stickers" onClick={() => setView('treasures')}>
+                  <span aria-hidden="true">🧺</span>
+                  Treasures
+                  {newTreasures(currentProfile.id) > 0 && (
+                    <span className="home-stickers-badge" aria-label={`${newTreasures(currentProfile.id)} new`}>
+                      ✨ {newTreasures(currentProfile.id)}
                     </span>
                   )}
                 </button>
@@ -1509,6 +1515,13 @@ export default function App() {
                 ← More apps
               </a>
             )}
+          </>
+        )}
+
+        {view === 'treasures' && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
+            <TreasureBox key={currentProfile.id} player={currentProfile} />
           </>
         )}
 
@@ -1770,6 +1783,16 @@ export default function App() {
                 </button>
               ))}
             </div>
+            {look === 'forest' && (
+              <button className="rate-row" onClick={() => openStickerBook()}>
+                <span className="rate-row-stars" aria-hidden="true">
+                  📒
+                </span>
+                <span>
+                  <strong>Sticker book</strong>The stickers from before the forest look.
+                </span>
+              </button>
+            )}
             {/* For grown-ups: each player's week, and rating MathPop. */}
             <h3 className="section-label">📈 This week</h3>
             <div className="week-cards">
@@ -2127,7 +2150,7 @@ export default function App() {
                       {newAnimal.emoji}
                     </span>
                     <span>
-                      <strong>A {newAnimal.name} moved into your forest!</strong>
+                      <strong>{withArticle(newAnimal.name).replace(/^a/, 'A')} moved into your forest!</strong>
                       Go home to find it on the map.
                     </span>
                   </div>
@@ -2138,14 +2161,18 @@ export default function App() {
                     </p>
                   )
                 ))}
-              <StickerPicker
-                key={`${currentProfile.id}-${roundIndex}`}
-                playerId={currentProfile.id}
-                signedIn={signedIn}
-                from={operation}
-                onStick={(index) => openStickerBook(index)}
-                onSignIn={openAccount}
-              />
+              {look === 'forest' ? (
+                <TreasureChest treasure={foundTreasure} onOpenBox={() => setView('treasures')} />
+              ) : (
+                <StickerPicker
+                  key={`${currentProfile.id}-${roundIndex}`}
+                  playerId={currentProfile.id}
+                  signedIn={signedIn}
+                  from={operation}
+                  onStick={(index) => openStickerBook(index)}
+                  onSignIn={openAccount}
+                />
+              )}
               {Object.keys(sessionResults).length > 0 && (
                 <div className="result-breakdown">
                   <p className="result-label">By operation:</p>

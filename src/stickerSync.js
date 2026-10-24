@@ -1,5 +1,5 @@
 import { mergeCloudStickers } from './cloud.js';
-import { playerStickers, replaceSavedStickers } from './stickerStore.js';
+import { replaceSavedStickers, savedEntries } from './stickerStore.js';
 
 // Keeps each player's sticker book the same on every phone signed in to
 // the family account. Each phone sends what it has and gets back the
@@ -9,7 +9,7 @@ import { playerStickers, replaceSavedStickers } from './stickerStore.js';
 // The sticker book listens for 'mathpop-stickers-synced'.
 
 async function syncPlayer(profileId) {
-  const stickers = await mergeCloudStickers(profileId, playerStickers(profileId));
+  const stickers = await mergeCloudStickers(profileId, savedEntries(profileId));
   if (!Array.isArray(stickers)) return false;
   replaceSavedStickers(profileId, stickers);
   return true;

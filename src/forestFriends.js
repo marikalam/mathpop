@@ -2,6 +2,8 @@
 // counts toward the player's forest, and at set numbers of rounds a new
 // animal moves in and lives on the home map. Saved per player on this
 // device.
+import { completeSets } from './treasures.js';
+
 const ROUNDS_KEY = 'mathpop-forest-rounds-v1';
 
 // Who moves in, after how many rounds, and where they live on the map
@@ -32,9 +34,11 @@ export function forestRounds(playerId) {
   return readAll()[playerId] || 0;
 }
 
+// The animals living in the player's forest: from rounds played, and one
+// for each finished treasure set (treasures.js).
 export function forestAnimals(playerId) {
   const rounds = forestRounds(playerId);
-  return ANIMALS.filter((a) => rounds >= a.at);
+  return [...ANIMALS.filter((a) => rounds >= a.at), ...completeSets(playerId).map((set) => set.animal)];
 }
 
 // Count a finished round; returns the animal that just moved in, if one did.

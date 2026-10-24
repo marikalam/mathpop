@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { bonusGivenToday, giveBonusIfDone, todayPlan } from './todayPlan.js';
+import { isForest } from './look.js';
 
 // The home page's "Today's practice" list (todayPlan.js), like PitchPop's.
 // Each item starts its round; a signed-in player's items check off as
-// they're done, and finishing them all earns a bonus sticker.
+// they're done, and finishing them all earns a bonus sticker (a treasure in the forest look).
 export default function TodayPlan({ playerId, grade, byOp, signedIn, onOpen, onSignIn }) {
   const [, refresh] = useState(0);
   useEffect(() => {
@@ -16,6 +17,7 @@ export default function TodayPlan({ playerId, grade, byOp, signedIn, onOpen, onS
   const items = todayPlan(playerId, grade, byOp).map((item) => (signedIn ? item : { ...item, done: false }));
   const doneCount = items.filter((i) => i.done).length;
   const allDone = signedIn && doneCount === items.length;
+  const prize = isForest() ? 'treasure 🧺' : 'sticker ⭐';
 
   useEffect(() => {
     if (signedIn) giveBonusIfDone(playerId, items);
@@ -64,8 +66,8 @@ export default function TodayPlan({ playerId, grade, byOp, signedIn, onOpen, onS
           </div>
           <p className="today-note">
             {allDone || bonusGivenToday(playerId)
-              ? '🎉 All done today! You earned a bonus sticker ⭐'
-              : `${doneCount} of ${items.length} done · finish all ${items.length} for a bonus sticker ⭐`}
+              ? `🎉 All done today! You earned a bonus ${prize}`
+              : `${doneCount} of ${items.length} done · finish all ${items.length} for a bonus ${prize}`}
           </p>
         </>
       ) : (
@@ -73,7 +75,7 @@ export default function TodayPlan({ playerId, grade, byOp, signedIn, onOpen, onS
           <button className="today-signin" onClick={onSignIn}>
             Sign in
           </button>{' '}
-          to check these off and earn a bonus sticker ⭐
+          to check these off and earn a bonus {prize}
         </p>
       )}
     </section>
