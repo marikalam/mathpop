@@ -47,6 +47,8 @@ import WelcomeCard from './WelcomeCard.jsx';
 import PlusScreen from './PlusScreen.jsx';
 import ReportScreen from './ReportScreen.jsx';
 import { cachedPlus, refreshPlus } from './plus.js';
+import { ForestMap, OutsideCard } from './ForestHome.jsx';
+import { loadLook, saveLook } from './look.js';
 
 const SESSION_ROUNDS = 10;
 // The iPhone app has no link out to the other apps' website, and no printing.
@@ -996,6 +998,12 @@ export default function App() {
     };
   }, []);
   const [settings, setSettings] = useState(loadSettings);
+  // The forest look or the classic one (look.js), switched in Players & grades.
+  const [look, setLook] = useState(loadLook);
+  function changeLook(next) {
+    saveLook(next);
+    setLook(next);
+  }
   const playerProgress = progress[currentProfile.id] || {};
   const levelStats = playerProgress[level] || { total: 0, correct: 0 };
 
@@ -1310,7 +1318,59 @@ export default function App() {
     // share whatever height is left (it still scrolls on a very short one).
     <div className={view === 'home' ? 'page page-fit' : 'page'}>
       <div className={view === 'home' ? 'app home-fit' : 'app'}>
-        {view === 'home' && (
+        {view === 'home' && look === 'forest' && (
+          <>
+            <AppHeader level={level} showBack={false} players={headerPlayers} logoSignal={heroPlaying} />
+            <section className="forest-hello">
+              <h2 className="home-hello">Ready to pop some math, {currentProfile.name}?</h2>
+              <div className="home-hero-row">
+                <LevelSwitcher level={level} readOnly />
+                {levelStats.total ? (
+                  streakDays(currentProfile.id) >= 2 ? (
+                    <span className="home-stat home-stat-streak">🔥 {streakDays(currentProfile.id)} days</span>
+                  ) : (
+                    <span className="home-stat">✅ {levelStats.total} solved</span>
+                  )
+                ) : null}
+                <button className="home-stickers" onClick={() => openStickerBook()}>
+                  <span aria-hidden="true">📒</span>
+                  Stickers
+                  {signedIn && pendingStickers(currentProfile.id) > 0 && (
+                    <span className="home-stickers-badge" aria-label={`${pendingStickers(currentProfile.id)} waiting`}>
+                      🎁 {pendingStickers(currentProfile.id)}
+                    </span>
+                  )}
+                </button>
+              </div>
+            </section>
+            {/* Tap a spot in the woods to play that section. */}
+            <ForestMap
+              sections={gradeSections(gradeInfo(level).id)}
+              onOpenSection={(id) => {
+                setSectionId(id);
+                setView('section');
+              }}
+              onExplore={() => setView('explore')}
+            />
+            <TodayPlan
+              key={`${currentProfile.id}-${gradeInfo(level).id}`}
+              playerId={currentProfile.id}
+              grade={gradeInfo(level).id}
+              byOp={levelStats.byOp || {}}
+              signedIn={signedIn}
+              onOpen={(mode) => startOperation(mode, 'home')}
+              onSignIn={openAccount}
+            />
+            <OutsideCard grade={gradeInfo(level).id} />
+            {!IS_NATIVE && (
+              <a className="all-apps-link" href="https://marikalam.github.io/apps/">
+                ← More apps
+              </a>
+            )}
+          </>
+        )}
+
+        {view === 'home' && look !== 'forest' && (
           <>
             <AppHeader level={level} showBack={false} players={headerPlayers} logoSignal={heroPlaying} />
             {/* Tapping the greeting plays the same animation as the logo:
@@ -1677,6 +1737,25 @@ export default function App() {
             <button className="back-link back-link-center" onClick={goHome}>
               Cancel
             </button>
+            {/* How MathPop looks, for everyone on this device (look.js). */}
+            <h3 className="section-label">🌲 App look</h3>
+            <div className="look-choice" role="radiogroup" aria-label="App look">
+              {[
+                ['forest', '🌲 Forest', 'Woods, pinecones and earthy colors'],
+                ['classic', '🎈 Classic', 'The original bright look'],
+              ].map(([id, name, sub]) => (
+                <button
+                  key={id}
+                  role="radio"
+                  aria-checked={look === id}
+                  className={`look-option${look === id ? ' look-option-on' : ''}`}
+                  onClick={() => changeLook(id)}
+                >
+                  <strong>{name}</strong>
+                  <span>{sub}</span>
+                </button>
+              ))}
+            </div>
             {/* For grown-ups: each player's week, and rating MathPop. */}
             <h3 className="section-label">📈 This week</h3>
             <div className="week-cards">
