@@ -340,7 +340,8 @@ export function speakProblem(problem) {
   }
 }
 
-export function playFeedbackAndSpeak(correct, correctAnswer, lang) {
+// `line` (the forest look's friend, forestFriends.js) is said first, in English.
+export function playFeedbackAndSpeak(correct, correctAnswer, lang, line) {
   if (correct) {
     playCorrectChime();
   } else {
@@ -358,6 +359,10 @@ export function playFeedbackAndSpeak(correct, correctAnswer, lang) {
       );
       return;
     }
+    if (line) {
+      speak(correct ? `${line} The answer is ${correctAnswer}` : `${line} Tap the hand, and I'll show you how.`);
+      return;
+    }
     if (name) {
       speak(correct ? `Great job, ${name}! The answer is ${correctAnswer}` : `Not quite, ${name}. Try again! Tap the hand, and I'll show you how.`);
       return;
@@ -368,7 +373,8 @@ export function playFeedbackAndSpeak(correct, correctAnswer, lang) {
   }, 300);
 }
 
-export function speakResults(correct, total, lang) {
+// `extra` is said after the score in English (a new forest animal).
+export function speakResults(correct, total, lang, extra) {
   const wrong = total - correct;
   const name = playerName();
   if (lang === 'ja') {
@@ -376,11 +382,11 @@ export function speakResults(correct, total, lang) {
     speakInLanguage(correct === total ? `${you}すごい！ ${total}もん ぜんぶ せいかい！` : `${you}${total}もんちゅう ${correct}もん せいかい！ よく がんばったね！`, LANG_TAGS.ja);
     return;
   }
-  speak(
+  const said =
     correct === total
       ? `Perfect${name ? `, ${name}` : ''}! You got all ${total} correct!`
-      : `${name ? `Well done, ${name}! ` : ''}You got ${correct} correct and ${wrong} wrong.`
-  );
+      : `${name ? `Well done, ${name}! ` : ''}You got ${correct} correct and ${wrong} wrong.`;
+  speak(extra ? `${said} ${extra}` : said);
 }
 
 async function synthesize(text) {

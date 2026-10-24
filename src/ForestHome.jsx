@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { gradeTier } from './grades.js';
-import { speak } from './sound.js';
+import { playStickerPick, speak } from './sound.js';
 
 // The forest look's home page (look.js): a drawn woodland where each spot
 // is one of the grade's sections - pinecones on a log for Numbers, a stick
@@ -79,6 +80,27 @@ function Bush({ x, y, r = 18 }) {
     <g>
       <path d={`M${x} ${y + r - 4}v14`} fill="none" strokeWidth="3.5" />
       <circle cx={x} cy={y} r={r} fill={MOSS} />
+    </g>
+  );
+}
+
+// Something on the map to tap just for fun: it wiggles (or hops) and
+// makes a little sound; an animal also says what it is.
+function Toy({ x, y, hop, say, children }) {
+  const [n, setN] = useState(0);
+  return (
+    <g
+      transform={`translate(${x} ${y})`}
+      className="forest-toy"
+      onClick={() => {
+        setN((k) => k + 1);
+        playStickerPick();
+        if (say) setTimeout(() => speak(say), 150);
+      }}
+    >
+      <g key={n} className={n ? (hop ? 'forest-toy-hop' : 'forest-toy-wiggle') : undefined}>
+        {children}
+      </g>
     </g>
   );
 }
@@ -235,7 +257,7 @@ function Spot({ id, label, x, y, onOpen }) {
   );
 }
 
-export function ForestMap({ sections, onOpenSection, onExplore }) {
+export function ForestMap({ sections, animals = [], onOpenSection, onExplore }) {
   const have = new Map(sections.map((s) => [s.id, s]));
   return (
     <div className="forest-map">
@@ -253,12 +275,24 @@ export function ForestMap({ sections, onOpenSection, onExplore }) {
           </g>
         </g>
         <g stroke={INK} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round">
-          <Bush x={122} y={20} r={11} />
-          <Bush x={240} y={196} r={10} />
-          <Bush x={120} y={420} r={12} />
-          <Pine x={240} y={52} s={0.6} />
-          <Pine x={120} y={262} s={0.6} />
-          <Pine x={240} y={414} s={0.6} />
+          <Toy x={122} y={20}>
+            <Bush x={0} y={0} r={11} />
+          </Toy>
+          <Toy x={240} y={196}>
+            <Bush x={0} y={0} r={10} />
+          </Toy>
+          <Toy x={120} y={420}>
+            <Bush x={0} y={0} r={12} />
+          </Toy>
+          <Toy x={240} y={52}>
+            <Pine x={0} y={0} s={0.6} />
+          </Toy>
+          <Toy x={120} y={262}>
+            <Pine x={0} y={0} s={0.6} />
+          </Toy>
+          <Toy x={240} y={414}>
+            <Pine x={0} y={0} s={0.6} />
+          </Toy>
           {SPOTS.map((spot) => {
             const id = spot.ids.find((sid) => sid === 'explore' || have.has(sid));
             if (!id) {
@@ -280,8 +314,41 @@ export function ForestMap({ sections, onOpenSection, onExplore }) {
               />
             );
           })}
+          {/* The animals that have moved in (forestFriends.js). */}
+          {animals.map((a) => (
+            <Toy key={a.name} x={a.x} y={a.y} hop say={`A ${a.name}!`}>
+              <text className="forest-animal">{a.emoji}</text>
+            </Toy>
+          ))}
         </g>
       </svg>
+    </div>
+  );
+}
+
+// The forest look's progress through a round: stepping stones, with a
+// hedgehog on the current one, to a treasure chest at the end.
+export function ForestPath({ current, total }) {
+  const gap = 290 / total;
+  return (
+    <div className="progress-wrap forest-path">
+      <svg viewBox="0 0 340 46" role="img" aria-label={`Problem ${current} of ${total}`}>
+        <path d="M6 30Q170 22 334 30" fill="none" stroke="#e2cfa3" strokeWidth="8" strokeLinecap="round" />
+        <g stroke={INK} strokeWidth="2">
+          {Array.from({ length: total }, (_, i) => (
+            <ellipse key={i} cx={14 + i * gap} cy="29" rx="11" ry="7" fill={i < current - 1 ? MOSS : i === current - 1 ? OCHRE : STONE} />
+          ))}
+          <rect x="304" y="16" width="30" height="22" rx="4" fill={BARK} />
+          <path d="M304 24q15-14 30 0z" fill={OCHRE} />
+          <rect x="316" y="24" width="6" height="7" rx="1" fill={OCHRE} />
+        </g>
+        <text transform={`translate(${14 + (current - 1) * gap} 22) scale(-1 1)`} className="forest-animal forest-path-walker">
+          🦔
+        </text>
+      </svg>
+      <span className="progress-count">
+        {current} / {total}
+      </span>
     </div>
   );
 }

@@ -47,8 +47,9 @@ import WelcomeCard from './WelcomeCard.jsx';
 import PlusScreen from './PlusScreen.jsx';
 import ReportScreen from './ReportScreen.jsx';
 import { cachedPlus, refreshPlus } from './plus.js';
-import { ForestMap, OutsideCard } from './ForestHome.jsx';
-import { loadLook, saveLook } from './look.js';
+import { ForestMap, ForestPath, OutsideCard } from './ForestHome.jsx';
+import { isForest, loadLook, saveLook } from './look.js';
+import { addForestRound, forestAnimals, friendLine, nextAnimal } from './forestFriends.js';
 
 const SESSION_ROUNDS = 10;
 // The iPhone app has no link out to the other apps' website, and no printing.
@@ -569,6 +570,8 @@ function NumberBond({ whole, parts }) {
 }
 
 function ProgressDots({ current, total }) {
+  // The forest look's stepping stones to a treasure chest.
+  if (isForest()) return <ForestPath current={current} total={total} />;
   const items = [];
   for (let i = 1; i <= total; i++) {
     items.push(<span key={`d${i}`} className={`progress-dot${i <= current ? ' progress-dot-filled' : ''}`} />);
@@ -1004,6 +1007,10 @@ export default function App() {
     saveLook(next);
     setLook(next);
   }
+  // The forest friend's words after an answer, and the animal that moved
+  // in at the end of a round (forestFriends.js).
+  const [friendSays, setFriendSays] = useState(null);
+  const [newAnimal, setNewAnimal] = useState(null);
   const playerProgress = progress[currentProfile.id] || {};
   const levelStats = playerProgress[level] || { total: 0, correct: 0 };
 
@@ -1053,7 +1060,10 @@ export default function App() {
   }, [view, problem]);
 
   useEffect(() => {
-    if (view === 'complete') speakResults(sessionCorrect, SESSION_ROUNDS, problem?.lang);
+    if (view === 'complete') {
+      const moved = look === 'forest' && newAnimal ? `A ${newAnimal.name} moved into your forest!` : null;
+      speakResults(sessionCorrect, SESSION_ROUNDS, problem?.lang, moved);
+    }
   }, [view]);
 
   function goHome() {
@@ -1184,7 +1194,9 @@ export default function App() {
     setChosen(value);
     setAnswerCorrect(correct);
     setShowHelp(false);
-    playFeedbackAndSpeak(correct, problem.speechAnswer ?? problem.correct, problem.lang);
+    const line = look === 'forest' && problem.lang !== 'ja' ? friendLine(correct, Math.random() < 0.6 ? currentProfile.name : null) : null;
+    setFriendSays(line);
+    playFeedbackAndSpeak(correct, problem.speechAnswer ?? problem.correct, problem.lang, line);
     if (navigator.vibrate) navigator.vibrate(correct ? 20 : [20, 40, 20]);
 
     // Only the first attempt at a problem counts toward the score and log —
@@ -1253,6 +1265,7 @@ export default function App() {
       if (signedIn) earnSticker(currentProfile.id);
       recordRound(currentProfile.id, operation, gradeInfo(level).id, sessionCorrect, SESSION_ROUNDS);
       statRoundDone({ grade: gradeInfo(level).id, topic: operation, lang: problem?.lang || 'en', correct: sessionCorrect, total: SESSION_ROUNDS });
+      setNewAnimal(addForestRound(currentProfile.id));
       setView('complete');
       return;
     }
@@ -1346,6 +1359,7 @@ export default function App() {
             {/* Tap a spot in the woods to play that section. */}
             <ForestMap
               sections={gradeSections(gradeInfo(level).id)}
+              animals={forestAnimals(currentProfile.id)}
               onOpenSection={(id) => {
                 setSectionId(id);
                 setView('section');
@@ -2035,6 +2049,14 @@ export default function App() {
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={sessionBack} />
             <ProgressDots current={roundIndex + 1} total={SESSION_ROUNDS} />
+            {look === 'forest' && friendSays ? (
+              <div className={`forest-friend${answerCorrect ? ' forest-friend-happy' : ''}`} key={`${roundIndex}-${friendSays}`}>
+                <span className="forest-friend-face" aria-hidden="true">
+                  🦔
+                </span>
+                <p className="forest-friend-say">{friendSays}</p>
+              </div>
+            ) : (
             <div className={`feedback-icon-wrap${answerCorrect ? ' feedback-correct' : ' feedback-incorrect'}`}>
               {answerCorrect && (
                 <div className="feedback-confetti" aria-hidden="true">
@@ -2050,6 +2072,7 @@ export default function App() {
               )}
               <span className="feedback-icon">{answerCorrect ? <CheckIcon /> : <XIcon />}</span>
             </div>
+            )}
             <h2 className="screen-title">{answerCorrect ? tr('Great job!', 'すごい！') : tr('Not quite!', 'おしい！')}</h2>
             {/* A wrong answer never shows the right one (they'd just go back
                 and pick it): it's Try again, with Show me how for help. */}
@@ -2097,6 +2120,24 @@ export default function App() {
                 <span className="results-score-number">{sessionCorrect}</span>
                 <span className="results-score-total">/ {SESSION_ROUNDS}</span>
               </div>
+              {look === 'forest' &&
+                (newAnimal ? (
+                  <div className="forest-moved-in">
+                    <span className="forest-moved-in-animal" aria-hidden="true">
+                      {newAnimal.emoji}
+                    </span>
+                    <span>
+                      <strong>A {newAnimal.name} moved into your forest!</strong>
+                      Go home to find it on the map.
+                    </span>
+                  </div>
+                ) : (
+                  nextAnimal(currentProfile.id) && (
+                    <p className="forest-next">
+                      🌱 {nextAnimal(currentProfile.id).left} more {nextAnimal(currentProfile.id).left === 1 ? 'round' : 'rounds'} until someone new moves in!
+                    </p>
+                  )
+                ))}
               <StickerPicker
                 key={`${currentProfile.id}-${roundIndex}`}
                 playerId={currentProfile.id}
