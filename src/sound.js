@@ -353,18 +353,18 @@ export function playFeedbackAndSpeak(correct, correctAnswer, lang) {
       speakInLanguage(
         correct
           ? `${name ? `${name}、` : ''}せいかい！ ${correctAnswer}！`
-          : `おしい！ ${name ? `${name}、` : ''}もういちど やってみよう。てのマークを おすと、やりかたを おしえるよ。`,
+          : `おしい！ ${name ? `${name}、` : ''}こたえは ${correctAnswer}。`,
         LANG_TAGS.ja,
       );
       return;
     }
     if (name) {
-      speak(correct ? `Great job, ${name}! The answer is ${correctAnswer}` : `Not quite, ${name}. Try again! Tap the hand, and I'll show you how.`);
+      speak(correct ? `Great job, ${name}! The answer is ${correctAnswer}` : `Not quite, ${name}. The answer is ${correctAnswer}.`);
       return;
     }
-    // Kids who can't read yet hear where the help is (🙋 Show me how).
-    // A wrong answer isn't given away: try again (and help is there).
-    speak(correct ? `The answer is ${correctAnswer}` : "Not quite. Try again! Tap the hand, and I'll show you how.");
+    // A wrong answer is told, and the round moves on (🙋 Show me how is
+    // there to explain it).
+    speak(correct ? `The answer is ${correctAnswer}` : `Not quite. The answer is ${correctAnswer}.`);
   }, 300);
 }
 

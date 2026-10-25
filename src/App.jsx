@@ -1179,8 +1179,8 @@ export default function App() {
     playFeedbackAndSpeak(correct, problem.speechAnswer ?? problem.correct, problem.lang);
     if (navigator.vibrate) navigator.vibrate(correct ? 20 : [20, 40, 20]);
 
-    // Only the first attempt at a problem counts toward the score and log —
-    // "Try again" lets a kid retry for practice without inflating the tally.
+    // Each problem is answered once: it counts toward the score and log,
+    // and the feedback screen shows the answer and moves on.
     if (firstAttempt) {
       if (correct) {
         setSessionCorrect((c) => c + 1);
@@ -1972,18 +1972,14 @@ export default function App() {
               <span className="feedback-icon">{answerCorrect ? <CheckIcon /> : <XIcon />}</span>
             </div>
             <h2 className="screen-title">{answerCorrect ? tr('Great job!', 'すごい！') : tr('Not quite!', 'おしい！')}</h2>
-            {/* A wrong answer never shows the right one (they'd just go back
-                and pick it): it's Try again, with Show me how for help. */}
-            {answerCorrect ? (
-              <>
-                <p className="screen-sub">{tr("That's right!", 'せいかい！')}</p>
-                <div className="answer-card" style={{ background: ALL_META[problem.op].color }}>
-                  <div className="answer-equation">{problemAnswerText(problem)}</div>
-                </div>
-              </>
-            ) : (
-              <p className="screen-sub">{tr(`You picked ${String(chosen)}. Have another go!`, 'もういちど やってみよう！')}</p>
-            )}
+            {/* Right or wrong, the answer is shown and the round moves on (a
+                wrong one isn't asked again); Show me how explains it. */}
+            <p className="screen-sub">
+              {answerCorrect ? tr("That's right!", 'せいかい！') : tr(`You picked ${String(chosen)}. Here's the answer:`, 'こたえは これだよ。')}
+            </p>
+            <div className="answer-card" style={{ background: ALL_META[problem.op].color }}>
+              <div className="answer-equation">{problemAnswerText(problem)}</div>
+            </div>
             {!answerCorrect &&
               (showHelp ? (
                 <ExplainPanel problem={problem} onClose={() => setShowHelp(false)} />
@@ -1993,15 +1989,9 @@ export default function App() {
                   {tr('Show me how', 'やりかたを みせて')}
                 </button>
               ))}
-            {answerCorrect ? (
-              <button className="pill-btn-primary pill-btn-full" onClick={nextProblem}>
-                {roundIndex + 1 >= SESSION_ROUNDS ? tr('Finish', 'おわり') : tr('Next problem', 'つぎの もんだい')} →
-              </button>
-            ) : (
-              <button className="pill-btn-primary pill-btn-full" onClick={() => { setChosen(null); setTypedAnswer(''); setShowHelp(false); setView('question'); }}>
-                {tr('Try again', 'もういちど')} →
-              </button>
-            )}
+            <button className="pill-btn-primary pill-btn-full" onClick={nextProblem}>
+              {roundIndex + 1 >= SESSION_ROUNDS ? tr('Finish', 'おわり') : tr('Next problem', 'つぎの もんだい')} →
+            </button>
           </>
         )}
 
