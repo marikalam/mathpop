@@ -8,7 +8,10 @@ email and password there (create one in the app; never put it in this repo).
 
 MathPop is a math practice game for Pre-K through 4th grade, made for the
 Kids category (ages 6–8). Kids can play without signing in; the family
-account is optional and only for grown-ups.
+account is optional and only for grown-ups. When MathPop opens without an
+account it offers one ("Save your kids' progress"); signing up or in is
+behind a grown-ups check, and "Not now, just play" goes straight to the
+app as a guest.
 
 How to use it:
 - Each player's grade and how they answer (tap a choice, type, or write

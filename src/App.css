@@ -5018,3 +5018,33 @@ body {
   background: #eef2ff;
   color: var(--accent-blue);
 }
+
+/* Sign-up when MathPop opens without an account (SignupCard.jsx). */
+.signup-card {
+  gap: 10px;
+}
+.signup-perks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  font: 500 14px 'IBM Plex Sans', sans-serif;
+  color: var(--ink);
+}
+.signup-perks li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.signup-signin {
+  appearance: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--accent-blue);
+  font: 700 14px 'IBM Plex Sans', sans-serif;
+}

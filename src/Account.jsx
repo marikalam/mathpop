@@ -238,13 +238,13 @@ export function SyncStatus({ user, onOpenAccount }) {
   );
 }
 
-export function AccountScreen({ user, playerCount, onSignedIn, onAccountDeleted, onOpenPlayers, onOpenStats, onDone, recoveryMode, onPasswordUpdated }) {
+export function AccountScreen({ user, playerCount, onSignedIn, onAccountDeleted, onOpenPlayers, onOpenStats, onDone, recoveryMode, onPasswordUpdated, startMode = 'sign-in' }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [mode, setMode] = useState('sign-in');
+  const [mode, setMode] = useState(startMode);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
