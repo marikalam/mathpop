@@ -82,7 +82,6 @@ const GRADE_KEY = 'mathpop-grade-v1';
 // The loading screen when the app opens (see `opening`).
 const OPENING_MIN_MS = 700;
 const OPENING_MAX_MS = 4000;
-const EXPLORE_SESSION_TAPS = 20;
 const EXPLORE_SESSION_KEY = 'mathpop-baby-session-v1';
 const EXPLORE_NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 // `say` is what the voice is given (kana for Japanese so 4 and 7 come out
@@ -1132,7 +1131,6 @@ export default function App() {
   }, [view, exploreLanguages, settings.exploreLang]);
 
   function exploreTap(n) {
-    if (exploreSession.taps >= EXPLORE_SESSION_TAPS) return;
     speakInLanguage(exploreLang.say[n], exploreLang.lang);
     setExplorePlayed(n);
     if (navigator.vibrate) navigator.vibrate(15);
@@ -1144,13 +1142,6 @@ export default function App() {
       saveExploreSession(next);
       return next;
     });
-  }
-
-  function explorePlayAgain() {
-    const next = { taps: 0, counts: {} };
-    setExploreSession(next);
-    saveExploreSession(next);
-    setExplorePlayed(null);
   }
 
   function updateExploreLang(key) {
@@ -1488,62 +1479,41 @@ export default function App() {
         {view === 'explore' && (
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
-            {exploreSession.taps >= EXPLORE_SESSION_TAPS ? (
-              <div className="complete-wrap">
-                <div className="complete-emoji">🌟</div>
-                <h2 className="screen-title">All done!</h2>
-                <p className="screen-sub">You tapped {EXPLORE_SESSION_TAPS} numbers.</p>
-                <div className="explore-tally">
-                  {EXPLORE_NUMBERS.filter((n) => exploreSession.counts[n]).map((n) => (
-                    <div key={n} className="explore-tally-chip" style={{ background: EXPLORE_COLORS[n] }}>
-                      {n}: {exploreSession.counts[n]}
-                    </div>
-                  ))}
-                </div>
-                <div className="feedback-actions">
-                  <button className="pill-btn-primary" onClick={explorePlayAgain}>
-                    Play again →
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="explore-lang-row" role="radiogroup" aria-label="Language" ref={exploreLangRow}>
-                  {exploreLanguages.map((l) => (
-                    <button
-                      key={l.key}
-                      role="radio"
-                      aria-checked={l.key === exploreLang.key}
-                      className={`explore-lang-btn${l.key === exploreLang.key ? ' explore-lang-btn-active' : ''}`}
-                      onClick={() => updateExploreLang(l.key)}
-                    >
-                      <span className="explore-lang-label">{l.label}</span>
-                      {l.name !== l.label && <span className="explore-lang-name">{l.name}</span>}
-                    </button>
-                  ))}
-                </div>
-                <div className="explore-counter">
-                  {exploreSession.taps} / {EXPLORE_SESSION_TAPS}
-                </div>
-                <div className="explore-grid">
-                  {EXPLORE_NUMBERS.map((n) => (
-                    <button
-                      key={n}
-                      className={`explore-btn${n === 10 ? ' explore-btn-wide' : ''}${explorePlayed === n ? ' explore-btn-played' : ''}`}
-                      style={{ background: EXPLORE_COLORS[n] }}
-                      aria-label={`Say the number ${n}`}
-                      onClick={() => exploreTap(n)}
-                    >
-                      <span className="explore-digit">{n}</span>
-                      {(() => {
-                        const word = (exploreLang.show || exploreLang.say)[n];
-                        return <span className={`explore-word${word.length > 5 ? ' explore-word-long' : ''}`}>{word}</span>;
-                      })()}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+            {/* No limit: tap numbers for as long as you like. */}
+            <div className="explore-lang-row" role="radiogroup" aria-label="Language" ref={exploreLangRow}>
+              {exploreLanguages.map((l) => (
+                <button
+                  key={l.key}
+                  role="radio"
+                  aria-checked={l.key === exploreLang.key}
+                  className={`explore-lang-btn${l.key === exploreLang.key ? ' explore-lang-btn-active' : ''}`}
+                  onClick={() => updateExploreLang(l.key)}
+                >
+                  <span className="explore-lang-label">{l.label}</span>
+                  {l.name !== l.label && <span className="explore-lang-name">{l.name}</span>}
+                </button>
+              ))}
+            </div>
+            <div className="explore-counter">
+              {exploreSession.taps} {exploreSession.taps === 1 ? 'tap' : 'taps'}
+            </div>
+            <div className="explore-grid">
+              {EXPLORE_NUMBERS.map((n) => (
+                <button
+                  key={n}
+                  className={`explore-btn${n === 10 ? ' explore-btn-wide' : ''}${explorePlayed === n ? ' explore-btn-played' : ''}`}
+                  style={{ background: EXPLORE_COLORS[n] }}
+                  aria-label={`Say the number ${n}`}
+                  onClick={() => exploreTap(n)}
+                >
+                  <span className="explore-digit">{n}</span>
+                  {(() => {
+                    const word = (exploreLang.show || exploreLang.say)[n];
+                    return <span className={`explore-word${word.length > 5 ? ' explore-word-long' : ''}`}>{word}</span>;
+                  })()}
+                </button>
+              ))}
+            </div>
           </>
         )}
 
