@@ -1746,22 +1746,31 @@ export default function App() {
                   🖨️
                 </button>
               )}
+              {/* Show me how: a small "?" at the end of the title line, out
+                  of the way; orange while the help is open. */}
+              <button
+                className={`help-q-btn${showHelp ? ' help-q-btn-on' : ''}`}
+                onClick={() => {
+                  unlockAudio();
+                  setShowHelp((open) => !open);
+                }}
+                aria-label={tr('Show me how', 'やりかたを みせて')}
+                aria-expanded={showHelp}
+                title={tr('Show me how', 'やりかたを みせて')}
+              >
+                ?
+              </button>
             </div>
             {/* "Show me how: talks this problem through out loud. For
                 adding up to two digits, the make-a-ten blocks show too.
                 It sits above the problem, away from the answer buttons at
                 the bottom, so it isn't tapped by mistake when answering. */}
-            {showHelp ? (
+            {showHelp && (
               <ExplainPanel problem={problem} onClose={() => setShowHelp(false)}>
                 {problem.op === 'add' && problem.type !== 'sentence' && problem.type !== 'skill' && problem.a < 100 && problem.b < 100 && (
                   <AdditionHelp a={problem.a} b={problem.b} bare />
                 )}
               </ExplainPanel>
-            ) : (
-              <button className="help-btn help-btn-soft" onClick={() => { unlockAudio(); setShowHelp(true); }}>
-                <span className="help-btn-icon" aria-hidden="true">🙋</span>
-                {tr('Show me how', 'やりかたを みせて')}
-              </button>
             )}
             {problem.promptKind === 'count' && problem.toddler ? (
               <CountBoard

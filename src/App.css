@@ -1246,7 +1246,7 @@ body {
   appearance: none;
   position: absolute;
   top: 50%;
-  right: 0;
+  left: 0;
   transform: translateY(-50%);
   display: flex;
   align-items: center;
@@ -5329,4 +5329,37 @@ body {
 }
 .question-fit .problem-visual-wrap .tv-svg-shape {
   max-height: 240px;
+}
+
+/* Show me how, as a small "?" at the right end of the question's title
+   line (the print button, on the website, sits at the left end). */
+.help-q-btn {
+  appearance: none;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  color: #e0793a;
+  font: 700 21px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.08s ease, background 0.15s ease, color 0.15s ease;
+}
+.help-q-btn:active {
+  transform: translateY(-50%) scale(0.92);
+}
+.help-q-btn-on {
+  background: #e0793a;
+  color: #fff;
 }
