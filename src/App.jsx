@@ -17,6 +17,7 @@ import PrintSheet from './PrintSheet.jsx';
 import { PREK_CONCEPTS, ShapeIcon } from './preK.jsx';
 import { Speaker, Thing } from './Drawings.jsx';
 import { CountBoard, CountCelebration, sayCountCelebration } from './ToddlerCount.jsx';
+import { problemPicture } from './ProblemPicture.jsx';
 import ProfileSwitcher from './ProfileSwitcher.jsx';
 import EmailHandoff from './EmailHandoff.jsx';
 import StickerPicker from './StickerPicker.jsx';
@@ -1337,6 +1338,9 @@ export default function App() {
   }
 
   const toddlerScreen = (view === 'question' || view === 'feedback') && !!problem?.toddler;
+  // Every question fills the screen: the problem card (and its picture)
+  // grows to fit above the answers.
+  const questionFit = view === 'question' && !!problem && !problem.toddler;
   // Toddler counting: the answers wait until every thing has been counted.
   const countLocked = problem?.promptKind === 'count' && !!problem?.toddler && !countDone;
 
@@ -1344,8 +1348,8 @@ export default function App() {
     // The home page fits one screen, like PitchPop's: the section cards
     // share whatever height is left (it still scrolls on a very short one).
     // Toddler games fill the screen too (the picture grows to fit).
-    <div className={view === 'home' || toddlerScreen ? 'page page-fit' : 'page'}>
-      <div className={view === 'home' ? 'app home-fit' : toddlerScreen ? 'app toddler-fit' : 'app'}>
+    <div className={view === 'home' || toddlerScreen || questionFit ? 'page page-fit' : 'page'}>
+      <div className={view === 'home' ? 'app home-fit' : toddlerScreen ? 'app toddler-fit' : questionFit ? 'app question-fit' : 'app'}>
         {view === 'home' && (
           <>
             <AppHeader level={level} showBack={false} players={headerPlayers} logoSignal={heroPlaying} />
@@ -1824,19 +1828,23 @@ export default function App() {
                   <span className="stack-rule" />
                 </span>
               ) : (
-                <span
-                  className={
-                    problem.type === 'sentence' || (problem.type === 'skill' && problem.prompt.length > 24)
-                      ? 'problem-text problem-text-sentence'
-                      : 'problem-text'
-                  }
-                >
-                  {problem.type === 'sentence'
-                    ? problem.text
-                    : problem.type === 'skill'
-                      ? problem.prompt
-                      : `${problem.a} ${problem.symbol} ${problem.b}`}
-                </span>
+                <>
+                  <span
+                    className={
+                      problem.type === 'sentence' || (problem.type === 'skill' && problem.prompt.length > 24)
+                        ? 'problem-text problem-text-sentence'
+                        : 'problem-text'
+                    }
+                  >
+                    {problem.type === 'sentence'
+                      ? problem.text
+                      : problem.type === 'skill'
+                        ? problem.prompt
+                        : `${problem.a} ${problem.symbol} ${problem.b}`}
+                  </span>
+                  {/* Ten-frames, a cookie tray or a bar model (ProblemPicture.jsx). */}
+                  {problemPicture(problem) && <span className="problem-picture">{problemPicture(problem)}</span>}
+                </>
               )}
             </button>
             )}
@@ -1854,7 +1862,11 @@ export default function App() {
             {!(problem.promptKind === 'count' && problem.toddler) && <p className="screen-sub tap-to-hear">{tr('Tap the problem to hear it', 'もんだいを タップすると きこえるよ')}</p>}
 
             {/* Toddler "listen and pick" games: the answers are the big part. */}
-            <div className={`answer-area${problem.toddler && problem.promptKind === 'say' ? ' answer-area-fill' : ''}`}>
+            <div
+              className={`answer-area${problem.toddler && problem.promptKind === 'say' ? ' answer-area-fill' : ''}${
+                answerFor(currentProfile.id) === 'write' && problem.type !== 'clock' && problem.answerType !== 'choice' ? ' answer-area-write' : ''
+              }`}
+            >
             {answerFor(currentProfile.id) === 'write' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
               <WritePad onSubmit={chooseAnswer} />
             ) : answerFor(currentProfile.id) === 'type' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (

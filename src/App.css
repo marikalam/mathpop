@@ -5271,3 +5271,61 @@ body {
   min-height: 0;
   font-size: 56px;
 }
+
+/* Every question fills the screen (1st grade and up): the problem card
+   and its picture (ProblemPicture.jsx) grow to fit above the answers; the
+   writing pad shares the space with it. */
+.question-fit {
+  gap: 12px;
+}
+.question-fit > * {
+  flex: none;
+}
+.question-fit > .problem-card {
+  flex: 1 1 0;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 18px 16px;
+}
+.question-fit > .answer-area {
+  flex: none;
+}
+.question-fit > .answer-area-write {
+  flex: 1 1 0;
+  min-height: 190px;
+}
+.question-fit .problem-visual-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  justify-content: center;
+}
+.question-fit .tv-svg {
+  max-height: 100%;
+}
+.problem-picture {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.problem-picture-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 340px;
+  max-height: 360px;
+}
+/* The topics' own pictures (TopicVisual.jsx) grow with the card too. */
+.question-fit .problem-visual-wrap .tv {
+  max-width: 340px;
+  width: 100%;
+}
+.question-fit .problem-visual-wrap .tv-svg-shape {
+  max-height: 240px;
+}
