@@ -5028,3 +5028,246 @@ body {
   color: var(--accent-blue);
   font: 700 14px 'IBM Plex Sans', sans-serif;
 }
+
+/* Toddler games (preK.jsx): the picture fills the screen, above the
+   answers; counting is tap-each-one (ToddlerCount.jsx). */
+.toddler-fit {
+  gap: 12px;
+}
+.toddler-fit > * {
+  flex: none;
+}
+.toddler-fit > .toddler-board,
+.toddler-fit > .toddler-card {
+  flex: 1 1 auto;
+  min-height: 220px;
+}
+.toddler-fit > .answer-area {
+  flex: none;
+}
+.toddler-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.toddler-board {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 18px 12px;
+  overflow: hidden;
+  cursor: default;
+}
+.toddler-rows {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+.toddler-row {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+.toddler-thing {
+  appearance: none;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--size) + 14px);
+  height: calc(var(--size) + 14px);
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.toddler-thing-counted {
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: inset 0 0 0 3px #fff;
+  animation: toddler-hop 0.45s ease;
+}
+.toddler-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 15px;
+  background: #fff;
+  color: #c2571a;
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+  animation: toddler-pop 0.35s ease both;
+}
+.toddler-badge-below {
+  top: auto;
+  right: auto;
+  bottom: -16px;
+  left: 50%;
+  margin-left: -15px;
+  color: #2fae6b;
+  animation-delay: calc(var(--i) * 0.4s + 0.3s);
+}
+.toddler-thing-dance {
+  cursor: default;
+  animation: toddler-dance 0.8s ease-in-out calc(var(--i) * 0.4s) 3;
+}
+.toddler-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #fff;
+  color: #171a2b;
+  font: 700 16px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  box-shadow: 0 6px 14px -6px rgba(23, 26, 43, 0.3);
+}
+.toddler-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.toddler-confetti i {
+  position: absolute;
+  top: -16px;
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  animation: toddler-fall 2.4s linear infinite;
+}
+.toddler-confetti i:nth-child(4n + 1) { background: #3b6fef; }
+.toddler-confetti i:nth-child(4n + 2) { background: #fff; }
+.toddler-confetti i:nth-child(4n + 3) { background: #8e4fd6; }
+.toddler-confetti i:nth-child(4n) { background: #2fae6b; }
+.toddler-confetti i:nth-child(1) { left: 6%; animation-delay: 0s; }
+.toddler-confetti i:nth-child(2) { left: 16%; animation-delay: 0.9s; }
+.toddler-confetti i:nth-child(3) { left: 26%; animation-delay: 1.6s; }
+.toddler-confetti i:nth-child(4) { left: 36%; animation-delay: 0.4s; }
+.toddler-confetti i:nth-child(5) { left: 46%; animation-delay: 1.2s; }
+.toddler-confetti i:nth-child(6) { left: 56%; animation-delay: 0.2s; }
+.toddler-confetti i:nth-child(7) { left: 66%; animation-delay: 1.9s; }
+.toddler-confetti i:nth-child(8) { left: 76%; animation-delay: 0.7s; }
+.toddler-confetti i:nth-child(9) { left: 86%; animation-delay: 1.4s; }
+.toddler-confetti i:nth-child(10) { left: 94%; animation-delay: 0.3s; }
+.toddler-confetti i:nth-child(11) { left: 11%; animation-delay: 2.1s; }
+.toddler-confetti i:nth-child(12) { left: 71%; animation-delay: 1s; }
+.toddler-fingers {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 10px 16px;
+  border-radius: 24px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+}
+.toddler-fingers-number {
+  font: 700 76px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  line-height: 1;
+  color: var(--accent-green);
+}
+.toddler-hands {
+  display: flex;
+  gap: 4px;
+}
+.toddler-fingers-text {
+  max-width: 110px;
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  line-height: 1.2;
+}
+.option-btn-waiting {
+  opacity: 0.38;
+}
+.option-btn-ready {
+  box-shadow: inset 0 0 0 4px var(--accent-green), var(--shadow);
+  animation: toddler-glow 1.2s ease-in-out 2;
+}
+@keyframes toddler-glow {
+  0%, 100% { background: var(--card-bg); }
+  50% { background: #e6f7ee; }
+}
+.option-btn-thing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 110px;
+}
+.prek-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+.prek-count .thing,
+.prek-pattern .thing {
+  display: block;
+}
+.prek-say {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+@keyframes toddler-hop {
+  0%, 100% { transform: translateY(0) scale(1); }
+  40% { transform: translateY(-14px) scale(1.1); }
+  70% { transform: translateY(0) scale(0.96); }
+}
+@keyframes toddler-pop {
+  0% { transform: scale(0.3); opacity: 0; }
+  70% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes toddler-dance {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  30% { transform: translateY(-12px) rotate(-8deg); }
+  65% { transform: translateY(0) rotate(8deg); }
+}
+@keyframes toddler-fall {
+  0% { transform: translateY(0) rotate(0); }
+  100% { transform: translateY(520px) rotate(540deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toddler-thing-counted,
+  .toddler-thing-dance,
+  .toddler-badge,
+  .option-btn-ready,
+  .toddler-confetti i {
+    animation: none;
+  }
+  .toddler-confetti {
+    display: none;
+  }
+}
+
+/* Toddler "listen and pick": a short question, then big answers that
+   fill the rest of the screen (3 answers stacked, 2 side by side). */
+.toddler-say {
+  padding: 22px 18px;
+}
+.toddler-fit > .answer-area-fill {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.answer-area-fill .options-grid {
+  flex: 1 1 auto;
+  grid-auto-rows: 1fr;
+}
+.answer-area-fill .options-grid-3 {
+  grid-template-columns: 1fr;
+}
+.answer-area-fill .option-btn {
+  min-height: 0;
+  font-size: 56px;
+}

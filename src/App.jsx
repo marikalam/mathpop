@@ -15,6 +15,8 @@ import AdditionHelp from './AdditionHelp.jsx';
 import ExplainPanel from './ExplainPanel.jsx';
 import PrintSheet from './PrintSheet.jsx';
 import { PREK_CONCEPTS, ShapeIcon } from './preK.jsx';
+import { Speaker, Thing } from './Drawings.jsx';
+import { CountBoard, CountCelebration, sayCountCelebration } from './ToddlerCount.jsx';
 import ProfileSwitcher from './ProfileSwitcher.jsx';
 import EmailHandoff from './EmailHandoff.jsx';
 import StickerPicker from './StickerPicker.jsx';
@@ -1047,6 +1049,8 @@ export default function App() {
   const [sessionResults, setSessionResults] = useState({});
   const [sessionLog, setSessionLog] = useState([]);
   const [firstAttempt, setFirstAttempt] = useState(true);
+  // Toddler counting: every thing has been tapped and counted (ToddlerCount.jsx).
+  const [countDone, setCountDone] = useState(false);
   // The help under an addition problem, open or not (closes on each new one).
   const [showHelp, setShowHelp] = useState(false);
   useEffect(() => setShowHelp(false), [problem]);
@@ -1188,6 +1192,7 @@ export default function App() {
     setSessionResults({});
     setSessionLog([]);
     setFirstAttempt(true);
+    setCountDone(false);
     setProblem(first);
     setOptions(makeOptions(first));
     setChosen(null);
@@ -1200,7 +1205,8 @@ export default function App() {
     setChosen(value);
     setAnswerCorrect(correct);
     setShowHelp(false);
-    playFeedbackAndSpeak(correct, problem.speechAnswer ?? problem.correct, problem.lang);
+    if (correct && problem.promptKind === 'count' && problem.toddler) sayCountCelebration(problem);
+    else playFeedbackAndSpeak(correct, problem.speechAnswer ?? problem.correct, problem.lang);
     if (navigator.vibrate) navigator.vibrate(correct ? 20 : [20, 40, 20]);
 
     // Each problem is answered once: it counts toward the score and log,
@@ -1279,6 +1285,7 @@ export default function App() {
     setChosen(null);
     setTypedAnswer('');
     setFirstAttempt(true);
+    setCountDone(false);
     setView('question');
   }
 
@@ -1329,11 +1336,16 @@ export default function App() {
     );
   }
 
+  const toddlerScreen = (view === 'question' || view === 'feedback') && !!problem?.toddler;
+  // Toddler counting: the answers wait until every thing has been counted.
+  const countLocked = problem?.promptKind === 'count' && !!problem?.toddler && !countDone;
+
   return (
     // The home page fits one screen, like PitchPop's: the section cards
     // share whatever height is left (it still scrolls on a very short one).
-    <div className={view === 'home' ? 'page page-fit' : 'page'}>
-      <div className={view === 'home' ? 'app home-fit' : 'app'}>
+    // Toddler games fill the screen too (the picture grows to fit).
+    <div className={view === 'home' || toddlerScreen ? 'page page-fit' : 'page'}>
+      <div className={view === 'home' ? 'app home-fit' : toddlerScreen ? 'app toddler-fit' : 'app'}>
         {view === 'home' && (
           <>
             <AppHeader level={level} showBack={false} players={headerPlayers} logoSignal={heroPlaying} />
@@ -1747,8 +1759,17 @@ export default function App() {
                 {tr('Show me how', 'やりかたを みせて')}
               </button>
             )}
+            {problem.promptKind === 'count' && problem.toddler ? (
+              <CountBoard
+                key={`${roundIndex}-${problem.countN}`}
+                problem={problem}
+                color={ALL_META[problem.op].color}
+                onCounted={() => setCountDone(true)}
+                onHear={() => speakProblem(problem)}
+              />
+            ) : (
             <button
-              className="problem-card"
+              className={`problem-card${problem.toddler ? (problem.promptKind === 'say' ? ' toddler-say' : ' toddler-card') : ''}`}
               style={{ background: ALL_META[problem.op].color }}
               onClick={() => speakProblem(problem)}
               aria-label={
@@ -1771,19 +1792,19 @@ export default function App() {
               ) : problem.type === 'skill' && problem.promptKind === 'count' ? (
                 <span className="prek-count" aria-hidden="true">
                   {Array.from({ length: problem.countN }, (_, i) => (
-                    <span key={i}>{problem.countEmoji}</span>
+                    <Thing key={i} id={problem.countThing || problem.countEmoji} size={52} />
                   ))}
                 </span>
               ) : problem.type === 'skill' && problem.promptKind === 'pattern' ? (
                 <span className="prek-pattern" aria-hidden="true">
                   {problem.patternItems.map((item, i) => (
-                    <span key={i}>{item}</span>
+                    <Thing key={i} id={item} size={problem.patternItems.length > 6 ? 44 : 56} />
                   ))}
                   <span className="prek-pattern-next">?</span>
                 </span>
               ) : problem.type === 'skill' && problem.promptKind === 'say' ? (
                 <span className="prek-say">
-                  <span aria-hidden="true">🔊</span> {problem.sayText}
+                  <Speaker size={34} /> {problem.sayText}
                 </span>
               ) : problem.type === 'skill' && problem.promptKind === 'bond' ? (
                 <NumberBond whole={problem.bondWhole} parts={problem.bondParts} />
@@ -1818,6 +1839,7 @@ export default function App() {
                 </span>
               )}
             </button>
+            )}
             {canZoom(problem) && (
               <button className="zoom-open-btn" onClick={() => setZoomed(problem)}>
                 🔍 {tr('Zoom in', 'おおきく する')}
@@ -1829,9 +1851,10 @@ export default function App() {
               </ZoomView>
             )}
             {problem.type === 'skill' && problem.hint && <p className="screen-sub skill-hint">💡 {problem.hint}</p>}
-            <p className="screen-sub tap-to-hear">{tr('Tap the problem to hear it', 'もんだいを タップすると きこえるよ')}</p>
+            {!(problem.promptKind === 'count' && problem.toddler) && <p className="screen-sub tap-to-hear">{tr('Tap the problem to hear it', 'もんだいを タップすると きこえるよ')}</p>}
 
-            <div className="answer-area">
+            {/* Toddler "listen and pick" games: the answers are the big part. */}
+            <div className={`answer-area${problem.toddler && problem.promptKind === 'say' ? ' answer-area-fill' : ''}`}>
             {answerFor(currentProfile.id) === 'write' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
               <WritePad onSubmit={chooseAnswer} />
             ) : answerFor(currentProfile.id) === 'type' && problem.type !== 'clock' && problem.answerType !== 'choice' ? (
@@ -1936,14 +1959,27 @@ export default function App() {
                 {options.map((value) => (
                   <button
                     key={value}
-                    className={`option-btn${problem.choiceKind ? ` option-btn-${problem.choiceKind}` : ''}`}
+                    className={`option-btn${problem.choiceKind ? ` option-btn-${problem.choiceKind}` : ''}${countLocked ? ' option-btn-waiting' : countDone && problem.promptKind === 'count' && problem.toddler ? ' option-btn-ready' : ''}`}
                     onClick={() => chooseAnswer(value)}
+                    disabled={countLocked}
                     aria-label={problem.choiceKind === 'size' ? `The ${value} one` : String(value)}
                   >
                     {problem.choiceKind === 'shape' ? (
-                      <ShapeIcon shape={value} color={problem.shapeColors[value]} />
+                      <ShapeIcon shape={value} color={problem.shapeColors[value]} size={problem.toddler ? 110 : 72} />
                     ) : problem.choiceKind === 'size' ? (
-                      <span className={`prek-size prek-size-${value}`}>{problem.sizeEmoji}</span>
+                      problem.sizeThing ? (
+                        <Thing id={problem.sizeThing} size={value === 'big' ? 150 : 50} />
+                      ) : (
+                        <span className={`prek-size prek-size-${value}`}>{problem.sizeEmoji}</span>
+                      )
+                    ) : problem.choiceKind === 'group' && problem.groups?.[value] ? (
+                      <span className="prek-group">
+                        {Array.from({ length: problem.groups[value].n }, (_, i) => (
+                          <Thing key={i} id={problem.groups[value].thing} size={problem.groups[value].n > 4 ? 58 : 72} />
+                        ))}
+                      </span>
+                    ) : problem.choiceKind === 'thing' ? (
+                      <Thing id={value} size={64} />
                     ) : (
                       value
                     )}
@@ -1960,6 +1996,18 @@ export default function App() {
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={sessionBack} />
             <ProgressDots current={roundIndex + 1} total={SESSION_ROUNDS} />
+            {answerCorrect && problem.promptKind === 'count' && problem.toddler ? (
+              <>
+                <h2 className="screen-title">
+                  {problem.lang === 'ja' ? `${problem.speechAnswer}！ やったね！` : `Yay, ${problemAnswerText(problem)}!`}
+                </h2>
+                <CountCelebration problem={problem} color={ALL_META[problem.op].color} />
+                <button className="pill-btn-primary pill-btn-full" onClick={nextProblem}>
+                  {roundIndex + 1 >= SESSION_ROUNDS ? tr('Finish', 'おわり') : tr('Next', 'つぎ')} →
+                </button>
+              </>
+            ) : (
+            <>
             <div className={`feedback-icon-wrap${answerCorrect ? ' feedback-correct' : ' feedback-incorrect'}`}>
               {answerCorrect && (
                 <div className="feedback-confetti" aria-hidden="true">
@@ -1996,6 +2044,8 @@ export default function App() {
             <button className="pill-btn-primary pill-btn-full" onClick={nextProblem}>
               {roundIndex + 1 >= SESSION_ROUNDS ? tr('Finish', 'おわり') : tr('Next problem', 'つぎの もんだい')} →
             </button>
+            </>
+            )}
           </>
         )}
 
