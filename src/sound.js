@@ -53,6 +53,41 @@ export function playIncorrectBuzz() {
   tone(ctx, 174.61, now + 0.1, 0.28, 0.16);
 }
 
+// Tapping the MathPop logo: four bubbly pops, one for each tile (+ − × ÷)
+// as they spin, then a slide-whistle "whee" and a sparkle. Played through
+// the same audio as the voice, so it's also a quick "is my sound on?" check.
+export function playLogoSound() {
+  const ctx = ensureAudio();
+  const now = ctx.currentTime + 0.02;
+  [420, 520, 640, 780].forEach((start, i) => {
+    const at = now + i * 0.1;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(start, at);
+    osc.frequency.exponentialRampToValueAtTime(start * 2.6, at + 0.07);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, at);
+    gain.gain.linearRampToValueAtTime(0.32, at + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.11);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(at);
+    osc.stop(at + 0.13);
+  });
+  const whee = now + 0.42;
+  const slide = ctx.createOscillator();
+  slide.type = 'triangle';
+  slide.frequency.setValueAtTime(500, whee);
+  slide.frequency.exponentialRampToValueAtTime(1500, whee + 0.28);
+  const wheeGain = ctx.createGain();
+  wheeGain.gain.setValueAtTime(0.0001, whee);
+  wheeGain.gain.linearRampToValueAtTime(0.16, whee + 0.03);
+  wheeGain.gain.exponentialRampToValueAtTime(0.0001, whee + 0.32);
+  slide.connect(wheeGain).connect(ctx.destination);
+  slide.start(whee);
+  slide.stop(whee + 0.34);
+  [1568, 2093, 2637].forEach((freq, i) => tone(ctx, freq, whee + 0.3 + i * 0.06, 0.35, 0.09));
+}
+
 // Stickers (the same sounds as PitchPop): a bubbly "bloop" when one is
 // tapped or picked...
 export function playStickerPick() {

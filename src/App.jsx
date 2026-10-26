@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import LevelSwitcher from './LevelSwitcher.jsx';
 import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
-import { getVoiceQuality, languagesWithVoices, playFeedbackAndSpeak, prewarmVoices, speakInLanguage, speakProblem, speakResults, unlockAudio } from './sound.js';
+import { getVoiceQuality, languagesWithVoices, playFeedbackAndSpeak, playLogoSound, prewarmVoices, speakInLanguage, speakProblem, speakResults, unlockAudio } from './sound.js';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
 import { loadDigitModel } from './digitModel.js';
@@ -509,13 +509,14 @@ function AppHeader({ level, onBack, showBack, players, logoSignal = 0 }) {
     <>
       <div className="brand-row" ref={rowRef}>
         <div className="brand-left">
-          {/* Tapping the logo plays its little animation (and, away from
+          {/* Tapping the logo plays its little animation and sound (and, away from
               the home page, also goes back home). */}
           <button
             className="logo-btn"
             aria-label={showBack ? 'Math Pop - back to home' : 'Math Pop'}
             onClick={() => {
               setLogoPlaying((n) => n + 1);
+              playLogoSound();
               if (showBack) onBack();
             }}
           >
