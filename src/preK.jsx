@@ -21,27 +21,27 @@ function shuffle(list) {
   return copy;
 }
 
-// [picture, one, many, Japanese]
+// [picture (a drawing in Drawings.jsx), one, many, Japanese]
 const THINGS = [
-  ['🍎', 'apple', 'apples', 'りんご'],
-  ['🐶', 'puppy', 'puppies', 'わんちゃん'],
-  ['⭐', 'star', 'stars', 'ほし'],
-  ['🦆', 'duck', 'ducks', 'あひる'],
-  ['🚗', 'car', 'cars', 'くるま'],
-  ['🌸', 'flower', 'flowers', 'おはな'],
-  ['🐟', 'fish', 'fish', 'おさかな'],
-  ['🍓', 'strawberry', 'strawberries', 'いちご'],
-  ['🎈', 'balloon', 'balloons', 'ふうせん'],
-  ['🐞', 'ladybug', 'ladybugs', 'てんとうむし'],
+  ['apple', 'apple', 'apples', 'りんご'],
+  ['star', 'star', 'stars', 'ほし'],
+  ['duck', 'duck', 'ducks', 'あひる'],
+  ['car', 'car', 'cars', 'くるま'],
+  ['flower', 'flower', 'flowers', 'おはな'],
+  ['fish', 'fish', 'fish', 'おさかな'],
+  ['strawberry', 'strawberry', 'strawberries', 'いちご'],
+  ['balloon', 'balloon', 'balloons', 'ふうせん'],
+  ['ladybug', 'ladybug', 'ladybugs', 'てんとうむし'],
+  ['bunny', 'bunny', 'bunnies', 'うさぎ'],
 ];
 
-const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+export const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 
 // Japanese (`lang: 'ja'`, a player's language in Players & grades): the
 // same games, asked and explained in Japanese, in hiragana a little one
 // hears and (later) reads. Numbers as said when counting (いち, に, さん)
 // and as a count of things (ひとつ, ふたつ, みっつ).
-const JA_NUMBERS = ['ゼロ', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', 'なな', 'はち', 'きゅう', 'じゅう'];
+export const JA_NUMBERS = ['ゼロ', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', 'なな', 'はち', 'きゅう', 'じゅう'];
 const JA_COUNTS = ['ゼロ', 'ひとつ', 'ふたつ', 'みっつ', 'よっつ', 'いつつ', 'むっつ', 'ななつ', 'やっつ', 'ここのつ', 'とお'];
 
 // Small numbers most of the time: a 2-3 year old counts to about 5.
@@ -60,11 +60,12 @@ function nearbyChoices(n, min = 1) {
 }
 
 function countProblem(lang) {
-  const [emoji, one, many, ja] = pick(THINGS);
+  const [thing, one, many, ja] = pick(THINGS);
   const n = smallNumber();
   const problem = {
     promptKind: 'count',
-    countEmoji: emoji,
+    countThing: thing,
+    countName: [one, many],
     countN: n,
     correct: n,
     answerType: 'choice',
@@ -243,22 +244,22 @@ function shapesProblem(lang) {
   };
 }
 
-// [picture, one, many, Japanese]
+// [picture (Drawings.jsx), one, many, Japanese]
 const BIG_SMALL = [
-  ['🐘', 'elephant', 'elephants', 'ぞう'],
-  ['🐻', 'bear', 'bears', 'くま'],
-  ['🐳', 'whale', 'whales', 'くじら'],
-  ['🏠', 'house', 'houses', 'おうち'],
-  ['🌳', 'tree', 'trees', 'き'],
-  ['🐶', 'puppy', 'puppies', 'わんちゃん'],
-  ['🍎', 'apple', 'apples', 'りんご'],
-  ['🚌', 'bus', 'buses', 'バス'],
+  ['bunny', 'bunny', 'bunnies', 'うさぎ'],
+  ['duck', 'duck', 'ducks', 'あひる'],
+  ['fish', 'fish', 'fish', 'おさかな'],
+  ['car', 'car', 'cars', 'くるま'],
+  ['balloon', 'balloon', 'balloons', 'ふうせん'],
+  ['apple', 'apple', 'apples', 'りんご'],
+  ['star', 'star', 'stars', 'ほし'],
+  ['ladybug', 'ladybug', 'ladybugs', 'てんとうむし'],
 ];
 
 function bigSmallProblem(lang) {
-  const [emoji, name, names, ja] = pick(BIG_SMALL);
+  const [thing, name, names, ja] = pick(BIG_SMALL);
   const correct = Math.random() < 0.5 ? 'big' : 'small';
-  const problem = { promptKind: 'say', correct, answerType: 'choice', choiceKind: 'size', sizeEmoji: emoji, choices: shuffle(['big', 'small']) };
+  const problem = { promptKind: 'say', correct, answerType: 'choice', choiceKind: 'size', sizeThing: thing, choices: shuffle(['big', 'small']) };
   if (lang === 'ja') {
     const size = correct === 'big' ? 'おおきい' : 'ちいさい';
     return {
@@ -298,17 +299,26 @@ function bigSmallProblem(lang) {
 }
 
 function moreFewerProblem(lang) {
-  const [emoji, one, many, ja] = pick(THINGS);
+  const [thing, one, many, ja] = pick(THINGS);
   let a = randInt(1, 6);
   let b = randInt(1, 6);
   // Easy to see: at least two apart.
   while (Math.abs(a - b) < 2) b = randInt(1, 6);
   const more = Math.random() < 0.7;
-  const groupA = emoji.repeat(a);
-  const groupB = emoji.repeat(b);
+  // Each answer is a group of things: its value says how many ("3 ducks").
+  const label = (k) => `${k} ${k === 1 ? one : many}`;
+  const groupA = label(a);
+  const groupB = label(b);
   const wantA = more ? a > b : a < b;
   const n = wantA ? a : b;
-  const problem = { promptKind: 'say', correct: wantA ? groupA : groupB, answerType: 'choice', choiceKind: 'group', choices: shuffle([groupA, groupB]) };
+  const problem = {
+    promptKind: 'say',
+    correct: wantA ? groupA : groupB,
+    answerType: 'choice',
+    choiceKind: 'group',
+    groups: { [groupA]: { thing, n: a }, [groupB]: { thing, n: b } },
+    choices: shuffle([groupA, groupB]),
+  };
   if (lang === 'ja') {
     const word = more ? 'おおい' : 'すくない';
     return {
@@ -351,31 +361,32 @@ function moreFewerProblem(lang) {
   };
 }
 
+// Pictures from Drawings.jsx.
 const PATTERN_SETS = [
-  ['🔴', '🔵', '🟡', '🟢'],
-  ['🐶', '🐱', '🐰', '🐸'],
-  ['🍎', '🍌', '🍇', '🍊'],
-  ['⭐', '🌙', '☀️', '☁️'],
+  ['red', 'blue', 'yellow', 'green'],
+  ['duck', 'fish', 'bunny', 'ladybug'],
+  ['apple', 'strawberry', 'flower', 'balloon'],
+  ['star', 'moon', 'sun', 'cloud'],
 ];
 // What to call each pattern picture out loud: in a list, as the answer,
 // and in Japanese.
 const PATTERN_NAMES = {
-  '🔴': ['red', 'the red one', 'あか'],
-  '🔵': ['blue', 'the blue one', 'あお'],
-  '🟡': ['yellow', 'the yellow one', 'きいろ'],
-  '🟢': ['green', 'the green one', 'みどり'],
-  '🐶': ['dog', 'the dog', 'いぬ'],
-  '🐱': ['cat', 'the cat', 'ねこ'],
-  '🐰': ['bunny', 'the bunny', 'うさぎ'],
-  '🐸': ['frog', 'the frog', 'かえる'],
-  '🍎': ['apple', 'the apple', 'りんご'],
-  '🍌': ['banana', 'the banana', 'バナナ'],
-  '🍇': ['grapes', 'the grapes', 'ぶどう'],
-  '🍊': ['orange', 'the orange', 'みかん'],
-  '⭐': ['star', 'the star', 'ほし'],
-  '🌙': ['moon', 'the moon', 'つき'],
-  '☀️': ['sun', 'the sun', 'たいよう'],
-  '☁️': ['cloud', 'the cloud', 'くも'],
+  red: ['red', 'the red one', 'あか'],
+  blue: ['blue', 'the blue one', 'あお'],
+  yellow: ['yellow', 'the yellow one', 'きいろ'],
+  green: ['green', 'the green one', 'みどり'],
+  duck: ['duck', 'the duck', 'あひる'],
+  fish: ['fish', 'the fish', 'おさかな'],
+  bunny: ['bunny', 'the bunny', 'うさぎ'],
+  ladybug: ['ladybug', 'the ladybug', 'てんとうむし'],
+  apple: ['apple', 'the apple', 'りんご'],
+  strawberry: ['strawberry', 'the strawberry', 'いちご'],
+  flower: ['flower', 'the flower', 'おはな'],
+  balloon: ['balloon', 'the balloon', 'ふうせん'],
+  star: ['star', 'the star', 'ほし'],
+  moon: ['moon', 'the moon', 'つき'],
+  sun: ['sun', 'the sun', 'たいよう'],
+  cloud: ['cloud', 'the cloud', 'くも'],
 };
 const PATTERN_KINDS = [
   [0, 1],
@@ -398,17 +409,20 @@ function patternProblem(lang) {
   const problem = {
     promptKind: 'pattern',
     patternItems: seq,
-    prompt: `${seq.join(' ')} ?`,
+    prompt: `${seq.map((x) => PATTERN_NAMES[x][0]).join(', ')}, ?`,
     correct,
     answerType: 'choice',
+    choiceKind: 'thing',
     choices: shuffle(choices),
-    answerLabel: `${seq.join(' ')} ${correct}`,
+    answerLabel: `Next comes ${PATTERN_NAMES[correct][1]}`,
   };
   if (lang === 'ja') {
     const ja = (x) => PATTERN_NAMES[x][2];
     return {
       ...problem,
       lang,
+      prompt: `${seq.map(ja).join('、')}、？`,
+      answerLabel: `つぎは ${ja(correct)}`,
       speech: 'つぎは なにかな？',
       speechAnswer: ja(correct),
       questionTitle: 'つぎは なに？',
@@ -456,13 +470,16 @@ export const PREK_SYMBOL = {
 
 // Built as (level, grade, lang), like the other games; only the
 // language matters here.
+// `toddler` marks them for the toddler screens (App.jsx): the question
+// fills the screen, and counting is tap-each-one.
+const toddler = (build) => (level, grade, lang) => ({ ...build(lang), toddler: true });
 export const PREK_BUILDERS = {
-  count: (level, grade, lang) => countProblem(lang),
-  findNumber: (level, grade, lang) => findNumberProblem(lang),
-  shapes: (level, grade, lang) => shapesProblem(lang),
-  bigSmall: (level, grade, lang) => bigSmallProblem(lang),
-  moreFewer: (level, grade, lang) => moreFewerProblem(lang),
-  pattern: (level, grade, lang) => patternProblem(lang),
+  count: toddler(countProblem),
+  findNumber: toddler(findNumberProblem),
+  shapes: toddler(shapesProblem),
+  bigSmall: toddler(bigSmallProblem),
+  moreFewer: toddler(moreFewerProblem),
+  pattern: toddler(patternProblem),
 };
 
 // A shape to tap: big and colorful.
