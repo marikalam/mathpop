@@ -4635,12 +4635,13 @@ body {
 .help-btn-soft {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 16px 6px 6px;
-  font-size: 15px;
+  gap: 6px;
+  margin-top: -4px;
+  padding: 3px 12px 3px 3px;
+  font-size: 13px;
   color: #c2571a;
   background: #fff7ee;
-  border: 2px solid #f8cfa6;
+  border: 1.5px solid #f8cfa6;
   box-shadow: none;
 }
 
@@ -4652,11 +4653,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: linear-gradient(135deg, #f5a524 0%, #e0793a 100%);
-  font-size: 16px;
+  font-size: 13px;
 }
 
 /* Grown-ups-only check (ParentGate.jsx) */
