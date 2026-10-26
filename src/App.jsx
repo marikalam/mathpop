@@ -44,6 +44,7 @@ import ZoomView from './ZoomView.jsx';
 import ParentGate from './ParentGate.jsx';
 import WeekCard from './WeekCard.jsx';
 import WelcomeCard from './WelcomeCard.jsx';
+import SignupCard from './SignupCard.jsx';
 import PlusScreen from './PlusScreen.jsx';
 import ReportScreen from './ReportScreen.jsx';
 import { cachedPlus, refreshPlus } from './plus.js';
@@ -71,6 +72,10 @@ const ACCOUNT_PLAYERS_KEY = 'mathpop-account-players-v1';
 // The account players this phone has seen in the account (withUnsyncedPlayers).
 const SEEN_PLAYERS_KEY = 'mathpop-account-seen-v1';
 const WELCOME_KEY = 'mathpop-welcomed-v1';
+// When the sign-up card was last put off with "Not now" (it asks again
+// after SIGNUP_ASK_AGAIN_DAYS).
+const SIGNUP_LATER_KEY = 'mathpop-signup-later-v1';
+const SIGNUP_ASK_AGAIN_DAYS = 3;
 const ACTIVE_PLAYER_KEY = 'mathpop-active-player-v1';
 const SETTINGS_KEY = 'mathpop-settings-v1';
 const GRADE_KEY = 'mathpop-grade-v1';
@@ -682,6 +687,32 @@ export default function App() {
   const showWelcome =
     !welcomeDone && view === 'home' && profileOwner === 'guest' && profiles.length === 1 && isUntouchedStarter(profiles[0], progress);
 
+  // Without a family account, MathPop opens on a sign-up card for a
+  // grown-up (SignupCard.jsx), before the welcome card. "Not now" plays as
+  // a guest, and it asks again a few days later.
+  const [signupLater, setSignupLater] = useState(() => readJson(SIGNUP_LATER_KEY));
+  const [accountMode, setAccountMode] = useState('sign-in');
+  const showSignup =
+    !cloudUser &&
+    view === 'home' &&
+    !(signupLater && Date.now() - signupLater < SIGNUP_ASK_AGAIN_DAYS * 86400000);
+  function signupNotNow() {
+    const now = Date.now();
+    writeJson(SIGNUP_LATER_KEY, now);
+    setSignupLater(now);
+  }
+  function signupOpen(mode) {
+    setGate({
+      reason: mode === 'sign-up' ? 'To sign up' : 'To sign in',
+      then: () => {
+        // If they back out of the account screen, don't ask again at once.
+        signupNotNow();
+        setAccountMode(mode);
+        setView('account');
+      },
+    });
+  }
+
   function finishWelcome(name, grade) {
     if (name) setProfiles((prev) => prev.map((p, i) => (i === 0 ? { ...p, name, grade } : p)));
     writeJson(WELCOME_KEY, true);
@@ -919,6 +950,7 @@ export default function App() {
   }
 
   function openAccount() {
+    setAccountMode('sign-in');
     setView('account');
   }
 
@@ -1647,6 +1679,7 @@ export default function App() {
               onDone={goHome}
               recoveryMode={passwordRecovery}
               onPasswordUpdated={() => setPasswordRecovery(false)}
+              startMode={accountMode}
             />
           </>
         )}
@@ -2155,7 +2188,8 @@ export default function App() {
         </div>
       )}
       <EmailHandoff />
-      {showWelcome && <WelcomeCard grade={profiles[0].grade} onDone={finishWelcome} onSkip={() => finishWelcome()} />}
+      {showSignup && !gate && <SignupCard onSignUp={() => signupOpen('sign-up')} onSignIn={() => signupOpen('sign-in')} onLater={signupNotNow} />}
+      {showWelcome && !showSignup && <WelcomeCard grade={profiles[0].grade} onDone={finishWelcome} onSkip={() => finishWelcome()} />}
       {gate && (
         <ParentGate
           reason={gate.reason}
