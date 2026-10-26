@@ -348,27 +348,7 @@ body {
   }
 }
 
-.explore-tally {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  margin: 8px 0;
-}
 
-.explore-tally-chip {
-  min-width: 34px;
-  height: 34px;
-  padding: 0 10px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-weight: 700;
-  font-size: 13px;
-}
 
 .skill-units {
   display: flex;
