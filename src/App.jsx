@@ -1440,7 +1440,7 @@ export default function App() {
                   className="home-tiles"
                   style={{
                     gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-                    gridTemplateRows: `repeat(${Math.ceil(n / cols)}, minmax(86px, 96px))`,
+                    gridTemplateRows: `repeat(${Math.ceil(n / cols)}, minmax(60px, 1fr))`,
                   }}
                 >
                   {sections.map((section) => (
