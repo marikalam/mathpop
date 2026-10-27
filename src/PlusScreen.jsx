@@ -11,6 +11,7 @@ const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stde
 const PRIVACY_URL = 'https://marikalam.github.io/apps/mathpop/privacy.html';
 
 const FEATURES = [
+  ['star', 'All of MathPop, every day', 'Every grade, game and topic, as many rounds as they like. Without Plus it’s one free round a day.'],
   ['chart', 'Full progress report', 'Every topic with how often they get it right, the tricky ones, four weeks of practice, and the mistakes still to fix.'],
   ['target', 'Assign practice', 'Pick topics for each child: they show up first in their Today’s practice.'],
   ['family', 'One family plan', 'Every child, on every device signed in to your family account.'],
@@ -27,8 +28,9 @@ export default function PlusScreen({ status, user, onStatus, onSignIn, openOutsi
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    if (!status.plus || status.why === 'paid') plusProducts().then(setProducts);
+    if (!status.plus || status.why === 'paid' || status.why === 'trial') plusProducts().then(setProducts);
   }, [status.plus, status.why]);
+  const canBuy = !status.plus || status.why === 'trial';
 
   async function buy(id) {
     setBusy(true);
@@ -64,7 +66,16 @@ export default function PlusScreen({ status, user, onStatus, onSignIn, openOutsi
             Plus is on{status.paidUntil ? ` until ${new Date(status.paidUntil).toLocaleDateString()}` : ''}. Thank you for supporting MathPop!
           </p>
         )}
-        {!status.plus && <p className="plus-hero-text">The grown-ups’ extras for MathPop.</p>}
+        {status.why === 'trial' && (
+          <p className="plus-hero-text">
+            Your free trial ends on {new Date(status.trialEnds).toLocaleDateString()}. Subscribe to keep all of MathPop after that.
+          </p>
+        )}
+        {!status.plus && (
+          <p className="plus-hero-text">
+            {status.trialOver ? 'Your free trial is over. ' : ''}Unlock all of MathPop for the whole family.
+          </p>
+        )}
       </div>
 
       <ul className="plus-features">
@@ -87,11 +98,11 @@ export default function PlusScreen({ status, user, onStatus, onSignIn, openOutsi
         </button>
       )}
 
-      {!status.plus && !IS_NATIVE && (
+      {canBuy && !IS_NATIVE && (
         <p className="plus-note">Subscribe in the MathPop iPhone app, then sign in here with the same family account.</p>
       )}
 
-      {!status.plus && IS_NATIVE && (
+      {canBuy && IS_NATIVE && (
         <>
           {!user && (
             <div className="plus-signin">

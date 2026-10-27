@@ -9,7 +9,8 @@
 --                 is really Apple's (supabase/functions/verify-plus).
 --   my_plus()     what the signed-in family has: founding family (the
 --                 account was made before Plus started: free for good,
---                 in MathPop and PitchPop) and/or paid until a date.
+--                 in MathPop and PitchPop), paid until a date, and when
+--                 the account was made (a new family's 7-day free trial).
 --
 -- Run once in the Supabase dashboard: SQL Editor -> New query -> paste ->
 -- Run. Safe to run again.
@@ -51,7 +52,9 @@ as $$
       (select u.created_at::date < c.plus_starts from auth.users u, plus_config c where u.id = auth.uid() and c.id = 1),
       false
     ),
-    'paidUntil', (select expires_at from family_plus where owner_id = auth.uid())
+    'paidUntil', (select expires_at from family_plus where owner_id = auth.uid()),
+    -- When the account was made: a new family's 7-day free trial starts then.
+    'accountCreated', (select created_at from auth.users where id = auth.uid())
   );
 $$;
 grant execute on function public.my_plus() to authenticated;

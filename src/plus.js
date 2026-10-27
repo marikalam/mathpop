@@ -2,12 +2,15 @@ import { Capacitor } from '@capacitor/core';
 import { NativePurchases, PURCHASE_TYPE } from '@capgo/native-purchases';
 import { loadFamilyPlus, loadPlusStart, verifyPlusPurchase } from './cloud.js';
 
-// MathPop Plus: the grown-ups' extras (the full progress report, and
-// assigning practice), one family plan with PitchPop. Who has it:
+// MathPop Plus: all of MathPop, every day (and the grown-ups' extras: the
+// full progress report and assigning practice), one family plan with
+// PitchPop. Without it, kids get one free round a day. Who has it:
 //   - everyone, until the day Plus starts is set (supabase/plus_setup.sql);
 //   - founding families, free for good: anyone using MathPop before that
 //     day - this device had MathPop before it, or (iPhone) the app was
 //     first downloaded before it, or the family account was made before it;
+//   - new families for 7 days after making their family account (the free
+//     trial: no payment details);
 //   - families who subscribe in the iPhone app (or in PitchPop): the
 //     purchase is checked with Apple (verify-plus) and saved to the family
 //     account, so every device and both apps have it.
@@ -18,6 +21,8 @@ const IS_NATIVE = Capacitor.isNativePlatform();
 const FIRST_SEEN_KEY = 'mathpop-first-seen-v1';
 const STATUS_KEY = 'mathpop-plus-status-v1';
 const START_KEY = 'mathpop-plus-start-v1';
+const FREE_ROUND_KEY = 'mathpop-free-round-v1';
+export const TRIAL_DAYS = 7;
 
 function today() {
   const d = new Date();
@@ -83,8 +88,9 @@ async function deviceSubscription() {
   }
 }
 
-// Works out whether this family has Plus: { plus, why, paidUntil }. `why`
-// is 'early' (Plus hasn't started), 'founder', 'paid' or null.
+// Works out whether this family has Plus: { plus, why, paidUntil,
+// trialEnds }. `why` is 'early' (Plus hasn't started), 'founder', 'paid',
+// 'trial' or null (then trialOver says whether the trial was had).
 export async function refreshPlus(user) {
   const remote = await loadPlusStart();
   const plusStarts = remote ? remote.plusStarts : read(START_KEY);
@@ -109,12 +115,34 @@ export async function refreshPlus(user) {
           (app?.originalPurchaseDate && app.originalPurchaseDate.slice(0, 10) < plusStarts) ||
           family?.founder,
       );
+    const trialEnds = family?.accountCreated
+      ? new Date(new Date(family.accountCreated).getTime() + TRIAL_DAYS * 86400000).toISOString()
+      : null;
+    const previous = read(STATUS_KEY);
     if (founder) status = { plus: true, why: 'founder' };
     else if (paidUntil || sub) status = { plus: true, why: 'paid', paidUntil };
-    else status = { plus: false, why: null };
+    else if (trialEnds && new Date(trialEnds) > new Date()) status = { plus: true, why: 'trial', trialEnds };
+    // Signed in but offline: keep what it was, while that still holds.
+    else if (user && !family && previous?.plus && !(previous.trialEnds && new Date(previous.trialEnds) <= new Date())) status = previous;
+    else status = { plus: false, why: null, trialOver: Boolean(trialEnds) };
   }
   write(STATUS_KEY, status);
   return status;
+}
+
+// Without Plus: one free round a day, on this device.
+export function freeRoundLeft() {
+  return read(FREE_ROUND_KEY) !== today();
+}
+
+export function spendFreeRound() {
+  write(FREE_ROUND_KEY, today());
+}
+
+// Whole days left in the free trial (1 on its last day).
+export function trialDaysLeft(status) {
+  if (status?.why !== 'trial' || !status.trialEnds) return 0;
+  return Math.max(1, Math.ceil((new Date(status.trialEnds) - Date.now()) / 86400000));
 }
 
 // The subscriptions as the App Store sells them here (localized prices).
