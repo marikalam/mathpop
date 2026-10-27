@@ -460,12 +460,12 @@ export const PREK_CONCEPTS = [
 ];
 
 export const PREK_SYMBOL = {
-  count: '🍎',
-  findNumber: '🔢',
-  shapes: '🔺',
-  bigSmall: '🐘',
-  moreFewer: '⚖️',
-  pattern: '🔴',
+  count: 'apple',
+  findNumber: 'keypad',
+  shapes: 'shapes',
+  bigSmall: 'bear',
+  moreFewer: 'scale',
+  pattern: 'pattern',
 };
 
 // Built as (level, grade, lang), like the other games; only the

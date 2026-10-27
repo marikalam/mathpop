@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { bonusGivenToday, giveBonusIfDone, todayPlan } from './todayPlan.js';
+import { RichText } from './Drawings.jsx';
+import Icon from './Icon.jsx';
 
 // The home page's "Today's practice" list (todayPlan.js), like PitchPop's.
 // Each item starts its round; a signed-in player's items check off as
@@ -25,7 +27,7 @@ export default function TodayPlan({ playerId, grade, byOp, signedIn, onOpen, onS
     <section className={`today${allDone ? ' today-all-done' : ''}`} aria-labelledby="today-title">
       <div className="today-head">
         <h3 className="today-title" id="today-title">
-          <span aria-hidden="true">📋</span> Today's practice
+          <Icon name="clipboard" /> Today's practice
         </h3>
         {signedIn && (
           <span className="today-count">
@@ -38,11 +40,11 @@ export default function TodayPlan({ playerId, grade, byOp, signedIn, onOpen, onS
           <li key={item.id}>
             <button className={`today-item today-item-${item.id}${item.done ? ' today-item-done' : ''}`} onClick={() => onOpen(item.mode)}>
               <span className="today-item-icon" aria-hidden="true">
-                {item.icon}
+                <Icon name={item.icon} />
               </span>
               <span className="today-item-text">
                 <span className="today-item-title">{item.title}</span>
-                <span className="today-item-sub">{item.sub}</span>
+                <span className="today-item-sub"><RichText text={item.sub} size={18} /></span>
               </span>
               {item.done ? (
                 <span className="today-check" aria-label="Done">
@@ -64,8 +66,8 @@ export default function TodayPlan({ playerId, grade, byOp, signedIn, onOpen, onS
           </div>
           <p className="today-note">
             {allDone || bonusGivenToday(playerId)
-              ? '🎉 All done today! You earned a bonus sticker ⭐'
-              : `${doneCount} of ${items.length} done · finish all ${items.length} for a bonus sticker ⭐`}
+              ? <><Icon name="party" /> All done today! You earned a bonus sticker <Icon name="star" /></>
+              : <>{doneCount} of {items.length} done · finish all {items.length} for a bonus sticker <Icon name="star" /></>}
           </p>
         </>
       ) : (
@@ -73,7 +75,7 @@ export default function TodayPlan({ playerId, grade, byOp, signedIn, onOpen, onS
           <button className="today-signin" onClick={onSignIn}>
             Sign in
           </button>{' '}
-          to check these off and earn a bonus sticker ⭐
+          to check these off and earn a bonus sticker <Icon name="star" />
         </p>
       )}
     </section>

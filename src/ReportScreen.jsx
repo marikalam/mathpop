@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { MAX_ASSIGNED, assignedTopics, gradeTopicList, loadMistakes, problemText, setAssignedTopics, weeklyRounds } from './todayPlan.js';
+import { RichText } from './Drawings.jsx';
+import Icon from './Icon.jsx';
 
 // MathPop Plus: one child's full progress report, for grown-ups. Each topic
 // at their grade with how often it's right (the tricky ones first), four
@@ -43,7 +45,7 @@ export default function ReportScreen({ player, grade, gradeName, progress }) {
             {played.map((t) => (
               <li key={t.id} className="stats-bar-row">
                 <span className="stats-bar-label">
-                  {t.pct < TRICKY && t.total >= 5 ? '⚠️ ' : ''}
+                  {t.pct < TRICKY && t.total >= 5 ? <><Icon name="warning" />{' '}</> : ''}
                   {t.title}
                 </span>
                 <span className="stats-bar-track">
@@ -80,11 +82,11 @@ export default function ReportScreen({ player, grade, gradeName, progress }) {
       <section className="stats-card">
         <h3 className="stats-card-title">Mistakes still to fix</h3>
         {mistakes.length === 0 ? (
-          <p className="stats-empty">None right now 🎉</p>
+          <p className="stats-empty">None right now <Icon name="party" /></p>
         ) : (
           <ul className="report-mistakes">
             {mistakes.map((m) => (
-              <li key={m.key}>{problemText(m.problem)}</li>
+              <li key={m.key}><RichText text={problemText(m.problem)} size={20} /></li>
             ))}
           </ul>
         )}
@@ -104,7 +106,7 @@ export default function ReportScreen({ player, grade, gradeName, progress }) {
               className={`report-assign-chip${assigned.includes(t.id) ? ' report-assign-chip-on' : ''}`}
               onClick={() => toggleAssigned(t.id)}
             >
-              {t.icon} {t.title}
+              <Icon name={t.icon} /> {t.title}
             </button>
           ))}
         </div>

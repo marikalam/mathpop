@@ -88,21 +88,21 @@ export const SINGAPORE_CONCEPTS = [
 
 const UNIT_COLOR = { A: '#4E8FF7', B: '#8B5CF6', C: '#F5A623', D: '#14B8A6', SG: '#E0577F', PK: '#F59E0B' };
 const CONCEPT_SYMBOL = {
-  placeValue: '🔢',
-  compare: '⚖️',
-  addStrategy: '➕',
-  subStrategy: '➖',
-  expression: '🧮',
-  riddle: '🧠',
-  measurement: '📏',
-  shortcut: '⚡',
-  oddEven: '🔀',
-  bigNumber: '💯',
-  regroup: '🧱',
-  multistep: '🧩',
-  numberBond: '🔗',
-  fraction: '🍕',
-  factors: '🧮',
+  placeValue: 'blocks',
+  compare: 'scale',
+  addStrategy: 'plus',
+  subStrategy: 'minus',
+  expression: 'abacus',
+  riddle: 'brain',
+  measurement: 'ruler',
+  shortcut: 'bolt',
+  oddEven: 'pairs',
+  bigNumber: 'hundred',
+  regroup: 'blocks',
+  multistep: 'puzzle',
+  numberBond: 'bond',
+  fraction: 'pizza',
+  factors: 'abacus',
 };
 
 export const SKILL_META = {};

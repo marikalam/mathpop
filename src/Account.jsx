@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { deleteAccount, requestPasswordReset, signIn, signOut, signUp, updatePassword } from './cloud.js';
 import Avatar from './Avatar.jsx';
 import { GRADES } from './grades.js';
+import Icon from './Icon.jsx';
 
 // A password input with an eye button that shows or hides what's typed.
 function PasswordField({ label, value, onChange, autoComplete, placeholder }) {
@@ -93,7 +94,7 @@ export function PlayerSettingsCard({ profile, onUpdate, onRemove, canRemove, sta
             onClick={() => onUpdate({ answerBy: w.id })}
           >
             <span className="answer-setting-icon" aria-hidden="true">
-              {w.icon}
+              <Icon name={w.icon} />
             </span>
             {w.label}
           </button>
@@ -111,7 +112,7 @@ export function PlayerSettingsCard({ profile, onUpdate, onRemove, canRemove, sta
             onClick={() => onUpdate({ lang: l.id })}
           >
             <span className="answer-setting-icon" aria-hidden="true">
-              {l.icon}
+              <Icon name={l.icon} />
             </span>
             {l.label}
           </button>
@@ -125,16 +126,16 @@ export function PlayerSettingsCard({ profile, onUpdate, onRemove, canRemove, sta
 // How a player answers number questions (questions with picture or word
 // answers are always picked from choices).
 const ANSWER_WAYS = [
-  { id: 'write', icon: '✏️', label: 'Write' },
-  { id: 'choice', icon: '👆', label: 'Pick' },
-  { id: 'type', icon: '🔢', label: 'Type' },
+  { id: 'write', icon: 'pencil', label: 'Write' },
+  { id: 'choice', icon: 'pointer', label: 'Pick' },
+  { id: 'type', icon: 'keypad', label: 'Type' },
 ];
 
 // The language a player hears and reads their games in. Japanese covers
 // the Pre-K games so far; other grades stay in English.
 const LANGUAGES = [
-  { id: 'en', icon: '🇺🇸', label: 'English' },
-  { id: 'ja', icon: '🇯🇵', label: '日本語' },
+  { id: 'en', icon: 'flagUS', label: 'English' },
+  { id: 'ja', icon: 'flagJP', label: '日本語' },
 ];
 
 export function AddPlayerForm({ onAdd }) {
@@ -402,7 +403,7 @@ export function AccountScreen({ user, playerCount, onSignedIn, onAccountDeleted,
           </button>
           {onOpenStats && (
             <button className="account-row account-row-button" onClick={onOpenStats}>
-              <span className="account-row-label">📊 MathPop stats</span>
+              <span className="account-row-label"><Icon name="chart" /> MathPop stats</span>
               <span className="account-row-value">›</span>
             </button>
           )}

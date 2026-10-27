@@ -2,6 +2,8 @@
 // coins, rulers, shapes, angles, graphs... Drawn on a white panel so it
 // reads the same on every card colour, and on printed worksheets.
 
+import { DRAWINGS, EMOJI_DRAWING, Thing } from './Drawings.jsx';
+
 const INK = '#1F2340';
 const SOFT = '#C9CEE0';
 const BLUE = '#3B6FEF';
@@ -350,7 +352,9 @@ function Pictograph({ title, rows, per }) {
       <span className="tv-graph-title">{title}</span>
       {rows.map((r) => (
         <span key={r.emoji} className="tv-picto-row">
-          <span className="tv-picto-label">{r.emoji}</span>
+          <span className="tv-picto-label">
+            <Thing id={r.emoji} size={24} />
+          </span>
           <span className="tv-picto-items">
             {Array.from({ length: r.value / per }, (_, i) => (
               <span key={i}>●</span>
@@ -390,9 +394,10 @@ function Bars({ title, rows, step }) {
         {rows.map((r, i) => (
           <g key={r.emoji}>
             <rect x={52 + i * 62} y={Y(r.value)} width={bw} height={Y(0) - Y(r.value)} fill={['#4E8FF7', '#F5A623', '#2FAE6B', '#E0577F'][i]} rx="3" />
-            <text x={52 + i * 62 + bw / 2} y={H + 36} fontSize="20" textAnchor="middle">
-              {r.emoji}
-            </text>
+            <g transform={`translate(${52 + i * 62 + bw / 2 - 13} ${H + 16}) scale(.26)`}>{(() => {
+              const D = DRAWINGS[EMOJI_DRAWING[r.emoji] || r.emoji];
+              return D ? <D /> : null;
+            })()}</g>
           </g>
         ))}
       </svg>
@@ -415,7 +420,7 @@ export default function TopicVisual({ v }) {
           <span className="tv-line">
             <span className="tv-line-left">left</span>
             {v.items.map((e, i) => (
-              <span key={i}>{e}</span>
+              <Thing key={i} id={e} size={36} />
             ))}
           </span>
         </Panel>
@@ -427,7 +432,7 @@ export default function TopicVisual({ v }) {
             {Array.from({ length: v.groups }, (_, g) => (
               <span key={g} className="tv-group">
                 {Array.from({ length: v.each }, (_, i) => (
-                  <span key={i}>{v.emoji}</span>
+                  <Thing key={i} id={v.emoji} size={24} />
                 ))}
               </span>
             ))}
@@ -439,7 +444,7 @@ export default function TopicVisual({ v }) {
         <Panel wide>
           <span className="tv-pile">
             {Array.from({ length: v.n }, (_, i) => (
-              <span key={i}>{v.emoji}</span>
+              <Thing key={i} id={v.emoji} size={26} />
             ))}
           </span>
         </Panel>
@@ -558,7 +563,7 @@ export default function TopicVisual({ v }) {
               </span>,
               ...Array.from({ length: v.cols }, (_, c) => (
                 <span key={`${r}-${c}`} className="tv-table-cell">
-                  {v.items[r * v.cols + c]}
+                  <Thing id={v.items[r * v.cols + c]} size={36} />
                 </span>
               )),
             ])}
@@ -581,7 +586,7 @@ export default function TopicVisual({ v }) {
       return (
         <Panel>
           <span className="tv-bag">
-            {v.bag.flatMap((b) => Array.from({ length: b.n }, (_, i) => <span key={`${b.emoji}${i}`}>{b.emoji}</span>))}
+            {v.bag.flatMap((b) => Array.from({ length: b.n }, (_, i) => <Thing key={`${b.emoji}${i}`} id={b.emoji} size={24} />))}
           </span>
         </Panel>
       );

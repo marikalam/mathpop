@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { explainSteps } from './explain.js';
 import ExplainPicture from './ExplainPicture.jsx';
 import { speakSteps, stopSpeaking } from './sound.js';
+import Icon from './Icon.jsx';
+import { RichText } from './Drawings.jsx';
 
 // "Show me how": MathPop talks the child through this problem out loud,
 // one step at a time, lighting up each step on screen as it's said (for
@@ -40,7 +42,7 @@ export default function ExplainPanel({ problem, withAnswer = false, onClose, chi
     <div className="explain-panel" ref={panelRef} role="region" aria-label="Show me how">
       <div className="explain-head">
         <span className={`explain-speaker${playing ? ' explain-speaker-on' : ''}`} aria-hidden="true">
-          🙋
+          <Icon name="hand" />
         </span>
         <h3 className="explain-title">{ja ? 'いっしょに やってみよう！' : 'Let me show you!'}</h3>
         <button className="explain-close" onClick={onClose} aria-label="Close">
@@ -54,13 +56,13 @@ export default function ExplainPanel({ problem, withAnswer = false, onClose, chi
             key={`${round}-${i}`}
             className={`explain-step${i === current ? ' explain-step-now' : ''}${current >= 0 && i > current ? ' explain-step-later' : ''}`}
           >
-            {step}
+            <RichText text={step} size={24} />
           </li>
         ))}
       </ol>
       {children}
       <button className="pill-btn-secondary pill-btn-full explain-again" onClick={() => setRound((r) => r + 1)}>
-        🔁 {ja ? 'もういちど きく' : 'Say it again'}
+        <Icon name="repeat" /> {ja ? 'もういちど きく' : 'Say it again'}
       </button>
     </div>
   );

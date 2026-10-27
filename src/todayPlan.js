@@ -135,7 +135,7 @@ function makePlan(playerId, grade, byOp) {
 
   const mistakes = loadMistakes(playerId, grade);
   if (mistakes.length) {
-    items.push({ id: 'mistakes', mode: 'mistakes', icon: '🔁', title: 'Fix my mistakes', sub: '' });
+    items.push({ id: 'mistakes', mode: 'mistakes', icon: 'repeat', title: 'Fix my mistakes', sub: '' });
   }
 
   const tricky = topics
@@ -149,7 +149,7 @@ function makePlan(playerId, grade, byOp) {
     items.push({
       id: 'focus',
       mode: tricky.t.id,
-      icon: '🎯',
+      icon: 'target',
       title: `Work on: ${tricky.t.title}`,
       sub: missed ? `${pct}% right · missed ${problemText(missed.problem)}` : `${pct}% right so far · 1 round of 10`,
     });
@@ -172,7 +172,7 @@ function makePlan(playerId, grade, byOp) {
     });
   });
 
-  items.push({ id: 'mix', mode: 'random', icon: '🎲', title: 'Random Mix', sub: 'A bit of everything · 1 round of 10' });
+  items.push({ id: 'mix', mode: 'random', icon: 'dice', title: 'Random Mix', sub: 'A bit of everything · 1 round of 10' });
   return items;
 }
 
@@ -205,7 +205,7 @@ export function todayPlan(playerId, grade, byOp = {}) {
     return {
       ...item,
       done: playedToday.has('mistakes') || !left,
-      sub: left ? `${left} to try again · like ${example}` : 'All fixed! 🎉',
+      sub: left ? `${left} to try again · like ${example}` : 'All fixed!',
     };
   });
 }

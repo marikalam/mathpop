@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Avatar from './Avatar.jsx';
 import { gradeInfo } from './grades.js';
+import Icon from './Icon.jsx';
 
 // "Playing as": the player pill in the header, next to the account button,
 // picks which player is playing (each plays at their own grade), and leads
@@ -58,7 +59,7 @@ export default function ProfileSwitcher({ profile, profiles, onChange, onOpenSet
                 setOpen(false);
               }}
             >
-              ⚙️ <span>Players &amp; grades</span>
+              <Icon name="gear" /> <span>Players &amp; grades</span>
             </button>
           </div>
         </div>

@@ -3019,7 +3019,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  background: color-mix(in srgb, var(--c) 15%, #fff);
+  color: var(--c);
   font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
   font-weight: 700;
   font-size: 22px;
@@ -5489,4 +5490,27 @@ body {
   .home-tile-title {
     font-size: 12.5px;
   }
+}
+
+/* Drawn pictures in place of emoji (Icon.jsx, Drawings.jsx RichText). */
+.icon {
+  display: inline-block;
+  vertical-align: -0.22em;
+  flex: none;
+}
+.icon-text {
+  font-weight: 700;
+}
+.thing-inline {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 0.08em;
+}
+.topic-card-icon .icon,
+.skill-card-symbol .icon,
+.today-item-icon .icon,
+.plus-feature-icon .icon,
+.answer-setting-icon .icon,
+.result-op-symbol .icon {
+  vertical-align: middle;
 }

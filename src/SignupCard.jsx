@@ -1,4 +1,5 @@
 import LogoMark from './LogoMark.jsx';
+import Icon from './Icon.jsx';
 
 // When MathPop opens without a family account: asks a grown-up to sign up
 // with email (past the grown-ups check, App.jsx), so players, grades and
@@ -17,13 +18,13 @@ export default function SignupCard({ onSignUp, onSignIn, onLater }) {
         <p className="handoff-text">A free family account, for grown-ups:</p>
         <ul className="signup-perks">
           <li>
-            <span aria-hidden="true">📱</span> Players, grades and stickers on every iPhone and iPad
+            <Icon name="phone" /> Players, grades and stickers on every iPhone and iPad
           </li>
           <li>
-            <span aria-hidden="true">🔒</span> Nothing lost if the app is deleted or the phone changes
+            <Icon name="lock" /> Nothing lost if the app is deleted or the phone changes
           </li>
           <li>
-            <span aria-hidden="true">📈</span> Each child’s week and progress report
+            <Icon name="growth" /> Each child’s week and progress report
           </li>
         </ul>
         <button type="button" className="pill-btn-primary pill-btn-full" onClick={onSignUp}>

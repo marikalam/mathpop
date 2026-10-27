@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Icon from './Icon.jsx';
 
 // A grown-ups-only check (App Store Kids category rule) before anything
 // that leaves the app: rating MathPop, or sharing a child's week. A
@@ -30,7 +31,7 @@ export default function ParentGate({ reason, onPass, onCancel }) {
     <div className="handoff-backdrop" role="dialog" aria-modal="true" aria-labelledby="parent-gate-title">
       <form className="handoff-card" onSubmit={check}>
         <div className="handoff-icon" aria-hidden="true">
-          🔒
+          <Icon name="lock" size="1em" />
         </div>
         <h2 id="parent-gate-title" className="handoff-title">
           Grown-ups only
