@@ -46,7 +46,7 @@ export default function ExplainPanel({ problem, withAnswer = false, onClose, chi
         </span>
         <h3 className="explain-title">{ja ? 'いっしょに やってみよう！' : 'Let me show you!'}</h3>
         <button className="explain-close" onClick={onClose} aria-label="Close">
-          ✕
+          <Icon name="cross" size="0.8em" />
         </button>
       </div>
       <ExplainPicture problem={problem} reveal={withAnswer} />
