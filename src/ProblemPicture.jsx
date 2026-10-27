@@ -274,16 +274,24 @@ function AreaModel({ big, small }) {
 
 // Two pizzas the very same size, each cut into its fraction's slices with
 // its slices shown (the rest is an empty plate): which has more pizza?
-function FractionPizzas({ fractions }) {
+// After the answer (`after`): the bigger one's slices get eaten, chomp by
+// chomp (`bg` is the card color, for the bites); equal ones slide onto
+// each other to show they cover the same amount.
+function FractionPizzas({ fractions, after, bg = '#14b8a6' }) {
   const R = 64;
+  const [l, r] = fractions;
+  const diff = l[0] * r[1] - r[0] * l[1];
+  const eat = after && diff !== 0 ? (diff > 0 ? 0 : 1) : null;
+  const same = after && diff === 0;
   const pizza = ([num, den], cx, i) => {
     const cy = 82;
     const at = (k, r) => {
       const ang = (k / den) * Math.PI * 2 - Math.PI / 2;
       return [cx + r * Math.cos(ang), cy + r * Math.sin(ang)];
     };
+    const bites = eat === i ? [0, 1, 2].map((j) => at((num * (j + 0.5)) / 3, R)) : [];
     return (
-      <g key={i}>
+      <g key={i} className={same ? `pizza-slide pizza-slide-${i ? 'r' : 'l'}` : eat === i ? 'pizza-eaten' : undefined}>
         <circle cx={cx} cy={cy} r={R + 7} fill="#fff" fillOpacity=".22" />
         {Array.from({ length: den }, (_, k) => {
           const [x0, y0] = at(k, R);
@@ -293,6 +301,7 @@ function FractionPizzas({ fractions }) {
           return (
             <g key={k}>
               <path
+                className={has ? 'pizza-slice' : undefined}
                 d={den === 1 ? `M${cx - R} ${cy}a${R} ${R} 0 1 0 ${2 * R} 0a${R} ${R} 0 1 0 ${-2 * R} 0` : `M${cx} ${cy}L${x0} ${y0}A${R} ${R} 0 0 1 ${x1} ${y1}Z`}
                 fill={has ? '#ffcf6e' : '#fff'}
                 fillOpacity={has ? 1 : 0.18}
@@ -300,11 +309,14 @@ function FractionPizzas({ fractions }) {
                 strokeWidth="3"
                 strokeLinejoin="round"
               />
-              {has && <circle cx={px} cy={py} r={Math.max(4, 12 - den)} fill="#e5484d" />}
+              {has && <circle className="pizza-slice" cx={px} cy={py} r={Math.max(4, 12 - den)} fill="#e5484d" />}
             </g>
           );
         })}
-        <text x={cx} y="182" textAnchor="middle" fontFamily="Fredoka, sans-serif" fontWeight="700" fontSize="26" fill="#fff">
+        {bites.map(([bx, by], j) => (
+          <circle key={j} className="pizza-bite" style={{ '--j': j }} cx={bx} cy={by} r="17" fill={bg} />
+        ))}
+        <text className={same ? 'pizza-label-fade' : undefined} x={cx} y="182" textAnchor="middle" fontFamily="Fredoka, sans-serif" fontWeight="700" fontSize="26" fill="#fff">
           {num}/{den}
         </text>
       </g>
@@ -312,10 +324,28 @@ function FractionPizzas({ fractions }) {
   };
   return (
     <svg className="problem-picture-svg" viewBox="0 0 300 192" aria-hidden="true">
-      {pizza(fractions[0], 74, 0)}
-      {pizza(fractions[1], 226, 1)}
+      {pizza(l, 74, 0)}
+      {pizza(r, 226, 1)}
+      {eat !== null && (
+        <text className="pizza-chomp" x={eat === 0 ? 74 : 226} y="30" textAnchor="middle" fontFamily="Fredoka, sans-serif" fontWeight="700" fontSize="30" fill="#fff">
+          Chomp!
+        </text>
+      )}
+      {same && (
+        <text className="pizza-same" x="150" y="184" textAnchor="middle" fontFamily="Fredoka, sans-serif" fontWeight="700" fontSize="22" fill="#fff">
+          The same amount!
+        </text>
+      )}
     </svg>
   );
+}
+
+// The feedback screen's picture for a fraction compare: the bigger one
+// gets eaten, or equal ones slide together.
+export function compareAfterPicture(problem, bg) {
+  if (!problem || problem.promptKind !== 'compare' || problem.lang === 'ja') return null;
+  const [l, r] = [fractionParts(problem.compareLeft), fractionParts(problem.compareRight)];
+  return l && r ? <FractionPizzas fractions={[l, r]} after bg={bg} /> : null;
 }
 
 function fractionParts(text) {
