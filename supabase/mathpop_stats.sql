@@ -119,6 +119,53 @@ revoke all on function public.mathpop_stats(int) from public, anon;
 grant execute on function public.mathpop_stats(int) to authenticated;
 grant execute on function public.mathpop_can_view_stats() to authenticated;
 
+-- Family accounts that signed up for MathPop, newest first, with their
+-- email: the sign-in is shared with PitchPop, so an account counts as
+-- MathPop's when it has MathPop players, or when it signed up from MathPop
+-- (the app marks those with app = 'mathpop'). Only for the stats viewers.
+create or replace function public.mathpop_signups(days int default 30)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  since timestamptz := now() - make_interval(days => greatest(1, least(days, 365)));
+  result jsonb;
+begin
+  if not mathpop_can_view_stats() then
+    raise exception 'not allowed';
+  end if;
+  with accounts as (
+    select u.id, u.email, u.created_at, u.email_confirmed_at, u.last_sign_in_at,
+      (select count(*) from mathpop_profiles p where p.owner_id = u.id) as players
+    from auth.users u
+    where u.raw_user_meta_data ->> 'app' = 'mathpop'
+      or exists (select 1 from mathpop_profiles p where p.owner_id = u.id)
+  )
+  select jsonb_build_object(
+    'total', (select count(*) from accounts),
+    'newInRange', (select count(*) from accounts where created_at >= since),
+    'accounts', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'email', email,
+        'at', created_at,
+        'confirmed', email_confirmed_at is not null,
+        'lastSignIn', last_sign_in_at,
+        'players', players,
+        'isNew', created_at >= since
+      ) order by created_at desc)
+      from (select * from accounts order by created_at desc limit 500) a
+    ), '[]')
+  ) into result;
+  return result;
+end;
+$$;
+
+revoke all on function public.mathpop_signups(int) from public, anon;
+grant execute on function public.mathpop_signups(int) to authenticated;
+
 -- Last step: let your own account see the stats (put in the email you sign
 -- in to MathPop with, then run this line too):
 -- insert into public.mathpop_stat_viewers (user_id)
