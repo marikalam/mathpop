@@ -1240,7 +1240,8 @@ export default function App() {
           op: problem.op,
           correct,
           prompt: problemPromptText(problem),
-          yourAnswer: value,
+          // A picture answer (a cat, a red marble) is kept as "{{cat}}" so it's drawn.
+          yourAnswer: problem.choiceKind === 'emoji' || problem.choiceKind === 'thing' ? `{{${value}}}` : value,
           answerText: problemAnswerText(problem),
         },
       ]);
@@ -2057,7 +2058,7 @@ export default function App() {
             {/* Right or wrong, the answer is shown and the round moves on (a
                 wrong one isn't asked again); Show me how explains it. */}
             <p className="screen-sub">
-              {answerCorrect ? tr("That's right!", 'せいかい！') : <RichText text={tr(`You picked ${String(chosen)}. Here's the answer:`, 'こたえは これだよ。')} size={26} />}
+              {answerCorrect ? tr("That's right!", 'せいかい！') : <RichText text={tr(`You picked ${problem.choiceKind === 'emoji' || problem.choiceKind === 'thing' ? `{{${chosen}}}` : String(chosen)}. Here's the answer:`, 'こたえは これだよ。')} size={26} />}
             </p>
             <div className="answer-card" style={{ background: ALL_META[problem.op].color }}>
               <div className="answer-equation"><RichText text={problemAnswerText(problem)} size={44} /></div>
@@ -2114,8 +2115,8 @@ export default function App() {
                       </span>
                       <span className="result-op-name">{ALL_META[op].label}</span>
                       <span className="result-numbers">
-                        <span className="result-correct">✓ {results.correct}</span>
-                        <span className="result-wrong">✗ {results.wrong}</span>
+                        <span className="result-correct"><Icon name="tick" size="0.9em" /> {results.correct}</span>
+                        <span className="result-wrong"><Icon name="cross" size="0.9em" /> {results.wrong}</span>
                       </span>
                     </div>
                   ))}

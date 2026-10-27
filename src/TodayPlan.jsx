@@ -48,7 +48,7 @@ export default function TodayPlan({ playerId, grade, byOp, signedIn, onOpen, onS
               </span>
               {item.done ? (
                 <span className="today-check" aria-label="Done">
-                  ✓
+                  <Icon name="tick" size="0.85em" />
                 </span>
               ) : (
                 <span className="today-arrow" aria-hidden="true">

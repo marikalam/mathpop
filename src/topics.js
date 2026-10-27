@@ -225,8 +225,8 @@ function skipCountProblem(tier, grade) {
 
 const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
 const ORDINAL_WORDS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth'];
-const LINE_ANIMALS = ['🐶', '🐱', '🐰', '🐸', '🐵', '🐷', '🐔', '🐻', '🦊', '🐼'];
-const ANIMAL_NAMES = { '🐶': 'dog', '🐱': 'cat', '🐰': 'bunny', '🐸': 'frog', '🐵': 'monkey', '🐷': 'pig', '🐔': 'chicken', '🐻': 'bear', '🦊': 'fox', '🐼': 'panda' };
+const LINE_ANIMALS = ['dog', 'cat', 'bunny', 'frog', 'monkey', 'pig', 'chicken', 'bear', 'fox', 'panda'];
+const ANIMAL_NAMES = { 'dog': 'dog', 'cat': 'cat', 'bunny': 'bunny', 'frog': 'frog', 'monkey': 'monkey', 'pig': 'pig', 'chicken': 'chicken', 'bear': 'bear', 'fox': 'fox', 'panda': 'panda' };
 
 // First, second, third... in a line (P1).
 function ordinalProblem() {
@@ -248,7 +248,7 @@ function ordinalProblem() {
       answerType: 'choice',
       choiceKind: 'emoji',
       choices: withChoices(row[i], row),
-      answerLabel: `${row[i]} is ${ORDINALS[i]}`,
+      answerLabel: `{{${row[i]}}} is ${ORDINALS[i]}`,
       speech: `Which animal is ${ORDINAL_WORDS[i]} from the left?`,
       questionTitle: 'Ordinal numbers',
     };
@@ -262,11 +262,11 @@ function ordinalProblem() {
     ],
     explainAnswer: `The ${animal} is ${ORDINAL_WORDS[i]}!`,
     visual: { kind: 'line', items: row },
-    prompt: `The ${row[i]} is in which place from the left?`,
+    prompt: `The {{${row[i]}}} is in which place from the left?`,
     correct: ORDINALS[i],
     answerType: 'choice',
     choices: withChoices(ORDINALS[i], ORDINALS.slice(0, 7)),
-    answerLabel: `${row[i]} is ${ORDINALS[i]}`,
+    answerLabel: `{{${row[i]}}} is ${ORDINALS[i]}`,
     speech: 'This animal is in which place from the left?',
     speechAnswer: ORDINAL_WORDS[i],
     questionTitle: 'Ordinal numbers',
@@ -685,8 +685,8 @@ function missingDigitProblem() {
   };
 }
 
-const GROUP_EMOJI = ['🍪', '🍎', '🌸', '⭐', '🐟', '🍓', '🧁', '⚽'];
-const GROUP_NAMES = { '🍪': 'cookies', '🍎': 'apples', '🌸': 'flowers', '⭐': 'stars', '🐟': 'fish', '🍓': 'strawberries', '🧁': 'cupcakes', '⚽': 'balls' };
+const GROUP_EMOJI = ['cookie', 'apple', 'flower', 'star', 'fish', 'strawberry', 'cupcake', 'ball'];
+const GROUP_NAMES = { 'cookie': 'cookies', 'apple': 'apples', 'flower': 'flowers', 'star': 'stars', 'fish': 'fish', 'strawberry': 'strawberries', 'cupcake': 'cupcakes', 'ball': 'balls' };
 
 // Equal groups, multiplying as adding the same number (P1, P2).
 function equalGroupsProblem(tier, grade) {
@@ -2222,8 +2222,8 @@ function symmetryProblem() {
   };
 }
 
-const GRID_THINGS = ['🍎', '🐱', '⭐', '🚗', '🎈', '🌸', '🐟', '🍩', '⚽', '🦋', '🍓', '🐢'];
-const GRID_NAMES = { '🍎': 'apple', '🐱': 'cat', '⭐': 'star', '🚗': 'car', '🎈': 'balloon', '🌸': 'flower', '🐟': 'fish', '🍩': 'donut', '⚽': 'ball', '🦋': 'butterfly', '🍓': 'strawberry', '🐢': 'turtle' };
+const GRID_THINGS = ['apple', 'cat', 'star', 'car', 'balloon', 'flower', 'fish', 'donut', 'ball', 'butterfly', 'strawberry', 'turtle'];
+const GRID_NAMES = { 'apple': 'apple', 'cat': 'cat', 'star': 'star', 'car': 'car', 'balloon': 'balloon', 'flower': 'flower', 'fish': 'fish', 'donut': 'donut', 'ball': 'ball', 'butterfly': 'butterfly', 'strawberry': 'strawberry', 'turtle': 'turtle' };
 
 // Rows and columns (Beast Academy 1D: position).
 function positionProblem() {
@@ -2247,7 +2247,7 @@ function positionProblem() {
     answerType: 'choice',
     choiceKind: 'emoji',
     choices: withChoices(correct, [items[(r - 1) * cols + ((c % cols))], items[((r % rows)) * cols + (c - 1)], items[(c - 1) * 1], ...items]),
-    answerLabel: `Row ${r}, column ${c}: ${correct}`,
+    answerLabel: `Row ${r}, column ${c}: {{${correct}}}`,
     speech: `What is in row ${r}, column ${c}? Rows go across from the top, columns go down from the left.`,
     hint: 'Rows go across (count from the top). Columns go down (count from the left).',
     questionTitle: 'Rows & columns',
@@ -2257,9 +2257,9 @@ function positionProblem() {
 // ---------------- Graphs ----------------
 
 const GRAPH_SETS = [
-  { title: 'Favourite fruit', items: [['🍎', 'apples'], ['🍌', 'bananas'], ['🍇', 'grapes'], ['🍊', 'oranges']] },
-  { title: 'Pets in class', items: [['🐶', 'dogs'], ['🐱', 'cats'], ['🐟', 'fish'], ['🐰', 'rabbits']] },
-  { title: 'Ways to school', items: [['🚌', 'bus'], ['🚗', 'car'], ['🚶', 'walk'], ['🚲', 'bike']] },
+  { title: 'Favourite fruit', items: [['apple', 'apples'], ['banana', 'bananas'], ['grapes', 'grapes'], ['orange', 'oranges']] },
+  { title: 'Pets in class', items: [['dog', 'dogs'], ['cat', 'cats'], ['fish', 'fish'], ['bunny', 'rabbits']] },
+  { title: 'Ways to school', items: [['bus', 'bus'], ['car', 'car'], ['walk', 'walk'], ['bike', 'bike']] },
 ];
 
 // `how` says how the graph is drawn, for the spoken walkthrough:
@@ -2292,7 +2292,7 @@ function graphQuestion(rows, unitWord, how) {
       answerType: 'choice',
       choiceKind: 'emoji',
       choices: shuffle(rows.map((r) => r.emoji)),
-      answerLabel: `${best.emoji} ${best.name}: ${best.value}`,
+      answerLabel: `{{${best.emoji}}} ${best.name}: ${best.value}`,
       speech: `Which has the ${most ? 'most' : 'fewest'}?`,
     };
   }
@@ -2306,7 +2306,7 @@ function graphQuestion(rows, unitWord, how) {
         read(lo),
         clash ? `Now count up from that number to ${hi.value}. How many did you count?` : `${shows(lo)} Now count up from ${lo.value} to ${hi.value}. How many did you count?`,
       ],
-      prompt: `How many more ${hi.emoji} than ${lo.emoji}?`,
+      prompt: `How many more {{${hi.emoji}}} than {{${lo.emoji}}}?`,
       correct: hi.value - lo.value,
       answerType: 'numeric',
       answerLabel: `${hi.value} ${MINUS} ${lo.value} = ${hi.value - lo.value}`,
@@ -2316,7 +2316,7 @@ function graphQuestion(rows, unitWord, how) {
   if (kind === 'total') {
     return {
       explain: [read(a), shows(a), read(b), shows(b), `So what is ${a.value} plus ${b.value}?`],
-      prompt: `How many ${a.emoji} and ${b.emoji} altogether?`,
+      prompt: `How many {{${a.emoji}}} and {{${b.emoji}}} altogether?`,
       correct: a.value + b.value,
       answerType: 'numeric',
       answerLabel: `${a.value} + ${b.value} = ${a.value + b.value}`,
@@ -2325,10 +2325,10 @@ function graphQuestion(rows, unitWord, how) {
   }
   return {
     explain: [`Let’s read the ${bars ? 'bar graph' : 'picture graph'} together.`, read(a), 'What number is that?'],
-    prompt: `How many ${a.emoji}?`,
+    prompt: `How many {{${a.emoji}}}?`,
     correct: a.value,
     answerType: 'numeric',
-    answerLabel: `${a.emoji} ${a.value}`,
+    answerLabel: `{{${a.emoji}}} ${a.value}`,
     speech: `How many ${a.name} ${unitWord}?`,
   };
 }
@@ -2450,7 +2450,7 @@ function countingProblem() {
   };
 }
 
-const MARBLES = [['🔴', 'red'], ['🔵', 'blue'], ['🟢', 'green'], ['🟡', 'yellow']];
+const MARBLES = [['red', 'red'], ['blue', 'blue'], ['green', 'green'], ['yellow', 'yellow']];
 
 // Probability (Beast Academy 4D).
 function probabilityProblem() {
@@ -2492,7 +2492,7 @@ function probabilityProblem() {
       ],
       explainAnswer: `It’s ${one.n} out of ${total}, or ${fracWords(one.n, total)}.`,
       visual: { kind: 'bag', bag },
-      prompt: `What is the chance of picking ${one.emoji}?`,
+      prompt: `What is the chance of picking {{${one.emoji}}}?`,
       correct: `${one.n}/${total}`,
       answerType: 'choice',
       choiceKind: 'frac',
@@ -2504,9 +2504,9 @@ function probabilityProblem() {
   }
   const [word, make] = pick([
     ['certain', () => `picking a marble from this bag`],
-    ['impossible', () => `picking a ⚫ marble`],
-    ['likely', () => `picking a marble that isn't ${bag.reduce((x, y) => (y.n < x.n ? y : x)).emoji}`],
-    ['unlikely', () => `picking ${bag.reduce((x, y) => (y.n < x.n ? y : x)).emoji}`],
+    ['impossible', () => `picking a {{black}} marble`],
+    ['likely', () => `picking a marble that isn't {{${bag.reduce((x, y) => (y.n < x.n ? y : x)).emoji}}}`],
+    ['unlikely', () => `picking {{${bag.reduce((x, y) => (y.n < x.n ? y : x)).emoji}}}`],
   ]);
   const fewest = bag.reduce((x, y) => (y.n < x.n ? y : x));
   const look = {
@@ -2530,7 +2530,7 @@ function probabilityProblem() {
     choiceKind: 'word',
     choices: ['impossible', 'unlikely', 'likely', 'certain'],
     answerLabel: `It is ${word}`,
-    speech: `How likely is ${make().replace(/[⚫🔴🔵🟢🟡]/gu, 'that colour')}?`,
+    speech: `How likely is ${make().replace(/\{\{\w+\}\}/g, 'that colour')}?`,
     questionTitle: 'Probability',
   };
 }

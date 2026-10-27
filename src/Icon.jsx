@@ -515,6 +515,9 @@ const ICONS = {
       <path d="M24 9v30M14 18c3 0 5 2 5 5M34 18c-3 0-5 2-5 5M13 30c3-1 5 0 6 2M35 30c-3-1-5 0-6 2" stroke={W} strokeWidth="2" fill="none" strokeLinecap="round" />
     </>
   ),
+  // Plain marks in the text's own color, for ✓ ✗ ✕.
+  tick: <path d="M9 25l10 10 20-22" stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round" strokeLinejoin="round" />,
+  cross: <path d="M12 12l24 24M36 12 12 36" stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round" />,
 };
 
 export function hasIcon(name) {
