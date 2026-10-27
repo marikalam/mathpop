@@ -1822,11 +1822,14 @@ export default function App() {
               ) : problem.type === 'skill' && problem.promptKind === 'bond' ? (
                 <NumberBond whole={problem.bondWhole} parts={problem.bondParts} />
               ) : problem.type === 'skill' && problem.promptKind === 'compare' ? (
-                <span className="problem-text compare-row">
-                  <span>{problem.compareLeft}</span>
-                  <span className="compare-blank">?</span>
-                  <span>{problem.compareRight}</span>
-                </span>
+                <>
+                  <span className="problem-text compare-row">
+                    <span>{problem.compareLeft}</span>
+                    <span className="compare-blank">?</span>
+                    <span>{problem.compareRight}</span>
+                  </span>
+                  {problemPicture(problem) && <span className="problem-picture">{problemPicture(problem)}</span>}
+                </>
               ) : problem.type === 'skill' && problem.promptKind === 'stack' ? (
                 <span className="stack-problem">
                   <span className="stack-row">{problem.stackTop}</span>
