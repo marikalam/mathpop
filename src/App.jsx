@@ -53,7 +53,7 @@ import WelcomeCard from './WelcomeCard.jsx';
 import SignupCard from './SignupCard.jsx';
 import PlusScreen from './PlusScreen.jsx';
 import ReportScreen from './ReportScreen.jsx';
-import { cachedPlus, refreshPlus } from './plus.js';
+import { cachedPlus, freeRoundLeft, refreshPlus, spendFreeRound, trialDaysLeft } from './plus.js';
 
 const SESSION_ROUNDS = 10;
 // The iPhone app has no link out to the other apps' website, and no printing.
@@ -675,9 +675,11 @@ export default function App() {
   const [reportFor, setReportFor] = useState(null);
 
   // Plus itself is for grown-ups: the grown-ups check first when it can
-  // be bought.
-  function openPlus() {
-    if (plusStatus.plus) setView('plus');
+  // be bought (no Plus yet, or still on the free trial).
+  const [plusBack, setPlusBack] = useState('players');
+  function openPlus(back = 'players') {
+    setPlusBack(back);
+    if (['founder', 'paid', 'early'].includes(plusStatus.why)) setView('plus');
     else setGate({ reason: 'To see MathPop Plus', then: () => setView('plus') });
   }
 
@@ -698,10 +700,18 @@ export default function App() {
   // a guest, and it asks again a few days later.
   const [signupLater, setSignupLater] = useState(() => readJson(SIGNUP_LATER_KEY));
   const [accountMode, setAccountMode] = useState('sign-in');
+  // Once Plus has started, it's the 7-day free trial's card, and "just
+  // play" (today's free round) asks again the next day.
+  const trialOffer = !plusStatus.plus;
   const showSignup =
     !cloudUser &&
     view === 'home' &&
-    !(signupLater && Date.now() - signupLater < SIGNUP_ASK_AGAIN_DAYS * 86400000);
+    !(
+      signupLater &&
+      (trialOffer
+        ? new Date(signupLater).toDateString() === new Date().toDateString()
+        : Date.now() - signupLater < SIGNUP_ASK_AGAIN_DAYS * 86400000)
+    );
   function signupNotNow() {
     const now = Date.now();
     writeJson(SIGNUP_LATER_KEY, now);
@@ -1183,6 +1193,15 @@ export default function App() {
   }
 
   function startOperation(op, from) {
+    // Without Plus (plus.js): one free round a day, then the "ask a
+    // grown-up" screen.
+    if (!plusStatus.plus) {
+      if (!freeRoundLeft()) {
+        setView('locked');
+        return;
+      }
+      spendFreeRound();
+    }
     if (from) setReturnView(from);
     if (op === 'mistakes') {
       const list = mistakeRound(currentProfile.id, gradeInfo(level).id, SESSION_ROUNDS);
@@ -1404,6 +1423,17 @@ export default function App() {
                   </>
                 ) : (
                   <span className="home-stat"><Icon name="star" /> Start your first round</span>
+                )}
+                {/* The free trial's days left, or (no Plus) today's free round. */}
+                {(plusStatus.why === 'trial' || !plusStatus.plus) && (
+                  <button className="home-stat home-stat-plus" onClick={() => openPlus('home')}>
+                    <Icon name="sparkle" />{' '}
+                    {plusStatus.why === 'trial'
+                      ? `Free trial: ${trialDaysLeft(plusStatus)} ${trialDaysLeft(plusStatus) === 1 ? 'day' : 'days'} left`
+                      : freeRoundLeft()
+                        ? '1 free round today'
+                        : 'Unlock MathPop'}
+                  </button>
                 )}
               </div>
               {/* The sticker book, as in PitchPop: earned by finishing rounds. */}
@@ -1628,9 +1658,40 @@ export default function App() {
           </>
         )}
 
+        {/* No Plus and today's free round is played: come back tomorrow,
+            or a grown-up starts the free trial or subscribes. */}
+        {view === 'locked' && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
+            <div className="locked-screen">
+              <div className="locked-art" aria-hidden="true">
+                <Icon name="star" size="96px" />
+              </div>
+              <h2 className="screen-title">That was today’s free round!</h2>
+              <p className="screen-sub">
+                Come back tomorrow for another one, or ask a grown-up to unlock MathPop for as many rounds as you like.
+              </p>
+              {!cloudUser && !plusStatus.trialOver && (
+                <button className="pill-btn-primary pill-btn-full" onClick={() => signupOpen('sign-up')}>
+                  Grown-ups: start the 7-day free trial
+                </button>
+              )}
+              <button
+                className={!cloudUser && !plusStatus.trialOver ? 'pill-btn-secondary pill-btn-full' : 'pill-btn-primary pill-btn-full'}
+                onClick={() => openPlus('home')}
+              >
+                Grown-ups: unlock MathPop
+              </button>
+              <button className="back-link back-link-center" onClick={goHome}>
+                Back home
+              </button>
+            </div>
+          </>
+        )}
+
         {view === 'plus' && (
           <>
-            <AppHeader level={level} players={headerPlayers} showBack onBack={() => setView('players')} />
+            <AppHeader level={level} players={headerPlayers} showBack onBack={() => setView(plusBack)} />
             <h2 className="screen-title">MathPop Plus</h2>
             <PlusScreen status={plusStatus} user={cloudUser} onStatus={setPlusStatus} onSignIn={openAccount} openOutside={openOutside} />
           </>
@@ -1719,10 +1780,12 @@ export default function App() {
                 {plusStatus.why === 'founder'
                   ? 'Free for you, for good: you’re a founding family.'
                   : plusStatus.why === 'paid'
-                    ? 'On: the full report and assigned practice.'
+                    ? 'On: all of MathPop, the full report and assigned practice.'
                     : plusStatus.why === 'early'
                       ? 'Free for everyone right now: the full report and assigned practice.'
-                      : 'The full progress report and assigned practice.'}
+                      : plusStatus.why === 'trial'
+                        ? `Free trial: ${trialDaysLeft(plusStatus)} ${trialDaysLeft(plusStatus) === 1 ? 'day' : 'days'} left. Subscribe to keep it.`
+                        : 'Unlock all of MathPop: as many rounds as they like, every day.'}
               </span>
             </button>
             <button className="rate-row" onClick={rateApp}>
@@ -2244,7 +2307,18 @@ export default function App() {
         </div>
       )}
       <EmailHandoff />
-      {showSignup && !gate && <SignupCard onSignUp={() => signupOpen('sign-up')} onSignIn={() => signupOpen('sign-in')} onLater={signupNotNow} />}
+      {showSignup && !gate && (
+        <SignupCard
+          trial={trialOffer}
+          onSignUp={() => signupOpen('sign-up')}
+          onSignIn={() => signupOpen('sign-in')}
+          onSubscribe={() => {
+            signupNotNow();
+            openPlus('home');
+          }}
+          onLater={signupNotNow}
+        />
+      )}
       {showWelcome && !showSignup && <WelcomeCard grade={profiles[0].grade} onDone={finishWelcome} onSkip={() => finishWelcome()} />}
       {gate && (
         <ParentGate

@@ -6,12 +6,15 @@ email and password there (create one in the app; never put it in this repo).
 
 ---
 
-MathPop is a math practice game for Pre-K through 4th grade, made for the
-Kids category (ages 6–8). Kids can play without signing in; the family
-account is optional and only for grown-ups. When MathPop opens without an
-account it offers one ("Save your kids' progress"); signing up or in is
-behind a grown-ups check, and "Not now, just play" goes straight to the
-app as a guest.
+MathPop is a math practice game for Toddler through 4th grade, made for
+the Kids category (ages 6–8). When MathPop opens without a family account
+it offers a 7-day free trial ("Try MathPop free for 7 days"): a grown-up
+signs up with email (behind a grown-ups check; no payment details). The
+same card lets a grown-up subscribe without an account, or the child plays
+today's free round. Without Plus or the trial, kids get one free round a
+day; after it, a "That was today's free round!" screen asks them to come
+back tomorrow or to ask a grown-up (both grown-up buttons go through the
+grown-ups check first).
 
 How to use it:
 - Each player's grade and how they answer (tap a choice, type, or write
@@ -38,13 +41,14 @@ Kids category notes:
   "Rate MathPop" (opens the App Store) and "Share <child>'s week" (the share
   sheet). Both ask a grown-ups-only question first (type the answer to a
   two-digit by one-digit multiplication).
-- MathPop Plus (optional auto-renewing subscription, monthly or yearly,
-  7-day free trial) is only offered to grown-ups: Players & grades ->
-  MathPop Plus, behind the same grown-ups check. It unlocks grown-up
-  features only (the full progress report and assigning practice); kids'
-  practice is all free and never shows an offer. In TestFlight/sandbox the
-  "founding family" check (free Plus for families from before Plus) is
-  skipped so the purchase can be tested.
+- MathPop Plus (auto-renewing subscription, monthly or yearly) unlocks
+  unlimited rounds plus the grown-up features (the full progress report and
+  assigning practice). It's only offered to grown-ups: Players & grades ->
+  MathPop Plus, the free-trial card and the free-round screen, all behind
+  the grown-ups check. Subscribing does not require an account. Families
+  who used MathPop before Plus started keep everything free ("founding
+  families"). In TestFlight/sandbox that check is skipped, so the trial and
+  the purchase can be tested.
 - No ads, no third-party analytics
   and no tracking. MathPop sends its own anonymous usage counts (app opened;
   a round's grade, game, language and score) with no account, device or
