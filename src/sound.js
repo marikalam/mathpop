@@ -3,10 +3,19 @@ import { playerName } from './storyNames.js';
 let audioCtx = null;
 
 function ensureAudio() {
-  if (!audioCtx) {
+  if (!audioCtx || audioCtx.state === 'closed') {
+    // On iPhone, web sounds are silenced by the ring/silent switch unless
+    // the page asks to be "playback" audio (iOS 17+), like a video app.
+    try {
+      if (navigator.audioSession) navigator.audioSession.type = 'playback';
+    } catch {
+      // Older iOS: no audioSession, nothing to set.
+    }
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  // "suspended" before the first tap; iOS also leaves it "interrupted"
+  // after a phone call or a trip to another app.
+  if (audioCtx.state !== 'running') audioCtx.resume().catch(() => {});
   return audioCtx;
 }
 
@@ -58,6 +67,16 @@ export function playIncorrectBuzz() {
 // the same audio as the voice, so it's also a quick "is my sound on?" check.
 export function playLogoSound() {
   const ctx = ensureAudio();
+  // If the audio is still waking up (the very first tap, or back from
+  // another app), play once it's running so the start isn't lost.
+  if (ctx.state !== 'running') {
+    ctx.resume().then(() => logoSound(ctx)).catch(() => {});
+    return;
+  }
+  logoSound(ctx);
+}
+
+function logoSound(ctx) {
   const now = ctx.currentTime + 0.02;
   [420, 520, 640, 780].forEach((start, i) => {
     const at = now + i * 0.1;
