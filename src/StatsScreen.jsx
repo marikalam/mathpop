@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { loadStats } from './cloud.js';
+import { loadSignups, loadStats } from './cloud.js';
 
 // MathPop stats (Account -> MathPop stats, for the accounts listed in
 // supabase/mathpop_stats.sql): how much the app is used, added up from
 // anonymous events (stats.js). Big numbers first, then one bar chart a
-// day, then what's played.
+// day, then what's played, then the family accounts that signed up.
 const RANGES = [7, 30, 90];
 const PLATFORM_NAMES = { iphone: 'iPhone', ipad: 'iPad', web: 'Website' };
 const LANG_NAMES = { en: 'English', ja: '日本語' };
@@ -51,6 +51,68 @@ function BarList({ title, rows }) {
   );
 }
 
+function shortDate(iso) {
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// The family accounts, newest first: email, when they signed up, and how
+// many players they have. "Copy emails" puts them all on the clipboard.
+function Signups({ signups, days }) {
+  const [copied, setCopied] = useState(false);
+  if (signups === undefined) return null;
+  if (signups === null) {
+    return (
+      <section className="stats-card">
+        <h3 className="stats-card-title">Sign-ups</h3>
+        <p className="stats-empty">Couldn’t load the sign-ups.</p>
+      </section>
+    );
+  }
+  const list = signups.accounts || [];
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(list.map((a) => a.email).join('\n'));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* no clipboard */
+    }
+  }
+  return (
+    <section className="stats-card">
+      <div className="signups-head">
+        <h3 className="stats-card-title">Sign-ups</h3>
+        {list.length > 0 && (
+          <button type="button" className="signups-copy" onClick={copy}>
+            {copied ? 'Copied!' : 'Copy emails'}
+          </button>
+        )}
+      </div>
+      <p className="stats-note signups-note">
+        {signups.total} {signups.total === 1 ? 'family account' : 'family accounts'} · {signups.newInRange} new in the last {days} days
+      </p>
+      {list.length === 0 ? (
+        <p className="stats-empty">No sign-ups yet</p>
+      ) : (
+        <ul className="signups-list">
+          {list.map((a) => (
+            <li key={a.email} className="signups-row">
+              <span className="signups-email">
+                {a.email}
+                {a.isNew && <span className="signups-new">New</span>}
+              </span>
+              <span className="signups-meta">
+                {shortDate(a.at)} · {a.players} {a.players === 1 ? 'player' : 'players'}
+                {!a.confirmed && ' · email not confirmed'}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function sortedRows(obj, names = {}) {
   return Object.entries(obj || {})
     .map(([k, v]) => ({ label: names[k] || k, value: v }))
@@ -60,12 +122,15 @@ function sortedRows(obj, names = {}) {
 export default function StatsScreen({ topicName, gradeName }) {
   const [days, setDays] = useState(30);
   const [stats, setStats] = useState(undefined);
+  const [signups, setSignups] = useState(undefined);
   const [hover, setHover] = useState(null);
 
   useEffect(() => {
     let live = true;
     setStats(undefined);
+    setSignups(undefined);
     loadStats(days).then((s) => live && setStats(s));
+    loadSignups(days).then((s) => live && setSignups(s));
     return () => {
       live = false;
     };
@@ -103,12 +168,13 @@ export default function StatsScreen({ topicName, gradeName }) {
           <div className="stats-tiles">
             <Tile value={Math.round((t.activeDays / (stats.daily?.length || days)) * 10) / 10} label="devices a day (average)" />
             <Tile value={t.newInstalls} label="new devices" />
+            {signups && <Tile value={signups.newInRange} label="new sign-ups" />}
             <Tile value={t.rounds} label="rounds played" />
             <Tile value={t.answered ? `${Math.round((t.correct / t.answered) * 100)}%` : '–'} label="answered right" />
           </div>
           <p className="stats-note">
-            {stats.allTimeInstalls} {stats.allTimeInstalls === 1 ? 'device' : 'devices'} since stats began. Nothing here says who
-            anyone is.
+            {stats.allTimeInstalls} {stats.allTimeInstalls === 1 ? 'device' : 'devices'} since stats began. The usage counts are
+            anonymous; only the sign-ups list shows emails.
           </p>
 
           <section className="stats-card">
@@ -152,6 +218,7 @@ export default function StatsScreen({ topicName, gradeName }) {
             }))}
           />
           <BarList title="Language" rows={sortedRows(stats.languages, LANG_NAMES)} />
+          <Signups signups={signups} days={days} />
         </>
       )}
     </div>

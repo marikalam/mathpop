@@ -139,7 +139,9 @@ export async function signUp(email, password) {
     .signUp({
       email,
       password,
-      options: { emailRedirectTo: emailLinkUrl() },
+      // app: 'mathpop' tells MathPop's sign-ups apart from PitchPop's
+      // (same sign-in) in MathPop stats.
+      options: { emailRedirectTo: emailLinkUrl(), data: { app: 'mathpop' } },
     })
     .catch((err) => ({ error: err }));
   if (error) throw friendlyError(error);
@@ -371,6 +373,17 @@ export async function canViewStats() {
 export async function loadStats(days) {
   try {
     const { data, error } = await supabase.rpc('mathpop_stats', { days });
+    return error ? null : data;
+  } catch {
+    return null;
+  }
+}
+
+// MathPop's family accounts, newest first, with their emails (only for
+// the stats viewers; null if not allowed or offline).
+export async function loadSignups(days) {
+  try {
+    const { data, error } = await supabase.rpc('mathpop_signups', { days });
     return error ? null : data;
   } catch {
     return null;
