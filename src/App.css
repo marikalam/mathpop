@@ -5483,8 +5483,21 @@ body {
   width: 52px;
   height: 41px;
 }
+/* The tiles take whatever height is left, so the home page never
+   scrolls on a phone; their drawings shrink with them. */
 .home-fit .home-tiles {
-  flex: none;
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: 340px;
+  align-content: stretch;
+}
+.home-fit .home-tile {
+  padding: 6px 2px;
+  gap: 2px;
+}
+.home-fit .section-icon {
+  width: auto;
+  height: clamp(26px, 4.6vh, 41px);
 }
 @media (max-width: 380px) {
   .home-tile-title {
@@ -5513,4 +5526,64 @@ body {
 .answer-setting-icon .icon,
 .result-op-symbol .icon {
   vertical-align: middle;
+}
+
+/* Home page on a phone: a slimmer hero and Today's practice, so the
+   section tiles fit under them without scrolling. */
+@media (max-height: 1000px) {
+  .home-fit .home-hero {
+    gap: 4px;
+    padding: 10px 14px 12px;
+  }
+  .home-fit .home-hero-op {
+    width: 30px;
+    height: 30px;
+    font-size: 19px;
+    border-radius: 9px;
+  }
+  .home-fit .home-hello {
+    font-size: clamp(19px, 5.4vw, 23px);
+    line-height: 1.15;
+  }
+  .home-fit .home-hero-sticker {
+    transform: scale(0.75);
+  }
+  .home-fit .home-stickers {
+    padding: 6px 18px;
+  }
+  .home-fit .today {
+    padding: 8px 12px 8px;
+  }
+  .home-fit .today-title {
+    font-size: 17px;
+  }
+  .home-fit .today-item {
+    padding: 5px 0;
+    gap: 10px;
+  }
+  .home-fit .today-item-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .home-fit .today-item-title {
+    font-size: 15px;
+  }
+  .home-fit .today-item-sub {
+    font-size: 12.5px;
+  }
+  .home-fit .today-bar {
+    margin: 4px 0 2px;
+  }
+  .home-fit .today-note {
+    margin-top: 2px;
+    font-size: 12.5px;
+  }
+}
+@media (max-height: 740px) {
+  /* No sign row on top here, so the top stickers would sit on the title. */
+  .home-fit .home-hero-sticker-0,
+  .home-fit .home-hero-sticker-1,
+  .home-fit .all-apps-link {
+    display: none;
+  }
 }
