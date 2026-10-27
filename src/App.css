@@ -5363,3 +5363,114 @@ body {
   background: #e0793a;
   color: #fff;
 }
+
+/* "Which sign is correct?": alligator signs to tap or drag into the box
+   (CompareSigns.jsx), and the pizzas after the answer (ProblemPicture.jsx). */
+.option-btn-sign {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.option-btn-lifted {
+  opacity: 0.35;
+}
+.compare-drag-tip {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+.compare-blank {
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.compare-blank-over {
+  transform: scale(1.25);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: #fff;
+}
+.sign-ghost {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  transform: translate(-50%, -50%) rotate(-6deg);
+  filter: drop-shadow(0 8px 10px rgba(23, 26, 43, 0.3));
+}
+.sign-ghost-snap {
+  transform: translate(-50%, -50%);
+  transition: left 0.25s ease, top 0.25s ease;
+}
+.answer-picture {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+.answer-picture .problem-picture-svg {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+}
+.pizza-eaten .pizza-slice {
+  animation: pizza-gone 0.5s ease 1.5s forwards;
+}
+.pizza-bite {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0);
+  animation: pizza-bite 0.25s ease-out forwards;
+  animation-delay: calc(0.4s + var(--j) * 0.35s);
+}
+.pizza-chomp {
+  opacity: 0;
+  animation: pizza-word 1.6s ease 0.4s forwards;
+}
+.pizza-slide {
+  animation: 1s ease-in-out 0.5s forwards;
+}
+.pizza-slide-l {
+  animation-name: pizza-slide-l;
+}
+.pizza-slide-r {
+  animation-name: pizza-slide-r;
+}
+.pizza-label-fade {
+  animation: pizza-gone-all 0.4s ease 0.4s forwards;
+}
+.pizza-same {
+  opacity: 0;
+  animation: pizza-word-stay 0.5s ease 1.5s forwards;
+}
+@keyframes pizza-bite {
+  to { transform: scale(1); }
+}
+@keyframes pizza-gone {
+  to { opacity: 0.12; }
+}
+@keyframes pizza-word {
+  0% { opacity: 0; transform: translateY(8px); }
+  20%, 80% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; }
+}
+@keyframes pizza-word-stay {
+  to { opacity: 1; }
+}
+@keyframes pizza-slide-l {
+  to { transform: translateX(76px); }
+}
+@keyframes pizza-slide-r {
+  to { transform: translateX(-76px); opacity: 0.7; }
+}
+@keyframes pizza-gone-all {
+  to { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pizza-bite,
+  .pizza-eaten .pizza-slice,
+  .pizza-chomp,
+  .pizza-slide,
+  .pizza-label-fade,
+  .pizza-same {
+    animation-duration: 0.01s;
+    animation-delay: 0s;
+  }
+}

@@ -17,7 +17,8 @@ import PrintSheet from './PrintSheet.jsx';
 import { PREK_CONCEPTS, ShapeIcon } from './preK.jsx';
 import { Speaker, Thing } from './Drawings.jsx';
 import { CountBoard, CountCelebration, sayCountCelebration } from './ToddlerCount.jsx';
-import { problemPicture } from './ProblemPicture.jsx';
+import { compareAfterPicture, problemPicture } from './ProblemPicture.jsx';
+import { CompareChoices } from './CompareSigns.jsx';
 import ProfileSwitcher from './ProfileSwitcher.jsx';
 import EmailHandoff from './EmailHandoff.jsx';
 import StickerPicker from './StickerPicker.jsx';
@@ -1825,7 +1826,7 @@ export default function App() {
                 <>
                   <span className="problem-text compare-row">
                     <span>{problem.compareLeft}</span>
-                    <span className="compare-blank">?</span>
+                    <span className="compare-blank" id="compare-blank">?</span>
                     <span>{problem.compareRight}</span>
                   </span>
                   {problemPicture(problem) && <span className="problem-picture">{problemPicture(problem)}</span>}
@@ -1978,6 +1979,8 @@ export default function App() {
                   </button>
                 </div>
               </div>
+            ) : problem.promptKind === 'compare' && options.every((o) => ['<', '>', '='].includes(o)) ? (
+              <CompareChoices options={options} onChoose={chooseAnswer} />
             ) : (
               <div className={`options-grid${options.length === 3 ? ' options-grid-3' : ''}`}>
                 {options.map((value) => (
@@ -2055,6 +2058,10 @@ export default function App() {
             </p>
             <div className="answer-card" style={{ background: ALL_META[problem.op].color }}>
               <div className="answer-equation">{problemAnswerText(problem)}</div>
+              {/* Fractions: the bigger pizza gets eaten, or equal ones slide together. */}
+              {compareAfterPicture(problem, ALL_META[problem.op].color) && (
+                <div className="answer-picture">{compareAfterPicture(problem, ALL_META[problem.op].color)}</div>
+              )}
             </div>
             {!answerCorrect &&
               (showHelp ? (
