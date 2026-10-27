@@ -18,6 +18,7 @@ import { PREK_CONCEPTS, ShapeIcon } from './preK.jsx';
 import { Speaker, Thing } from './Drawings.jsx';
 import { CountBoard, CountCelebration, sayCountCelebration } from './ToddlerCount.jsx';
 import { compareAfterPicture, problemPicture } from './ProblemPicture.jsx';
+import SectionIcon from './SectionIcon.jsx';
 import { CompareChoices } from './CompareSigns.jsx';
 import ProfileSwitcher from './ProfileSwitcher.jsx';
 import EmailHandoff from './EmailHandoff.jsx';
@@ -1431,13 +1432,14 @@ export default function App() {
             {(() => {
               const sections = gradeSections(gradeInfo(level).id);
               const n = sections.length + 1;
-              const cols = n <= 4 ? n : n <= 8 ? 4 : 5;
+              // Three across (two or three for the youngest grades).
+              const cols = n <= 3 ? n : 3;
               return (
                 <div
                   className="home-tiles"
                   style={{
                     gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-                    gridTemplateRows: `repeat(${Math.ceil(n / cols)}, minmax(0, 92px))`,
+                    gridTemplateRows: `repeat(${Math.ceil(n / cols)}, minmax(86px, 96px))`,
                   }}
                 >
                   {sections.map((section) => (
@@ -1451,7 +1453,7 @@ export default function App() {
                       }}
                     >
                       <span className="home-tile-icon" aria-hidden="true">
-                        {section.icon}
+                        <SectionIcon id={section.id} />
                       </span>
                       <span className="home-tile-title">{section.tile || section.short || section.title}</span>
                     </button>
@@ -1462,7 +1464,7 @@ export default function App() {
                     onClick={() => setView('explore')}
                   >
                     <span className="home-tile-icon" aria-hidden="true">
-                      🔊
+                      <SectionIcon id="explore" />
                     </span>
                     <span className="home-tile-title">Explore Numbers</span>
                   </button>
