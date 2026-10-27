@@ -2,7 +2,9 @@
 // games have their own, ToddlerCount.jsx): ten-frames for adding and
 // taking away within 20, place-value blocks for bigger numbers up to 999,
 // a tray of cookies in rows for times and sharing, a "break it apart"
-// area model for bigger times, and a Singapore bar model for word problems. It shows the problem, not
+// area model for bigger times, a Singapore bar model for word problems,
+// and for "which sign is correct?": two same-size pizzas for fractions, or
+// the two numbers' place-value blocks. It shows the problem, not
 // the answer: the last skip-count and the bar's total are "?".
 // Returns null when a problem has no picture (big numbers).
 
@@ -220,7 +222,7 @@ function PlaceValue({ a, b, op }) {
       <rect x={labelW - 10} y="0" width={w - labelW + 16} height={op === 'subtract' ? 212 : 196} rx="16" fill="#fff" fillOpacity=".95" />
       {text(labelW / 2 - 8, 52, a)}
       {ga}
-      {text(labelW / 2 - 8, 106, op === 'subtract' ? '−' : '+', 30)}
+      {text(labelW / 2 - 8, 106, op === 'subtract' ? '−' : op === 'compare' ? '?' : '+', 30)}
       {text(labelW / 2 - 8, 156, b)}
       {gb}
       {op === 'subtract' && (
@@ -270,11 +272,73 @@ function AreaModel({ big, small }) {
   );
 }
 
+// Two pizzas the very same size, each cut into its fraction's slices with
+// its slices shown (the rest is an empty plate): which has more pizza?
+function FractionPizzas({ fractions }) {
+  const R = 64;
+  const pizza = ([num, den], cx, i) => {
+    const cy = 82;
+    const at = (k, r) => {
+      const ang = (k / den) * Math.PI * 2 - Math.PI / 2;
+      return [cx + r * Math.cos(ang), cy + r * Math.sin(ang)];
+    };
+    return (
+      <g key={i}>
+        <circle cx={cx} cy={cy} r={R + 7} fill="#fff" fillOpacity=".22" />
+        {Array.from({ length: den }, (_, k) => {
+          const [x0, y0] = at(k, R);
+          const [x1, y1] = at(k + 1, R);
+          const has = k < num;
+          const [px, py] = at(k + 0.5, R * 0.58);
+          return (
+            <g key={k}>
+              <path
+                d={den === 1 ? `M${cx - R} ${cy}a${R} ${R} 0 1 0 ${2 * R} 0a${R} ${R} 0 1 0 ${-2 * R} 0` : `M${cx} ${cy}L${x0} ${y0}A${R} ${R} 0 0 1 ${x1} ${y1}Z`}
+                fill={has ? '#ffcf6e' : '#fff'}
+                fillOpacity={has ? 1 : 0.18}
+                stroke={has ? '#e2a85a' : '#fff'}
+                strokeWidth="3"
+                strokeLinejoin="round"
+              />
+              {has && <circle cx={px} cy={py} r={Math.max(4, 12 - den)} fill="#e5484d" />}
+            </g>
+          );
+        })}
+        <text x={cx} y="182" textAnchor="middle" fontFamily="Fredoka, sans-serif" fontWeight="700" fontSize="26" fill="#fff">
+          {num}/{den}
+        </text>
+      </g>
+    );
+  };
+  return (
+    <svg className="problem-picture-svg" viewBox="0 0 300 192" aria-hidden="true">
+      {pizza(fractions[0], 74, 0)}
+      {pizza(fractions[1], 226, 1)}
+    </svg>
+  );
+}
+
+function fractionParts(text) {
+  const m = /^(\d+)\/(\d+)$/.exec(String(text));
+  if (!m) return null;
+  const [num, den] = [Number(m[1]), Number(m[2])];
+  return den >= 1 && den <= 12 && num <= den ? [num, den] : null;
+}
+
 export function problemPicture(problem) {
   if (!problem || problem.toddler || problem.lang === 'ja') return null;
   if (problem.type === 'sentence' && problem.numbers) {
     const [a, b] = problem.numbers;
     return <BarModel op={problem.op} a={a} b={b} />;
+  }
+  if (problem.promptKind === 'compare') {
+    const [l, r] = [fractionParts(problem.compareLeft), fractionParts(problem.compareRight)];
+    if (l && r) return <FractionPizzas fractions={[l, r]} />;
+    // Whole numbers up to 999 (written as numbers or text).
+    const whole = (v) => (/^\d{1,3}$/.test(String(v)) ? Number(v) : null);
+    const [x, y] = [whole(problem.compareLeft), whole(problem.compareRight)];
+    if (x !== null && y !== null) return <PlaceValue a={x} b={y} op="compare" />;
+    return null;
   }
   if (problem.type) return null;
   const { op, a, b } = problem;
