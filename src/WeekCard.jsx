@@ -1,4 +1,5 @@
 import { weekSummary } from './todayPlan.js';
+import Icon from './Icon.jsx';
 
 // A player's last 7 days, for grown-ups (Players & grades): rounds, days
 // played, how many right, mistakes fixed, the streak and the games played
@@ -7,7 +8,7 @@ export function weekText(name, week) {
   const pct = week.total ? Math.round((week.correct / week.total) * 100) : 0;
   const parts = [`${week.rounds} ${week.rounds === 1 ? 'round' : 'rounds'} on ${week.days} ${week.days === 1 ? 'day' : 'days'}`, `${pct}% right`];
   if (week.fixed) parts.push(`fixed ${week.fixed} ${week.fixed === 1 ? 'mistake' : 'mistakes'}`);
-  return `${name}'s math week on MathPop: ${parts.join(', ')}${week.streak >= 2 ? `, and a ${week.streak}-day streak` : ''}! 🎉`;
+  return `${name}'s math week on MathPop: ${parts.join(', ')}${week.streak >= 2 ? `, and a ${week.streak}-day streak` : ''}!`;
 }
 
 export default function WeekCard({ player, topicName, onShare, onReport }) {
@@ -17,7 +18,7 @@ export default function WeekCard({ player, topicName, onShare, onReport }) {
     <section className="week-card">
       <div className="week-card-head">
         <h3 className="week-card-title">{player.name}’s week</h3>
-        {week.streak >= 1 && <span className="week-streak">🔥 {week.streak} {week.streak === 1 ? 'day' : 'days in a row'}</span>}
+        {week.streak >= 1 && <span className="week-streak"><Icon name="fire" /> {week.streak} {week.streak === 1 ? 'day' : 'days in a row'}</span>}
       </div>
       {week.rounds === 0 ? (
         <p className="week-empty">No rounds in the last 7 days yet.</p>
@@ -41,7 +42,7 @@ export default function WeekCard({ player, topicName, onShare, onReport }) {
           <div className="week-actions">
             {onReport && (
               <button className="week-share" onClick={() => onReport(player)}>
-                ✨ Full report
+                <Icon name="sparkle" /> Full report
               </button>
             )}
             {onShare && (

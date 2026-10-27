@@ -397,7 +397,7 @@ export function playFeedbackAndSpeak(correct, correctAnswer, lang) {
       speak(correct ? `Great job, ${name}! The answer is ${correctAnswer}` : `Not quite, ${name}. The answer is ${correctAnswer}.`);
       return;
     }
-    // A wrong answer is told, and the round moves on (🙋 Show me how is
+    // A wrong answer is told, and the round moves on (Show me how is
     // there to explain it).
     speak(correct ? `The answer is ${correctAnswer}` : `Not quite. The answer is ${correctAnswer}.`);
   }, 300);

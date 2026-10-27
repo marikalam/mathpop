@@ -1,6 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import { useEffect, useState } from 'react';
 import { buyPlus, manageSubscription, plusProducts, restorePlus } from './plus.js';
+import Icon from './Icon.jsx';
 
 // MathPop Plus, for grown-ups (behind the grown-ups check): what it adds,
 // and the subscription (iPhone app). Founding families, and everyone
@@ -10,10 +11,10 @@ const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stde
 const PRIVACY_URL = 'https://marikalam.github.io/apps/mathpop/privacy.html';
 
 const FEATURES = [
-  ['📊', 'Full progress report', 'Every topic with how often they get it right, the tricky ones, four weeks of practice, and the mistakes still to fix.'],
-  ['🎯', 'Assign practice', 'Pick topics for each child: they show up first in their Today’s practice.'],
-  ['👨‍👩‍👧', 'One family plan', 'Every child, on every device signed in to your family account.'],
-  ['💛', 'Keeps MathPop growing', 'No ads, ever. Plus helps a mom keep building it.'],
+  ['chart', 'Full progress report', 'Every topic with how often they get it right, the tricky ones, four weeks of practice, and the mistakes still to fix.'],
+  ['target', 'Assign practice', 'Pick topics for each child: they show up first in their Today’s practice.'],
+  ['family', 'One family plan', 'Every child, on every device signed in to your family account.'],
+  ['heart', 'Keeps MathPop growing', 'No ads, ever. Plus helps a mom keep building it.'],
 ];
 
 function periodName(product) {
@@ -51,9 +52,9 @@ export default function PlusScreen({ status, user, onStatus, onSignIn, openOutsi
   return (
     <div className="plus-screen">
       <div className="plus-hero">
-        <span className="plus-hero-badge">✨ Plus</span>
+        <span className="plus-hero-badge"><Icon name="sparkle" /> Plus</span>
         {status.why === 'founder' && (
-          <p className="plus-hero-text">You’re a founding family 💛 Plus is free for you, for good. Thank you for being here early!</p>
+          <p className="plus-hero-text">You’re a founding family <Icon name="heart" /> Plus is free for you, for good. Thank you for being here early!</p>
         )}
         {status.why === 'early' && (
           <p className="plus-hero-text">Plus is free for everyone right now, and families using MathPop before it starts keep it free for good.</p>
@@ -70,7 +71,7 @@ export default function PlusScreen({ status, user, onStatus, onSignIn, openOutsi
         {FEATURES.map(([icon, title, text]) => (
           <li key={title}>
             <span className="plus-feature-icon" aria-hidden="true">
-              {icon}
+              <Icon name={icon} />
             </span>
             <span>
               <strong>{title}</strong>

@@ -15,10 +15,11 @@ import AdditionHelp from './AdditionHelp.jsx';
 import ExplainPanel from './ExplainPanel.jsx';
 import PrintSheet from './PrintSheet.jsx';
 import { PREK_CONCEPTS, ShapeIcon } from './preK.jsx';
-import { Speaker, Thing } from './Drawings.jsx';
+import { RichText, Speaker, Thing } from './Drawings.jsx';
 import { CountBoard, CountCelebration, sayCountCelebration } from './ToddlerCount.jsx';
 import { compareAfterPicture, problemPicture } from './ProblemPicture.jsx';
 import SectionIcon from './SectionIcon.jsx';
+import Icon from './Icon.jsx';
 import { CompareChoices } from './CompareSigns.jsx';
 import ProfileSwitcher from './ProfileSwitcher.jsx';
 import EmailHandoff from './EmailHandoff.jsx';
@@ -160,7 +161,7 @@ const OPERATIONS = {
   add: { symbol: '+', label: 'Addition', color: '#2FAE6B' },
   subtract: { symbol: '−', label: 'Subtraction', color: '#8E4FD6' },
   divide: { symbol: '÷', label: 'Division', color: '#E0793A' },
-  clock: { symbol: '🕐', label: 'Clock', color: '#E0793A' },
+  clock: { symbol: 'clock', label: 'Clock', color: '#E0793A' },
 };
 
 const ALL_META = { ...OPERATIONS, ...SKILL_META };
@@ -1394,23 +1395,23 @@ export default function App() {
                   <>
                     {/* Days in a row, once there's a streak to keep going. */}
                     {streakDays(currentProfile.id) >= 2 ? (
-                      <span className="home-stat home-stat-streak">🔥 {streakDays(currentProfile.id)} days in a row</span>
+                      <span className="home-stat home-stat-streak"><Icon name="fire" /> {streakDays(currentProfile.id)} days in a row</span>
                     ) : (
-                      <span className="home-stat">✅ {levelStats.total} solved</span>
+                      <span className="home-stat"><Icon name="check" /> {levelStats.total} solved</span>
                     )}
-                    <span className="home-stat">🎯 {Math.round((levelStats.correct / levelStats.total) * 100)}% right</span>
+                    <span className="home-stat"><Icon name="target" /> {Math.round((levelStats.correct / levelStats.total) * 100)}% right</span>
                   </>
                 ) : (
-                  <span className="home-stat">⭐ Start your first round</span>
+                  <span className="home-stat"><Icon name="star" /> Start your first round</span>
                 )}
               </div>
               {/* The sticker book, as in PitchPop: earned by finishing rounds. */}
               <button className="home-stickers" onClick={() => openStickerBook()}>
-                <span aria-hidden="true">📒</span>
+                <Icon name="book" size="1.4em" />
                 Sticker book
                 {signedIn && pendingStickers(currentProfile.id) > 0 && (
                   <span className="home-stickers-badge" aria-label={`${pendingStickers(currentProfile.id)} waiting`}>
-                    🎁 {pendingStickers(currentProfile.id)}
+                    <Icon name="gift" /> {pendingStickers(currentProfile.id)}
                   </span>
                 )}
               </button>
@@ -1544,7 +1545,7 @@ export default function App() {
               <>
                 <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
                 <h2 className="screen-title">
-                  <span aria-hidden="true">{section.icon}</span> {section.title}
+                  <Icon name={section.icon} /> {section.title}
                 </h2>
                 <p className="screen-sub">{gradeInfo(level).label} · {section.sub}</p>
                 {section.topics.length > 1 && (
@@ -1554,7 +1555,7 @@ export default function App() {
                     onClick={() => startOperation(`section:${section.id}`, 'section')}
                   >
                     <span className="home-cta-icon" aria-hidden="true">
-                      🎲
+                      <Icon name="dice" size="1.6em" />
                     </span>
                     <span className="home-cta-text">
                       <span className="home-cta-title">Mix it up</span>
@@ -1570,8 +1571,8 @@ export default function App() {
                     const stats = levelStats.byOp?.[topic.id];
                     return (
                       <button key={topic.id} className="topic-card" onClick={() => startOperation(topic.id, 'section')}>
-                        <span className="topic-card-icon" style={{ background: section.to }} aria-hidden="true">
-                          {TOPIC_ICONS[topic.id] || section.icon}
+                        <span className="topic-card-icon" style={{ '--c': section.to }} aria-hidden="true">
+                          <Icon name={TOPIC_ICONS[topic.id] || section.icon} size="1.35em" />
                         </span>
                         <span className="topic-card-text">
                           <span className="topic-card-title">{topic.title}</span>
@@ -1612,7 +1613,7 @@ export default function App() {
                         style={{ background: SKILL_META[concept.id].color }}
                         onClick={() => startOperation(concept.id, 'skills')}
                       >
-                        <span className="skill-card-symbol">{SKILL_META[concept.id].symbol}</span>
+                        <span className="skill-card-symbol"><Icon name={SKILL_META[concept.id].symbol} /></span>
                         <span className="skill-card-text">
                           <span className="skill-card-title">{concept.title}</span>
                           <span className="skill-card-sub">{concept.sub}</span>
@@ -1701,7 +1702,7 @@ export default function App() {
               Cancel
             </button>
             {/* For grown-ups: each player's week, and rating MathPop. */}
-            <h3 className="section-label">📈 This week</h3>
+            <h3 className="section-label"><Icon name="growth" /> This week</h3>
             <div className="week-cards">
               {profiles.map((p) => (
                 <WeekCard key={p.id} player={p} topicName={statTopicName} onShare={shareWeek} onReport={openReport} />
@@ -1710,7 +1711,7 @@ export default function App() {
             {shareNote && <p className="share-note">{shareNote}</p>}
             <button className="rate-row plus-row" onClick={openPlus}>
               <span className="rate-row-stars" aria-hidden="true">
-                ✨
+                <Icon name="sparkle" />
               </span>
               <span>
                 <strong>MathPop Plus</strong>
@@ -1725,7 +1726,7 @@ export default function App() {
             </button>
             <button className="rate-row" onClick={rateApp}>
               <span className="rate-row-stars" aria-hidden="true">
-                ⭐
+                <Icon name="star" />
               </span>
               <span>
                 <strong>Enjoying MathPop?</strong>A rating on the App Store helps other families find it.
@@ -1746,7 +1747,7 @@ export default function App() {
                   the worksheet is a website-only extra, tucked in the corner. */}
               {!IS_NATIVE && (
                 <button className="print-open-btn" onClick={() => setPrintPanel(true)} aria-label="Print a worksheet" title="Print a worksheet">
-                  🖨️
+                  <Icon name="printer" />
                 </button>
               )}
               {/* Show me how: a small "?" at the end of the title line, out
@@ -1803,7 +1804,7 @@ export default function App() {
               ) : problem.type === 'skill' && problem.visual ? (
                 <span className="problem-visual-wrap">
                   <TopicVisual v={problem.visual} />
-                  <span className="problem-text problem-text-sentence">{problem.prompt}</span>
+                  <span className="problem-text problem-text-sentence"><RichText text={problem.prompt} size={34} /></span>
                 </span>
               ) : problem.type === 'skill' && problem.promptKind === 'count' ? (
                 <span className="prek-count" aria-hidden="true">
@@ -1854,7 +1855,7 @@ export default function App() {
                     {problem.type === 'sentence'
                       ? problem.text
                       : problem.type === 'skill'
-                        ? problem.prompt
+                        ? <RichText text={problem.prompt} size={problem.prompt.length > 24 ? 34 : 48} />
                         : `${problem.a} ${problem.symbol} ${problem.b}`}
                   </span>
                   {/* Ten-frames, a cookie tray or a bar model (ProblemPicture.jsx). */}
@@ -1865,7 +1866,7 @@ export default function App() {
             )}
             {canZoom(problem) && (
               <button className="zoom-open-btn" onClick={() => setZoomed(problem)}>
-                🔍 {tr('Zoom in', 'おおきく する')}
+                <Icon name="zoom" /> {tr('Zoom in', 'おおきく する')}
               </button>
             )}
             {zoomed === problem && (
@@ -1873,7 +1874,7 @@ export default function App() {
                 {problem.type === 'clock' ? <ClockFace hour={problem.hour} minute={problem.minute} /> : <TopicVisual v={problem.visual} />}
               </ZoomView>
             )}
-            {problem.type === 'skill' && problem.hint && <p className="screen-sub skill-hint">💡 {problem.hint}</p>}
+            {problem.type === 'skill' && problem.hint && <p className="screen-sub skill-hint"><Icon name="bulb" /> <RichText text={problem.hint} size={22} /></p>}
             {!(problem.promptKind === 'count' && problem.toddler) && <p className="screen-sub tap-to-hear">{tr('Tap the problem to hear it', 'もんだいを タップすると きこえるよ')}</p>}
 
             {/* Toddler "listen and pick" games: the answers are the big part. */}
@@ -2007,10 +2008,10 @@ export default function App() {
                           <Thing key={i} id={problem.groups[value].thing} size={problem.groups[value].n > 4 ? 58 : 72} />
                         ))}
                       </span>
-                    ) : problem.choiceKind === 'thing' ? (
+                    ) : problem.choiceKind === 'thing' || problem.choiceKind === 'emoji' ? (
                       <Thing id={value} size={64} />
                     ) : (
-                      value
+                      <RichText text={value} size={40} />
                     )}
                   </button>
                 ))}
@@ -2028,7 +2029,7 @@ export default function App() {
             {answerCorrect && problem.promptKind === 'count' && problem.toddler ? (
               <>
                 <h2 className="screen-title">
-                  {problem.lang === 'ja' ? `${problem.speechAnswer}！ やったね！` : `Yay, ${problemAnswerText(problem)}!`}
+                  {problem.lang === 'ja' ? `${problem.speechAnswer}！ やったね！` : <>Yay, <RichText text={problemAnswerText(problem)} size={36} />!</>}
                 </h2>
                 <CountCelebration problem={problem} color={ALL_META[problem.op].color} />
                 <button className="pill-btn-primary pill-btn-full" onClick={nextProblem}>
@@ -2056,10 +2057,10 @@ export default function App() {
             {/* Right or wrong, the answer is shown and the round moves on (a
                 wrong one isn't asked again); Show me how explains it. */}
             <p className="screen-sub">
-              {answerCorrect ? tr("That's right!", 'せいかい！') : tr(`You picked ${String(chosen)}. Here's the answer:`, 'こたえは これだよ。')}
+              {answerCorrect ? tr("That's right!", 'せいかい！') : <RichText text={tr(`You picked ${String(chosen)}. Here's the answer:`, 'こたえは これだよ。')} size={26} />}
             </p>
             <div className="answer-card" style={{ background: ALL_META[problem.op].color }}>
-              <div className="answer-equation">{problemAnswerText(problem)}</div>
+              <div className="answer-equation"><RichText text={problemAnswerText(problem)} size={44} /></div>
               {/* Fractions: the bigger pizza gets eaten, or equal ones slide together. */}
               {compareAfterPicture(problem, ALL_META[problem.op].color) && (
                 <div className="answer-picture">{compareAfterPicture(problem, ALL_META[problem.op].color)}</div>
@@ -2070,7 +2071,7 @@ export default function App() {
                 <ExplainPanel problem={problem} onClose={() => setShowHelp(false)} />
               ) : (
                 <button className="help-btn help-btn-soft" onClick={() => { unlockAudio(); setShowHelp(true); }}>
-                  <span className="help-btn-icon" aria-hidden="true">🙋</span>
+                  <span className="help-btn-icon" aria-hidden="true"><Icon name="hand" /></span>
                   {tr('Show me how', 'やりかたを みせて')}
                 </button>
               ))}
@@ -2086,7 +2087,7 @@ export default function App() {
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={sessionBack} />
             <div className="complete-wrap">
-              <div className="complete-emoji">🎉</div>
+              <div className="complete-emoji"><Icon name="party" size="1em" /></div>
               <h2 className="screen-title">{tr('All done!', 'できた！')}</h2>
               <p className="screen-sub">
                 {tr(`You went through ${SESSION_ROUNDS} ${modeLabel} problems.`, `${SESSION_ROUNDS}もん ぜんぶ おわったよ！`)}
@@ -2109,7 +2110,7 @@ export default function App() {
                   {Object.entries(sessionResults).map(([op, results]) => (
                     <div key={op} className="result-row">
                       <span className="result-op-symbol" style={{ background: ALL_META[op].color }}>
-                        {ALL_META[op].symbol}
+                        <Icon name={ALL_META[op].symbol} />
                       </span>
                       <span className="result-op-name">{ALL_META[op].label}</span>
                       <span className="result-numbers">
@@ -2152,10 +2153,10 @@ export default function App() {
                   </span>
                   <div className="review-body">
                     <p className="review-prompt">
-                      {i + 1}. {entry.prompt}
+                      {i + 1}. <RichText text={entry.prompt} size={22} />
                     </p>
-                    {!entry.correct && <p className="review-your-answer">You answered: {String(entry.yourAnswer)}</p>}
-                    <p className="review-correct-answer">{entry.answerText}</p>
+                    {!entry.correct && <p className="review-your-answer">You answered: <RichText text={String(entry.yourAnswer)} size={22} /></p>}
+                    <p className="review-correct-answer"><RichText text={entry.answerText} size={22} /></p>
                   </div>
                 </div>
               ))}
@@ -2171,7 +2172,7 @@ export default function App() {
               aria-label="Print a worksheet"
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="print-panel-title">🖨️ Print a worksheet</h2>
+              <h2 className="print-panel-title"><Icon name="printer" /> Print a worksheet</h2>
               <p className="print-panel-sub">
                 New {modeLabel} problems at this level, to do on paper.
               </p>
@@ -2216,7 +2217,7 @@ export default function App() {
         <div className="handoff-backdrop" role="dialog" aria-modal="true" aria-labelledby="guest-move-title">
           <div className="handoff-card">
             <div className="handoff-icon" aria-hidden="true">
-              👨‍👩‍👧
+              <Icon name="family" size="1em" />
             </div>
             <h2 id="guest-move-title" className="handoff-title">
               Move your guest players into your account?

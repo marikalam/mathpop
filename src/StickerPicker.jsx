@@ -3,6 +3,7 @@ import { STICKERS, stickerName } from './stickers.js';
 import { addSticker, bookPage, pendingStickers, playerStickers } from './stickerStore.js';
 import Sticker from './Sticker.jsx';
 import { playStickerPick, playStickerStick } from './sound.js';
+import Icon from './Icon.jsx';
 
 const ALL = STICKERS.map((_, i) => i);
 
@@ -29,7 +30,7 @@ export default function StickerPicker({ playerId, signedIn, from, onStick, onSig
           <Sticker index={guestSticker} size={72} play />
         </span>
         <span>
-          <span className="workon-title">Your sticker! ⭐</span>
+          <span className="workon-title">Your sticker! <Icon name="star" /></span>
           <br />
           <span className="workon-text">
             Stickers can't be kept in a sticker book without an account. Make one to save every sticker!
@@ -90,8 +91,8 @@ export default function StickerPicker({ playerId, signedIn, from, onStick, onSig
         {chosen === null
           ? 'Tap a sticker'
           : signedIn
-            ? 'Stick it in my book ⭐'
-            : 'Pick this one ⭐'}
+            ? <>Stick it in my book <Icon name="star" /></>
+            : <>Pick this one <Icon name="star" /></>}
       </button>
     </div>
   );

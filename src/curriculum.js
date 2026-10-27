@@ -10,31 +10,31 @@
 
 // `short` is the name on the home page's card.
 const SECTION_STYLE = {
-  numbers: { icon: '🔢', short: 'Numbers', from: '#4e8ff7', to: '#3a6fd8' },
-  addsub: { icon: '➕', short: 'Add & Subtract', from: '#38c07f', to: '#2a9e60' },
-  muldiv: { icon: '✖️', short: 'Multiply & Divide', from: '#a065e6', to: '#7c3fc4' },
-  fractions: { icon: '🍕', short: 'Fractions', from: '#14b8a6', to: '#0f9384' },
-  decimals: { icon: '🔟', short: 'Decimals', from: '#1fb6ba', to: '#14898c' },
-  measure: { icon: '📏', short: 'Measurement', tile: 'Measure', from: '#f5a524', to: '#e08a12' },
-  shapes: { icon: '🔺', short: 'Shapes', from: '#e0577f', to: '#c43c66' },
-  data: { icon: '📊', short: 'Graphs', from: '#f0954f', to: '#e0793a' },
-  puzzles: { icon: '🧠', short: 'Puzzles', from: '#8e4fd6', to: '#6f35b8' },
+  numbers: { icon: 'keypad', short: 'Numbers', from: '#4e8ff7', to: '#3a6fd8' },
+  addsub: { icon: 'plus', short: 'Add & Subtract', from: '#38c07f', to: '#2a9e60' },
+  muldiv: { icon: 'times', short: 'Multiply & Divide', from: '#a065e6', to: '#7c3fc4' },
+  fractions: { icon: 'pizza', short: 'Fractions', from: '#14b8a6', to: '#0f9384' },
+  decimals: { icon: 'decimal', short: 'Decimals', from: '#1fb6ba', to: '#14898c' },
+  measure: { icon: 'ruler', short: 'Measurement', tile: 'Measure', from: '#f5a524', to: '#e08a12' },
+  shapes: { icon: 'shapes', short: 'Shapes', from: '#e0577f', to: '#c43c66' },
+  data: { icon: 'chart', short: 'Graphs', from: '#f0954f', to: '#e0793a' },
+  puzzles: { icon: 'brain', short: 'Puzzles', from: '#8e4fd6', to: '#6f35b8' },
 };
 
 // Each topic's picture on its card.
 export const TOPIC_ICONS = {
-  count: '🍎', findNumber: '🔍', moreFewer: '⚖️', shapes: '🔺', bigSmall: '🐘', pattern: '🔴',
-  frames: '🔟', numberOrder: '➡️', compare: '⚖️', numberBond: '🔗', add: '+', subtract: '−',
-  multiply: '×', divide: '÷', sentence: '📖', clock: '🕐', placeValue: '🔢', skipCount: '🦘',
-  ordinal: '🥇', addStrategy: '🔟', equalGroups: '🍪', sharing: '🤝', ruler: '📏', money: '💰',
-  shapeSides: '🛑', position: '🗺️', pictureGraph: '📊', oddEven: '🔀', subStrategy: '🧠',
-  regroup: '🧱', missingDigit: '❓', fractionPicture: '🍕', fraction: '🥧', compareFractions: '⚖️',
-  measurement: '📐', massVolume: '⚖️', duration: '⏱️', expression: '🧮', riddle: '🕵️',
-  shortcut: '⚡', estimate: '🎯', remainder: '🍬', squares: '⬛', distributive: '✂️',
-  addFractions: '➕', perimeter: '🔲', area: '🟦', shapeClass: '🔷', angles: '📐', lines: '🛤️',
-  barGraph: '📊', variables: '🔤', multistep: '🧩', rounding: '🎯', factors: '🧮', primes: '💎',
-  exponents: '🚀', negative: '🌡️', orderOps: '🧭', decimalPlace: '🔟', decimalConvert: '🔁',
-  decimalAddSub: '➕', clock24: '🕒', symmetry: '🦋', logic: '🧩', counting: '🔢', probability: '🎲',
+  count: 'apple', findNumber: 'zoom', moreFewer: 'scale', shapes: 'shapes', bigSmall: 'bear', pattern: 'pattern',
+  frames: 'tenframe', numberOrder: 'arrow', compare: 'scale', numberBond: 'bond', add: '+', subtract: '−',
+  multiply: '×', divide: '÷', sentence: 'story', clock: 'clock', placeValue: 'blocks', skipCount: 'frog',
+  ordinal: 'medal', addStrategy: 'tenframe', equalGroups: 'cookie', sharing: 'share', ruler: 'ruler', money: 'coin',
+  shapeSides: 'octagon', position: 'grid', pictureGraph: 'chart', oddEven: 'pairs', subStrategy: 'brain',
+  regroup: 'blocks', missingDigit: 'question', fractionPicture: 'pizza', fraction: 'pizza', compareFractions: 'scale',
+  measurement: 'ruler', massVolume: 'scale', duration: 'clock', expression: 'abacus', riddle: 'zoom',
+  shortcut: 'bolt', estimate: 'target', remainder: 'candy', squares: 'grid', distributive: 'scissors',
+  addFractions: 'plus', perimeter: 'perimeter', area: 'grid', shapeClass: 'shapes', angles: 'angle', lines: 'lines',
+  barGraph: 'chart', variables: 'abc', multistep: 'puzzle', rounding: 'target', factors: 'abacus', primes: 'gem',
+  exponents: 'rocket', negative: 'thermometer', orderOps: 'compass', decimalPlace: 'decimal', decimalConvert: 'repeat',
+  decimalAddSub: 'plus', clock24: 'clock', symmetry: 'butterfly', logic: 'puzzle', counting: 'keypad', probability: 'dice',
 };
 
 const t = (id, title, sub, from) => ({ id, title, sub, from });

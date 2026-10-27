@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom';
 import { ClockFace } from './icons.jsx';
 import TopicVisual from './TopicVisual.jsx';
+import { RichText } from './Drawings.jsx';
 
 // A printable worksheet: numbered problems in two columns with room to
 // write, and an optional answer key on its own page. It's rendered into
@@ -52,7 +53,7 @@ function Problem({ problem }) {
       body = (
         <>
           {problem.visual && <TopicVisual v={problem.visual} />}
-          <p className={problem.prompt.length > 24 ? 'ws-text' : 'ws-math'}>{problem.prompt}</p>
+          <p className={problem.prompt.length > 24 ? 'ws-text' : 'ws-math'}><RichText text={problem.prompt} size={20} /></p>
         </>
       );
     }
@@ -108,7 +109,7 @@ export default function PrintSheet({ problems, title, levelLabel, withKey }) {
           <ol className="ws-key-list">
             {problems.map((p, i) => (
               <li key={i}>
-                <span className="ws-num">{i + 1}.</span> {answerFor(p)}
+                <span className="ws-num">{i + 1}.</span> <RichText text={answerFor(p)} size={16} />
               </li>
             ))}
           </ol>
