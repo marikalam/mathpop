@@ -47,8 +47,8 @@ Kids category notes:
   MathPop Plus, the free-trial card and the free-round screen, all behind
   the grown-ups check. Subscribing does not require an account. Families
   who used MathPop before Plus started keep everything free ("founding
-  families"). In TestFlight/sandbox that check is skipped, so the trial and
-  the purchase can be tested.
+  families"). A fresh install is a new family, so the trial, the daily free
+  round and the purchase can all be tested.
 - No ads, no third-party analytics
   and no tracking. MathPop sends its own anonymous usage counts (app opened;
   a round's grade, game, language and score) with no account, device or
