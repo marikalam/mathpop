@@ -5145,11 +5145,15 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 22px;
+  /* The things shrink to fit a row across a narrow phone (ToddlerCount
+     sets --across, the most in one row). */
+  width: 100%;
+  container-type: inline-size;
 }
 .toddler-row {
   display: flex;
   justify-content: center;
-  gap: 14px;
+  gap: 12px;
 }
 .toddler-thing {
   appearance: none;
@@ -5157,14 +5161,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: calc(var(--size) + 14px);
-  height: calc(var(--size) + 14px);
+  width: min(calc(var(--size) + 14px), calc((100cqw - (var(--across, 1) - 1) * 12px) / var(--across, 1)));
+  aspect-ratio: 1;
   padding: 0;
   border: none;
   border-radius: 50%;
   background: transparent;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+.toddler-thing > .thing {
+  width: calc(100% - 14px);
+  height: auto;
 }
 .toddler-thing-counted {
   background: rgba(255, 255, 255, 0.3);
