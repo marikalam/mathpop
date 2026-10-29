@@ -2129,6 +2129,12 @@ export default function App() {
               {compareAfterPicture(problem, ALL_META[problem.op].color) && (
                 <div className="answer-picture">{compareAfterPicture(problem, ALL_META[problem.op].color)}</div>
               )}
+              {/* Rows & columns: the row and column light up where they meet. */}
+              {problem.visual?.kind === 'table' && problem.visual.ask && (
+                <div className="answer-picture">
+                  <TopicVisual v={{ ...problem.visual, reveal: true }} />
+                </div>
+              )}
             </div>
             {!answerCorrect &&
               (showHelp ? (
