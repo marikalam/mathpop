@@ -1,8 +1,11 @@
 // Sets up MathPop Plus in App Store Connect: the "MathPop Plus"
 // subscription group and its two subscriptions (monthly and yearly), each
 // with its name and description, its price in every country (Apple's
-// equivalents of the US price), a 7-day free trial and the screenshot for
-// App Review. Safe to run again: it only adds what's missing. Run by
+// equivalents of the US price) and the screenshot for App Review. No
+// App Store free trial: the app gives new families its own 7 days first
+// (src/plus.js), so any old one is removed. Safe to run again: it only
+// adds what's missing, and keeps the description and review note up to
+// date. Run by
 // appstore-plus.yml. The App Store's Paid Apps agreement must be active.
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -13,10 +16,11 @@ const PLANS = [
   { productId: 'com.marikalam.mathpop.plus.monthly', name: 'MathPop Plus Monthly', period: 'ONE_MONTH', price: '3.99', level: 2 },
   { productId: 'com.marikalam.mathpop.plus.yearly', name: 'MathPop Plus Yearly', period: 'ONE_YEAR', price: '29.99', level: 1 },
 ];
-const DISPLAY = { name: 'MathPop Plus', description: 'Full progress report and assigned practice' };
+const DISPLAY = { name: 'MathPop Plus', description: 'Unlimited rounds, full report and assigned practice' };
 const REVIEW_NOTE =
-  'MathPop Plus unlocks grown-up features: the full progress report and assigning practice (Players & grades, behind a grown-ups check). ' +
-  'Families who used MathPop before Plus started keep it free. In TestFlight/sandbox the founding-family check is skipped so the purchase can be tested.';
+  'MathPop Plus unlocks all of MathPop: unlimited rounds (without it, one free round a day after a 7-day free trial that needs no payment ' +
+  'details), plus the full progress report and assigning practice. It is only offered to grown-ups, behind a grown-ups check, and does not ' +
+  'require an account. Families who used MathPop before Plus started keep it free. A fresh install is a new family, so the purchase can be tested.';
 
 // Every page of a list.
 async function all(path) {
@@ -72,13 +76,21 @@ for (const plan of PLANS) {
     console.log(`Made ${plan.name}`);
   }
 
-  if (!(await all(`/v1/subscriptions/${sub.id}/subscriptionLocalizations?limit=50`)).length) {
+  const local = (await all(`/v1/subscriptions/${sub.id}/subscriptionLocalizations?limit=50`)).find((l) => l.attributes.locale === 'en-US');
+  if (!local) {
     await api('POST', '/v1/subscriptionLocalizations', {
       type: 'subscriptionLocalizations',
       attributes: { locale: 'en-US', ...DISPLAY },
       relationships: { subscription: { data: { type: 'subscriptions', id: sub.id } } },
     });
     console.log(`${plan.name}: name and description`);
+  } else if (local.attributes.description !== DISPLAY.description || local.attributes.name !== DISPLAY.name) {
+    await api('PATCH', `/v1/subscriptionLocalizations/${local.id}`, { type: 'subscriptionLocalizations', id: local.id, attributes: DISPLAY });
+    console.log(`${plan.name}: description updated`);
+  }
+  if (sub.attributes.reviewNote !== REVIEW_NOTE) {
+    await api('PATCH', `/v1/subscriptions/${sub.id}`, { type: 'subscriptions', id: sub.id, attributes: { reviewNote: REVIEW_NOTE } });
+    console.log(`${plan.name}: review note updated`);
   }
 
   // Prices: the US price, and Apple's matching price in every other country.
@@ -126,27 +138,18 @@ for (const plan of PLANS) {
     if (!String(err).includes('409')) throw err;
   }
 
-  // A 7-day free trial for new subscribers, in every country.
+  // No App Store free trial (the app's own 7 days come first): remove any.
   const offers = await all(`/v1/subscriptions/${sub.id}/introductoryOffers?limit=200`);
-  if (!offers.length) {
-    let n = 0;
-    for (const t of territories) {
-      try {
-        await api('POST', '/v1/subscriptionIntroductoryOffers', {
-          type: 'subscriptionIntroductoryOffers',
-          attributes: { duration: 'ONE_WEEK', offerMode: 'FREE_TRIAL', numberOfPeriods: 1 },
-          relationships: {
-            subscription: { data: { type: 'subscriptions', id: sub.id } },
-            territory: { data: { type: 'territories', id: t.id } },
-          },
-        });
-        n++;
-      } catch (err) {
-        if (n === 0 && t === territories[0]) console.log(`${plan.name}: free trial: ${String(err).split('\n')[0]}`);
-      }
+  let removed = 0;
+  for (const offer of offers) {
+    try {
+      await api('DELETE', `/v1/subscriptionIntroductoryOffers/${offer.id}`);
+      removed++;
+    } catch (err) {
+      if (removed === 0) console.log(`${plan.name}: free trial not removed: ${String(err).split('\n')[0]}`);
     }
-    console.log(`${plan.name}: 7-day free trial in ${n} countries`);
   }
+  if (offers.length) console.log(`${plan.name}: App Store free trial removed in ${removed} of ${offers.length} countries`);
 
   // The screenshot App Review sees.
   const has = await api('GET', `/v1/subscriptions/${sub.id}/appStoreReviewScreenshot`).catch(() => ({ data: null }));

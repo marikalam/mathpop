@@ -119,7 +119,7 @@ export default function PlusScreen({ status, user, onStatus, onSignIn, openOutsi
                 <strong>
                   {p.priceString} / {periodName(p)}
                 </strong>
-                <span>{periodName(p) === 'year' ? 'Best value · 7 days free, then yearly' : '7 days free, then monthly'}</span>
+                <span>{periodName(p) === 'year' ? 'Best value · billed yearly' : 'Billed monthly'}</span>
               </button>
             ))}
           </div>
@@ -127,7 +127,7 @@ export default function PlusScreen({ status, user, onStatus, onSignIn, openOutsi
             Restore purchases
           </button>
           <p className="plus-legal">
-            Payment is charged to your Apple ID when you confirm, after any free trial. The subscription renews automatically unless
+            Payment is charged to your Apple ID when you confirm. The subscription renews automatically unless
             it’s cancelled at least 24 hours before the end of the period; manage or cancel it in your App Store account settings.{' '}
             <button className="plus-link" onClick={() => openOutside(TERMS_URL)}>
               Terms of Use
