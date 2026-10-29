@@ -68,7 +68,7 @@ export function CountBoard({ problem, color, onCounted, onHear }) {
         if (!e.target.closest('button')) onHear();
       }}
     >
-      <span className="toddler-rows">
+      <span className="toddler-rows" style={{ '--across': rows(n)[0] }}>
         <Rows
           n={n}
           render={(i) => (
@@ -128,7 +128,7 @@ export function CountCelebration({ problem, color }) {
             <i key={i} />
           ))}
         </span>
-        <span className="toddler-rows">
+        <span className="toddler-rows" style={{ '--across': rows(n)[0] }}>
           <Rows
             n={n}
             render={(i) => (
