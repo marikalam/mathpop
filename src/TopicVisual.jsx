@@ -547,29 +547,51 @@ export default function TopicVisual({ v }) {
           <span className="tv-letter">{v.letter}</span>
         </Panel>
       );
-    case 'table':
+    case 'table': {
+      // Rows (blue) go across, columns (orange) go down. The row and column
+      // asked about have filled labels; after answering (`reveal`), that
+      // row and column light up and the box where they cross is ringed.
+      const [askR, askC] = v.ask || [];
       return (
         <Panel>
-          <span className="tv-table" style={{ gridTemplateColumns: `auto repeat(${v.cols}, 1fr)` }}>
-            <span />
-            {Array.from({ length: v.cols }, (_, c) => (
-              <span key={c} className="tv-table-head">
-                {c + 1}
-              </span>
-            ))}
-            {Array.from({ length: v.rows }, (_, r) => [
-              <span key={`h${r}`} className="tv-table-head">
-                {r + 1}
-              </span>,
-              ...Array.from({ length: v.cols }, (_, c) => (
-                <span key={`${r}-${c}`} className="tv-table-cell">
-                  <Thing id={v.items[r * v.cols + c]} size={36} />
+          <span className="tv-table-wrap">
+            <span className="tv-table" style={{ gridTemplateColumns: `auto repeat(${v.cols}, 1fr)` }}>
+              <span />
+              {Array.from({ length: v.cols }, (_, c) => (
+                <span key={c} className={`tv-table-col${askC === c + 1 ? ' tv-table-on' : ''}`}>
+                  <span className="tv-table-word">Column</span>
+                  {c + 1}
+                  <span className="tv-table-arrow">↓</span>
                 </span>
-              )),
-            ])}
+              ))}
+              {Array.from({ length: v.rows }, (_, r) => [
+                <span key={`h${r}`} className={`tv-table-row${askR === r + 1 ? ' tv-table-on' : ''}`}>
+                  <span className="tv-table-word">Row</span>
+                  {r + 1}
+                  <span className="tv-table-arrow">→</span>
+                </span>,
+                ...Array.from({ length: v.cols }, (_, c) => {
+                  const inRow = v.reveal && askR === r + 1;
+                  const inCol = v.reveal && askC === c + 1;
+                  return (
+                    <span
+                      key={`${r}-${c}`}
+                      className={`tv-table-cell${inRow ? ' tv-table-cell-row' : ''}${inCol ? ' tv-table-cell-col' : ''}${inRow && inCol ? ' tv-table-cell-hit' : ''}`}
+                    >
+                      <Thing id={v.items[r * v.cols + c]} size={36} />
+                    </span>
+                  );
+                }),
+              ])}
+            </span>
+            <span className="tv-table-key">
+              <span className="tv-table-key-row">Rows go across →</span>
+              <span className="tv-table-key-col">Columns go down ↓</span>
+            </span>
           </span>
         </Panel>
       );
+    }
     case 'pictograph':
       return (
         <Panel wide>

@@ -2235,21 +2235,21 @@ function positionProblem() {
   const correct = items[(r - 1) * cols + (c - 1)];
   return {
     explain: [
-      'Rows go across, side by side. Columns go up and down.',
-      `Start at the top row and count down to row ${r}.`,
-      `Now stay in that row, and count from the left to column ${c}.`,
-      'What’s in that box?',
+      'Rows go across, like a line of kids standing side by side. Columns go up and down, like a tower.',
+      `Find the blue label that says row ${r}, and slide your finger across that row.`,
+      `Now find the orange label that says column ${c}, and slide another finger down that column.`,
+      'Where your fingers meet, what do you see?',
     ],
-    explainAnswer: `It’s the ${GRID_NAMES[correct]}!`,
-    visual: { kind: 'table', rows, cols, items },
-    prompt: `What is in row ${r}, column ${c}?`,
+    explainAnswer: `It’s the ${GRID_NAMES[correct]}! Row ${r} and column ${c} meet there.`,
+    visual: { kind: 'table', rows, cols, items, ask: [r, c] },
+    prompt: `What is in row ${r} and column ${c}?`,
     correct,
     answerType: 'choice',
     choiceKind: 'emoji',
     choices: withChoices(correct, [items[(r - 1) * cols + ((c % cols))], items[((r % rows)) * cols + (c - 1)], items[(c - 1) * 1], ...items]),
-    answerLabel: `Row ${r}, column ${c}: {{${correct}}}`,
-    speech: `What is in row ${r}, column ${c}? Rows go across from the top, columns go down from the left.`,
-    hint: 'Rows go across (count from the top). Columns go down (count from the left).',
+    answerLabel: `Row ${r} and column ${c}: {{${correct}}}`,
+    speech: `What is in row ${r} and column ${c}? Go across row ${r}, and down column ${c}. Where do they meet?`,
+    hint: `Go across row ${r} and down column ${c}. Where they meet is the answer.`,
     questionTitle: 'Rows & columns',
   };
 }
