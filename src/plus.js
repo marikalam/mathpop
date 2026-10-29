@@ -14,8 +14,10 @@ import { loadFamilyPlus, loadPlusStart, verifyPlusPurchase } from './cloud.js';
 //   - families who subscribe in the iPhone app (or in PitchPop): the
 //     purchase is checked with Apple (verify-plus) and saved to the family
 //     account, so every device and both apps have it.
-// Test purchases (TestFlight) skip the founding-family checks, so the
-// subscription screens can be tried out.
+// TestFlight and App Review (Apple's sandbox) act as if Plus had started
+// today when no start day is set yet, so a fresh install is a new family
+// (trial, free round, subscribing can be tried) while a device that
+// already had MathPop is still a founding family.
 export const PLUS_PRODUCTS = ['com.marikalam.mathpop.plus.monthly', 'com.marikalam.mathpop.plus.yearly'];
 const IS_NATIVE = Capacitor.isNativePlatform();
 const FIRST_SEEN_KEY = 'mathpop-first-seen-v1';
@@ -98,7 +100,8 @@ export async function refreshPlus(user) {
   const app = await appTransaction();
   const testing = IS_NATIVE && app && app.environment && app.environment !== 'Production';
   let status;
-  if (!plusStarts && !testing) {
+  const start = plusStarts || (testing ? today() : null);
+  if (!start) {
     status = { plus: true, why: 'early' };
   } else {
     const firstSeen = read(FIRST_SEEN_KEY) || today();
@@ -108,13 +111,9 @@ export async function refreshPlus(user) {
     // (renewals included).
     if (sub?.jwsRepresentation && user) verifyPlusPurchase(sub.jwsRepresentation);
     const paidUntil = family?.paidUntil && new Date(family.paidUntil) > new Date() ? family.paidUntil : sub?.expirationDate || null;
-    const founder =
-      !testing &&
-      Boolean(
-        firstSeen < plusStarts ||
-          (app?.originalPurchaseDate && app.originalPurchaseDate.slice(0, 10) < plusStarts) ||
-          family?.founder,
-      );
+    const founder = Boolean(
+      firstSeen < start || (app?.originalPurchaseDate && app.originalPurchaseDate.slice(0, 10) < start) || family?.founder,
+    );
     const trialEnds = family?.accountCreated
       ? new Date(new Date(family.accountCreated).getTime() + TRIAL_DAYS * 86400000).toISOString()
       : null;
