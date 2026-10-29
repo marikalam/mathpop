@@ -3,8 +3,9 @@ import { loadSignups, loadStats } from './cloud.js';
 
 // MathPop stats (Account -> MathPop stats, for the accounts listed in
 // supabase/mathpop_stats.sql): how much the app is used, added up from
-// anonymous events (stats.js). Big numbers first, then one bar chart a
-// day, then what's played, then the family accounts that signed up.
+// anonymous events (stats.js). Big numbers first, then the family
+// accounts that signed up (with their emails), then one bar chart a day,
+// then what's played.
 const RANGES = [7, 30, 90];
 const PLATFORM_NAMES = { iphone: 'iPhone', ipad: 'iPad', web: 'Website' };
 const LANG_NAMES = { en: 'English', ja: '日本語' };
@@ -174,8 +175,10 @@ export default function StatsScreen({ topicName, gradeName }) {
           </div>
           <p className="stats-note">
             {stats.allTimeInstalls} {stats.allTimeInstalls === 1 ? 'device' : 'devices'} since stats began. The usage counts are
-            anonymous; only the sign-ups list shows emails.
+            anonymous; only the sign-ups list below shows emails.
           </p>
+
+          <Signups signups={signups} days={days} />
 
           <section className="stats-card">
             <h3 className="stats-card-title">Devices using MathPop each day</h3>
@@ -218,7 +221,6 @@ export default function StatsScreen({ topicName, gradeName }) {
             }))}
           />
           <BarList title="Language" rows={sortedRows(stats.languages, LANG_NAMES)} />
-          <Signups signups={signups} days={days} />
         </>
       )}
     </div>
