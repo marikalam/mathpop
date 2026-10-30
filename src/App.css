@@ -5768,3 +5768,128 @@ body {
   border-radius: 50%;
   background: #fff4cc;
 }
+
+/* "Just for me" (myPath.js): the home page's own-level round, and its
+   "Level up!" on the All done screen. */
+.path-btn {
+  appearance: none;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #3b6fef, #8e4fd6);
+  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.15), var(--shadow);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.path-btn:active {
+  transform: scale(0.98);
+}
+.path-btn-icon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.18);
+}
+.path-btn-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.path-btn-title {
+  font: 700 20px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  line-height: 1.1;
+}
+.path-btn-sub {
+  font: 600 13px 'IBM Plex Sans', sans-serif;
+  opacity: 0.92;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.path-btn-meter {
+  display: block;
+  height: 6px;
+  margin-top: 2px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+.path-btn-meter span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: #ffd23f;
+}
+.path-btn-go {
+  flex: none;
+  font: 700 22px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.level-up {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: #fff4cc;
+  color: #5c4300;
+  font: 600 15px 'IBM Plex Sans', sans-serif;
+  text-align: left;
+}
+.level-up strong {
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  font-size: 17px;
+  color: #8a5a00;
+}
+/* With "Just for me" on the home page, phones keep everything on one
+   screen by dropping the curriculum line and More apps, and a slimmer
+   button. */
+@media (max-height: 900px) {
+  .home-fit .curriculum-note,
+  .home-fit .all-apps-link {
+    display: none;
+  }
+  .home-fit .path-btn {
+    padding: 8px 12px;
+  }
+  .home-fit .path-btn-icon {
+    width: 44px;
+    height: 44px;
+  }
+  .home-fit .path-btn-title {
+    font-size: 18px;
+  }
+}
+/* iPhone SE and other short screens: a one-line "Just for me" and no
+   Today's practice footnote, so the tiles still fit. */
+@media (max-height: 700px) {
+  .home-fit .path-btn {
+    padding: 6px 12px;
+  }
+  .home-fit .path-btn-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .home-fit .path-btn-icon .icon {
+    width: 26px;
+    height: 26px;
+  }
+  .home-fit .path-btn-meter,
+  .home-fit .today-note,
+  .home-fit .today-bar {
+    display: none;
+  }
+}

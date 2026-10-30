@@ -160,8 +160,10 @@ function makePlan(playerId, grade, byOp) {
   const lastPlayed = (id) => rounds.reduce((last, r, i) => (r.mode === id ? i : last), -1);
   const oldest = topics.filter((t) => !used.has(t.id)).sort((a, b) => lastPlayed(a.id) - lastPlayed(b.id));
   const newOnes = untried.length ? untried : oldest;
-  // Three in all (plus any a grown-up picked), with the Random Mix last.
-  const wanted = Math.max(0, 2 - items.filter((i) => !i.id.startsWith('assigned')).length);
+  // Three in all (plus any a grown-up picked). The home page's "Just for
+  // me" button (myPath.js) is the mix of everything, so there's no Random
+  // Mix here.
+  const wanted = Math.max(0, 3 - items.filter((i) => !i.id.startsWith('assigned')).length);
   newOnes.slice(0, wanted).forEach((t, i) => {
     items.push({
       id: `next${i}`,
@@ -172,7 +174,6 @@ function makePlan(playerId, grade, byOp) {
     });
   });
 
-  items.push({ id: 'mix', mode: 'random', icon: 'dice', title: 'Random Mix', sub: 'A bit of everything · 1 round of 10' });
   return items;
 }
 
