@@ -55,11 +55,29 @@ export function playCorrectChime() {
   tone(ctx, 783.99, now + 0.18, 0.3, 0.18);
 }
 
+// A wrong answer: a gentle "uh-oh", two falling notes. High enough, and
+// with a triangle wave's overtones, to be heard on a phone's small
+// speaker (the low notes it used to be were nearly silent on iPhone).
 export function playIncorrectBuzz() {
   const ctx = ensureAudio();
   const now = ctx.currentTime + 0.01;
-  tone(ctx, 220, now, 0.22, 0.16);
-  tone(ctx, 174.61, now + 0.1, 0.28, 0.16);
+  [
+    [523.25, 0],
+    [392, 0.2],
+  ].forEach(([freq, offset]) => {
+    const at = now + offset;
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, at);
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.88, at + 0.24);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, at);
+    gain.gain.linearRampToValueAtTime(0.34, at + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.28);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(at);
+    osc.stop(at + 0.3);
+  });
 }
 
 // Tapping the MathPop logo: four bubbly pops, one for each tile (+ − × ÷)
