@@ -4343,7 +4343,7 @@ body {
   line-height: 1;
 }
 .home-tile-title {
-  font: 700 13.5px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  font: 700 14.5px 'Fredoka', ui-rounded, system-ui, sans-serif;
   line-height: 1.1;
   text-align: center;
 }
@@ -5564,8 +5564,10 @@ body {
 /* The section tiles' drawings (SectionIcon.jsx). */
 .section-icon {
   display: block;
-  width: 52px;
-  height: 41px;
+  width: 64px;
+  height: 48px;
+  /* A soft step under each drawing, so it stands out from the tile. */
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.16));
 }
 /* The tiles take whatever height is left, so the home page never
    scrolls on a phone; their drawings shrink with them. */
@@ -5576,12 +5578,14 @@ body {
   align-content: stretch;
 }
 .home-fit .home-tile {
-  padding: 6px 2px;
-  gap: 2px;
+  padding: 6px 2px 8px;
+  gap: 4px;
+  /* The drawing is sized by the tile's own height (cqh). */
+  container-type: size;
 }
 .home-fit .section-icon {
   width: auto;
-  height: clamp(26px, 4.6vh, 41px);
+  height: clamp(28px, 50cqh, 60px);
 }
 @media (max-width: 380px) {
   .home-tile-title {
