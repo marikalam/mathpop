@@ -70,6 +70,19 @@ if (!version) {
       }
     }
   }
+  // In a review submission that hasn't been sent yet (READY_FOR_REVIEW):
+  // Apple locks its screenshots and build there, so take the version back
+  // out of that submission first (it's put back in below).
+  if (state === 'READY_FOR_REVIEW') {
+    const drafts = (await api('GET', `/v1/reviewSubmissions?filter[app]=${app.id}&filter[platform]=IOS&filter[state]=READY_FOR_REVIEW`)).data;
+    for (const sub of drafts) {
+      const items = (await api('GET', `/v1/reviewSubmissions/${sub.id}/items?limit=50`)).data;
+      for (const item of items) {
+        await api('DELETE', `/v1/reviewSubmissionItems/${item.id}`);
+        console.log('Took the version out of the unsent review submission');
+      }
+    }
+  }
   await api('PATCH', `/v1/appStoreVersions/${version.id}`, {
     type: 'appStoreVersions',
     id: version.id,
