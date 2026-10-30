@@ -5940,3 +5940,10 @@ body {
     padding: 4px;
   }
 }
+
+/* Today's practice without a family account. */
+.today-locked-text {
+  margin: 6px 0 10px;
+  font: 600 14px 'IBM Plex Sans', sans-serif;
+  color: #5b6178;
+}

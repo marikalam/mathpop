@@ -6,7 +6,8 @@ import Icon from './Icon.jsx';
 // (myPath.js), checked off as they're done, with a bonus sticker for all
 // three. Each round is made from the player's history: mistakes to fix,
 // practice a grown-up picked, the steps they're working on and a little
-// review, so the day is just "do your rounds".
+// review, so the day is just "do your rounds". It needs a family account:
+// without one, the card asks a grown-up to sign in.
 export default function TodayPlan({ playerId, signedIn, working, meter, onStart, onSignIn }) {
   const [, refresh] = useState(0);
   useEffect(() => {
@@ -22,6 +23,25 @@ export default function TodayPlan({ playerId, signedIn, working, meter, onStart,
   useEffect(() => {
     if (signedIn) giveBonusIfDone(playerId, done);
   });
+
+  if (!signedIn) {
+    return (
+      <section className="today today-locked" aria-labelledby="today-title">
+        <div className="today-head">
+          <h3 className="today-title" id="today-title">
+            <Icon name="clipboard" /> Today's practice
+          </h3>
+          <Icon name="lock" />
+        </div>
+        <p className="today-locked-text">
+          Three rounds a day made just for you, from your own answers. A grown-up signs in to turn it on.
+        </p>
+        <button className="pill-btn-primary pill-btn-full" onClick={onSignIn}>
+          Grown-ups: sign in or sign up
+        </button>
+      </section>
+    );
+  }
 
   return (
     <section className={`today${allDone ? ' today-all-done' : ''}`} aria-labelledby="today-title">
@@ -56,26 +76,17 @@ export default function TodayPlan({ playerId, signedIn, working, meter, onStart,
           →
         </span>
       </button>
-      {signedIn ? (
-        <p className="today-note">
-          {allDone || bonusGivenToday(playerId) ? (
-            <>
-              <Icon name="party" /> All done today! You earned a bonus sticker <Icon name="star" />
-            </>
-          ) : (
-            <>
-              Finish all {DAILY_ROUNDS} rounds for a bonus sticker <Icon name="star" />
-            </>
-          )}
-        </p>
-      ) : (
-        <p className="today-note">
-          <button className="today-signin" onClick={onSignIn}>
-            Sign in
-          </button>{' '}
-          to earn a bonus sticker for all {DAILY_ROUNDS} rounds <Icon name="star" />
-        </p>
-      )}
+      <p className="today-note">
+        {allDone || bonusGivenToday(playerId) ? (
+          <>
+            <Icon name="party" /> All done today! You earned a bonus sticker <Icon name="star" />
+          </>
+        ) : (
+          <>
+            Finish all {DAILY_ROUNDS} rounds for a bonus sticker <Icon name="star" />
+          </>
+        )}
+      </p>
     </section>
   );
 }

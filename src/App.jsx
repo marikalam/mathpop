@@ -1206,6 +1206,11 @@ export default function App() {
   }
 
   function startOperation(op, from) {
+    // Today's practice ("Just for me") needs a family account.
+    if (op === 'path' && !signedIn) {
+      signupOpen('sign-up');
+      return;
+    }
     // Without Plus (plus.js): one free round a day, then the "ask a
     // grown-up" screen.
     if (!plusStatus.plus) {
@@ -1507,7 +1512,7 @@ export default function App() {
                     label: `${gradeInfo(path.grade).label}: ${path.gradeDone} of ${path.gradeSize} steps done`,
                   }}
                   onStart={() => startOperation('path', 'home')}
-                  onSignIn={openAccount}
+                  onSignIn={() => signupOpen('sign-up')}
                 />
               );
             })()}
