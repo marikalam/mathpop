@@ -221,24 +221,6 @@ if (SCREENSHOTS === 'yes') {
   await new Promise((r) => setTimeout(r, 30000));
 }
 
-// MathPop Plus's subscriptions, when asked for (SUBSCRIPTIONS=yes): the
-// first time, Apple reviews them together with this version.
-if (SUBSCRIPTIONS === 'yes') {
-  for (const group of (await api('GET', `/v1/apps/${app.id}/subscriptionGroups?limit=50`)).data) {
-    for (const sub of (await api('GET', `/v1/subscriptionGroups/${group.id}/subscriptions?limit=50`)).data) {
-      if (sub.attributes.state !== 'READY_TO_SUBMIT') {
-        console.log(`Subscription ${sub.attributes.productId}: ${sub.attributes.state}`);
-        continue;
-      }
-      await api('POST', '/v1/subscriptionSubmissions', {
-        type: 'subscriptionSubmissions',
-        relationships: { subscription: { data: { type: 'subscriptions', id: sub.id } } },
-      });
-      console.log(`Subscription ${sub.attributes.productId} sent for review with this version`);
-    }
-  }
-}
-
 // Submit: reuse a submission that hasn't been sent yet, or start one.
 let submission = (
   await api('GET', `/v1/reviewSubmissions?filter[app]=${app.id}&filter[platform]=IOS&filter[state]=READY_FOR_REVIEW`)
@@ -266,6 +248,36 @@ try {
   if (!String(err).includes('409')) throw err;
   console.log(`Adding the version to the submission: ${err.message}`);
 }
+// MathPop Plus's subscriptions, when asked for (SUBSCRIPTIONS=yes). The
+// first time, Apple only takes them while this version is in the review
+// submission, so this comes after the version is added and before it's
+// sent. If Apple still won't take them, nothing is sent: the version
+// waits in App Store Connect for the subscriptions to be added there.
+if (SUBSCRIPTIONS === 'yes') {
+  for (const group of (await api('GET', `/v1/apps/${app.id}/subscriptionGroups?limit=50`)).data) {
+    for (const sub of (await api('GET', `/v1/subscriptionGroups/${group.id}/subscriptions?limit=50`)).data) {
+      if (sub.attributes.state !== 'READY_TO_SUBMIT') {
+        console.log(`Subscription ${sub.attributes.productId}: ${sub.attributes.state}`);
+        continue;
+      }
+      try {
+        await api('POST', '/v1/subscriptionSubmissions', {
+          type: 'subscriptionSubmissions',
+          relationships: { subscription: { data: { type: 'subscriptions', id: sub.id } } },
+        });
+        console.log(`Subscription ${sub.attributes.productId} sent for review with this version`);
+      } catch (err) {
+        console.log(`Subscription ${sub.attributes.productId} could not be added: ${String(err).split('\n')[0]}`);
+        console.log(
+          `Not sent. In App Store Connect, open MathPop -> iOS App ${VERSION} -> "In-App Purchases and Subscriptions", ` +
+            'add both MathPop Plus subscriptions, then press "Add for Review" and "Submit to App Review".',
+        );
+        process.exit(1);
+      }
+    }
+  }
+}
+
 await api('PATCH', `/v1/reviewSubmissions/${submission.id}`, {
   type: 'reviewSubmissions',
   id: submission.id,
