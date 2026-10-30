@@ -2,7 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import LevelSwitcher from './LevelSwitcher.jsx';
 import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
-import { getVoiceQuality, languagesWithVoices, playFeedbackAndSpeak, playLogoSound, prewarmVoices, speakInLanguage, speakProblem, speakResults, unlockAudio } from './sound.js';
+import { getVoiceQuality, languagesWithVoices, playFeedbackAndSpeak, playLogoSound, playStickerPick, prewarmVoices, speakInLanguage, speakProblem, speakResults, unlockAudio } from './sound.js';
+import Pip from './Pip.jsx';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
 import { loadDigitModel } from './digitModel.js';
@@ -25,9 +26,7 @@ import ProfileSwitcher from './ProfileSwitcher.jsx';
 import EmailHandoff from './EmailHandoff.jsx';
 import StickerPicker from './StickerPicker.jsx';
 import StickerBook from './StickerBook.jsx';
-import { earnSticker, pendingStickers, playerStickers } from './stickerStore.js';
-import Sticker from './Sticker.jsx';
-import { STICKERS } from './stickers.js';
+import { earnSticker, pendingStickers } from './stickerStore.js';
 import { startStickerSync } from './stickerSync.js';
 import TodayPlan from './TodayPlan.jsx';
 import { assignedTopics, clearMistake, loadMistakes, mistakeRound, recordMistake, recordRound, streakDays } from './todayPlan.js';
@@ -59,13 +58,6 @@ import { cachedPlus, freeRoundLeft, refreshPlus, spendFreeRound, trialDaysLeft }
 const SESSION_ROUNDS = 10;
 // The iPhone app has no link out to the other apps' website, and no printing.
 const IS_NATIVE = Capacitor.isNativePlatform();
-// The four operation tiles across the top of the home page.
-const HERO_OPS = [
-  { symbol: '+', color: '#2fae6b' },
-  { symbol: '−', color: '#8e4fd6' },
-  { symbol: '×', color: '#3b6fef' },
-  { symbol: '÷', color: '#f0954f' },
-];
 // Progress per player and grade: { playerId: { grade: { total, correct, byOp } } }.
 // The older one (v2) was per grade only, for the whole phone; it becomes
 // the first guest player's.
@@ -1417,9 +1409,8 @@ export default function App() {
         {view === 'home' && (
           <>
             <AppHeader level={level} showBack={false} players={headerPlayers} logoSignal={heroPlaying} />
-            {/* Tapping the greeting plays the same animation as the logo:
-                the + − × ÷ tiles pop and spin, the stickers bounce (but
-                not when it's the Sticker book button that's tapped). */}
+            {/* Tapping the greeting makes Pip bounce and plays the logo's
+                animation (but not when it's a button that's tapped). */}
             <section
               className={`home-hero${heroPlaying ? ' home-hero-play' : ''}`}
               key={`hero-${heroPlaying}`}
@@ -1427,27 +1418,29 @@ export default function App() {
                 if (!e.target.closest('button, a')) setHeroPlaying((n) => n + 1);
               }}
             >
-              {/* The player's newest stickers (or a few to start with)
-                  decorate the greeting, as in PitchPop. */}
-              {(() => {
-                const mine = signedIn ? playerStickers(currentProfile.id).slice(-4).map((st) => st.index) : [];
-                const pick = (name) => STICKERS.findIndex(([n]) => n === name);
-                const shown = mine.length >= 2 ? mine : [pick('Star'), pick('Abacus'), pick('Heart'), pick('Balloon')];
-                return shown.slice(0, 4).map((index, i) => (
-                  <span key={`${index}-${i}`} className={`home-hero-sticker home-hero-sticker-${i}`} aria-hidden="true">
-                    <Sticker index={index} size={40} />
-                  </span>
-                ));
-              })()}
-              <div className="home-hero-ops" aria-hidden="true">
-                {HERO_OPS.map((op) => (
-                  <span key={op.symbol} className="home-hero-op" style={{ background: op.color }}>
-                    <span className="home-hero-sign">{op.symbol}</span>
-                  </span>
-                ))}
-              </div>
-              <h2 className="home-hello">Ready to pop some math, {currentProfile.name}?</h2>
-              <p className="home-tagline">Pick a game, answer ten problems, and watch your score grow.</p>
+              {/* Pip the bubble waves hello (tap Pip for a pop), in front of
+                  a few floating bubbles. Cheering on a streak. */}
+              <span className="home-hero-bubbles" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+                <i />
+                <i />
+              </span>
+              <button
+                className="home-pip"
+                aria-label="Pip says hi"
+                onClick={() => {
+                  playStickerPick();
+                  setHeroPlaying((n) => n + 1);
+                }}
+              >
+                <Pip size={96} mood={streakDays(currentProfile.id) >= 2 ? 'cheer' : 'wave'} />
+              </button>
+              <div className="home-hero-main">
+              <h2 className="home-hello">
+                Hi {currentProfile.name}! Ready to pop some math?
+              </h2>
               {/* The playing player's grade. A grown-up sets it in Players &
                   grades (the player menu), not here. */}
               <div className="home-hero-row">
@@ -1487,6 +1480,7 @@ export default function App() {
                   </span>
                 )}
               </button>
+              </div>
             </section>
 
             {/* Today's practice: today's "Just for me" rounds (myPath.js),
