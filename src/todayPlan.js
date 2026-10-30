@@ -13,7 +13,6 @@ import { earnSticker } from './stickerStore.js';
 // play), and each item checks off when a round of it is finished today.
 // Finishing all three earns a bonus sticker, once a day.
 const LOG_KEY = 'mathpop-round-log-v1';
-const PLAN_KEY = 'mathpop-today-plan-v2';
 const MISTAKES_KEY = 'mathpop-mistakes-v1';
 const KEEP_MISTAKES = 40;
 const BONUS_KEY = 'mathpop-today-bonus-v1';
@@ -123,97 +122,17 @@ export function gradeTopicList(grade) {
   return list;
 }
 
-function makePlan(playerId, grade, byOp) {
-  const topics = gradeTopicList(grade);
-  const rounds = (read(LOG_KEY)[playerId] || []).filter((r) => r.grade === grade);
-  const items = [];
+// Today's practice (TodayPlan.jsx): three "Just for me" rounds a day.
+export const DAILY_ROUNDS = 3;
 
-  // Practice a grown-up picked (MathPop Plus) comes first.
-  assignedTopics(playerId, grade).forEach((t, i) => {
-    items.push({ id: `assigned${i}`, mode: t.id, icon: t.icon, title: `From a grown-up: ${t.title}`, sub: `${t.sub} · 1 round of 10` });
-  });
-
-  const mistakes = loadMistakes(playerId, grade);
-  if (mistakes.length) {
-    items.push({ id: 'mistakes', mode: 'mistakes', icon: 'repeat', title: 'Fix my mistakes', sub: '' });
-  }
-
-  const tricky = topics
-    .map((t) => ({ t, s: byOp[t.id] }))
-    .filter(({ t }) => !items.some((i) => i.mode === t.id))
-    .filter(({ s }) => s && s.total >= MIN_TRIES && s.correct / s.total < GOOD_ENOUGH)
-    .sort((a, b) => a.s.correct / a.s.total - b.s.correct / b.s.total)[0];
-  if (tricky) {
-    const pct = Math.round((100 * tricky.s.correct) / tricky.s.total);
-    const missed = [...mistakes].reverse().find((m) => m.op === tricky.t.id);
-    items.push({
-      id: 'focus',
-      mode: tricky.t.id,
-      icon: 'target',
-      title: `Work on: ${tricky.t.title}`,
-      sub: missed ? `${pct}% right · missed ${problemText(missed.problem)}` : `${pct}% right so far · 1 round of 10`,
-    });
-  }
-
-  const used = new Set(items.map((i) => i.mode));
-  const untried = topics.filter((t) => !used.has(t.id) && !(byOp[t.id]?.total > 0));
-  const lastPlayed = (id) => rounds.reduce((last, r, i) => (r.mode === id ? i : last), -1);
-  const oldest = topics.filter((t) => !used.has(t.id)).sort((a, b) => lastPlayed(a.id) - lastPlayed(b.id));
-  const newOnes = untried.length ? untried : oldest;
-  // Three in all (plus any a grown-up picked). The home page's "Just for
-  // me" button (myPath.js) is the mix of everything, so there's no Random
-  // Mix here.
-  const wanted = Math.max(0, 3 - items.filter((i) => !i.id.startsWith('assigned')).length);
-  newOnes.slice(0, wanted).forEach((t, i) => {
-    items.push({
-      id: `next${i}`,
-      mode: t.id,
-      icon: t.icon,
-      title: untried.length ? `Something new: ${t.title}` : `Review: ${t.title}`,
-      sub: `${t.sub} · 1 round of 10`,
-    });
-  });
-
-  return items;
-}
-
-// Today's list for a player at a grade: [{ id, mode, icon, title, sub, done }].
-export function todayPlan(playerId, grade, byOp = {}) {
+export function pathRoundsToday(playerId) {
   const today = dayKey();
-  const plans = read(PLAN_KEY);
-  let plan = plans[playerId];
-  const playedSoFar = (read(LOG_KEY)[playerId] || []).some((r) => r.day === today);
-  // A new day or grade gets a new list; so does one with mistakes to fix
-  // that the list doesn't have yet, as long as nothing on it is done.
-  const needsMistakes = plan && !plan.items.some((i) => i.id === 'mistakes') && loadMistakes(playerId, grade).length && !playedSoFar;
-  // A grown-up changing the assigned practice remakes it too.
-  const assigned = assignedTopics(playerId, grade).map((t) => t.id).join(',');
-  if (!plan || plan.day !== today || plan.grade !== grade || needsMistakes || (plan.assigned || '') !== assigned) {
-    plan = { day: today, grade, assigned, items: makePlan(playerId, grade, byOp) };
-    try {
-      localStorage.setItem(PLAN_KEY, JSON.stringify({ ...plans, [playerId]: plan }));
-    } catch {
-      /* ignore */
-    }
-  }
-  const playedToday = new Set((read(LOG_KEY)[playerId] || []).filter((r) => r.day === today).map((r) => r.mode));
-  const mistakes = loadMistakes(playerId, grade);
-  return plan.items.map((item) => {
-    if (item.id !== 'mistakes') return { ...item, done: playedToday.has(item.mode) };
-    // How many are still waiting (it changes as they're fixed).
-    const left = mistakes.length;
-    const example = left ? problemText(mistakes[mistakes.length - 1].problem) : '';
-    return {
-      ...item,
-      done: playedToday.has('mistakes') || !left,
-      sub: left ? `${left} to try again · like ${example}` : 'All fixed!',
-    };
-  });
+  return (read(LOG_KEY)[playerId] || []).filter((r) => r.day === today && r.mode === 'path').length;
 }
 
-// The day's bonus sticker, once, when the whole list is done.
-export function giveBonusIfDone(playerId, items) {
-  if (!items.length || !items.every((i) => i.done)) return false;
+// The day's bonus sticker, once, when today's rounds are all done.
+export function giveBonusIfDone(playerId, roundsDone) {
+  if (roundsDone < DAILY_ROUNDS) return false;
   const given = read(BONUS_KEY);
   if (given[playerId] === dayKey()) return false;
   write(BONUS_KEY, { ...given, [playerId]: dayKey() });

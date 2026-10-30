@@ -19,8 +19,9 @@ grown-ups check first).
 How to use it:
 - Each player's grade and how they answer (tap a choice, type, or write
   with a finger) are set in Players & grades, from the player button at the
-  top. The home page shows a "Today's practice" list (mistakes to fix, a
-  topic to work on, something new) and a tile for each section.
+  top. The home page's "Today's practice" is three rounds a day,
+  each made for the child from their own answers (mistakes to fix, what
+  they're learning, a little review), and a tile for each section.
 - Tap any item or topic to start a round of ten problems. Tap the problem
   to hear it read aloud; "Show me how" talks the child through it step by
   step. Each finished round earns a sticker for the sticker book.
