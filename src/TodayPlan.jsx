@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { bonusGivenToday, giveBonusIfDone, todayPlan } from './todayPlan.js';
-import { RichText } from './Drawings.jsx';
+import { DAILY_ROUNDS, bonusGivenToday, giveBonusIfDone, pathRoundsToday } from './todayPlan.js';
 import Icon from './Icon.jsx';
 
-// The home page's "Today's practice" list (todayPlan.js), like PitchPop's.
-// Each item starts its round; a signed-in player's items check off as
-// they're done, and finishing them all earns a bonus sticker.
-export default function TodayPlan({ playerId, grade, byOp, signedIn, onOpen, onSignIn }) {
+// The home page's "Today's practice": three "Just for me" rounds a day
+// (myPath.js), checked off as they're done, with a bonus sticker for all
+// three. Each round is made from the player's history: mistakes to fix,
+// practice a grown-up picked, the steps they're working on and a little
+// review, so the day is just "do your rounds".
+export default function TodayPlan({ playerId, signedIn, working, meter, onStart, onSignIn }) {
   const [, refresh] = useState(0);
   useEffect(() => {
     const update = () => refresh((n) => n + 1);
@@ -15,12 +16,11 @@ export default function TodayPlan({ playerId, grade, byOp, signedIn, onOpen, onS
     return () => events.forEach((e) => window.removeEventListener(e, update));
   }, []);
 
-  const items = todayPlan(playerId, grade, byOp).map((item) => (signedIn ? item : { ...item, done: false }));
-  const doneCount = items.filter((i) => i.done).length;
-  const allDone = signedIn && doneCount === items.length;
+  const done = pathRoundsToday(playerId);
+  const allDone = done >= DAILY_ROUNDS;
 
   useEffect(() => {
-    if (signedIn) giveBonusIfDone(playerId, items);
+    if (signedIn) giveBonusIfDone(playerId, done);
   });
 
   return (
@@ -29,53 +29,51 @@ export default function TodayPlan({ playerId, grade, byOp, signedIn, onOpen, onS
         <h3 className="today-title" id="today-title">
           <Icon name="clipboard" /> Today's practice
         </h3>
-        {signedIn && (
-          <span className="today-count">
-            {doneCount} / {items.length}
-          </span>
-        )}
+        <span className="today-count">
+          {Math.min(done, DAILY_ROUNDS)} / {DAILY_ROUNDS}
+        </span>
       </div>
-      <ul className="today-list">
-        {items.map((item) => (
-          <li key={item.id}>
-            <button className={`today-item today-item-${item.id}${item.done ? ' today-item-done' : ''}`} onClick={() => onOpen(item.mode)}>
-              <span className="today-item-icon" aria-hidden="true">
-                <Icon name={item.icon} />
-              </span>
-              <span className="today-item-text">
-                <span className="today-item-title">{item.title}</span>
-                <span className="today-item-sub"><RichText text={item.sub} size={18} /></span>
-              </span>
-              {item.done ? (
-                <span className="today-check" aria-label="Done">
-                  <Icon name="tick" size="0.85em" />
-                </span>
-              ) : (
-                <span className="today-arrow" aria-hidden="true">
-                  ›
-                </span>
-              )}
-            </button>
+      <ol className="today-rounds" aria-label="Today's rounds">
+        {Array.from({ length: DAILY_ROUNDS }, (_, i) => (
+          <li key={i} className={i < done ? 'today-round-done' : i === done ? 'today-round-next' : ''}>
+            {i < done ? <Icon name="tick" size="0.9em" /> : i + 1}
+            <span>Round {i + 1}</span>
           </li>
         ))}
-      </ul>
+      </ol>
+      <button className="path-btn" onClick={onStart}>
+        <span className="path-btn-icon" aria-hidden="true">
+          <Icon name="rocket" size="36px" />
+        </span>
+        <span className="path-btn-text">
+          <span className="path-btn-title">{allDone ? 'One more, just for me' : `Round ${done + 1}: just for me`}</span>
+          <span className="path-btn-sub">{working}</span>
+          <span className="path-btn-meter" aria-label={meter.label}>
+            <span style={{ width: `${meter.pct}%` }} />
+          </span>
+        </span>
+        <span className="path-btn-go" aria-hidden="true">
+          →
+        </span>
+      </button>
       {signedIn ? (
-        <>
-          <div className="today-bar" aria-hidden="true">
-            <span style={{ width: `${(100 * doneCount) / items.length}%` }} />
-          </div>
-          <p className="today-note">
-            {allDone || bonusGivenToday(playerId)
-              ? <><Icon name="party" /> All done today! You earned a bonus sticker <Icon name="star" /></>
-              : <>{doneCount} of {items.length} done · finish all {items.length} for a bonus sticker <Icon name="star" /></>}
-          </p>
-        </>
+        <p className="today-note">
+          {allDone || bonusGivenToday(playerId) ? (
+            <>
+              <Icon name="party" /> All done today! You earned a bonus sticker <Icon name="star" />
+            </>
+          ) : (
+            <>
+              Finish all {DAILY_ROUNDS} rounds for a bonus sticker <Icon name="star" />
+            </>
+          )}
+        </p>
       ) : (
         <p className="today-note">
           <button className="today-signin" onClick={onSignIn}>
             Sign in
           </button>{' '}
-          to check these off and earn a bonus sticker <Icon name="star" />
+          to earn a bonus sticker for all {DAILY_ROUNDS} rounds <Icon name="star" />
         </p>
       )}
     </section>

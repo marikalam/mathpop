@@ -30,7 +30,7 @@ import Sticker from './Sticker.jsx';
 import { STICKERS } from './stickers.js';
 import { startStickerSync } from './stickerSync.js';
 import TodayPlan from './TodayPlan.jsx';
-import { clearMistake, mistakeRound, recordMistake, recordRound, streakDays } from './todayPlan.js';
+import { assignedTopics, clearMistake, loadMistakes, mistakeRound, recordMistake, recordRound, streakDays } from './todayPlan.js';
 import { pathRound, pathStatus, recordPathAnswer } from './myPath.js';
 import LogoMark from './LogoMark.jsx';
 import { AccountButton, AccountScreen, AddPlayerForm, PlayerSettingsCard, SyncStatus } from './Account.jsx';
@@ -1194,7 +1194,10 @@ export default function App() {
   function nextRoundProblem(op) {
     const lang = langFor(currentProfile.id);
     if (op === 'path') {
-      const step = pathQueue.current.shift() || pathBefore.current?.current[0] || { topic: 'random', grade: level };
+      const next = pathQueue.current.shift();
+      // A mistake to fix comes back as it was.
+      if (next?.problem) return { ...next.problem, pathGrade: level };
+      const step = next || pathBefore.current?.current[0] || { topic: 'random', grade: level };
       return { ...makeProblem(step.topic, step.grade, lang), pathGrade: step.grade };
     }
     if (op !== 'mistakes') return makeProblem(op, level, lang);
@@ -1219,8 +1222,15 @@ export default function App() {
       mistakeOps.current = [...new Set(list.map((p) => p.op))];
     }
     if (op === 'path') {
+      // Up to 2 mistakes to fix and 2 problems a grown-up picked, then the
+      // steps they're on, all mixed together.
       pathBefore.current = pathStatus(currentProfile.id, level, playerProgress);
-      pathQueue.current = pathRound(pathBefore.current, SESSION_ROUNDS);
+      const fixes = mistakeRound(currentProfile.id, level, 2).map((problem) => ({ problem }));
+      const picked = assignedTopics(currentProfile.id, level)
+        .slice(0, 2)
+        .map((t) => ({ grade: level, topic: t.id, id: `${level}:${t.id}` }));
+      const steps = pathRound(pathBefore.current, SESSION_ROUNDS - fixes.length - picked.length);
+      pathQueue.current = shuffle([...fixes, ...picked, ...steps]);
     }
     setLevelUp(null);
     const first = roundProblem(op);
@@ -1474,45 +1484,33 @@ export default function App() {
               </button>
             </section>
 
-            {/* "Just for me" (myPath.js): one round made from this player's
-                history, at their own level rather than a grade's list. */}
+            {/* Today's practice: today's "Just for me" rounds (myPath.js),
+                each made from this player's history. */}
             {(() => {
               const path = pathStatus(currentProfile.id, level, playerProgress);
-              const now = path.current[0];
+              const label = (n) => ALL_META[n.topic]?.label || n.topic;
+              const assigned = assignedTopics(currentProfile.id, level);
+              const toFix = loadMistakes(currentProfile.id, level).length;
+              const parts = [
+                ...(toFix ? [`${toFix} to fix`] : []),
+                ...assigned.slice(0, 1).map((t) => `from a grown-up: ${t.title}`),
+                ...path.current.slice(0, 2).map(label),
+              ];
               return (
-                <button className="path-btn" onClick={() => startOperation('path', 'home')}>
-                  <span className="path-btn-icon" aria-hidden="true">
-                    <Icon name="rocket" size="36px" />
-                  </span>
-                  <span className="path-btn-text">
-                    <span className="path-btn-title">Just for me</span>
-                    <span className="path-btn-sub">
-                      {now
-                        ? `Working on ${ALL_META[now.topic]?.label || now.topic} · ${gradeInfo(now.grade).short}`
-                        : 'You’ve done every step!'}
-                    </span>
-                    <span className="path-btn-meter" aria-label={`${path.gradeDone} of ${path.gradeSize} steps done`}>
-                      <span style={{ width: `${Math.round((100 * path.gradeDone) / Math.max(1, path.gradeSize))}%` }} />
-                    </span>
-                  </span>
-                  <span className="path-btn-go" aria-hidden="true">
-                    →
-                  </span>
-                </button>
+                <TodayPlan
+                  key={`${currentProfile.id}-${level}`}
+                  playerId={currentProfile.id}
+                  signedIn={signedIn}
+                  working={parts.length ? parts.join(' · ') : 'You’ve done every step!'}
+                  meter={{
+                    pct: Math.round((100 * path.gradeDone) / Math.max(1, path.gradeSize)),
+                    label: `${gradeInfo(path.grade).label}: ${path.gradeDone} of ${path.gradeSize} steps done`,
+                  }}
+                  onStart={() => startOperation('path', 'home')}
+                  onSignIn={openAccount}
+                />
               );
             })()}
-
-            {/* What to work on today, made from this player's history (like
-                PitchPop's Today's practice). */}
-            <TodayPlan
-              key={`${currentProfile.id}-${gradeInfo(level).id}`}
-              playerId={currentProfile.id}
-              grade={gradeInfo(level).id}
-              byOp={levelStats.byOp || {}}
-              signedIn={signedIn}
-              onOpen={(mode) => startOperation(mode, 'home')}
-              onSignIn={openAccount}
-            />
 
             {/* Every section, and Explore Numbers, as small tiles under it. */}
             {(() => {
