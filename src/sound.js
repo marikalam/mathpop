@@ -34,6 +34,41 @@ export function unlockAudio() {
   ensureAudio();
 }
 
+// After MathPop goes to the background (switching to another app such as
+// PitchPop, or turning the screen off), iOS can leave its audio silent
+// even once it says it's playing again, and only a tap may start it. So
+// the first tap after coming back makes a fresh AudioContext and plays a
+// moment of silence inside that tap, which wakes the sound up.
+let audioStale = false;
+function freshAudio() {
+  audioStale = false;
+  const old = audioCtx;
+  audioCtx = null;
+  if (old) {
+    stopCurrent();
+    old.close().catch(() => {});
+  }
+  const ctx = ensureAudio();
+  const silence = ctx.createBufferSource();
+  silence.buffer = ctx.createBuffer(1, 1, 22050);
+  silence.connect(ctx.destination);
+  silence.start(0);
+}
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') audioStale = true;
+  });
+  window.addEventListener('pagehide', () => {
+    audioStale = true;
+  });
+  const onTap = () => {
+    if (audioStale || (audioCtx && audioCtx.state !== 'running')) freshAudio();
+  };
+  // Before anything else handles the tap, so its own sound plays.
+  document.addEventListener('pointerdown', onTap, true);
+  document.addEventListener('touchend', onTap, true);
+}
+
 function tone(ctx, freq, startTime, duration, peak) {
   const osc = ctx.createOscillator();
   osc.type = 'sine';
