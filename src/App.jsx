@@ -31,6 +31,7 @@ import { STICKERS } from './stickers.js';
 import { startStickerSync } from './stickerSync.js';
 import TodayPlan from './TodayPlan.jsx';
 import { clearMistake, mistakeRound, recordMistake, recordRound, streakDays } from './todayPlan.js';
+import { pathRound, pathStatus, recordPathAnswer } from './myPath.js';
 import LogoMark from './LogoMark.jsx';
 import { AccountButton, AccountScreen, AddPlayerForm, PlayerSettingsCard, SyncStatus } from './Account.jsx';
 import {
@@ -1178,6 +1179,11 @@ export default function App() {
   // lately, newest first, then more of the same topics to make ten.
   const mistakeQueue = useRef([]);
   const mistakeOps = useRef([]);
+  // "Just for me" (myPath.js): the steps for this round, where the player
+  // was when it started, and what they mastered in it (for "Level up!").
+  const pathQueue = useRef([]);
+  const pathBefore = useRef(null);
+  const [levelUp, setLevelUp] = useState(null);
   // About half the questions are asked by name ("Marcus, how many
   // apples?"), when they're read out (sound.js).
   function roundProblem(op) {
@@ -1187,6 +1193,10 @@ export default function App() {
 
   function nextRoundProblem(op) {
     const lang = langFor(currentProfile.id);
+    if (op === 'path') {
+      const step = pathQueue.current.shift() || pathBefore.current?.current[0] || { topic: 'random', grade: level };
+      return { ...makeProblem(step.topic, step.grade, lang), pathGrade: step.grade };
+    }
     if (op !== 'mistakes') return makeProblem(op, level, lang);
     if (mistakeQueue.current.length) return mistakeQueue.current.shift();
     return makeProblem(mistakeOps.current.length ? shuffle(mistakeOps.current)[0] : 'random', level, lang);
@@ -1208,6 +1218,11 @@ export default function App() {
       mistakeQueue.current = list;
       mistakeOps.current = [...new Set(list.map((p) => p.op))];
     }
+    if (op === 'path') {
+      pathBefore.current = pathStatus(currentProfile.id, level, playerProgress);
+      pathQueue.current = pathRound(pathBefore.current, SESSION_ROUNDS);
+    }
+    setLevelUp(null);
     const first = roundProblem(op);
     setOperation(op);
     setRoundIndex(0);
@@ -1239,8 +1254,11 @@ export default function App() {
         setSessionCorrect((c) => c + 1);
       }
       // Wrong the first time: keep it for Fix my mistakes; right: it's fixed.
+      // A "Just for me" problem can be from another grade than the player's.
+      const grade = problem.pathGrade || level;
       if (correct) clearMistake(currentProfile.id, problem);
-      else recordMistake(currentProfile.id, gradeInfo(level).id, problem);
+      else recordMistake(currentProfile.id, grade, problem);
+      recordPathAnswer(currentProfile.id, grade, problem.op, correct);
 
       setSessionResults((prev) => {
         const opStats = prev[problem.op] || { correct: 0, wrong: 0 };
@@ -1267,13 +1285,13 @@ export default function App() {
 
       setProgress((prev) => {
         const mine = prev[currentProfile.id] || {};
-        const p = mine[level] || { total: 0, correct: 0, byOp: {} };
+        const p = mine[grade] || { total: 0, correct: 0, byOp: {} };
         const opStats = p.byOp[problem.op] || { total: 0, correct: 0 };
         const next = {
           ...prev,
           [currentProfile.id]: {
             ...mine,
-            [level]: {
+            [grade]: {
               total: p.total + 1,
               correct: p.correct + (correct ? 1 : 0),
               byOp: {
@@ -1298,6 +1316,12 @@ export default function App() {
       // Every finished round earns a sticker (picked on the "All done!" screen).
       if (signedIn) earnSticker(currentProfile.id);
       recordRound(currentProfile.id, operation, gradeInfo(level).id, sessionCorrect, SESSION_ROUNDS);
+      if (operation === 'path' && pathBefore.current) {
+        const after = pathStatus(currentProfile.id, level, progress[currentProfile.id] || {});
+        const stillOn = new Set(after.current.map((n) => n.id));
+        const got = pathBefore.current.current.filter((n) => !stillOn.has(n.id));
+        if (got.length) setLevelUp({ got, next: after.current[0] || null });
+      }
       statRoundDone({ grade: gradeInfo(level).id, topic: operation, lang: problem?.lang || 'en', correct: sessionCorrect, total: SESSION_ROUNDS });
       setView('complete');
       return;
@@ -1335,6 +1359,8 @@ export default function App() {
       ? (gradeSection(gradeInfo(level).id, operation.slice(8))?.title || 'mixed').toLowerCase()
       : operation === 'random'
       ? 'random mix'
+      : operation === 'path'
+      ? 'just-for-you'
       : operation === 'mistakes'
       ? 'fix-my-mistakes'
       : operation === 'sentence'
@@ -1448,6 +1474,34 @@ export default function App() {
               </button>
             </section>
 
+            {/* "Just for me" (myPath.js): one round made from this player's
+                history, at their own level rather than a grade's list. */}
+            {(() => {
+              const path = pathStatus(currentProfile.id, level, playerProgress);
+              const now = path.current[0];
+              return (
+                <button className="path-btn" onClick={() => startOperation('path', 'home')}>
+                  <span className="path-btn-icon" aria-hidden="true">
+                    <Icon name="rocket" size="36px" />
+                  </span>
+                  <span className="path-btn-text">
+                    <span className="path-btn-title">Just for me</span>
+                    <span className="path-btn-sub">
+                      {now
+                        ? `Working on ${ALL_META[now.topic]?.label || now.topic} · ${gradeInfo(now.grade).short}`
+                        : 'You’ve done every step!'}
+                    </span>
+                    <span className="path-btn-meter" aria-label={`${path.gradeDone} of ${path.gradeSize} steps done`}>
+                      <span style={{ width: `${Math.round((100 * path.gradeDone) / Math.max(1, path.gradeSize))}%` }} />
+                    </span>
+                  </span>
+                  <span className="path-btn-go" aria-hidden="true">
+                    →
+                  </span>
+                </button>
+              );
+            })()}
+
             {/* What to work on today, made from this player's history (like
                 PitchPop's Today's practice). */}
             <TodayPlan
@@ -1471,7 +1525,7 @@ export default function App() {
                   className="home-tiles"
                   style={{
                     gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-                    gridTemplateRows: `repeat(${Math.ceil(n / cols)}, minmax(60px, 1fr))`,
+                    gridTemplateRows: `repeat(${Math.ceil(n / cols)}, minmax(54px, 1fr))`,
                   }}
                 >
                   {sections.map((section) => (
@@ -2166,6 +2220,16 @@ export default function App() {
                 <span className="results-score-number">{sessionCorrect}</span>
                 <span className="results-score-total">/ {SESSION_ROUNDS}</span>
               </div>
+              {/* "Just for me": the steps mastered in this round, and what's next. */}
+              {levelUp && (
+                <div className="level-up">
+                  <Icon name="rocket" size="44px" />
+                  <span>
+                    <strong>Level up!</strong> You’ve got {levelUp.got.map((n) => ALL_META[n.topic]?.label || n.topic).join(' and ')}.
+                    {levelUp.next && ` Next: ${ALL_META[levelUp.next.topic]?.label || levelUp.next.topic}.`}
+                  </span>
+                </div>
+              )}
               <StickerPicker
                 key={`${currentProfile.id}-${roundIndex}`}
                 playerId={currentProfile.id}
