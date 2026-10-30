@@ -12,6 +12,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // play even with the ringer switch on silent, and mix with whatever
         // else is playing instead of stopping it.
         try? AVAudioSession.sharedInstance().setCategory(.playback, options: [.mixWithOthers])
+        // After an interruption (a call, an alarm, another app's sound), turn
+        // MathPop's sound back on when it ends.
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
+        ) { note in
+            guard let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  AVAudioSession.InterruptionType(rawValue: raw) == .ended else { return }
+            try? AVAudioSession.sharedInstance().setActive(true)
+        }
         return true
     }
 

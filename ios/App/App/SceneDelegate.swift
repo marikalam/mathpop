@@ -1,4 +1,5 @@
 import UIKit
+import AVFoundation
 import Capacitor
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
@@ -14,6 +15,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window?.makeKeyAndVisible()
 
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
+    }
+
+    // Back in front (from another app such as PitchPop, or the screen
+    // turned back on): switch MathPop's sound back on, so it isn't left
+    // silent.
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, options: [.mixWithOthers])
+        try? session.setActive(true)
     }
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
