@@ -46,7 +46,7 @@ const posts = {
     <img class="icon" src="${url('public/icon-512.png')}">
     <h1>Hi, we're<br>MathPop!</h1>
     <p>Math practice that reads every problem out loud, so kids can play before they can read.</p>
-    <div class="pill">Pre-K to 4th grade · Free · No ads</div>
+    <div class="pill">Pre-K to 4th grade · No ads</div>
     <div class="handle">@playmathpop</div>`,
   '02-reads-aloud': crop('1-home'),
   '03-show-me-how': crop('2-explain'),
