@@ -2,7 +2,34 @@ import { playerName } from './storyNames.js';
 
 let audioCtx = null;
 
+// What iPhone shows for MathPop's sound on the lock screen, in Control
+// Center and in the car (CarPlay): the app's name and icon, and whose
+// practice it is. Without this it shows the web view's address
+// ("localhost").
+let nowPlayingFor = null;
+function setNowPlaying() {
+  if (!('mediaSession' in navigator) || typeof window.MediaMetadata !== 'function') return;
+  const name = playerName();
+  if (nowPlayingFor === name) return;
+  nowPlayingFor = name;
+  const base = import.meta.env.BASE_URL;
+  try {
+    navigator.mediaSession.metadata = new window.MediaMetadata({
+      title: 'MathPop',
+      artist: name ? `${name}'s math practice` : 'Math practice',
+      album: 'MathPop',
+      artwork: [
+        { src: `${base}icon-192.png`, sizes: '192x192', type: 'image/png' },
+        { src: `${base}icon-512.png`, sizes: '512x512', type: 'image/png' },
+      ],
+    });
+  } catch {
+    // No Now Playing on this device.
+  }
+}
+
 function ensureAudio() {
+  setNowPlaying();
   if (!audioCtx || audioCtx.state === 'closed') {
     // On iPhone, web sounds are silenced by the ring/silent switch unless
     // the page asks to be "playback" audio (iOS 17+), like a video app.
