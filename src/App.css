@@ -6127,3 +6127,163 @@ body {
     height: 11px;
   }
 }
+
+/* Tap-and-hear boards for the youngest (TapBoards.jsx): big bouncy
+   buttons that say what they are, and a "Find it!" game. */
+.tap-board {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+.tap-modes {
+  display: flex;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #e9edf7;
+}
+.tap-mode {
+  appearance: none;
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #5b6178;
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  cursor: pointer;
+}
+.tap-mode-on {
+  background: #fff;
+  color: #3b6fef;
+  box-shadow: var(--shadow-sm);
+}
+.tap-ask {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px;
+  border: none;
+  border-radius: 20px;
+  background: #fff4cc;
+  color: #5c4300;
+  font: 700 24px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  cursor: pointer;
+}
+.tap-ask-hint {
+  font: 600 12px 'IBM Plex Sans', sans-serif;
+  color: #8a5a00;
+}
+.tap-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.tap-btn {
+  appearance: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 140px;
+  padding: 12px 8px;
+  border: none;
+  border-radius: 28px;
+  background: var(--tap-bg, #fff);
+  box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.12), var(--shadow);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.tap-btn:active {
+  transform: scale(0.95);
+}
+.tap-name {
+  font: 700 22px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #2b2d42;
+}
+.tap-board-colors .tap-name {
+  color: #fff;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+}
+.tap-board-colors .tap-btn-light .tap-name {
+  color: #2b2d42;
+  text-shadow: none;
+}
+.tap-board-colors .tap-btn-light {
+  box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.08), inset 0 0 0 2px #e4e7f2, var(--shadow);
+}
+.tap-color-look {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+}
+.tap-board-colors .tap-btn-light .tap-color-look {
+  background: #e9edf7;
+}
+.tap-look {
+  display: flex;
+  line-height: 0;
+}
+.tap-btn-played .tap-look {
+  animation: tap-hop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.tap-btn-cheer {
+  box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.12), 0 0 0 5px #ffd23f, var(--shadow);
+}
+@keyframes tap-hop {
+  0% {
+    transform: scale(1) rotate(0);
+  }
+  40% {
+    transform: scale(1.22) rotate(-6deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+.tap-confetti i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  animation: tap-burst 0.9s ease-out forwards;
+}
+.tap-confetti i:nth-child(odd) {
+  border-radius: 50%;
+}
+.tap-confetti i:nth-child(1) { background: #ef4444; --dx: -70px; --dy: -60px; }
+.tap-confetti i:nth-child(2) { background: #ffd23f; --dx: 70px; --dy: -60px; }
+.tap-confetti i:nth-child(3) { background: #3b8cf0; --dx: -80px; --dy: 10px; }
+.tap-confetti i:nth-child(4) { background: #2fae6b; --dx: 80px; --dy: 10px; }
+.tap-confetti i:nth-child(5) { background: #9b6bf2; --dx: -40px; --dy: 70px; }
+.tap-confetti i:nth-child(6) { background: #ff8fb1; --dx: 40px; --dy: 70px; }
+.tap-confetti i:nth-child(7) { background: #ff9f43; --dx: 0px; --dy: -80px; }
+.tap-confetti i:nth-child(8) { background: #14b8a6; --dx: 0px; --dy: 80px; }
+@keyframes tap-burst {
+  0% {
+    transform: translate(-50%, -50%) scale(0.4);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tap-btn-played .tap-look,
+  .tap-confetti i {
+    animation: none;
+  }
+}

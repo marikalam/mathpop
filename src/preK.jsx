@@ -178,7 +178,7 @@ export const SHAPES = {
   diamond: 'diamond',
 };
 // What each shape looks like, said in "Show me how".
-const SHAPE_LOOKS = {
+export const SHAPE_LOOKS = {
   circle: 'A circle is round, like a ball. It has no corners at all.',
   square: 'A square has 4 sides, all the same size, and 4 corners.',
   triangle: 'A triangle has 3 sides and 3 pointy corners.',
@@ -189,7 +189,7 @@ const SHAPE_LOOKS = {
   diamond: 'A diamond has 4 sides and stands up on a point, like a kite.',
 };
 // [name, what it looks like] in Japanese.
-const JA_SHAPES = {
+export const JA_SHAPES = {
   circle: ['まる', 'まるは ボールみたいに まるいよ。かどは ひとつも ないよ。'],
   square: ['しかく', 'しかくは おなじ ながさの へんが 4つ、かどが 4つ あるよ。'],
   triangle: ['さんかく', 'さんかくは へんが 3つ、とがった かどが 3つ あるよ。'],

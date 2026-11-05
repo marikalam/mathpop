@@ -4,6 +4,7 @@ import LevelSwitcher from './LevelSwitcher.jsx';
 import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
 import { getVoiceQuality, languagesWithVoices, playFeedbackAndSpeak, playLogoSound, playStickerPick, prewarmVoices, speakInLanguage, speakProblem, speakResults, unlockAudio } from './sound.js';
 import Pip from './Pip.jsx';
+import TapBoard from './TapBoards.jsx';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
 import { loadDigitModel } from './digitModel.js';
@@ -58,6 +59,13 @@ import { cachedPlus, freeRoundLeft, refreshPlus, spendFreeRound, trialDaysLeft }
 const SESSION_ROUNDS = 10;
 // The iPhone app has no link out to the other apps' website, and no printing.
 const IS_NATIVE = Capacitor.isNativePlatform();
+// The tap-and-hear boards (TapBoards.jsx), on the youngest grades' home page.
+const TAP_BOARDS = [
+  { id: 'shapes', title: 'Tap Shapes', color: '#e0577f' },
+  { id: 'colors', title: 'Tap Colors', color: '#14b8a6' },
+  { id: 'animals', title: 'Tap Animals', color: '#8e4fd6' },
+];
+const TAP_BOARDS_FOR = ['p', 'k'];
 // Progress per player and grade: { playerId: { grade: { total, correct, byOp } } }.
 // The older one (v2) was per grade only, for the whole phone; it becomes
 // the first guest player's.
@@ -730,6 +738,8 @@ export default function App() {
 
   // Goes up each time the home greeting is tapped (its animation).
   const [heroPlaying, setHeroPlaying] = useState(0);
+  // Which tap-and-hear board is open (TapBoards.jsx).
+  const [tapBoard, setTapBoard] = useState('shapes');
   // The problem whose picture is zoomed in on (ZoomView), if any.
   const [zoomed, setZoomed] = useState(null);
   useEffect(() => {
@@ -1514,7 +1524,7 @@ export default function App() {
             {/* Every section, and Explore Numbers, as small tiles under it. */}
             {(() => {
               const sections = gradeSections(gradeInfo(level).id);
-              const n = sections.length + 1;
+              const n = sections.length + 1 + (TAP_BOARDS_FOR.includes(gradeInfo(level).id) ? TAP_BOARDS.length : 0);
               // Three across (two or three for the youngest grades).
               const cols = n <= 3 ? n : 3;
               return (
@@ -1551,6 +1561,24 @@ export default function App() {
                     </span>
                     <span className="home-tile-title">Explore Numbers</span>
                   </button>
+                  {/* The youngest players' tap-and-hear boards (TapBoards.jsx). */}
+                  {TAP_BOARDS_FOR.includes(gradeInfo(level).id) &&
+                    TAP_BOARDS.map((b) => (
+                      <button
+                        key={b.id}
+                        className="home-tile"
+                        style={{ '--card-from': b.color, '--card-to': b.color }}
+                        onClick={() => {
+                          setTapBoard(b.id);
+                          setView('tap');
+                        }}
+                      >
+                        <span className="home-tile-icon" aria-hidden="true">
+                          <SectionIcon id={`tap-${b.id}`} />
+                        </span>
+                        <span className="home-tile-title">{b.title}</span>
+                      </button>
+                    ))}
                 </div>
               );
             })()}
@@ -1575,6 +1603,14 @@ export default function App() {
               placing={placingSticker}
               onPlaced={() => setPlacingSticker(null)}
             />
+          </>
+        )}
+
+        {view === 'tap' && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
+            <h2 className="screen-title">{TAP_BOARDS.find((b) => b.id === tapBoard)?.title}</h2>
+            <TapBoard key={tapBoard} board={tapBoard} lang={langFor(currentProfile.id)} />
           </>
         )}
 

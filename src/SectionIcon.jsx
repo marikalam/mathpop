@@ -116,6 +116,36 @@ const DRAWINGS = {
       </text>
     </g>
   ),
+  'tap-shapes': (
+    <g>
+      <circle cx="13" cy="15" r="11" fill={W} />
+      <path d="M32 3l5 10 11 1-8 8 2 11-10-5-10 5 2-11-8-8 11-1z" fill={Y} />
+      <path d="M52 44c-9-6-12-10-10-14 2-3 7-3 10 1 3-4 8-4 10-1 2 4-1 8-10 14z" fill="#ffb3c6" />
+      <rect x="6" y="30" width="16" height="16" rx="3" fill={W} />
+    </g>
+  ),
+  'tap-colors': (
+    <g>
+      {/* A painter's palette with dabs of color. */}
+      <path d="M32 4C15 4 3 14 3 26c0 10 8 17 18 17 5 0 6-3 6-6 0-4 3-6 7-6h8c10 0 19-5 19-13C61 10 48 4 32 4z" fill={W} />
+      <circle cx="16" cy="22" r="5" fill="#ef4444" />
+      <circle cx="25" cy="12" r="5" fill="#ffd23f" />
+      <circle cx="38" cy="11" r="5" fill="#3b8cf0" />
+      <circle cx="49" cy="19" r="5" fill="#2fae6b" />
+    </g>
+  ),
+  'tap-animals': (
+    <g>
+      {/* A puppy face. */}
+      <ellipse cx="14" cy="20" rx="7" ry="13" fill="#c98f5c" />
+      <ellipse cx="50" cy="20" rx="7" ry="13" fill="#c98f5c" />
+      <circle cx="32" cy="25" r="18" fill={W} />
+      <circle cx="25" cy="22" r="2.6" fill="#2b2d42" />
+      <circle cx="39" cy="22" r="2.6" fill="#2b2d42" />
+      <ellipse cx="32" cy="30" rx="4" ry="3" fill="#2b2d42" />
+      <path d="M28 35q4 3 8 0" stroke="#2b2d42" strokeWidth="2" fill="none" strokeLinecap="round" />
+    </g>
+  ),
 };
 
 export default function SectionIcon({ id }) {
