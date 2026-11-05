@@ -3214,20 +3214,36 @@ body {
   align-items: center;
   gap: 8px;
   border-bottom: 1px solid #eceef5;
-  padding: 2px 0;
+  padding: 1px 0;
 }
 .tv-picto-label {
-  font-size: 24px;
-  width: 32px;
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  width: 36px;
+  line-height: 0;
 }
 .tv-picto-items {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
-  color: #3b6fef;
-  font-size: 20px;
+  gap: 3px;
   line-height: 1;
+}
+/* A picture-graph dot with its running count on it. */
+.tv-picto-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #3b6fef;
+  color: #fff;
+  font: 700 13px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.tv-picto-dot-key {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
 }
 .tv-graph-key {
   font-size: 13px;
@@ -6082,4 +6098,32 @@ body {
 }
 .home-hero .home-stickers {
   align-self: flex-start;
+}
+
+/* Short phones (iPhone SE): smaller picture-graph rows, so the graph and
+   its question both fit above the answer pad. */
+@media (max-height: 700px) {
+  .tv-picto-dot {
+    width: 19px;
+    height: 19px;
+    font-size: 11px;
+  }
+  .tv-picto-label .thing {
+    width: 19px;
+    height: 19px;
+  }
+  .tv-picto-row {
+    padding: 0;
+  }
+  .tv-graph {
+    gap: 2px;
+  }
+  .tv-graph-title,
+  .tv-graph-key {
+    font-size: 12px;
+  }
+  .tv-picto-dot.tv-picto-dot-key {
+    width: 11px;
+    height: 11px;
+  }
 }
