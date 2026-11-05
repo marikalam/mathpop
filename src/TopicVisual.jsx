@@ -346,6 +346,9 @@ function Money({ items }) {
   );
 }
 
+// Each dot carries its running count (1, 2, 3, ... or 2, 4, 6, ... when a
+// dot stands for 2), so a child who can't easily count small dots on a
+// phone can read how many there are.
 function Pictograph({ title, rows, per }) {
   return (
     <span className="tv-graph">
@@ -357,12 +360,16 @@ function Pictograph({ title, rows, per }) {
           </span>
           <span className="tv-picto-items">
             {Array.from({ length: r.value / per }, (_, i) => (
-              <span key={i}>●</span>
+              <span key={i} className="tv-picto-dot">
+                {(i + 1) * per}
+              </span>
             ))}
           </span>
         </span>
       ))}
-      <span className="tv-graph-key">● = {per}</span>
+      <span className="tv-graph-key">
+        Each <span className="tv-picto-dot tv-picto-dot-key" /> = {per}
+      </span>
     </span>
   );
 }
