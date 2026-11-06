@@ -757,6 +757,35 @@ export default function App() {
     setWelcomeDone(true);
   }
 
+  // On Android (Chrome), the website can be installed as an app: the
+  // browser offers it (beforeinstallprompt) and the home page shows an
+  // Install button until it's installed.
+  const [installPrompt, setInstallPrompt] = useState(null);
+  useEffect(() => {
+    if (IS_NATIVE) return undefined;
+    const offer = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    const done = () => setInstallPrompt(null);
+    window.addEventListener('beforeinstallprompt', offer);
+    window.addEventListener('appinstalled', done);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', offer);
+      window.removeEventListener('appinstalled', done);
+    };
+  }, []);
+  async function installApp() {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    try {
+      await installPrompt.userChoice;
+    } catch {
+      /* dismissed */
+    }
+    setInstallPrompt(null);
+  }
+
   // Goes up each time the home greeting is tapped (its animation).
   const [heroPlaying, setHeroPlaying] = useState(0);
   // Which tap-and-hear board is open (TapBoards.jsx).
@@ -1583,6 +1612,16 @@ export default function App() {
               );
             })()}
 
+            {installPrompt && (
+              <button type="button" className="install-banner" onClick={installApp}>
+                <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="" />
+                <span>
+                  <strong>Install MathPop on this phone</strong>
+                  <span>Opens like an app, right from the home screen</span>
+                </span>
+                <span className="install-banner-btn">Install</span>
+              </button>
+            )}
             {/* Every section, and Explore Numbers, as small tiles under it. */}
             {(() => {
               const sections = gradeSections(gradeInfo(level).id);
