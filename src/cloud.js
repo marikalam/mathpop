@@ -379,6 +379,18 @@ export async function loadStats(days) {
   }
 }
 
+// Apple's App Store numbers for MathPop (supabase/mathpop_store_stats.sql,
+// saved each day by the App Store downloads workflow): downloads,
+// impressions, page views and countries. Null if not allowed or offline.
+export async function loadStoreStats(days) {
+  try {
+    const { data, error } = await supabase.rpc('mathpop_store_stats', { days });
+    return error ? null : data;
+  } catch {
+    return null;
+  }
+}
+
 // MathPop's family accounts, newest first, with their emails (only for
 // the stats viewers; null if not allowed or offline).
 export async function loadSignups(days) {
