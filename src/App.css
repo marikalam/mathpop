@@ -4893,27 +4893,106 @@ body {
   text-align: center;
 }
 
-.welcome-grades {
+/* The welcome card's age buttons (WelcomeCard.jsx): big and bright, a
+   picture, the age and the grade. */
+.welcome-ages-card {
+  gap: 10px;
+  padding-top: 18px;
+}
+.welcome-pip {
+  margin-bottom: -6px;
+}
+.welcome-ages {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   width: 100%;
 }
-
-.welcome-grade {
+.welcome-age {
   appearance: none;
-  padding: 10px 0;
-  border: 2px solid transparent;
-  border-radius: 14px;
-  background: #f1f3f9;
-  color: var(--ink);
-  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
-  cursor: pointer;
-}
-
-.welcome-grade-on {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px 9px;
+  border: 0;
+  border-radius: 16px;
   background: var(--grade-color);
   color: #fff;
+  cursor: pointer;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.16);
+  transition: transform 0.1s;
+}
+.welcome-age:active {
+  transform: scale(0.95);
+}
+.welcome-age-pic .section-icon {
+  width: 46px;
+  height: 34px;
+}
+.welcome-age-num {
+  font: 700 26px/1 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.welcome-age-grade {
+  font: 600 11.5px 'IBM Plex Sans', sans-serif;
+  opacity: 0.95;
+}
+.welcome-ages-card .welcome-name {
+  padding: 9px 12px;
+  font-size: 16px;
+}
+
+/* "See you tomorrow!" at the end of a round, with the daily reminder. */
+.tomorrow-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: #eaf3ff;
+  text-align: left;
+}
+.tomorrow-card .pip {
+  flex: none;
+}
+.tomorrow-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  color: var(--ink);
+}
+.tomorrow-text strong {
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.tomorrow-text span {
+  font-size: 14px;
+  line-height: 1.35;
+}
+.tomorrow-remind {
+  appearance: none;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #2f7fe0;
+  color: #fff;
+  font: 600 13.5px 'IBM Plex Sans', sans-serif;
+  cursor: pointer;
+}
+.tomorrow-remind-on {
+  background: transparent;
+  color: #2f7fe0;
+  padding-left: 0;
+}
+.tomorrow-text .tomorrow-denied {
+  font-size: 12.5px;
+  color: #a33;
 }
 
 .home-stat-streak {
