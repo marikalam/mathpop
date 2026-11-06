@@ -2021,7 +2021,17 @@ function anglesProblem(tier, grade) {
 // ---------------- Shapes, position and patterns ----------------
 
 const POLYGON_NAMES = { 3: 'triangle', 4: 'square', 5: 'pentagon', 6: 'hexagon', 8: 'octagon' };
-const SOLIDS = [['cube', 6], ['cuboid', 6], ['square pyramid', 5], ['triangular prism', 5], ['cylinder', 2], ['cone', 1]];
+const SOLIDS = [['cube', 6], ['cuboid', 6], ['square pyramid', 5], ['triangular prism', 5], ['cylinder', 2], ['cone', 1], ['sphere', 0]];
+// What each 3D shape looks like in real life (for "What is this shape called?").
+const SOLID_THINGS = {
+  cube: 'a dice',
+  cuboid: 'a cereal box',
+  'square pyramid': 'the pyramids in Egypt',
+  'triangular prism': 'a tent',
+  cylinder: 'a can of soup',
+  cone: 'an ice cream cone',
+  sphere: 'a ball',
+};
 const SOLID_TIPS = {
   cube: ['Think of a dice.', 'Count the top, the bottom, and the sides all the way around.'],
   cuboid: ['Think of a cereal box.', 'Count the top, the bottom, and the sides all the way around.'],
@@ -2029,6 +2039,7 @@ const SOLID_TIPS = {
   'triangular prism': ['It has a triangle at each end, like a tent.', 'Then rectangles go around the sides, one for each side of the triangle.'],
   cylinder: ['Think of a can of soup.', 'The top and the bottom are flat. The side all around is curved.'],
   cone: ['Think of an ice cream cone, turned upside down.', 'The round bottom is flat. The rest is curved up to a point.'],
+  sphere: ['Think of a ball.', 'It is curved all over. Is there any flat part to stand it on?'],
 };
 
 // Sides and corners (P1), 2D and 3D shapes (P2, Beast Academy 1A and 3A).
@@ -2036,17 +2047,35 @@ function shapeSidesProblem(tier, grade) {
   const kind = grade === '2' ? pick(['sides', 'name', 'solid']) : pick(['sides', 'sides', 'name']);
   if (kind === 'solid') {
     const [solid, faces] = pick(SOLIDS);
+    const a = (w) => (/^[aeiou]/.test(w) ? 'an' : 'a');
+    if (Math.random() < 0.45) {
+      return {
+        explain: [`This shape looks like ${SOLID_THINGS[solid]}.`, ...SOLID_TIPS[solid].slice(1), 'Which name fits?'],
+        explainAnswer: `It’s ${a(solid)} ${solid}!`,
+        visual: { kind: 'solid', solid },
+        prompt: 'What is this shape called?',
+        correct: solid,
+        answerType: 'choice',
+        choiceKind: 'word',
+        choices: withChoices(solid, SOLIDS.map((x) => x[0])),
+        answerLabel: `${a(solid) === 'an' ? 'An' : 'A'} ${solid}, like ${SOLID_THINGS[solid]}`,
+        speech: 'What is this 3D shape called?',
+        questionTitle: '3D shapes',
+      };
+    }
     return {
+      visual: { kind: 'solid', solid },
       explain: [
         'A flat face is a flat side you could stand the shape on.',
         ...SOLID_TIPS[solid],
-        `So how many flat faces does a ${solid} have?`,
+        'The dashed lines are the edges at the back that you can’t see.',
+        `So how many flat faces does ${a(solid)} ${solid} have?`,
       ],
-      prompt: `How many flat faces does a ${solid} have?`,
+      prompt: `How many flat faces does ${a(solid)} ${solid} have?`,
       correct: faces,
       answerType: 'numeric',
-      answerLabel: `A ${solid} has ${faces} flat face${faces === 1 ? '' : 's'}`,
-      speech: `How many flat faces does a ${solid} have?`,
+      answerLabel: `${a(solid) === 'an' ? 'An' : 'A'} ${solid} has ${faces} flat face${faces === 1 ? '' : 's'}`,
+      speech: `How many flat faces does ${a(solid)} ${solid} have?`,
       questionTitle: '3D shapes',
     };
   }

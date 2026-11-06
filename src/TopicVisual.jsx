@@ -391,6 +391,79 @@ function Chart100({ first, start }) {
   );
 }
 
+// 3D shapes (topics.js shapeSidesProblem): each drawn the way it looks on
+// a table, faces shaded (front lighter, top lightest, side darker) and
+// the edges you can't see dashed, so the flat faces can be counted.
+const SOLID_FILL = { top: '#C9D8FF', front: '#8FB0FA', side: '#6C93F2', curved: '#8FB0FA' };
+function Solid({ solid }) {
+  const L = { stroke: INK, strokeWidth: 2.5, strokeLinejoin: 'round' };
+  const D = { stroke: INK, strokeWidth: 1.8, strokeDasharray: '5 4', fill: 'none', opacity: 0.7 };
+  let body;
+  if (solid === 'cube' || solid === 'cuboid') {
+    const w = solid === 'cube' ? 70 : 104;
+    const h = 70;
+    const x = solid === 'cube' ? 48 : 30;
+    const y = 52;
+    const dx = 30;
+    const dy = 22;
+    body = (
+      <>
+        <path d={`M${x} ${y}h${w}v${h}h${-w}z`} fill={SOLID_FILL.front} {...L} />
+        <path d={`M${x} ${y}l${dx} ${-dy}h${w}l${-dx} ${dy}z`} fill={SOLID_FILL.top} {...L} />
+        <path d={`M${x + w} ${y}l${dx} ${-dy}v${h}l${-dx} ${dy}z`} fill={SOLID_FILL.side} {...L} />
+        <path d={`M${x + dx} ${y - dy + h}H${x + w + dx}M${x + dx} ${y - dy}V${y - dy + h}L${x} ${y + h}`} {...D} />
+      </>
+    );
+  } else if (solid === 'square pyramid') {
+    body = (
+      <>
+        <path d="M40 120H108L90 14Z" fill={SOLID_FILL.front} {...L} />
+        <path d="M108 120 140 98 90 14Z" fill={SOLID_FILL.side} {...L} />
+        <path d="M40 120 72 98H140M72 98 90 14" {...D} />
+      </>
+    );
+  } else if (solid === 'triangular prism') {
+    body = (
+      <>
+        <path d="M22 124H86L54 72Z" fill={SOLID_FILL.front} {...L} />
+        <path d="M86 124 158 100 126 48 54 72Z" fill={SOLID_FILL.side} {...L} />
+        <path d="M22 124 94 100H158M94 100 126 48" {...D} />
+      </>
+    );
+  } else if (solid === 'cylinder') {
+    body = (
+      <>
+        <path d="M44 32V112A46 14 0 0 0 136 112V32Z" fill={SOLID_FILL.curved} {...L} />
+        <ellipse cx="90" cy="32" rx="46" ry="14" fill={SOLID_FILL.top} {...L} />
+        <path d="M58 52V104" stroke="#fff" strokeWidth="6" strokeLinecap="round" opacity=".35" />
+        <path d="M44 112a46 14 0 0 1 92 0" {...D} />
+      </>
+    );
+  } else if (solid === 'cone') {
+    body = (
+      <>
+        <path d="M90 12 42 116A48 14 0 0 0 138 116Z" fill={SOLID_FILL.curved} {...L} />
+        <path d="M78 40 60 100" stroke="#fff" strokeWidth="6" strokeLinecap="round" opacity=".35" />
+        <path d="M42 116a48 14 0 0 1 96 0" {...D} />
+      </>
+    );
+  } else {
+    body = (
+      <>
+        <circle cx="90" cy="70" r="54" fill={SOLID_FILL.curved} {...L} />
+        <path d="M36 70a54 16 0 0 0 108 0" fill="none" stroke={INK} strokeWidth="1.8" opacity=".55" />
+        <path d="M36 70a54 16 0 0 1 108 0" {...D} />
+        <ellipse cx="68" cy="46" rx="14" ry="9" fill="#fff" opacity=".45" transform="rotate(-30 68 46)" />
+      </>
+    );
+  }
+  return (
+    <svg viewBox="0 0 180 140" className="tv-svg tv-svg-shape" role="img" aria-label={`A ${solid}`}>
+      {body}
+    </svg>
+  );
+}
+
 const NOTE_COLORS = { 100: '#8FCB9B', 200: '#B9A6E6', 500: '#F2A6A6', 1000: '#F7C873' };
 
 function Money({ items }) {
@@ -525,6 +598,12 @@ export default function TopicVisual({ v }) {
       return (
         <Panel>
           <Grid cols={v.n} rows={v.n} cells={Array.from({ length: v.n * v.n }, (_, i) => i)} />
+        </Panel>
+      );
+    case 'solid':
+      return (
+        <Panel>
+          <Solid solid={v.solid} />
         </Panel>
       );
     case 'jumps':
