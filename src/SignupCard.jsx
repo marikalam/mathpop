@@ -6,10 +6,11 @@ import Icon from './Icon.jsx';
 // stickers are saved and synced. "Not now" lets kids play straight away
 // as a guest; it asks again a few days later (App.jsx).
 //
-// Once Plus has started (plus.js), a new family's sign-up starts its 7-day
-// free trial instead: the card says so, a grown-up can subscribe without
-// an account, and "just play" is today's one free round (it asks again
-// the next day).
+// A new device gets a 7-day free trial on its own (plus.js). Once that
+// week is over without Plus, the card offers 7 more free days for making
+// a family account instead: a grown-up can also subscribe without an
+// account, and "just play" is today's one free round (it asks again the
+// next day).
 export default function SignupCard({ trial = false, onSignUp, onSignIn, onSubscribe, onLater }) {
   return (
     <div className="handoff-backdrop" role="dialog" aria-modal="true" aria-labelledby="signup-title">
@@ -18,10 +19,10 @@ export default function SignupCard({ trial = false, onSignUp, onSignIn, onSubscr
           <LogoMark playing={1} />
         </div>
         <h2 id="signup-title" className="handoff-title">
-          {trial ? 'Try MathPop free for 7 days' : 'Save your kids’ progress'}
+          {trial ? 'Get 7 more free days' : 'Save your kids’ progress'}
         </h2>
         <p className="handoff-text">
-          {trial ? 'Sign up with email (for grown-ups) to start. No payment details needed.' : 'A free family account, for grown-ups:'}
+          {trial ? 'Make a free family account (for grown-ups). No payment details needed.' : 'A free family account, for grown-ups:'}
         </p>
         <ul className="signup-perks">
           {trial && (
@@ -40,7 +41,7 @@ export default function SignupCard({ trial = false, onSignUp, onSignIn, onSubscr
           </li>
         </ul>
         <button type="button" className="pill-btn-primary pill-btn-full" onClick={onSignUp}>
-          {trial ? 'Start free trial' : 'Sign up with email'}
+          Sign up with email
         </button>
         <button type="button" className="signup-signin" onClick={onSignIn}>
           I have an account: sign in

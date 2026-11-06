@@ -1896,13 +1896,13 @@ export default function App() {
               <p className="screen-sub">
                 Come back tomorrow for another one, or ask a grown-up to unlock MathPop for as many rounds as you like.
               </p>
-              {!cloudUser && !plusStatus.trialOver && (
+              {!cloudUser && (
                 <button className="pill-btn-primary pill-btn-full" onClick={() => signupOpen('sign-up')}>
-                  Grown-ups: start the 7-day free trial
+                  Grown-ups: get 7 more free days with a family account
                 </button>
               )}
               <button
-                className={!cloudUser && !plusStatus.trialOver ? 'pill-btn-secondary pill-btn-full' : 'pill-btn-primary pill-btn-full'}
+                className={!cloudUser ? 'pill-btn-secondary pill-btn-full' : 'pill-btn-primary pill-btn-full'}
                 onClick={() => openPlus('home')}
               >
                 Grown-ups: unlock MathPop
