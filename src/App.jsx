@@ -5,6 +5,7 @@ import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
 import { getVoiceQuality, languagesWithVoices, playFeedbackAndSpeak, playLogoSound, playStickerPick, prewarmVoices, speakInLanguage, speakProblem, speakResults, unlockAudio } from './sound.js';
 import Pip from './Pip.jsx';
 import TapBoard from './TapBoards.jsx';
+import { COLORING_PACKS, ColoringPage, ColoringPrint } from './ColoringPages.jsx';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
 import { loadDigitModel } from './digitModel.js';
@@ -66,6 +67,9 @@ const TAP_BOARDS = [
   { id: 'animals', title: 'Tap Animals', color: '#8e4fd6' },
 ];
 const TAP_BOARDS_FOR = ['p', 'k'];
+// The printable coloring pages (ColoringPages.jsx), for the same grades.
+// The iPhone app can't print, so it opens them on the website in Safari.
+const COLORING_URL = 'https://marikalam.github.io/apps/mathpop/?coloring=1';
 // Progress per player and grade: { playerId: { grade: { total, correct, byOp } } }.
 // The older one (v2) was per grade only, for the whole phone; it becomes
 // the first guest player's.
@@ -597,7 +601,9 @@ function ProgressDots({ current, total }) {
 }
 
 export default function App() {
-  const [view, setView] = useState('home');
+  // The website opened with ?coloring (from the iPhone app's "Print in
+  // Safari") starts on the coloring pages.
+  const [view, setView] = useState(() => (!IS_NATIVE && new URLSearchParams(window.location.search).has('coloring') ? 'coloring' : 'home'));
   // The section open on the 'section' screen (curriculum.js).
   const [sectionId, setSectionId] = useState(null);
   const [returnView, setReturnView] = useState('home');
@@ -1058,6 +1064,8 @@ export default function App() {
   const [printCount, setPrintCount] = useState(10);
   const [printKey, setPrintKey] = useState(true);
   const [printSet, setPrintSet] = useState(null);
+  // The coloring pages being printed (ColoringPages.jsx).
+  const [coloringPrint, setColoringPrint] = useState(null);
   const [options, setOptions] = useState([]);
   const [answerCorrect, setAnswerCorrect] = useState(false);
   const [chosen, setChosen] = useState(null);
@@ -1360,9 +1368,24 @@ export default function App() {
     const id = setTimeout(() => window.print(), 50);
     return () => clearTimeout(id);
   }, [printSet]);
+  useEffect(() => {
+    if (!coloringPrint) return;
+    const id = setTimeout(() => window.print(), 300);
+    return () => clearTimeout(id);
+  }, [coloringPrint]);
+
+  function printColoring(pack) {
+    if (IS_NATIVE) {
+      openOutside(COLORING_URL);
+      return;
+    }
+    setPrintSet(null);
+    setColoringPrint({ pages: pack.pages, id: Date.now() });
+  }
 
   function printWorksheet() {
     setPrintPanel(false);
+    setColoringPrint(null);
     setPrintSet({ problems: makeWorksheet(operation, level, printCount, langFor(currentProfile.id)), withKey: printKey, id: Date.now() });
   }
 
@@ -1524,7 +1547,7 @@ export default function App() {
             {/* Every section, and Explore Numbers, as small tiles under it. */}
             {(() => {
               const sections = gradeSections(gradeInfo(level).id);
-              const n = sections.length + 1 + (TAP_BOARDS_FOR.includes(gradeInfo(level).id) ? TAP_BOARDS.length : 0);
+              const n = sections.length + 1 + (TAP_BOARDS_FOR.includes(gradeInfo(level).id) ? TAP_BOARDS.length + 1 : 0);
               // Three across (two or three for the youngest grades).
               const cols = n <= 3 ? n : 3;
               return (
@@ -1579,6 +1602,14 @@ export default function App() {
                         <span className="home-tile-title">{b.title}</span>
                       </button>
                     ))}
+                  {TAP_BOARDS_FOR.includes(gradeInfo(level).id) && (
+                    <button className="home-tile" style={{ '--card-from': '#f5a524', '--card-to': '#e08a12' }} onClick={() => setView('coloring')}>
+                      <span className="home-tile-icon" aria-hidden="true">
+                        <SectionIcon id="coloring" />
+                      </span>
+                      <span className="home-tile-title">Coloring Pages</span>
+                    </button>
+                  )}
                 </div>
               );
             })()}
@@ -1611,6 +1642,38 @@ export default function App() {
             <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
             <h2 className="screen-title">{TAP_BOARDS.find((b) => b.id === tapBoard)?.title}</h2>
             <TapBoard key={tapBoard} board={tapBoard} lang={langFor(currentProfile.id)} />
+          </>
+        )}
+
+        {view === 'coloring' && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
+            <h2 className="screen-title">Coloring Pages</h2>
+            <p className="screen-sub">
+              {IS_NATIVE
+                ? 'Print these and color them with crayons. Printing opens MathPop’s website in Safari: tap Print there.'
+                : 'Print these and color them with crayons. Each page is one sheet of paper.'}
+            </p>
+            <div className="coloring-packs">
+              {COLORING_PACKS.map((pack) => (
+                <section key={pack.id} className="coloring-pack">
+                  <div className="coloring-thumbs" aria-hidden="true">
+                    {pack.pages.slice(0, 3).map((page, i) => (
+                      <ColoringPage key={i} page={page} className="coloring-thumb" />
+                    ))}
+                  </div>
+                  <div className="coloring-pack-info">
+                    <h3 className="coloring-pack-title">{pack.title}</h3>
+                    <p className="coloring-pack-sub">
+                      {pack.sub} · {pack.pages.length} pages
+                    </p>
+                    <button type="button" className="pill-btn-primary coloring-print-btn" onClick={() => printColoring(pack)}>
+                      <Icon name="printer" /> {IS_NATIVE ? 'Print in Safari' : 'Print'}
+                    </button>
+                  </div>
+                </section>
+              ))}
+            </div>
           </>
         )}
 
@@ -2370,6 +2433,7 @@ export default function App() {
           </div>
         )}
 
+        {coloringPrint && <ColoringPrint key={coloringPrint.id} pages={coloringPrint.pages} />}
         {printSet && (
           <PrintSheet
             key={printSet.id}
