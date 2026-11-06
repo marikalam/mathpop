@@ -53,6 +53,7 @@ import ParentGate from './ParentGate.jsx';
 import WeekCard from './WeekCard.jsx';
 import WelcomeCard from './WelcomeCard.jsx';
 import SignupCard from './SignupCard.jsx';
+import { canRemind, hourLabel, reminderState, turnOffReminder, turnOnReminder } from './reminder.js';
 import PlusScreen from './PlusScreen.jsx';
 import ReportScreen from './ReportScreen.jsx';
 import { cachedPlus, freeRoundLeft, refreshPlus, spendFreeRound, trialDaysLeft } from './plus.js';
@@ -87,6 +88,9 @@ const WELCOME_KEY = 'mathpop-welcomed-v1';
 // after SIGNUP_ASK_AGAIN_DAYS).
 const SIGNUP_LATER_KEY = 'mathpop-signup-later-v1';
 const SIGNUP_ASK_AGAIN_DAYS = 3;
+// Set once this device has finished a round: a new family plays first and
+// is asked to sign up after that.
+const PLAYED_KEY = 'mathpop-played-once-v1';
 const ACTIVE_PLAYER_KEY = 'mathpop-active-player-v1';
 const SETTINGS_KEY = 'mathpop-settings-v1';
 const GRADE_KEY = 'mathpop-grade-v1';
@@ -710,8 +714,12 @@ export default function App() {
   // Once Plus has started, it's the 7-day free trial's card, and "just
   // play" (today's free round) asks again the next day.
   const trialOffer = !plusStatus.plus;
+  // A new family plays one round before being asked (those who already
+  // went through the old welcome card are asked as before).
+  const [playedOnce, setPlayedOnce] = useState(() => Boolean(readJson(PLAYED_KEY) || readJson(WELCOME_KEY)));
   const showSignup =
     !cloudUser &&
+    playedOnce &&
     view === 'home' &&
     !(
       signupLater &&
@@ -736,8 +744,15 @@ export default function App() {
     });
   }
 
+  // The welcome card's age buttons: set the grade (and the name, if given)
+  // and go straight into a game for that age (the effect below starts it
+  // once the grade has changed).
+  const [startAfterWelcome, setStartAfterWelcome] = useState(null);
   function finishWelcome(name, grade) {
-    if (name) setProfiles((prev) => prev.map((p, i) => (i === 0 ? { ...p, name, grade } : p)));
+    if (grade) {
+      setProfiles((prev) => prev.map((p, i) => (i === 0 ? { ...p, grade, ...(name ? { name } : {}) } : p)));
+      setStartAfterWelcome(grade);
+    }
     writeJson(WELCOME_KEY, true);
     setWelcomeDone(true);
   }
@@ -1107,7 +1122,31 @@ export default function App() {
 
   useEffect(() => {
     if (view === 'complete') speakResults(sessionCorrect, SESSION_ROUNDS, problem?.lang);
+    if (view === 'complete' && !playedOnce) {
+      writeJson(PLAYED_KEY, true);
+      setPlayedOnce(true);
+    }
   }, [view]);
+
+  // The first game, picked on the welcome card: counting for toddlers, a
+  // mix of the grade's problems for everyone else.
+  useEffect(() => {
+    if (!startAfterWelcome || gradeInfo(currentProfile.grade).id !== startAfterWelcome) return;
+    setStartAfterWelcome(null);
+    startOperation(startAfterWelcome === 'p' ? 'count' : 'random', 'home');
+  }, [startAfterWelcome, currentProfile.grade]);
+
+  // The daily reminder (reminder.js), set by a grown-up from the end of a round.
+  const [reminder, setReminder] = useState(reminderState);
+  function askReminder() {
+    setGate({
+      reason: 'To set a daily reminder',
+      then: () => turnOnReminder(currentProfile.name, reminder.hour).then(setReminder),
+    });
+  }
+  function stopReminder() {
+    setGate({ reason: 'To turn off the reminder', then: () => turnOffReminder().then(setReminder) });
+  }
 
   function goHome() {
     setView('home');
@@ -2356,6 +2395,36 @@ export default function App() {
                   Review answers
                 </button>
               )}
+              {/* Come back tomorrow: the streak to keep going, and (iPhone
+                  app) a daily reminder a grown-up can set. */}
+              {(() => {
+                const days = streakDays(currentProfile.id);
+                const who = isUntouchedStarter(currentProfile, progress) || /^Player \d+$/.test(currentProfile.name) ? '' : `, ${currentProfile.name}`;
+                return (
+                  <div className="tomorrow-card">
+                    <Pip size={64} mood="wave" />
+                    <div className="tomorrow-text">
+                      <strong>{tr(`See you tomorrow${who}!`, 'また あしたね！')}</strong>
+                      <span>
+                        {days >= 2
+                          ? tr(`That's ${days} days in a row. Come back tomorrow for ${days + 1}!`, `${days}にち つづいたよ！ あしたも あそぼう！`)
+                          : tr('Play again tomorrow to start a streak. Pip will have new problems ready.', 'あしたも あそぶと れんぞくきろくが はじまるよ！')}
+                      </span>
+                      {canRemind &&
+                        (reminder.on ? (
+                          <button type="button" className="tomorrow-remind tomorrow-remind-on" onClick={stopReminder}>
+                            Reminder on: every day at {hourLabel(reminder.hour)} · Turn off
+                          </button>
+                        ) : (
+                          <button type="button" className="tomorrow-remind" onClick={askReminder}>
+                            <Icon name="clock" /> Grown-ups: remind us every day
+                          </button>
+                        ))}
+                      {reminder.denied && <span className="tomorrow-denied">Notifications are off for MathPop. Turn them on in the iPhone's Settings → MathPop.</span>}
+                    </div>
+                  </div>
+                );
+              })()}
               <div className="feedback-actions">
                 <button className="pill-btn-secondary" onClick={goHome}>
                   Home
@@ -2486,7 +2555,7 @@ export default function App() {
           onLater={signupNotNow}
         />
       )}
-      {showWelcome && !showSignup && <WelcomeCard grade={profiles[0].grade} onDone={finishWelcome} onSkip={() => finishWelcome()} />}
+      {showWelcome && !showSignup && <WelcomeCard onDone={finishWelcome} onSkip={() => finishWelcome()} />}
       {gate && (
         <ParentGate
           reason={gate.reason}
