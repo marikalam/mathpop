@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { loadSignups, loadStats } from './cloud.js';
+import { loadSignups, loadStats, loadStoreStats } from './cloud.js';
 
 // MathPop stats (Account -> MathPop stats, for the accounts listed in
 // supabase/mathpop_stats.sql): how much the app is used, added up from
@@ -53,7 +53,11 @@ function BarList({ title, rows }) {
 }
 
 function shortDate(iso) {
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 // The family accounts, newest first: email, when they signed up, and how
@@ -114,6 +118,61 @@ function Signups({ signups, days }) {
   );
 }
 
+// Apple's own App Store numbers (the App Store downloads workflow saves
+// them each day; they run a day or two behind): first-time downloads,
+// how many saw MathPop and opened its page, and the top countries.
+function countryName(code) {
+  try {
+    return new Intl.DisplayNames(undefined, { type: 'region' }).of(code) || code;
+  } catch {
+    return code;
+  }
+}
+
+function AppStore({ store, days }) {
+  if (store === undefined) return null;
+  const t = store?.totals || {};
+  const has = store && store.through;
+  const downloads = t.download || 0;
+  return (
+    <>
+      <section className="stats-card">
+        <h3 className="stats-card-title">App Store (from Apple)</h3>
+        {!has ? (
+          <p className="stats-empty">
+            {store === null
+              ? 'Couldn’t load the App Store numbers.'
+              : 'Apple’s numbers will show here a day or two after the App Store downloads workflow first runs.'}
+          </p>
+        ) : (
+          <>
+            <div className="stats-tiles">
+              <Tile value={downloads} label="downloads" />
+              <Tile value={t.redownload || 0} label="redownloads" />
+              <Tile value={(t.impression || 0).toLocaleString()} label="saw it in the App Store" />
+              <Tile value={t.page_view || 0} label="opened its page" />
+              <Tile value={t.page_view ? `${Math.round((downloads / t.page_view) * 100)}%` : '–'} label="page → download" />
+            </div>
+            <p className="stats-note">
+              Last {days} days, up to {shortDate(`${store.through}T12:00:00`)}. {store.allTime?.download || 0} downloads in all. Apple’s numbers run a day or
+              two behind.
+            </p>
+          </>
+        )}
+      </section>
+      {has && (store.countries || []).length > 0 && (
+        <BarList
+          title="Downloads by country"
+          rows={store.countries.map((c) => ({
+            label: countryName(c.territory),
+            value: c.downloads,
+          }))}
+        />
+      )}
+    </>
+  );
+}
+
 function sortedRows(obj, names = {}) {
   return Object.entries(obj || {})
     .map(([k, v]) => ({ label: names[k] || k, value: v }))
@@ -124,13 +183,16 @@ export default function StatsScreen({ topicName, gradeName }) {
   const [days, setDays] = useState(30);
   const [stats, setStats] = useState(undefined);
   const [signups, setSignups] = useState(undefined);
+  const [store, setStore] = useState(undefined);
   const [hover, setHover] = useState(null);
 
   useEffect(() => {
     let live = true;
     setStats(undefined);
     setSignups(undefined);
+    setStore(undefined);
     loadStats(days).then((s) => live && setStats(s));
+    loadStoreStats(days).then((s) => live && setStore(s));
     loadSignups(days).then((s) => live && setSignups(s));
     return () => {
       live = false;
@@ -174,10 +236,11 @@ export default function StatsScreen({ topicName, gradeName }) {
             <Tile value={t.answered ? `${Math.round((t.correct / t.answered) * 100)}%` : '–'} label="answered right" />
           </div>
           <p className="stats-note">
-            {stats.allTimeInstalls} {stats.allTimeInstalls === 1 ? 'device' : 'devices'} since stats began. The usage counts are
-            anonymous; only the sign-ups list below shows emails.
+            {stats.allTimeInstalls} {stats.allTimeInstalls === 1 ? 'device' : 'devices'} since stats began. The usage counts are anonymous; only the sign-ups
+            list below shows emails.
           </p>
 
+          <AppStore store={store} days={days} />
           <Signups signups={signups} days={days} />
 
           <section className="stats-card">
@@ -211,7 +274,13 @@ export default function StatsScreen({ topicName, gradeName }) {
           </section>
 
           <BarList title="iPhone, iPad or website (devices a day, added up)" rows={sortedRows(stats.platforms, PLATFORM_NAMES)} />
-          <BarList title="Rounds by grade" rows={sortedRows(stats.grades).map((r) => ({ ...r, label: gradeName(r.label) }))} />
+          <BarList
+            title="Rounds by grade"
+            rows={sortedRows(stats.grades).map((r) => ({
+              ...r,
+              label: gradeName(r.label),
+            }))}
+          />
           <BarList
             title="Most played"
             rows={(stats.topics || []).map((x) => ({

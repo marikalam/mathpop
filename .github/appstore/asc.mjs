@@ -9,7 +9,7 @@ const { ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_PATH } = process.env;
 
 const b64url = (v) => Buffer.from(typeof v === 'string' ? v : JSON.stringify(v)).toString('base64url');
 
-function token() {
+export function token() {
   const now = Math.floor(Date.now() / 1000);
   const head = b64url({ alg: 'ES256', kid: ASC_KEY_ID, typ: 'JWT' });
   const body = b64url({ iss: ASC_ISSUER_ID, iat: now, exp: now + 15 * 60, aud: 'appstoreconnect-v1' });
