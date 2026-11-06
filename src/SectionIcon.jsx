@@ -116,6 +116,22 @@ const DRAWINGS = {
       </text>
     </g>
   ),
+  coloring: (
+    <g>
+      {/* Three crayons. */}
+      {[
+        ['#fff', -14, 10],
+        [Y, 0, 20],
+        ['#ffb3c6', 14, 34],
+      ].map(([fill, rot, x]) => (
+        <g key={x} transform={`rotate(${rot} ${x + 6} 30)`}>
+          <path d={`M${x} 14h12v28h-12z`} fill={fill} />
+          <path d={`M${x} 14l6-11 6 11z`} fill={fill} />
+          <path d={`M${x} 22h12M${x} 34h12`} stroke="rgba(0,0,0,.18)" strokeWidth="2" />
+        </g>
+      ))}
+    </g>
+  ),
   'tap-shapes': (
     <g>
       <circle cx="13" cy="15" r="11" fill={W} />
