@@ -2537,7 +2537,174 @@ function probabilityProblem() {
 
 // ---------------- The list ----------------
 
+// ---- Adding within 100 (2nd grade, like enVision Topic 3): two 2-digit
+// numbers, the open number line (jump the tens, then the ones) and the
+// hundred chart (hop down a row for each ten, across for the ones).
+
+// Two 2-digit numbers whose sum is at most 99; about two in three make a
+// new ten in the ones (57 + 18), the step kids slip on.
+function twoDigitPair() {
+  const regroup = Math.random() < 0.65;
+  for (let i = 0; i < 60; i++) {
+    const a = randInt(11, 79);
+    const b = randInt(11, 99 - a);
+    if ((a % 10) + (b % 10) >= 10 === regroup && a % 10 && b % 10) return [a, b];
+  }
+  return [57, 18];
+}
+
+// The number line steps a grown-up would say: start at the first number,
+// jump the tens one at a time, then the ones (making the next ten first
+// if the ones go past it). They end with a question, never the sum.
+function jumpSteps(a, b) {
+  const tens = Math.floor(b / 10);
+  const ones = b % 10;
+  const steps = [
+    `Start at ${a}.`,
+    `${b} is ${plural(tens, 'ten')}${ones ? ` and ${plural(ones, 'one')}` : ''}.`,
+  ];
+  let at = a;
+  for (let i = 0; i < tens; i++) {
+    if (!ones && i === tens - 1) return [...steps, `One more jump of 10. What is ${at} plus 10?`];
+    steps.push(`Jump 10: ${at} plus 10 is ${at + 10}.`);
+    at += 10;
+  }
+  if (ones) {
+    const need = 10 - (at % 10);
+    if (ones > need) {
+      steps.push(`Now the ${ones} ones. ${at} needs ${need} more to make ${at + need}. Careful, the ones make a new ten!`);
+      steps.push(`So what is ${at + need} plus ${ones - need}?`);
+    } else steps.push(`Now jump the ${ones} ones. What is ${at} plus ${ones}?`);
+  }
+  return steps;
+}
+
+// Each jump of the open number line: one per ten, then one for the ones.
+function jumpsFor(a, b) {
+  const sizes = [...Array(Math.floor(b / 10)).fill(10), ...(b % 10 ? [b % 10] : [])];
+  let at = a;
+  return sizes.map((size) => ({ size, land: (at += size) }));
+}
+
+function add100Problem() {
+  const [a, b] = twoDigitPair();
+  const correct = a + b;
+  const kind = pick(['plain', 'stack', 'story', 'story', 'more']);
+  const explain = jumpSteps(a, b);
+  const base = { correct, answerType: 'numeric', answerLabel: `${a} + ${b} = ${correct}`, explain, questionTitle: 'Add within 100' };
+  if (kind === 'stack') {
+    return {
+      ...base,
+      promptKind: 'stack',
+      stackTop: a,
+      stackBottom: b,
+      stackSymbol: '+',
+      prompt: `${a} + ${b}`,
+      speech: `${a} plus ${b}`,
+      explain: [
+        'Add the ones first, on the right.',
+        `${a % 10} plus ${b % 10} is ${(a % 10) + (b % 10)}.`,
+        (a % 10) + (b % 10) >= 10 ? `That's 10 or more! Write the ${(a % 10) + (b % 10) - 10} and carry 1 ten.` : `Write the ${(a % 10) + (b % 10)}.`,
+        `Now the tens: ${Math.floor(a / 10)} plus ${Math.floor(b / 10)}${(a % 10) + (b % 10) >= 10 ? ', plus the 1 we carried' : ''}.`,
+        'What number do you get?',
+      ],
+    };
+  }
+  const name = storyName();
+  if (kind === 'more') {
+    const [p, q] = storyNames(2);
+    const item = pick(['pens', 'stickers', 'cards', 'shells', 'marbles']);
+    const prompt = `${p} has ${a} ${item}. ${q} has ${b} more ${item} than ${p}. How many ${item} does ${q} have?`;
+    return { ...base, prompt, speech: prompt, explain: [`${q} has as many as ${p}, and ${b} more. So we add.`, ...explain] };
+  }
+  if (kind === 'story') {
+    const [item, verb] = pick([
+      ['markers', 'gets'],
+      ['pennies', 'gets'],
+      ['cards', 'buys'],
+      ['stickers', 'finds'],
+      ['seeds', 'plants'],
+      ['blocks', 'stacks'],
+    ]);
+    const prompt =
+      verb === 'plants' || verb === 'stacks'
+        ? `${name} ${verb} ${a} ${item}. Then ${name} ${verb} ${b} more. How many ${item} is that in all?`
+        : `${name} has ${a} ${item}. ${name} ${verb} ${b} more ${item}. How many ${item} does ${name} have now?`;
+    return { ...base, prompt, speech: prompt, explain: ['Getting more means we add.', ...explain] };
+  }
+  return { ...base, prompt: `${a} + ${b}`, speech: `${a} plus ${b}` };
+}
+
+// The open number line: the jumps are drawn and labeled; one landing
+// spot is a "?" to fill in (most often the last one, the sum).
+function numberLineAddProblem() {
+  const round = Math.random() < 0.35;
+  const a = round ? randInt(2, 6) * 10 : randInt(21, 69);
+  const b = randInt(12, Math.min(39, 99 - a));
+  const jumps = jumpsFor(a, b);
+  const correct = a + b;
+  const hide = Math.random() < 0.6 || jumps.length < 2 ? jumps.length - 1 : randInt(0, jumps.length - 2);
+  const target = jumps[hide].land;
+  const before = hide ? jumps[hide - 1].land : a;
+  const last = hide === jumps.length - 1;
+  const prompt = last ? `${a} + ${b} = ?` : 'Which number goes in the ? box?';
+  const steps = jumpSteps(a, b);
+  return {
+    visual: { kind: 'jumps', start: a, jumps, hide },
+    prompt,
+    speech: last ? `Use the number line. What is ${a} plus ${b}?` : `Look at the jumps on the number line. Which number goes in the box with the question mark?`,
+    correct: String(target),
+    answerType: 'choice',
+    choices: withChoices(String(target), [target + 10, target - 10, target + 1, target - 1, target + 2].map(String)),
+    answerLabel: last ? `${a} + ${b} = ${correct}` : `${before} + ${jumps[hide].size} = ${target}`,
+    explain: last
+      ? steps
+      : [`Start at ${before}.`, `The jump says plus ${jumps[hide].size}.`, `So what is ${before} plus ${jumps[hide].size}?`],
+    questionTitle: 'Number line jumps',
+  };
+}
+
+// The hundred chart: five rows of it, the start circled. Add by hopping
+// down a row for each ten, then across one box for each one.
+function hundredChartProblem() {
+  const a = randInt(12, 68);
+  let b = randInt(11, Math.min(39, 99 - a));
+  if (b % 10 === 0) b -= 1;
+  const correct = a + b;
+  const first = Math.min(51, a - ((a - 1) % 10));
+  const tens = Math.floor(b / 10);
+  const ones = b % 10;
+  const down = a + tens * 10;
+  const story = Math.random() < 0.5;
+  const name = storyName();
+  const prompt = story ? `${name} has ${a} pennies and gets ${b} more. How many pennies now?` : `Start at ${a}. Add ${b}. Where do you land?`;
+  return {
+    visual: { kind: 'chart100', first, start: a },
+    prompt,
+    speech: `${prompt} Use the hundred chart.`,
+    correct: String(correct),
+    answerType: 'choice',
+    choices: withChoices(String(correct), [correct + 10, correct - 10, correct + 1, correct - 1, a + tens + ones * 10].filter((n) => n > 0 && n <= 100).map(String)),
+    answerLabel: `${a} + ${b} = ${correct}`,
+    explain: [
+      `Find ${a} on the chart. It has a circle around it.`,
+      `${b} is ${plural(tens, 'ten')}${ones ? ` and ${plural(ones, 'one')}` : ''}.`,
+      `Each ten is one hop straight down a row. ${tens === 1 ? 'One hop down' : `${tens} hops down`} takes you to ${down}.`,
+      ...(ones
+        ? [
+            `Now hop ${ones} ${ones === 1 ? 'box' : 'boxes'} to the right, one for each one.${(down % 10) + ones > 10 || down % 10 === 0 ? ' At the end of a row, keep going at the start of the next row.' : ''}`,
+            'Where do you land?',
+          ]
+        : []),
+    ],
+    questionTitle: 'Hundred chart',
+  };
+}
+
 export const TOPIC_BUILDERS = {
+  add100: add100Problem,
+  numberLineAdd: numberLineAddProblem,
+  hundredChart: hundredChartProblem,
   frames: framesProblem,
   numberOrder: numberOrderProblem,
   skipCount: skipCountProblem,

@@ -840,7 +840,57 @@ function regroupProblem(level) {
 
 const MULTISTEP_ITEMS = ['stickers', 'marbles', 'books', 'stamps', 'crayons', 'shells'];
 
-function multistepProblem(level) {
+// 2nd grade's two-step stories (like "Matt has 44 seeds. He gives away
+// 10. Then he buys 8 more."): a start under 100, two smaller changes, and
+// every step stays between 0 and 100. The second step often makes a new
+// ten in the ones, and "Show me how" points that out.
+function secondGradeTwoStep() {
+  const name = nameA();
+  const item = pick([...MULTISTEP_ITEMS, 'seeds', 'pennies']);
+  const give = pick(['gives away', 'loses', 'uses']);
+  const get = pick(['buys', 'finds', 'gets']);
+  const pattern = pick(['sub-add', 'sub-add', 'add-sub', 'add-add', 'sub-sub']);
+  const small = () => (Math.random() < 0.4 ? randInt(1, 3) * 10 : randInt(3, 19));
+  let a, b, c, mid, correct;
+  for (let i = 0; i < 50; i++) {
+    a = randInt(25, 75);
+    b = small();
+    c = small();
+    mid = pattern.startsWith('add') ? a + b : a - b;
+    correct = pattern.endsWith('add') ? mid + c : mid - c;
+    if (mid >= 10 && mid < 100 && correct > 0 && correct < 100) break;
+  }
+  const verb1 = pattern.startsWith('add') ? get : give;
+  const verb2 = pattern.endsWith('add') ? get : give;
+  const prompt = `${name} has ${a} ${item}. ${name} ${verb1} ${b}. Then ${name} ${verb2} ${c}${pattern.endsWith('add') ? ' more' : ''}. How many ${item} does ${name} have now?`;
+  const op = (p) => (p === 'add' ? 'plus' : 'minus');
+  const [p1, p2] = pattern.split('-');
+  const ao = mid % 10;
+  const co = c % 10;
+  const careful =
+    p2 === 'add' && ao + co >= 10
+      ? [`Careful with the ones: ${ao} plus ${co} is ${ao + co}. That's a new ten, so the tens go up by one.`]
+      : p2 === 'sub' && co > ao
+        ? [`Careful with the ones: ${mid} only has ${ao} ${ao === 1 ? 'one' : 'ones'}, so break a ten into ones first.`]
+        : [];
+  return {
+    prompt,
+    correct,
+    answerType: 'numeric',
+    answerLabel: `${a} ${p1 === 'add' ? '+' : '−'} ${b} = ${mid}, ${mid} ${p2 === 'add' ? '+' : '−'} ${c} = ${correct}`,
+    speech: prompt,
+    explain: [
+      'This story has two steps. Do one at a time.',
+      `Step 1: ${name} ${verb1} ${b}, so we ${p1 === 'add' ? 'add' : 'take away'}. ${a} ${op(p1)} ${b} is ${mid}.`,
+      `Step 2: start from ${mid}, not ${a}! ${name} ${verb2} ${c}, so we ${p2 === 'add' ? 'add' : 'take away'}.`,
+      ...careful,
+      `So what is ${mid} ${op(p2)} ${c}?`,
+    ],
+  };
+}
+
+function multistepProblem(level, grade) {
+  if (grade === '2') return secondGradeTwoStep();
   const range = level === 'easy' ? [1, 20] : level === 'medium' ? [10, 60] : [20, 150];
   const pattern = pick(['add-add', 'add-sub', 'sub-add', 'sub-sub']);
   const name = nameA();

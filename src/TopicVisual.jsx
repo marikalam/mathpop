@@ -326,6 +326,71 @@ function NumberLine({ from, to, mark }) {
   );
 }
 
+// The open number line (adding within 100): a start, then one arc per
+// jump (a ten, or the ones), labeled "+10" above and where it lands below.
+// The landing at `hide` is a "?" box to fill in.
+function Jumps({ start, jumps, hide }) {
+  const total = jumps.reduce((n, j) => n + j.size, 0);
+  const X0 = 22;
+  const span = 290;
+  const X = (v) => X0 + ((v - start) / total) * span;
+  const Y = 74;
+  return (
+    <svg viewBox="0 0 334 118" className="tv-svg" role="img" aria-label={`A number line starting at ${start}, with ${jumps.length} jumps`}>
+      <line x1="6" y1={Y} x2="328" y2={Y} stroke={INK} strokeWidth="2" />
+      <path d={`M6 ${Y}l8 -5v10z M328 ${Y}l-8 -5v10z`} fill={INK} />
+      <line x1={X0} y1={Y - 7} x2={X0} y2={Y + 7} stroke={INK} strokeWidth="2.5" />
+      <text x={X0} y={Y + 26} fontSize="15" textAnchor="middle" fill={INK} fontWeight="700">
+        {start}
+      </text>
+      {jumps.map((j, i) => {
+        const from = X(j.land - j.size);
+        const to = X(j.land);
+        const mid = (from + to) / 2;
+        const h = Math.max(16, Math.min(38, (to - from) * 0.75));
+        const hidden = i === hide;
+        return (
+          <g key={i}>
+            <path d={`M${from} ${Y - 2} Q${mid} ${Y - h * 2} ${to} ${Y - 2}`} fill="none" stroke={BLUE} strokeWidth="2.5" />
+            <path d={`M${to} ${Y - 2}l-6 -7m6 7l2 -9`} stroke={BLUE} strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            <text x={mid} y={Y - h - 6} fontSize="13" textAnchor="middle" fill={BLUE} fontWeight="700">
+              +{j.size}
+            </text>
+            <line x1={to} y1={Y - 7} x2={to} y2={Y + 7} stroke={INK} strokeWidth="2.5" />
+            <rect x={to - 15} y={Y + 11} width="30" height="22" rx="5" fill={hidden ? '#FFE3EC' : '#fff'} stroke={hidden ? '#E0577F' : SOFT} strokeWidth="1.5" />
+            <text x={to} y={Y + 27} fontSize="14" textAnchor="middle" fill={hidden ? '#E0577F' : INK} fontWeight="700">
+              {hidden ? '?' : j.land}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// Five rows of the hundred chart, from `first`, with `start` circled.
+function Chart100({ first, start }) {
+  const S = 31;
+  return (
+    <svg viewBox={`0 0 ${S * 10 + 4} ${S * 5 + 4}`} className="tv-svg" role="img" aria-label={`A hundred chart from ${first} to ${first + 49}, with ${start} circled`}>
+      {Array.from({ length: 50 }, (_, i) => {
+        const n = first + i;
+        const x = 2 + (i % 10) * S;
+        const y = 2 + Math.floor(i / 10) * S;
+        return (
+          <g key={n}>
+            <rect x={x} y={y} width={S} height={S} fill={n % 10 === 0 ? '#F3F5FB' : '#fff'} stroke={INK} strokeWidth="1" />
+            {n === start && <circle cx={x + S / 2} cy={y + S / 2} r={S / 2 - 2} fill="#FFE3EC" stroke="#E0577F" strokeWidth="2.5" />}
+            <text x={x + S / 2} y={y + S / 2 + 5} fontSize="13" textAnchor="middle" fill={INK} fontWeight={n === start ? 800 : 600}>
+              {n}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 const NOTE_COLORS = { 100: '#8FCB9B', 200: '#B9A6E6', 500: '#F2A6A6', 1000: '#F7C873' };
 
 function Money({ items }) {
@@ -460,6 +525,18 @@ export default function TopicVisual({ v }) {
       return (
         <Panel>
           <Grid cols={v.n} rows={v.n} cells={Array.from({ length: v.n * v.n }, (_, i) => i)} />
+        </Panel>
+      );
+    case 'jumps':
+      return (
+        <Panel wide>
+          <Jumps start={v.start} jumps={v.jumps} hide={v.hide} />
+        </Panel>
+      );
+    case 'chart100':
+      return (
+        <Panel wide>
+          <Chart100 first={v.first} start={v.start} />
         </Panel>
       );
     case 'numberLine':
