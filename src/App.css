@@ -6436,3 +6436,48 @@ body {
     max-height: 250mm;
   }
 }
+
+/* The website's "Install MathPop" button (Android Chrome and other
+   browsers that can install it as an app). */
+.install-banner {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+}
+.install-banner img {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  flex: none;
+}
+.install-banner > span:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  font-size: 13px;
+  color: #5b6077;
+}
+.install-banner strong {
+  font: 700 16px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: var(--ink);
+}
+.install-banner-btn {
+  flex: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #3b6fef;
+  color: #fff;
+  font: 700 14px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
