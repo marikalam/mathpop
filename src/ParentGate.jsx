@@ -1,30 +1,31 @@
 import { useState } from 'react';
 import Icon from './Icon.jsx';
 
-// A grown-ups-only check (App Store Kids category rule) before anything
-// that leaves the app: rating MathPop, or sharing a child's week. A
-// multiplication a young child is unlikely to know, typed in rather than
-// picked from choices. Practice itself never asks.
-function newQuestion() {
-  const a = 12 + Math.floor(Math.random() * 8);
-  const b = 3 + Math.floor(Math.random() * 7);
-  return { a, b };
+// A grown-ups-only check before anything that leaves the app or costs
+// money: buying Plus, rating MathPop on the App Store, sharing a child's
+// week, opening Safari to print (Apple's Kids category rules). No math:
+// three numbers are written as words ("seven, two, five") and typed in as
+// digits, which needs reading that young children don't have yet.
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+
+function newCode() {
+  return Array.from({ length: 3 }, () => Math.floor(Math.random() * 10));
 }
 
 export default function ParentGate({ reason, onPass, onCancel }) {
-  const [question, setQuestion] = useState(newQuestion);
+  const [code, setCode] = useState(newCode);
   const [answer, setAnswer] = useState('');
   const [wrong, setWrong] = useState(false);
 
   function check(e) {
     e.preventDefault();
-    if (Number(answer) === question.a * question.b) {
+    if (answer === code.join('')) {
       onPass();
       return;
     }
     setWrong(true);
     setAnswer('');
-    setQuestion(newQuestion());
+    setCode(newCode());
   }
 
   return (
@@ -34,11 +35,11 @@ export default function ParentGate({ reason, onPass, onCancel }) {
           <Icon name="lock" size="1em" />
         </div>
         <h2 id="parent-gate-title" className="handoff-title">
-          Grown-ups only
+          For grown-ups
         </h2>
         <p className="handoff-text">
-          {wrong ? 'Not quite. Try this one: ' : `${reason}, answer: `}
-          what is {question.a} × {question.b}?
+          {wrong ? 'Not quite. Try again: type ' : `${reason}, type these numbers: `}
+          <strong className="parent-gate-words">{code.map((d) => WORDS[d]).join(', ')}</strong>
         </p>
         <input
           className="parent-gate-input"
@@ -46,12 +47,12 @@ export default function ParentGate({ reason, onPass, onCancel }) {
           inputMode="numeric"
           pattern="[0-9]*"
           autoComplete="off"
-          aria-label="Answer"
+          aria-label="The numbers"
           value={answer}
-          onChange={(e) => setAnswer(e.target.value.replace(/\D/g, '').slice(0, 4))}
+          onChange={(e) => setAnswer(e.target.value.replace(/\D/g, '').slice(0, 3))}
           autoFocus
         />
-        <button type="submit" className="pill-btn-primary pill-btn-full handoff-open" disabled={!answer}>
+        <button type="submit" className="pill-btn-primary pill-btn-full handoff-open" disabled={answer.length < 3}>
           Continue
         </button>
         <button type="button" className="handoff-stay" onClick={onCancel}>

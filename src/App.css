@@ -6481,3 +6481,10 @@ body {
   color: #fff;
   font: 700 14px 'Fredoka', ui-rounded, system-ui, sans-serif;
 }
+
+.parent-gate-words {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink);
+  font: 700 20px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}

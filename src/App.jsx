@@ -732,16 +732,13 @@ export default function App() {
     writeJson(SIGNUP_LATER_KEY, now);
     setSignupLater(now);
   }
+  // Signing in or up opens the account screen straight away (no
+  // grown-ups check: the email and password are the grown-up's own).
   function signupOpen(mode) {
-    setGate({
-      reason: mode === 'sign-up' ? 'To sign up' : 'To sign in',
-      then: () => {
-        // If they back out of the account screen, don't ask again at once.
-        signupNotNow();
-        setAccountMode(mode);
-        setView('account');
-      },
-    });
+    // If they back out of the account screen, don't ask again at once.
+    signupNotNow();
+    setAccountMode(mode);
+    setView('account');
   }
 
   // The welcome card's age buttons: set the grade (and the name, if given)
@@ -1167,14 +1164,12 @@ export default function App() {
 
   // The daily reminder (reminder.js), set by a grown-up from the end of a round.
   const [reminder, setReminder] = useState(reminderState);
+  // (iOS asks to allow notifications itself the first time.)
   function askReminder() {
-    setGate({
-      reason: 'To set a daily reminder',
-      then: () => turnOnReminder(currentProfile.name, reminder.hour).then(setReminder),
-    });
+    turnOnReminder(currentProfile.name, reminder.hour).then(setReminder);
   }
   function stopReminder() {
-    setGate({ reason: 'To turn off the reminder', then: () => turnOffReminder().then(setReminder) });
+    turnOffReminder().then(setReminder);
   }
 
   function goHome() {
@@ -1444,7 +1439,9 @@ export default function App() {
 
   function printColoring(pack) {
     if (IS_NATIVE) {
-      openOutside(COLORING_URL);
+      // Leaving the app for Safari: Apple's Kids rules ask for the
+      // grown-ups check first.
+      setGate({ reason: 'To open Safari to print', then: () => openOutside(COLORING_URL) });
       return;
     }
     setPrintSet(null);
