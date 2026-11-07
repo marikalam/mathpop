@@ -52,6 +52,7 @@ import ZoomView from './ZoomView.jsx';
 import ParentGate from './ParentGate.jsx';
 import WeekCard from './WeekCard.jsx';
 import TrialRecap from './TrialRecap.jsx';
+import MoneyCard from './MoneyCard.jsx';
 import WelcomeCard from './WelcomeCard.jsx';
 import SignupCard from './SignupCard.jsx';
 import { canRemind, hourLabel, reminderState, turnOffReminder, turnOnReminder } from './reminder.js';
@@ -1989,6 +1990,8 @@ export default function App() {
             <h2 className="screen-title">Players &amp; grades</h2>
             <p className="screen-sub">Set each player's grade and how they answer. They play at that grade, following Singapore math.</p>
             <SyncStatus user={profileOwner === 'account' ? cloudUser : null} onOpenAccount={openAccount} />
+            {/* Only for the accounts that can see MathPop's stats (the owner). */}
+            {statsViewer && <MoneyCard app="mathpop" />}
             <div className="settings-list">
               {draftProfiles.map((p) => (
                 <PlayerSettingsCard
