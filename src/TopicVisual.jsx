@@ -747,10 +747,6 @@ export default function TopicVisual({ v }) {
                 }),
               ])}
             </span>
-            <span className="tv-table-key">
-              <span className="tv-table-key-row">Rows go across →</span>
-              <span className="tv-table-key-col">Columns go down ↓</span>
-            </span>
           </span>
         </Panel>
       );

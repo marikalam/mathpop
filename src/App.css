@@ -3298,7 +3298,7 @@ body {
   color: #fff;
 }
 .tv-table-word {
-  font: 700 9.5px 'IBM Plex Sans', sans-serif;
+  font: 700 8.5px 'IBM Plex Sans', sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.02em;
   opacity: 0.85;
@@ -3306,7 +3306,12 @@ body {
 .tv-table-row {
   flex-wrap: wrap;
   align-content: center;
-  width: 44px;
+  width: 46px;
+  height: var(--tv-cell);
+}
+.tv-table-cell svg {
+  width: 76%;
+  height: 76%;
 }
 .tv-table-row .tv-table-word {
   flex-basis: 100%;
@@ -3315,9 +3320,14 @@ body {
 .tv-table-arrow {
   font-size: 13px;
 }
+.tv-table-wrap {
+  /* The grid scales with the screen's height so it always fits the card
+     (about 42px boxes on an iPhone 13, smaller on small phones). */
+  --tv-cell: clamp(32px, 4.8vh, 48px);
+}
 .tv-table-cell {
-  width: 48px;
-  height: 48px;
+  width: var(--tv-cell);
+  height: var(--tv-cell);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5476,6 +5486,12 @@ body {
 .question-fit > .answer-area {
   flex: none;
 }
+/* A card with a big grid (rows & columns) is never squeezed smaller than
+   its picture, so the picture can't spill over the question. */
+.question-fit > .problem-card:has(.tv-table) {
+  flex: none;
+  min-height: auto;
+}
 .question-fit > .answer-area-write {
   flex: 1 1 0;
   min-height: 190px;
@@ -6607,4 +6623,18 @@ body {
 
 .money-tile-strong .stats-tile-value {
   color: #1f8a52;
+}
+/* Rows & columns: the grid takes the room, so the picture answers are a
+   little shorter and all four fit on the screen. */
+.question-fit:has(.tv-table) .option-btn {
+  min-height: 0;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+.question-fit:has(.tv-table) .option-btn svg {
+  width: 50px;
+  height: 50px;
+}
+.question-fit:has(.tv-table) .options-grid {
+  gap: 10px;
 }
