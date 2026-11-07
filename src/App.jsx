@@ -1609,8 +1609,11 @@ export default function App() {
               const label = (n) => ALL_META[n.topic]?.label || n.topic;
               const assigned = assignedTopics(currentProfile.id, level);
               const toFix = loadMistakes(currentProfile.id, level).length;
+              // The youngest players see what they'll play, not how many
+              // mistakes are saved up.
+              const little = ['p', 'k'].includes(gradeInfo(level).id);
               const parts = [
-                ...(toFix ? [`${toFix} to fix`] : []),
+                ...(toFix && !little ? [`${toFix} to fix`] : []),
                 ...assigned.slice(0, 1).map((t) => `from a grown-up: ${t.title}`),
                 ...path.current.slice(0, 2).map(label),
               ];
@@ -1619,6 +1622,7 @@ export default function App() {
                   key={`${currentProfile.id}-${level}`}
                   playerId={currentProfile.id}
                   signedIn={signedIn}
+                  little={little}
                   working={parts.length ? parts.join(' · ') : 'You’ve done every step!'}
                   meter={{
                     pct: Math.round((100 * path.gradeDone) / Math.max(1, path.gradeSize)),

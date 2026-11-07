@@ -6543,3 +6543,32 @@ body {
   font-size: 13px;
   color: var(--ink-dim);
 }
+
+/* Toddler and K: today's three stars, lighting up one per round. */
+.today-stars {
+  display: flex;
+  gap: 4px;
+}
+.today-star {
+  width: 30px;
+  height: 30px;
+  fill: #eceef5;
+  stroke: #c9cede;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.today-star-next {
+  stroke: #f5b301;
+  stroke-dasharray: 4 3;
+}
+.today-star-lit {
+  fill: #ffd23f;
+  stroke: #e0a100;
+  stroke-dasharray: none;
+  animation: today-star-pop 0.5s ease-out;
+}
+@keyframes today-star-pop {
+  50% {
+    transform: scale(1.3);
+  }
+}

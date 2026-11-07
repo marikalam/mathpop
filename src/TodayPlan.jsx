@@ -8,7 +8,18 @@ import Icon from './Icon.jsx';
 // practice a grown-up picked, the steps they're working on and a little
 // review, so the day is just "do your rounds". It needs a family account:
 // without one, the card asks a grown-up to sign in.
-export default function TodayPlan({ playerId, signedIn, working, meter, onStart, onSignIn }) {
+// A star that lights up (Toddler and K see three stars, not "Round 1, 2, 3").
+function DayStar({ lit, next }) {
+  return (
+    <svg viewBox="0 0 40 40" className={`today-star${lit ? ' today-star-lit' : ''}${next ? ' today-star-next' : ''}`} aria-hidden="true">
+      <path d="M20 3l5.2 10.6 11.7 1.7-8.5 8.2 2 11.6L20 29.6 9.6 35.1l2-11.6-8.5-8.2 11.7-1.7z" />
+    </svg>
+  );
+}
+
+// `little`: the youngest players (Toddler and K) get three stars to light
+// up instead of numbered rounds, and plain words on the button.
+export default function TodayPlan({ playerId, signedIn, working, meter, little = false, onStart, onSignIn }) {
   const [, refresh] = useState(0);
   useEffect(() => {
     const update = () => refresh((n) => n + 1);
@@ -33,9 +44,7 @@ export default function TodayPlan({ playerId, signedIn, working, meter, onStart,
           </h3>
           <Icon name="lock" />
         </div>
-        <p className="today-locked-text">
-          Three rounds a day made just for you, from your own answers. A grown-up signs in to turn it on.
-        </p>
+        <p className="today-locked-text">Three rounds a day made just for you, from your own answers. A grown-up signs in to turn it on.</p>
         <button className="pill-btn-primary pill-btn-full" onClick={onSignIn}>
           Grown-ups: sign in or sign up
         </button>
@@ -49,24 +58,44 @@ export default function TodayPlan({ playerId, signedIn, working, meter, onStart,
         <h3 className="today-title" id="today-title">
           <Icon name="clipboard" /> Today's practice
         </h3>
-        <span className="today-count">
-          {Math.min(done, DAILY_ROUNDS)} / {DAILY_ROUNDS}
-        </span>
+        {little ? (
+          <span className="today-stars" aria-label={`${Math.min(done, DAILY_ROUNDS)} of ${DAILY_ROUNDS} stars today`}>
+            {Array.from({ length: DAILY_ROUNDS }, (_, i) => (
+              <DayStar key={i} lit={i < done} next={i === done} />
+            ))}
+          </span>
+        ) : (
+          <span className="today-count">
+            {Math.min(done, DAILY_ROUNDS)} / {DAILY_ROUNDS}
+          </span>
+        )}
       </div>
-      <ol className="today-rounds" aria-label="Today's rounds">
-        {Array.from({ length: DAILY_ROUNDS }, (_, i) => (
-          <li key={i} className={i < done ? 'today-round-done' : i === done ? 'today-round-next' : ''}>
-            {i < done ? <Icon name="tick" size="0.9em" /> : i + 1}
-            <span>Round {i + 1}</span>
-          </li>
-        ))}
-      </ol>
+      {!little && (
+        <ol className="today-rounds" aria-label="Today's rounds">
+          {Array.from({ length: DAILY_ROUNDS }, (_, i) => (
+            <li key={i} className={i < done ? 'today-round-done' : i === done ? 'today-round-next' : ''}>
+              {i < done ? <Icon name="tick" size="0.9em" /> : i + 1}
+              <span>Round {i + 1}</span>
+            </li>
+          ))}
+        </ol>
+      )}
       <button className="path-btn" onClick={onStart}>
         <span className="path-btn-icon" aria-hidden="true">
           <Icon name="rocket" size="36px" />
         </span>
         <span className="path-btn-text">
-          <span className="path-btn-title">{allDone ? 'One more, just for me' : `Round ${done + 1}: just for me`}</span>
+          <span className="path-btn-title">
+            {little
+              ? allDone
+                ? 'Play some more!'
+                : done
+                  ? 'Get the next star!'
+                  : 'Let’s play!'
+              : allDone
+                ? 'One more, just for me'
+                : `Round ${done + 1}: just for me`}
+          </span>
           <span className="path-btn-sub">{working}</span>
           <span className="path-btn-meter" aria-label={meter.label}>
             <span style={{ width: `${meter.pct}%` }} />
@@ -83,7 +112,7 @@ export default function TodayPlan({ playerId, signedIn, working, meter, onStart,
           </>
         ) : (
           <>
-            Finish all {DAILY_ROUNDS} rounds for a bonus sticker <Icon name="star" />
+            {little ? `Light up all ${DAILY_ROUNDS} stars for a bonus sticker` : `Finish all ${DAILY_ROUNDS} rounds for a bonus sticker`} <Icon name="star" />
           </>
         )}
       </p>
