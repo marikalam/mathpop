@@ -7,13 +7,13 @@ App Store tab). Character limits are Apple's.
 MathPop: Kids Math Practice
 
 ## Subtitle (30)
-Reads aloud · Pre-K to 4th
+Math Facts Games, Pre-K to 4th
 
 ## Promotional text (170, can change anytime without review)
-Every problem read aloud and explained step by step, so even kids who can't read yet can practice. A daily list from their own mistakes, and a sticker every round.
+Kids play every game free for 7 days, no sign-up needed. Every problem is read aloud and explained step by step, so even kids who can't read yet can practice. No ads.
 
 ## Description (4000)
-MathPop is a bright, simple math practice game for Pre-K through 4th grade that reads every problem aloud, so even kids who can't read yet can practice on their own. Each child plays at their own grade, with games that follow Singapore math and Beast Academy, from counting to 10 all the way up to fractions, times tables and big numbers. Made by a mom for her own kids. Free, with no ads.
+MathPop is a bright, simple math practice game for Pre-K through 4th grade that reads every problem aloud, so even kids who can't read yet can practice on their own. Each child plays at their own grade, with games that follow Singapore math and Beast Academy, from counting to 10 all the way up to fractions, times tables and big numbers. Made by a mom for her own kids. Try every game free for 7 days, no sign-up and no payment details. No ads.
 
 TODAY'S PRACTICE, MADE FOR YOUR CHILD
 • Fix my mistakes: the very problems they got wrong, asked again until they get them right
@@ -51,10 +51,13 @@ FAMILY ACCOUNT (OPTIONAL)
 Kids can play right away with no sign-in. Grown-ups can create a free family account to keep players and grades in sync across devices. The same account works in PitchPop.
 
 PRIVATE BY DESIGN
-No ads and no tracking. Everything kids play is free; MathPop Plus is an optional subscription for grown-ups (the full progress report and assigned practice), and families who used MathPop before Plus keep it free. Without an account, everything MathPop remembers stays on your device.
+No ads and no tracking.
+
+FREE TO TRY, THEN MATHPOP PLUS
+Every game is free for the first 7 days, with no account and no payment details. After that, kids get one free round a day, or a grown-up can unlock all of MathPop with MathPop Plus (monthly or yearly): unlimited rounds in every grade, the full progress report and assigned practice, for every child in the family, in MathPop and PitchPop. Families who used MathPop before Plus keep it free. Without an account, everything MathPop remembers stays on your device.
 
 ## Keywords (100, comma-separated)
-singapore,kindergarten,preschool,homeschool,addition,subtraction,times tables,counting,first grade
+addition,subtraction,multiplication,times tables,kindergarten,preschool,homeschool,fractions
 
 ## URLs
 - Privacy Policy URL: https://marikalam.github.io/apps/mathpop/privacy.html
@@ -106,4 +109,4 @@ purchases or health data. (The usage counts carry no account or device ID:
 supabase/mathpop_stats.sql.)
 
 ## Pricing and availability
-Free, all regions.
+Free download with in-app purchase (MathPop Plus), all regions.

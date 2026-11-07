@@ -9,8 +9,9 @@ import { loadFamilyPlus, loadPlusStart, verifyPlusPurchase } from './cloud.js';
 //   - founding families, free for good: anyone using MathPop before that
 //     day - this device had MathPop before it, or (iPhone) the app was
 //     first downloaded before it, or the family account was made before it;
-//   - new families for 7 days after making their family account (the free
-//     trial: no payment details);
+//   - new families for 7 days from the first time MathPop opens on the
+//     device (the free trial: no account, no payment details); making a
+//     family account afterwards gives 7 days from the account's day;
 //   - families who subscribe in the iPhone app (or in PitchPop): the
 //     purchase is checked with Apple (verify-plus) and saved to the family
 //     account, so every device and both apps have it.
@@ -114,9 +115,13 @@ export async function refreshPlus(user) {
     const founder = Boolean(
       firstSeen < start || (app?.originalPurchaseDate && app.originalPurchaseDate.slice(0, 10) < start) || family?.founder,
     );
-    const trialEnds = family?.accountCreated
-      ? new Date(new Date(family.accountCreated).getTime() + TRIAL_DAYS * 86400000).toISOString()
-      : null;
+    // The 7-day free trial starts the first time MathPop opens on this
+    // device, no account or email needed, so kids can play everything
+    // straight away. Making a family account (signed in) starts it from
+    // the account's day instead, so a grown-up who signs up after the
+    // device's week gets a fresh week.
+    const trialStart = family?.accountCreated ? new Date(family.accountCreated) : new Date(`${firstSeen}T00:00:00`);
+    const trialEnds = new Date(trialStart.getTime() + TRIAL_DAYS * 86400000).toISOString();
     const previous = read(STATUS_KEY);
     if (founder) status = { plus: true, why: 'founder' };
     else if (paidUntil || sub) status = { plus: true, why: 'paid', paidUntil };
