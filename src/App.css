@@ -6488,3 +6488,58 @@ body {
   color: var(--ink);
   font: 700 20px 'Fredoka', ui-rounded, system-ui, sans-serif;
 }
+
+/* End-of-trial recap (TrialRecap.jsx): each child's week, for grown-ups. */
+.recap-card {
+  gap: 10px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+.recap-eyebrow {
+  margin: 0;
+  color: var(--ink-dim);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.recap-players {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.recap-player {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #fff7dc;
+  text-align: left;
+}
+
+.recap-name {
+  margin: 0 0 4px;
+  font: 700 16px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: var(--ink);
+}
+
+.recap-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  font-size: 14px;
+  color: var(--ink-dim);
+}
+
+.recap-stats strong {
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.recap-games {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ink-dim);
+}

@@ -31,7 +31,7 @@ import StickerBook from './StickerBook.jsx';
 import { earnSticker, pendingStickers } from './stickerStore.js';
 import { startStickerSync } from './stickerSync.js';
 import TodayPlan from './TodayPlan.jsx';
-import { assignedTopics, clearMistake, loadMistakes, mistakeRound, recordMistake, recordRound, streakDays } from './todayPlan.js';
+import { assignedTopics, clearMistake, dayKey, loadMistakes, mistakeRound, recordMistake, recordRound, streakDays, weekSummary } from './todayPlan.js';
 import { pathRound, pathStatus, recordPathAnswer } from './myPath.js';
 import LogoMark from './LogoMark.jsx';
 import { AccountButton, AccountScreen, AddPlayerForm, PlayerSettingsCard, SyncStatus } from './Account.jsx';
@@ -51,6 +51,7 @@ import StatsScreen from './StatsScreen.jsx';
 import ZoomView from './ZoomView.jsx';
 import ParentGate from './ParentGate.jsx';
 import WeekCard from './WeekCard.jsx';
+import TrialRecap from './TrialRecap.jsx';
 import WelcomeCard from './WelcomeCard.jsx';
 import SignupCard from './SignupCard.jsx';
 import { canRemind, hourLabel, reminderState, turnOffReminder, turnOnReminder } from './reminder.js';
@@ -87,6 +88,8 @@ const WELCOME_KEY = 'mathpop-welcomed-v1';
 // When the sign-up card was last put off with "Not now" (it asks again
 // after SIGNUP_ASK_AGAIN_DAYS).
 const SIGNUP_LATER_KEY = 'mathpop-signup-later-v1';
+// The day the end-of-trial recap (TrialRecap.jsx) was last shown.
+const RECAP_SEEN_KEY = 'mathpop-trial-recap-v1';
 const SIGNUP_ASK_AGAIN_DAYS = 3;
 // Set once this device has finished a round: a new family plays first and
 // is asked to sign up after that.
@@ -727,6 +730,24 @@ export default function App() {
         ? new Date(signupLater).toDateString() === new Date().toDateString()
         : Date.now() - signupLater < SIGNUP_ASK_AGAIN_DAYS * 86400000)
     );
+  // In the free trial's last two days, once a day on the home page: what
+  // each child did this week, for a grown-up deciding whether to keep
+  // MathPop (TrialRecap.jsx). Only once a child has finished a round, and
+  // never on top of the sign-up or welcome cards.
+  const [recapSeen, setRecapSeen] = useState(() => readJson(RECAP_SEEN_KEY));
+  const showRecap =
+    plusStatus.why === 'trial' &&
+    trialDaysLeft(plusStatus) <= 2 &&
+    view === 'home' &&
+    !showSignup &&
+    !showWelcome &&
+    !gate &&
+    recapSeen !== dayKey() &&
+    profiles.some((p) => weekSummary(p.id).rounds > 0);
+  function recapDone() {
+    writeJson(RECAP_SEEN_KEY, dayKey());
+    setRecapSeen(dayKey());
+  }
   function signupNotNow() {
     const now = Date.now();
     writeJson(SIGNUP_LATER_KEY, now);
@@ -2592,6 +2613,18 @@ export default function App() {
         />
       )}
       {showWelcome && !showSignup && <WelcomeCard onDone={finishWelcome} onSkip={() => finishWelcome()} />}
+      {showRecap && (
+        <TrialRecap
+          players={profiles}
+          daysLeft={trialDaysLeft(plusStatus)}
+          topicName={statTopicName}
+          onKeep={() => {
+            recapDone();
+            openPlus('home');
+          }}
+          onLater={recapDone}
+        />
+      )}
       {gate && (
         <ParentGate
           reason={gate.reason}
