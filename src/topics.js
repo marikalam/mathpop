@@ -5,7 +5,16 @@
 // answer or a list of choices. `visual` is drawn above the prompt by
 // TopicVisual.jsx (plain data, so worksheets can tell problems apart).
 
-import { storyName, storyNames } from './storyNames.js';
+import { playerName, storyName, storyNames } from './storyNames.js';
+
+// "Melody, what is this shape called?": asked by the player's name (when
+// they have one), on screen and out loud. callName: false so the voice
+// doesn't add the name a second time (sound.js).
+function askByName(question) {
+  const name = playerName();
+  const text = name ? `${name}, ${question.charAt(0).toLowerCase()}${question.slice(1)}` : question;
+  return { prompt: text, speech: text, callName: false };
+}
 
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -2053,13 +2062,12 @@ function shapeSidesProblem(tier, grade) {
         explain: [`This shape looks like ${SOLID_THINGS[solid]}.`, ...SOLID_TIPS[solid].slice(1), 'Which name fits?'],
         explainAnswer: `It’s ${a(solid)} ${solid}!`,
         visual: { kind: 'solid', solid },
-        prompt: 'What is this shape called?',
+        ...askByName('What is this shape called?'),
         correct: solid,
         answerType: 'choice',
         choiceKind: 'word',
         choices: withChoices(solid, SOLIDS.map((x) => x[0])),
         answerLabel: `${a(solid) === 'an' ? 'An' : 'A'} ${solid}, like ${SOLID_THINGS[solid]}`,
-        speech: 'What is this 3D shape called?',
         questionTitle: '3D shapes',
       };
     }
@@ -2091,13 +2099,12 @@ function shapeSidesProblem(tier, grade) {
       ],
       explainAnswer: `It’s ${correct === 'octagon' ? 'an' : 'a'} ${correct}! It has ${n} sides.`,
       visual: { kind: 'polygon', sides: n, numbers: 'sides' },
-      prompt: 'What is this shape called?',
+      ...askByName('What is this shape called?'),
       correct,
       answerType: 'choice',
       choiceKind: 'word',
       choices: withChoices(correct, Object.values(POLYGON_NAMES)),
       answerLabel: `It has ${n} sides: ${correct === 'octagon' ? 'an' : 'a'} ${correct}`,
-      speech: 'What is this shape called?',
       questionTitle: 'Shapes',
     };
   }
