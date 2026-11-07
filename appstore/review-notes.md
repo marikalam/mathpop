@@ -14,8 +14,7 @@ email and password). The
 same card lets a grown-up subscribe without an account, or the child plays
 today's free round. Without Plus or the trial, kids get one free round a
 day; after it, a "That was today's free round!" screen asks them to come
-back tomorrow or to ask a grown-up (both grown-up buttons go through the
-grown-ups check first).
+back tomorrow or to ask a grown-up.
 
 How to use it:
 - Each player's grade and how they answer (tap a choice, type, or write
@@ -39,17 +38,14 @@ Family account (optional):
   and its players from our servers.
 
 Kids category notes:
-- The only ways out of the app are for grown-ups: "Rate MathPop" (opens the
-  App Store) and "Share <child>'s week" (the share sheet) in Players &
-  grades, and "Print in Safari" on the Coloring Pages. Each asks a
-  grown-ups-only check first: three numbers written as words ("seven, two,
-  five") to type in as digits, which needs reading young children don't
-  have yet.
+- The only ways out of the app are "Rate MathPop" (opens the App Store) and
+  "Share <child>'s week" (the share sheet), in Players & grades, a screen
+  meant for grown-ups. Coloring pages and worksheets print from inside the
+  app with iOS's print screen (AirPrint).
 - MathPop Plus (auto-renewing subscription, monthly or yearly) unlocks
   unlimited rounds plus the grown-up features (the full progress report and
-  assigning practice). It's only offered to grown-ups: Players & grades ->
-  MathPop Plus, the free-trial card and the free-round screen, all behind
-  the grown-ups check. Subscribing does not require an account. Families
+  assigning practice). It's offered in Players & grades -> MathPop Plus,
+  the free-trial card and the free-round screen. Subscribing does not require an account. Families
   who used MathPop before Plus started keep everything free ("founding
   families"). A fresh install is a new family, so the trial, the daily free
   round and the purchase can all be tested.

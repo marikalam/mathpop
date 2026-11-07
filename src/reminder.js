@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
 // The daily practice reminder (iPhone and iPad app only): a grown-up turns
-// it on (past the grown-ups check), and every day at the same time iOS
+// it on, and every day at the same time iOS
 // shows "Pip has new math for Maddie!". Nothing leaves the device: it's a
 // local notification, set on this phone.
 

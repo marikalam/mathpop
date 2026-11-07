@@ -49,7 +49,7 @@ import { listenForAppLinks } from './appLink.js';
 import { statAppOpened, statRoundDone } from './stats.js';
 import StatsScreen from './StatsScreen.jsx';
 import ZoomView from './ZoomView.jsx';
-import ParentGate from './ParentGate.jsx';
+import { Printer } from '@capgo/capacitor-printer';
 import WeekCard from './WeekCard.jsx';
 import TrialRecap from './TrialRecap.jsx';
 import MoneyCard from './MoneyCard.jsx';
@@ -70,9 +70,7 @@ const TAP_BOARDS = [
   { id: 'animals', title: 'Tap Animals', color: '#8e4fd6' },
 ];
 const TAP_BOARDS_FOR = ['p', 'k'];
-// The printable coloring pages (ColoringPages.jsx), for the same grades.
-// The iPhone app can't print, so it opens them on the website in Safari.
-const COLORING_URL = 'https://marikalam.github.io/apps/mathpop/?coloring=1';
+// The printable coloring pages (ColoringPages.jsx) are for the same grades.
 // Progress per player and grade: { playerId: { grade: { total, correct, byOp } } }.
 // The older one (v2) was per grade only, for the whole phone; it becomes
 // the first guest player's.
@@ -663,31 +661,23 @@ export default function App() {
   }, []);
   // The stats page is only for the accounts allowed to see it.
   const [statsViewer, setStatsViewer] = useState(false);
-  // The grown-ups check before leaving the app (rating, sharing): what it's
-  // for, and what to do once it's passed.
-  const [gate, setGate] = useState(null);
   const [shareNote, setShareNote] = useState('');
 
   function rateApp() {
-    setGate({ reason: 'To rate MathPop on the App Store', then: () => openOutside(`${APP_STORE_URL}?action=write-review`) });
+    openOutside(`${APP_STORE_URL}?action=write-review`);
   }
 
-  function shareWeek(text) {
-    setGate({
-      reason: 'To share this',
-      then: async () => {
-        try {
-          if (navigator.share) {
-            await navigator.share({ text, url: APP_STORE_URL });
-            return;
-          }
-          await navigator.clipboard.writeText(`${text} ${APP_STORE_URL}`);
-          setShareNote('Copied! Paste it into a message.');
-        } catch {
-          /* closed the share sheet */
-        }
-      },
-    });
+  async function shareWeek(text) {
+    try {
+      if (navigator.share) {
+        await navigator.share({ text, url: APP_STORE_URL });
+        return;
+      }
+      await navigator.clipboard.writeText(`${text} ${APP_STORE_URL}`);
+      setShareNote('Copied! Paste it into a message.');
+    } catch {
+      /* closed the share sheet */
+    }
   }
 
   // MathPop Plus (plus.js): whether this family has it, and why.
@@ -702,13 +692,10 @@ export default function App() {
   // The player whose full report is open.
   const [reportFor, setReportFor] = useState(null);
 
-  // Plus itself is for grown-ups: the grown-ups check first when it can
-  // be bought (no Plus yet, or still on the free trial).
   const [plusBack, setPlusBack] = useState('players');
   function openPlus(back = 'players') {
     setPlusBack(back);
-    if (['founder', 'paid', 'early'].includes(plusStatus.why)) setView('plus');
-    else setGate({ reason: 'To see MathPop Plus', then: () => setView('plus') });
+    setView('plus');
   }
 
   function openReport(player) {
@@ -755,7 +742,6 @@ export default function App() {
     view === 'home' &&
     !showSignup &&
     !showWelcome &&
-    !gate &&
     recapSeen !== dayKey() &&
     profiles.some((p) => weekSummary(p.id).rounds > 0);
   function recapDone() {
@@ -768,7 +754,7 @@ export default function App() {
     setSignupLater(now);
   }
   // Signing in or up opens the account screen straight away (no
-  // grown-ups check: the email and password are the grown-up's own).
+  // check first: the email and password are the grown-up’s own).
   function signupOpen(mode) {
     // If they back out of the account screen, don't ask again at once.
     signupNotNow();
@@ -1474,25 +1460,25 @@ export default function App() {
     setView('question');
   }
 
-  // Once the worksheet is on the page, open the print dialog.
+  // Once the worksheet or coloring pages are on the page, open the print
+  // dialog: the browser's on the website, and in the iPhone app iOS's own
+  // print screen (AirPrint), printing the page with its @media print rules.
+  function printPage(name) {
+    if (IS_NATIVE) Printer.printWebView({ name }).catch(() => {});
+    else window.print();
+  }
   useEffect(() => {
     if (!printSet) return;
-    const id = setTimeout(() => window.print(), 50);
+    const id = setTimeout(() => printPage('MathPop worksheet'), 50);
     return () => clearTimeout(id);
   }, [printSet]);
   useEffect(() => {
     if (!coloringPrint) return;
-    const id = setTimeout(() => window.print(), 300);
+    const id = setTimeout(() => printPage('MathPop coloring pages'), 300);
     return () => clearTimeout(id);
   }, [coloringPrint]);
 
   function printColoring(pack) {
-    if (IS_NATIVE) {
-      // Leaving the app for Safari: Apple's Kids rules ask for the
-      // grown-ups check first.
-      setGate({ reason: 'To open Safari to print', then: () => openOutside(COLORING_URL) });
-      return;
-    }
     setPrintSet(null);
     setColoringPrint({ pages: pack.pages, id: Date.now() });
   }
@@ -1778,9 +1764,7 @@ export default function App() {
             <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
             <h2 className="screen-title">Coloring Pages</h2>
             <p className="screen-sub">
-              {IS_NATIVE
-                ? 'Print these and color them with crayons. Printing opens MathPop’s website in Safari: tap Print there.'
-                : 'Print these and color them with crayons. Each page is one sheet of paper.'}
+              Print these and color them with crayons. Each page is one sheet of paper.
             </p>
             <div className="coloring-packs">
               {COLORING_PACKS.map((pack) => (
@@ -1796,7 +1780,7 @@ export default function App() {
                       {pack.sub} · {pack.pages.length} pages
                     </p>
                     <button type="button" className="pill-btn-primary coloring-print-btn" onClick={() => printColoring(pack)}>
-                      <Icon name="printer" /> {IS_NATIVE ? 'Print in Safari' : 'Print'}
+                      <Icon name="printer" /> Print
                     </button>
                   </div>
                 </section>
@@ -2087,13 +2071,11 @@ export default function App() {
               <h2 className="screen-title">
                 {problem.questionTitle || (problem.type === 'clock' ? 'What time is it?' : "What's the answer?")}
               </h2>
-              {/* Printing doesn't work inside the iPhone app's web view, so
-                  the worksheet is a website-only extra, tucked in the corner. */}
-              {!IS_NATIVE && (
-                <button className="print-open-btn" onClick={() => setPrintPanel(true)} aria-label="Print a worksheet" title="Print a worksheet">
-                  <Icon name="printer" />
-                </button>
-              )}
+              {/* Print a worksheet of this game (the app prints with iOS's own
+                  print screen), tucked in the corner. */}
+              <button className="print-open-btn" onClick={() => setPrintPanel(true)} aria-label="Print a worksheet" title="Print a worksheet">
+                <Icon name="printer" />
+              </button>
               {/* Show me how: a small "?" at the end of the title line, out
                   of the way; orange while the help is open. */}
               <button
@@ -2634,7 +2616,7 @@ export default function App() {
         </div>
       )}
       <EmailHandoff />
-      {showSignup && !gate && (
+      {showSignup && (
         <SignupCard
           trial={trialOffer}
           onSignUp={() => signupOpen('sign-up')}
@@ -2657,16 +2639,6 @@ export default function App() {
             openPlus('home');
           }}
           onLater={recapDone}
-        />
-      )}
-      {gate && (
-        <ParentGate
-          reason={gate.reason}
-          onPass={() => {
-            setGate(null);
-            gate.then();
-          }}
-          onCancel={() => setGate(null)}
         />
       )}
     </div>

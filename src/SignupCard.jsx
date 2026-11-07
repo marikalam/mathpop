@@ -2,7 +2,7 @@ import LogoMark from './LogoMark.jsx';
 import Icon from './Icon.jsx';
 
 // When MathPop opens without a family account: asks a grown-up to sign up
-// with email (past the grown-ups check, App.jsx), so players, grades and
+// with email, so players, grades and
 // stickers are saved and synced. "Not now" lets kids play straight away
 // as a guest; it asks again a few days later (App.jsx).
 //
