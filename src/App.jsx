@@ -545,6 +545,19 @@ function AppHeader({ level, onBack, showBack, players, logoSignal = 0 }) {
           </button>
         </div>
         <div className="brand-actions">
+          {/* The player's language, on every page: one tap switches between
+              English and Japanese. */}
+          {players.lang && (
+            <button
+              type="button"
+              className="lang-btn"
+              onClick={players.onToggleLang}
+              aria-label={players.lang === 'ja' ? '日本語: tap for English' : 'English: tap for Japanese'}
+            >
+              <Icon name={players.lang === 'ja' ? 'flagJP' : 'flagUS'} size="1.5em" />
+              <span>{players.lang === 'ja' ? '日本語' : 'EN'}</span>
+            </button>
+          )}
           <ProfileSwitcher
             profile={players.profile}
             profiles={players.profiles}
@@ -1031,6 +1044,17 @@ export default function App() {
   const answerFor = (id) => settings.answerBy?.[id] || settings.inputMethod || 'write';
   // And the language they play in (English, or Japanese for Pre-K).
   const langFor = (id) => settings.langBy?.[id] || 'en';
+  // The header's language button: switches the current player between
+  // English and Japanese (kept with the rest of the settings).
+  function toggleLang() {
+    const id = currentProfile.id;
+    const next = langFor(id) === 'ja' ? 'en' : 'ja';
+    setSettings((prev) => {
+      const updated = { ...prev, langBy: { ...prev.langBy, [id]: next } };
+      saveSettings(updated);
+      return updated;
+    });
+  }
 
   function openPlayers() {
     setDraftProfiles(profiles.map((p) => ({ ...p, answerBy: answerFor(p.id), lang: langFor(p.id) })));
@@ -1116,6 +1140,9 @@ export default function App() {
     };
   }, []);
   const [settings, setSettings] = useState(loadSettings);
+  // The header's language button (needs the settings, so added here).
+  headerPlayers.lang = langFor(currentProfile.id);
+  headerPlayers.onToggleLang = toggleLang;
   const playerProgress = progress[currentProfile.id] || {};
   const levelStats = playerProgress[level] || { total: 0, correct: 0 };
 
@@ -1610,8 +1637,11 @@ export default function App() {
               const label = (n) => ALL_META[n.topic]?.label || n.topic;
               const assigned = assignedTopics(currentProfile.id, level);
               const toFix = loadMistakes(currentProfile.id, level).length;
+              // The youngest players see what they'll play, not how many
+              // mistakes are saved up.
+              const little = ['p', 'k'].includes(gradeInfo(level).id);
               const parts = [
-                ...(toFix ? [`${toFix} to fix`] : []),
+                ...(toFix && !little ? [`${toFix} to fix`] : []),
                 ...assigned.slice(0, 1).map((t) => `from a grown-up: ${t.title}`),
                 ...path.current.slice(0, 2).map(label),
               ];
@@ -1620,6 +1650,7 @@ export default function App() {
                   key={`${currentProfile.id}-${level}`}
                   playerId={currentProfile.id}
                   signedIn={signedIn}
+                  little={little}
                   working={parts.length ? parts.join(' · ') : 'You’ve done every step!'}
                   meter={{
                     pct: Math.round((100 * path.gradeDone) / Math.max(1, path.gradeSize)),
