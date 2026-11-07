@@ -1310,7 +1310,7 @@ export default function App() {
   // apples?"), when they're read out (sound.js).
   function roundProblem(op) {
     const p = nextRoundProblem(op);
-    return p.type === 'sentence' ? p : { ...p, callName: Math.random() < 0.5 };
+    return p.type === 'sentence' ? p : { ...p, callName: p.callName ?? Math.random() < 0.5 };
   }
 
   function nextRoundProblem(op) {
