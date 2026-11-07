@@ -9,7 +9,8 @@ email and password there (create one in the app; never put it in this repo).
 MathPop is a math practice game for Toddler through 4th grade, made for
 the Kids category (ages 6–8). When MathPop opens without a family account
 it offers a 7-day free trial ("Try MathPop free for 7 days"): a grown-up
-signs up with email (behind a grown-ups check; no payment details). The
+signs up with email (no payment details; the account is the grown-up's own
+email and password). The
 same card lets a grown-up subscribe without an account, or the child plays
 today's free round. Without Plus or the trial, kids get one free round a
 day; after it, a "That was today's free round!" screen asks them to come
@@ -38,10 +39,12 @@ Family account (optional):
   and its players from our servers.
 
 Kids category notes:
-- The only ways out of the app are for grown-ups, in Players & grades:
-  "Rate MathPop" (opens the App Store) and "Share <child>'s week" (the share
-  sheet). Both ask a grown-ups-only question first (type the answer to a
-  two-digit by one-digit multiplication).
+- The only ways out of the app are for grown-ups: "Rate MathPop" (opens the
+  App Store) and "Share <child>'s week" (the share sheet) in Players &
+  grades, and "Print in Safari" on the Coloring Pages. Each asks a
+  grown-ups-only check first: three numbers written as words ("seven, two,
+  five") to type in as digits, which needs reading young children don't
+  have yet.
 - MathPop Plus (auto-renewing subscription, monthly or yearly) unlocks
   unlimited rounds plus the grown-up features (the full progress report and
   assigning practice). It's only offered to grown-ups: Players & grades ->
