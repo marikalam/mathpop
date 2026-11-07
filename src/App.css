@@ -6543,3 +6543,16 @@ body {
   font-size: 13px;
   color: var(--ink-dim);
 }
+
+/* Downloads & money (MoneyCard.jsx), owner only. */
+.money-card .stats-tiles {
+  margin-top: 8px;
+}
+
+.money-tile-strong {
+  background: #eaf7ef;
+}
+
+.money-tile-strong .stats-tile-value {
+  color: #1f8a52;
+}
