@@ -5,6 +5,8 @@ import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
 import { getVoiceQuality, languagesWithVoices, playFeedbackAndSpeak, playLogoSound, playStickerPick, prewarmVoices, speakInLanguage, speakProblem, speakResults, unlockAudio } from './sound.js';
 import Pip from './Pip.jsx';
 import TapBoard from './TapBoards.jsx';
+import PipCloset, { roundStars } from './PipCloset.jsx';
+import { closetFor, earnStars, nextItem, starsLeft } from './pipCloset.js';
 import { COLORING_PACKS, ColoringPage, ColoringPrint } from './ColoringPages.jsx';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
@@ -806,6 +808,13 @@ export default function App() {
 
   // Goes up each time the home greeting is tapped (its animation).
   const [heroPlaying, setHeroPlaying] = useState(0);
+  // Pip's Closet (pipCloset.js): the home page redraws when ★ or outfits change.
+  const [, setClosetTick] = useState(0);
+  useEffect(() => {
+    const update = () => setClosetTick((n) => n + 1);
+    window.addEventListener('mathpop-closet-changed', update);
+    return () => window.removeEventListener('mathpop-closet-changed', update);
+  }, []);
   // Which tap-and-hear board is open (TapBoards.jsx).
   const [tapBoard, setTapBoard] = useState('shapes');
   // The problem whose picture is zoomed in on (ZoomView), if any.
@@ -1438,6 +1447,10 @@ export default function App() {
     if (roundIndex + 1 >= SESSION_ROUNDS) {
       // Every finished round earns a sticker (picked on the "All done!" screen).
       if (signedIn) earnSticker(currentProfile.id);
+      // ★ for Pip's Closet (counted before the round is logged, so a first
+      // visit to the closet doesn't count this round twice).
+      closetFor(currentProfile.id);
+      earnStars(currentProfile.id, roundStars(operation));
       recordRound(currentProfile.id, operation, gradeInfo(level).id, sessionCorrect, SESSION_ROUNDS);
       if (operation === 'path' && pathBefore.current) {
         const after = pathStatus(currentProfile.id, level, progress[currentProfile.id] || {});
@@ -1568,7 +1581,7 @@ export default function App() {
                   setHeroPlaying((n) => n + 1);
                 }}
               >
-                <Pip size={96} mood={streakDays(currentProfile.id) >= 2 ? 'cheer' : 'wave'} />
+                <Pip size={96} mood={streakDays(currentProfile.id) >= 2 ? 'cheer' : 'wave'} wear={closetFor(currentProfile.id).wear} />
               </button>
               <div className="home-hero-main">
               <h2 className="home-hello">
@@ -1603,7 +1616,12 @@ export default function App() {
                   </button>
                 )}
               </div>
-              {/* The sticker book, as in PitchPop: earned by finishing rounds. */}
+              {/* The sticker book, as in PitchPop: earned by finishing rounds.
+                  Next to it, Pip's Closet and the ★ to spend there. */}
+              <div className="home-hero-btns">
+              <button className="home-closet" onClick={() => setView('closet')}>
+                Pip's Closet <span className="home-closet-stars">★ {starsLeft(closetFor(currentProfile.id))}</span>
+              </button>
               <button className="home-stickers" onClick={() => openStickerBook()}>
                 <Icon name="book" size="1.4em" />
                 Sticker book
@@ -1613,6 +1631,7 @@ export default function App() {
                   </span>
                 )}
               </button>
+              </div>
               </div>
             </section>
 
@@ -1648,6 +1667,22 @@ export default function App() {
               );
             })()}
 
+            {/* Enough ★ for something new in Pip's Closet. */}
+            {(() => {
+              const closet = closetFor(currentProfile.id);
+              const item = nextItem(closet);
+              if (!item || !item.price || starsLeft(closet) < item.price) return null;
+              return (
+                <button type="button" className="closet-card" onClick={() => setView('closet')}>
+                  <span className="closet-card-new">NEW</span>
+                  <Pip size={54} wear={{ [item.kind]: item.id }} />
+                  <span>
+                    <strong>You can get Pip {/^[aeiou]/.test(item.name) ? 'an' : 'a'} {item.name}!</strong>
+                    <span>You have ★ {starsLeft(closet)}. Tap to go to Pip's Closet.</span>
+                  </span>
+                </button>
+              );
+            })()}
             {installPrompt && (
               <button type="button" className="install-banner" onClick={installApp}>
                 <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="" />
@@ -1748,6 +1783,14 @@ export default function App() {
               placing={placingSticker}
               onPlaced={() => setPlacingSticker(null)}
             />
+          </>
+        )}
+
+        {view === 'closet' && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
+            <h2 className="screen-title">Pip's Closet</h2>
+            <PipCloset key={currentProfile.id} playerId={currentProfile.id} />
           </>
         )}
 
@@ -2468,6 +2511,9 @@ export default function App() {
                   Review answers
                 </button>
               )}
+              <button type="button" className="closet-earned" onClick={() => setView('closet')}>
+                +{roundStars(operation)} <span className="closet-star">★</span> for Pip's Closet
+              </button>
               {/* Come back tomorrow: the streak to keep going, and (iPhone
                   app) a daily reminder a grown-up can set. */}
               {(() => {
