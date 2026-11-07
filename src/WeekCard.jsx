@@ -3,7 +3,7 @@ import Icon from './Icon.jsx';
 
 // A player's last 7 days, for grown-ups (Players & grades): rounds, days
 // played, how many right, mistakes fixed, the streak and the games played
-// most. `onShare` (after the grown-ups check) shares it as a message.
+// most. `onShare` shares it as a message.
 export function weekText(name, week) {
   const pct = week.total ? Math.round((week.correct / week.total) * 100) : 0;
   const parts = [`${week.rounds} ${week.rounds === 1 ? 'round' : 'rounds'} on ${week.days} ${week.days === 1 ? 'day' : 'days'}`, `${pct}% right`];

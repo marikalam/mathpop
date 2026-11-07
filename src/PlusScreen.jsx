@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { buyPlus, manageSubscription, plusProducts, restorePlus } from './plus.js';
 import Icon from './Icon.jsx';
 
-// MathPop Plus, for grown-ups (behind the grown-ups check): what it adds,
+// MathPop Plus, for grown-ups: what it adds,
 // and the subscription (iPhone app). Founding families, and everyone
 // before Plus starts, already have it, free.
 const IS_NATIVE = Capacitor.isNativePlatform();

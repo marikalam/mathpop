@@ -5,7 +5,7 @@ import Pip from './Pip.jsx';
 // the home page: what each child did this week (rounds, days played, how
 // many right, mistakes fixed, the games played most), so a grown-up sees
 // the progress just before deciding whether to keep MathPop. "Keep
-// MathPop" opens Plus (behind the grown-ups check, App.jsx).
+// MathPop" opens Plus.
 export default function TrialRecap({ players, daysLeft, topicName, onKeep, onLater }) {
   const weeks = players.map((p) => ({ player: p, week: weekSummary(p.id) })).filter((w) => w.week.rounds > 0);
   const names = weeks.map((w) => w.player.name);
