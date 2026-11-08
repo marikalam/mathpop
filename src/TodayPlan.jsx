@@ -108,11 +108,11 @@ export default function TodayPlan({ playerId, signedIn, working, meter, little =
       <p className="today-note">
         {allDone || bonusGivenToday(playerId) ? (
           <>
-            <Icon name="party" /> All done today! You earned a bonus sticker <Icon name="star" />
+            <Icon name="party" /> All done today! You earned a bonus star <Icon name="star" />
           </>
         ) : (
           <>
-            {little ? `Light up all ${DAILY_ROUNDS} stars for a bonus sticker` : `Finish all ${DAILY_ROUNDS} rounds for a bonus sticker`} <Icon name="star" />
+            {little ? `Light up all ${DAILY_ROUNDS} stars for a bonus star` : `Finish all ${DAILY_ROUNDS} rounds for a bonus star`} <Icon name="star" />
           </>
         )}
       </p>

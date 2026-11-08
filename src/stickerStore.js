@@ -1,7 +1,7 @@
 import { BOOK_SIZE, STICKERS } from './stickers.js';
 
-// Each player's sticker book (the same as PitchPop's): a sticker for every
-// finished round of ten problems, no limit. The player picks which one;
+// Each player's stars (once a sticker book, the same as PitchPop's): a star
+// for every finished round of ten problems, no limit. The player picks which one;
 // each sticker appears once per page of BOOK_SIZE, then a new page starts.
 // Every player keeps their book on this phone; for a signed-in family it
 // also syncs with the family account (stickerSync.js).
@@ -50,11 +50,24 @@ export function pendingStickers(playerId) {
   return read(PENDING_KEY)[playerId] || 0;
 }
 
-// A finished round: one more sticker waiting to be picked.
+// A finished round: one more star, straight away (stars are kept as the
+// sticker records, so they sync with the family account like before).
 export function earnSticker(playerId) {
-  const pending = read(PENDING_KEY);
-  write(PENDING_KEY, { ...pending, [playerId]: (pending[playerId] || 0) + 1 });
+  const all = read(STICKERS_KEY);
+  const list = all[playerId] || [];
+  const index = list.length % STICKERS.length;
+  write(STICKERS_KEY, { ...all, [playerId]: [...list, { index, at: new Date().toISOString(), from: 'round' }] });
   window.dispatchEvent(new Event('mathpop-stickers-changed'));
+  window.dispatchEvent(new CustomEvent('mathpop-stickers-added', { detail: playerId }));
+}
+
+// Stickers earned before stars that were never picked: added as stars.
+export function settlePending(playerId) {
+  const pending = read(PENDING_KEY);
+  const n = pending[playerId] || 0;
+  if (!n) return;
+  write(PENDING_KEY, { ...pending, [playerId]: 0 });
+  for (let i = 0; i < n; i++) earnSticker(playerId);
 }
 
 // Sticks the picked sticker in the book (using up one that was waiting).

@@ -1,7 +1,7 @@
 import { pendingStickers, playerStickers } from './stickerStore.js';
 
-// Pip's Closet: hats, glasses and capes for Pip that unlock as a player's
-// sticker book fills up (a sticker for every finished round). Nothing is
+// Pip's Closet: hats, glasses and capes for Pip that unlock with the stars a
+// player earns (a star for every finished round). Nothing is
 // spent: stickers stay in the book, and each item unlocks for good once
 // the player has that many stickers. Kept on this device, per player:
 // { seen: [item ids already tried on], wear: { hat, glasses, cape } }.
@@ -37,6 +37,7 @@ export const anItem = (name) => `${/^[aeiou]/.test(name) ? 'an' : 'a'} ${name}`;
 
 // Every sticker the player has earned: in the book, or waiting to be stuck.
 export function stickerCount(playerId) {
+  // Stars: one for every finished round (kept as the sticker records).
   return playerStickers(playerId).length + pendingStickers(playerId);
 }
 

@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import Pip from './Pip.jsx';
-import Sticker from './Sticker.jsx';
 import { CLOSET_ITEMS, CLOSET_KINDS, anItem, closetFor, nextItem, rememberUnlocks, stickerCount, tryOn, unlockedSet } from './pipCloset.js';
 import { playCorrectChime, playStickerPick, speak } from './sound.js';
 
 // Pip's Closet (pipCloset.js): hats, glasses and capes for Pip that unlock
-// as the player's sticker book fills up. Tap one that's unlocked to put
+// as the player earns stars. Tap one that's unlocked to put
 // it on (tap again to take it off); the first time, Pip cheers. A locked
-// one says how many more stickers it needs.
+// one says how many more stars it needs.
 export default function PipCloset({ playerId }) {
   const [closet, setCloset] = useState(() => closetFor(playerId));
   const [count, setCount] = useState(() => stickerCount(playerId));
@@ -50,15 +49,15 @@ export default function PipCloset({ playerId }) {
       return;
     }
     const more = item.need - count;
-    const line = `${more} more ${more === 1 ? 'sticker' : 'stickers'} for ${anItem(item.name)}. Finish a round to get a sticker!`;
+    const line = `${more} more ${more === 1 ? 'star' : 'stars'} for ${anItem(item.name)}. Finish a round to get a star!`;
     setNote(line);
     speak(line);
   }
 
   return (
     <div className="closet">
-      <div className="closet-stars" aria-label={`${count} stickers`}>
-        <Sticker index={0} size={22} /> {count}
+      <div className="closet-stars" aria-label={`${count} stars`}>
+        <span className="closet-star">★</span> {count}
       </div>
       <div className="closet-stage">
         {note && <div className="closet-bubble">{note}</div>}
@@ -90,12 +89,12 @@ export default function PipCloset({ playerId }) {
               type="button"
               className={`closet-item${on ? ' closet-item-on' : ''}${isOpen ? (unseen.has(item.id) ? ' closet-item-ready' : '') : ' closet-item-locked'}`}
               onClick={() => tap(item)}
-              aria-label={isOpen ? `${item.name}${on ? ', wearing' : ''}` : `${item.name}, unlocks at ${item.need} stickers`}
+              aria-label={isOpen ? `${item.name}${on ? ', wearing' : ''}` : `${item.name}, unlocks at ${item.need} stars`}
             >
               <Pip size={62} wear={{ [item.kind]: item.id }} />
               {!isOpen && (
                 <span className="closet-price">
-                  <Sticker index={0} size={14} /> {item.need}
+                  <span className="closet-star">★</span> {item.need}
                 </span>
               )}
               {isOpen && unseen.has(item.id) && <span className="closet-new">NEW</span>}
@@ -109,7 +108,7 @@ export default function PipCloset({ playerId }) {
             <i style={{ width: `${Math.min(100, (count / next.need) * 100)}%` }} />
           </div>
           <span>
-            {next.need - count} more {next.need - count === 1 ? 'sticker' : 'stickers'} for {anItem(next.name)}. Every round you finish gets a sticker!
+            {next.need - count} more {next.need - count === 1 ? 'star' : 'stars'} for {anItem(next.name)}. Every round you finish gets a star!
           </span>
         </div>
       )}

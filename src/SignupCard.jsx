@@ -31,7 +31,7 @@ export default function SignupCard({ trial = false, onSignUp, onSignIn, onSubscr
             </li>
           )}
           <li>
-            <Icon name="phone" /> Players, grades and stickers on every iPhone and iPad
+            <Icon name="phone" /> Players, grades, stars and Pip's outfits on every iPhone and iPad
           </li>
           <li>
             <Icon name="lock" /> Nothing lost if the app is deleted or the phone changes
