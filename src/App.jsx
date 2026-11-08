@@ -158,9 +158,16 @@ function saveExploreSession(data) {
 function loadSettings() {
   try {
     const saved = localStorage.getItem(SETTINGS_KEY);
-    return saved ? JSON.parse(saved) : { inputMethod: 'write' };
+    // Typing on the number pad is the default way to answer (a player
+    // can still choose writing or picking in Players & grades).
+    const settings = saved ? JSON.parse(saved) : {};
+    if (!settings.typeDefault) {
+      settings.inputMethod = 'type';
+      settings.typeDefault = true;
+    }
+    return settings;
   } catch {
-    return { inputMethod: 'write' };
+    return { inputMethod: 'type', typeDefault: true };
   }
 }
 
@@ -1078,7 +1085,7 @@ export default function App() {
 
   // How each player answers (write, pick or type), set in Players & grades.
   // Kept on this device, per player (older versions had one setting for all).
-  const answerFor = (id) => settings.answerBy?.[id] || settings.inputMethod || 'write';
+  const answerFor = (id) => settings.answerBy?.[id] || settings.inputMethod || 'type';
   // And the language they play in (English, or Japanese for Pre-K).
   // Japanese only when this device has a Japanese voice to say it (without
   // one, iOS reads Japanese text with its English voice, which is gibberish).
@@ -1382,12 +1389,87 @@ export default function App() {
     return makeProblem(mistakeOps.current.length ? shuffle(mistakeOps.current)[0] : 'random', level, lang);
   }
 
+  // A round left part way (Back, the logo, another screen) is kept, so
+  // starting the same game again carries on where it stopped: same
+  // question, same score. Kept on this phone too, so it survives closing
+  // the app. Cleared when the round is finished or a different game is
+  // started.
+  const PAUSED_KEY = 'mathpop-paused-round-v1';
+  const pausedRef = useRef(null);
+  if (pausedRef.current === null) pausedRef.current = readJson(PAUSED_KEY) || {};
+  function savePaused(next) {
+    pausedRef.current = next;
+    writeJson(PAUSED_KEY, next);
+  }
+  const prevView = useRef(view);
+  useEffect(() => {
+    const was = prevView.current;
+    prevView.current = view;
+    const inRound = (v) => v === 'question' || v === 'feedback';
+    if (!inRound(was) || inRound(view) || view === 'complete' || !problem) return;
+    savePaused({
+      ...pausedRef.current,
+      [currentProfile.id]: {
+        op: operation,
+        level,
+        at: was,
+        roundIndex,
+        problem,
+        options,
+        chosen,
+        answerCorrect,
+        sessionCorrect,
+        sessionResults,
+        sessionLog,
+        firstAttempt,
+        returnView,
+        queues: { mistake: mistakeQueue.current, mistakeOps: mistakeOps.current, path: pathQueue.current, pathBefore: pathBefore.current },
+      },
+    });
+  }, [view]);
+  function clearPaused() {
+    if (!pausedRef.current[currentProfile.id]) return;
+    const { [currentProfile.id]: _gone, ...rest } = pausedRef.current;
+    savePaused(rest);
+  }
+  function resumePaused(op) {
+    const r = pausedRef.current[currentProfile.id];
+    if (!r || r.op !== op || r.level !== level) return false;
+    mistakeQueue.current = r.queues?.mistake || [];
+    mistakeOps.current = r.queues?.mistakeOps || [];
+    pathQueue.current = r.queues?.path || [];
+    pathBefore.current = r.queues?.pathBefore || null;
+    setOperation(r.op);
+    setRoundIndex(r.roundIndex);
+    setSessionCorrect(r.sessionCorrect);
+    setSessionResults(r.sessionResults || {});
+    setSessionLog(r.sessionLog || []);
+    setFirstAttempt(r.firstAttempt ?? true);
+    setCountDone(false);
+    setProblem(r.problem);
+    setOptions(r.options || makeOptions(r.problem));
+    setChosen(r.at === 'feedback' ? r.chosen : null);
+    setAnswerCorrect(Boolean(r.answerCorrect));
+    setTypedAnswer('');
+    setLevelUp(null);
+    setReturnView(r.returnView || 'home');
+    setView(r.at === 'feedback' ? 'feedback' : 'question');
+    clearPaused();
+    return true;
+  }
+
   function startOperation(op, from) {
     // Today's practice ("Just for me") needs a family account.
     if (op === 'path' && !signedIn) {
       signupOpen('sign-up');
       return;
     }
+    // The same game left part way: carry on where it stopped.
+    if (resumePaused(op)) {
+      if (from) setReturnView(from);
+      return;
+    }
+    clearPaused();
     // Without Plus (plus.js): one free round a day, then the "ask a
     // grown-up" screen.
     if (!plusStatus.plus) {
@@ -1515,6 +1597,7 @@ export default function App() {
         if (got.length) setLevelUp({ got, next: after.current[0] || null });
       }
       statRoundDone({ grade: gradeInfo(level).id, topic: operation, lang: problem?.lang || 'en', correct: sessionCorrect, total: SESSION_ROUNDS });
+      clearPaused();
       setView('complete');
       return;
     }
