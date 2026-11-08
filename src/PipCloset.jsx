@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import Pip from './Pip.jsx';
 import Sticker from './Sticker.jsx';
-import { CLOSET_ITEMS, CLOSET_KINDS, anItem, closetFor, isUnlocked, nextItem, stickerCount, tryOn } from './pipCloset.js';
+import { CLOSET_ITEMS, CLOSET_KINDS, anItem, closetFor, nextItem, rememberUnlocks, stickerCount, tryOn, unlockedSet } from './pipCloset.js';
 import { playCorrectChime, playStickerPick, speak } from './sound.js';
 
 // Pip's Closet (pipCloset.js): hats, glasses and capes for Pip that unlock
@@ -15,15 +15,25 @@ export default function PipCloset({ playerId }) {
   const [note, setNote] = useState(null);
   const [cheer, setCheer] = useState(0);
   useEffect(() => {
-    const reload = () => setCount(stickerCount(playerId));
+    // Whatever the stickers have unlocked is saved for good (and synced).
+    rememberUnlocks(playerId);
+    const reload = () => {
+      setCount(stickerCount(playerId));
+      setCloset(closetFor(playerId));
+    };
+    window.addEventListener('mathpop-closet-changed', reload);
     window.addEventListener('mathpop-stickers-changed', reload);
-    return () => window.removeEventListener('mathpop-stickers-changed', reload);
+    return () => {
+      window.removeEventListener('mathpop-stickers-changed', reload);
+      window.removeEventListener('mathpop-closet-changed', reload);
+    };
   }, [playerId]);
   const next = nextItem(playerId);
-  const unseen = new Set(CLOSET_ITEMS.filter((i) => isUnlocked(i, count) && !closet.seen.includes(i.id)).map((i) => i.id));
+  const open = unlockedSet(playerId);
+  const unseen = new Set(CLOSET_ITEMS.filter((i) => open.has(i.id) && !closet.seen.includes(i.id)).map((i) => i.id));
 
   function tap(item) {
-    if (isUnlocked(item, count)) {
+    if (open.has(item.id)) {
       const { closet: after, isNew } = tryOn(playerId, item.id);
       setCloset(after);
       if (isNew) {
@@ -72,23 +82,23 @@ export default function PipCloset({ playerId }) {
       </div>
       <div className="closet-grid">
         {CLOSET_ITEMS.filter((i) => i.kind === kind).map((item) => {
-          const open = isUnlocked(item, count);
+          const isOpen = open.has(item.id);
           const on = closet.wear[item.kind] === item.id;
           return (
             <button
               key={item.id}
               type="button"
-              className={`closet-item${on ? ' closet-item-on' : ''}${open ? (unseen.has(item.id) ? ' closet-item-ready' : '') : ' closet-item-locked'}`}
+              className={`closet-item${on ? ' closet-item-on' : ''}${isOpen ? (unseen.has(item.id) ? ' closet-item-ready' : '') : ' closet-item-locked'}`}
               onClick={() => tap(item)}
-              aria-label={open ? `${item.name}${on ? ', wearing' : ''}` : `${item.name}, unlocks at ${item.need} stickers`}
+              aria-label={isOpen ? `${item.name}${on ? ', wearing' : ''}` : `${item.name}, unlocks at ${item.need} stickers`}
             >
               <Pip size={62} wear={{ [item.kind]: item.id }} />
-              {!open && (
+              {!isOpen && (
                 <span className="closet-price">
                   <Sticker index={0} size={14} /> {item.need}
                 </span>
               )}
-              {open && unseen.has(item.id) && <span className="closet-new">NEW</span>}
+              {isOpen && unseen.has(item.id) && <span className="closet-new">NEW</span>}
             </button>
           );
         })}

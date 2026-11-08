@@ -1,5 +1,5 @@
 import { loadCloudClosets, saveCloudCloset } from './cloud.js';
-import { closetFor, mergeCloudCloset } from './pipCloset.js';
+import { closetFor, mergeCloudCloset, rememberUnlocks } from './pipCloset.js';
 
 // Keeps Pip's Closet (what Pip wears, what's been tried on) the same on
 // every phone signed in to the family account: each change goes up
@@ -10,7 +10,9 @@ async function pull(ids) {
   const closets = await loadCloudClosets();
   if (!closets) return;
   for (const id of ids) {
-    const newerHere = closets[id] ? mergeCloudCloset(id, closets[id]) : Boolean(closetFor(id).at);
+    rememberUnlocks(id);
+    const c = closetFor(id);
+    const newerHere = closets[id] ? mergeCloudCloset(id, closets[id]) : Boolean(c.at || c.unlocked.length);
     if (newerHere) saveCloudCloset(id, closetFor(id));
   }
 }
