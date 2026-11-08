@@ -526,6 +526,12 @@ function AppHeader({ level, onBack, showBack, players, logoSignal = 0 }) {
   // The language menu (a tap opens it, so a stray tap can't switch).
   const [langOpen, setLangOpen] = useState(false);
   useEffect(() => {
+    if (!langOpen) return undefined;
+    const close = () => setLangOpen(false);
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [langOpen]);
+  useEffect(() => {
     if (logoSignal) setLogoPlaying((n) => n + 1);
   }, [logoSignal]);
   return (
@@ -552,47 +558,42 @@ function AppHeader({ level, onBack, showBack, players, logoSignal = 0 }) {
         <div className="brand-actions">
           {/* The player's language, on every page: one tap switches between
               English and Japanese. */}
+          {/* The player's language, on every page (like PitchPop's): a small
+              EN / 日本語 pill that opens a menu. */}
           {players.lang && (
-            <span className="lang-wrap">
+            <span className="lang-wrap" onPointerDown={(e) => e.stopPropagation()}>
               <button
                 type="button"
                 className="lang-btn"
-                onClick={() => setLangOpen((o) => !o)}
+                aria-haspopup="menu"
                 aria-expanded={langOpen}
-                aria-label={`Language: ${players.lang === 'ja' ? '日本語' : 'English'}`}
+                aria-label="Language"
+                onClick={() => setLangOpen((o) => !o)}
               >
-                <Icon name={players.lang === 'ja' ? 'flagJP' : 'flagUS'} size="1.5em" />
-                <span>{players.lang === 'ja' ? '日本語' : 'EN'}</span>
+                {players.lang === 'ja' ? '日本語' : 'EN'}
               </button>
               {langOpen && (
                 <span className="lang-menu" role="menu">
                   {[
-                    ['en', 'flagUS', 'English'],
-                    ['ja', 'flagJP', '日本語'],
-                  ].map(([id, icon, label]) => {
-                    const off = id === 'ja' && !players.jaVoice;
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        role="menuitemradio"
-                        aria-checked={players.lang === id}
-                        disabled={off}
-                        className={`lang-option${players.lang === id ? ' lang-option-on' : ''}`}
-                        onClick={() => {
-                          players.onSetLang(id);
-                          setLangOpen(false);
-                        }}
-                      >
-                        <Icon name={icon} size="1.4em" /> {label}
-                      </button>
-                    );
-                  })}
-                  <span className="lang-note">
-                    {players.jaVoice
-                      ? 'Japanese is for the Toddler games so far.'
-                      : 'This device has no Japanese voice. Add one in Settings → Accessibility → Spoken Content → Voices.'}
-                  </span>
+                    ['en', 'English', 'English screens and voice'],
+                    ['ja', '日本語', players.jaVoice ? 'Toddler games in Japanese: screens and voice' : 'This device has no Japanese voice. Add one in Settings → Accessibility → Spoken Content → Voices.'],
+                  ].map(([id, label, sub]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={players.lang === id}
+                      disabled={id === 'ja' && !players.jaVoice}
+                      className={`lang-item${players.lang === id ? ' lang-item-on' : ''}`}
+                      onClick={() => {
+                        players.onSetLang(id);
+                        setLangOpen(false);
+                      }}
+                    >
+                      <b>{label}</b>
+                      <span>{sub}</span>
+                    </button>
+                  ))}
                 </span>
               )}
             </span>

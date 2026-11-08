@@ -6589,28 +6589,6 @@ body {
   }
 }
 
-/* The language button in the header (every page). */
-.lang-btn {
-  appearance: none;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  min-width: 46px;
-  height: 46px;
-  padding: 2px 6px;
-  border: 0;
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(23, 58, 102, 0.12);
-  color: var(--ink);
-  font: 700 10.5px/1 'IBM Plex Sans', sans-serif;
-  cursor: pointer;
-}
-.lang-btn:active {
-  transform: scale(0.94);
-}
 
 /* Downloads & money (MoneyCard.jsx), owner only. */
 .money-card .stats-tiles {
@@ -6856,49 +6834,6 @@ body {
   cursor: pointer;
 }
 
-/* The header's language menu. */
-.lang-wrap {
-  position: relative;
-}
-.lang-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 50%;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 200px;
-  padding: 10px;
-  border-radius: 16px;
-  background: #fff;
-  box-shadow: 0 8px 24px rgba(23, 58, 102, 0.2);
-  transform: translateX(-50%);
-}
-.lang-option {
-  appearance: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 10px;
-  border: 2px solid transparent;
-  border-radius: 12px;
-  background: #f3f5fb;
-  color: var(--ink);
-  font: 700 16px 'Fredoka', ui-rounded, system-ui, sans-serif;
-  cursor: pointer;
-}
-.lang-option-on {
-  border-color: #3b6fef;
-  background: #eef4ff;
-}
-.lang-option:disabled {
-  opacity: 0.45;
-}
-.lang-note {
-  font: 500 12px/1.35 'IBM Plex Sans', sans-serif;
-  color: #5b6077;
-}
 
 /* Word problems and long prompts grow to fill the problem card (FitText.jsx):
    the text box takes the card's free space, and the font size is the
@@ -7240,4 +7175,64 @@ body {
 }
 .stats-more[open] > summary::after {
   content: ' ▴';
+}
+
+/* The header's language pill and menu (same as PitchPop's). */
+.lang-wrap {
+  position: relative;
+}
+.lang-btn {
+  flex: none;
+  height: 34px;
+  min-width: 40px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(23, 58, 102, 0.12);
+  color: #3b6fef;
+  font: 700 13px 'IBM Plex Sans', system-ui, sans-serif;
+  cursor: pointer;
+}
+.lang-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 60;
+  width: 250px;
+  max-width: calc(100vw - 32px);
+  background: #fff;
+  border-radius: 18px;
+  padding: 8px;
+  box-shadow: 0 14px 40px rgba(40, 20, 80, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lang-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font: inherit;
+  color: #2a2140;
+  cursor: pointer;
+}
+.lang-item b {
+  font-size: 15px;
+}
+.lang-item span {
+  font-size: 12.5px;
+  color: #7a6a92;
+}
+.lang-item-on {
+  background: #efeaff;
+}
+.lang-item:disabled {
+  opacity: 0.55;
 }
