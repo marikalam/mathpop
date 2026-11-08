@@ -7236,3 +7236,130 @@ body {
 .lang-item:disabled {
   opacity: 0.55;
 }
+
+/* Home, layout A: Pip and hello, one big Play button, Pip's Closet and
+   the sticker book side by side, then the topics, which stretch to fill
+   the rest of the screen on every phone (no empty space at the bottom). */
+.home-fit .home-hero {
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+}
+.home-fit .home-hello {
+  font-size: clamp(24px, 7vw, 30px);
+  text-align: left;
+}
+.home-hero-main {
+  min-width: 0;
+}
+.home-hero-line {
+  margin: 2px 0 0;
+  color: #5b6077;
+  font: 600 15px 'IBM Plex Sans', sans-serif;
+}
+.home-hero-plus {
+  appearance: none;
+  margin-top: 6px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff3c4;
+  color: #8a5a00;
+  font: 700 13px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  cursor: pointer;
+}
+.play-big {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: clamp(14px, 2.4vh, 22px) 18px;
+  border: 0;
+  border-radius: 24px;
+  background: linear-gradient(90deg, #3b6fef, #8e4fd6);
+  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.15);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+.play-big:active {
+  transform: scale(0.98);
+}
+.play-big-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.play-big-title {
+  font: 700 clamp(21px, 6vw, 26px)/1.15 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.play-big-sub {
+  margin-top: 2px;
+  font: 600 14px 'IBM Plex Sans', sans-serif;
+  opacity: 0.92;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.play-big-stars {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+.play-big-stars svg {
+  width: 26px;
+  height: 26px;
+  fill: rgba(255, 255, 255, 0.3);
+}
+.play-big-stars svg.on {
+  fill: #ffd23f;
+}
+.home-pair {
+  display: flex;
+  gap: 10px;
+}
+.home-pair-btn {
+  appearance: none;
+  position: relative;
+  flex: 1;
+  padding: 12px 10px;
+  border: 0;
+  border-radius: 18px;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.1);
+  font: 700 16px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  cursor: pointer;
+}
+.home-pair-closet {
+  background: linear-gradient(90deg, #ffd23f, #ffb347);
+  color: #5a3a00;
+}
+.home-pair-book {
+  background: linear-gradient(90deg, #c39bff, #f08bb8);
+  color: #fff;
+}
+.home-pair-new {
+  position: absolute;
+  top: -8px;
+  right: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #e5484d;
+  color: #fff;
+  font: 700 11px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.home-topics-label {
+  margin: 4px 0 -2px;
+  color: #8a90a8;
+  font: 700 14px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.home-fit .home-tiles {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: none;
+  align-content: stretch;
+}
