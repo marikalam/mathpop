@@ -7363,3 +7363,44 @@ body {
   max-height: none;
   align-content: stretch;
 }
+
+/* Measuring pictures that can be pinched to zoom, right in the question
+   (PinchZoom.jsx). */
+.pinch-zoom {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 16px;
+  touch-action: pan-y;
+}
+.pinch-zoom-on {
+  touch-action: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8);
+}
+.pinch-zoom-inner {
+  display: block;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.pinch-zoom-hint {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(23, 58, 102, 0.55);
+  color: #fff;
+  font: 600 11px 'IBM Plex Sans', sans-serif;
+  pointer-events: none;
+  /* Shown for a moment, then out of the way of the picture. */
+  animation: pinch-hint 2.6s ease-in forwards;
+}
+@keyframes pinch-hint {
+  0%,
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
