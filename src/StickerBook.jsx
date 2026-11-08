@@ -11,8 +11,8 @@ import Icon from './Icon.jsx';
 // its little move. (Stickers earned but not picked yet wait here: tapping
 // a shadow picks one.)
 export default function StickerBook({ player, signedIn, onSignIn, placing, onPlaced }) {
-  const [stickers, setStickers] = useState(() => (signedIn ? playerStickers(player.id) : []));
-  const [pending, setPending] = useState(() => (signedIn ? pendingStickers(player.id) : 0));
+  const [stickers, setStickers] = useState(() => playerStickers(player.id));
+  const [pending, setPending] = useState(() => pendingStickers(player.id));
   const [chosen, setChosen] = useState(null);
   // The sticker being stuck on: 'wait' (the book shows, then) 'fly', then 'landed'.
   const [stick, setStick] = useState(placing ?? null);
@@ -24,7 +24,6 @@ export default function StickerBook({ player, signedIn, onSignIn, placing, onPla
 
   // Stickers stuck in on the family's other phones, or picked elsewhere.
   useEffect(() => {
-    if (!signedIn) return undefined;
     const reload = () => {
       setStickers(playerStickers(player.id));
       setPending(pendingStickers(player.id));
@@ -35,9 +34,9 @@ export default function StickerBook({ player, signedIn, onSignIn, placing, onPla
       window.removeEventListener('mathpop-stickers-changed', reload);
       window.removeEventListener('mathpop-stickers-synced', reload);
     };
-  }, [signedIn, player.id]);
+  }, [player.id]);
 
-  const choosing = signedIn && pending > 0 && (phase === null || phase === 'landed');
+  const choosing = pending > 0 && (phase === null || phase === 'landed');
   const book = bookPage(stickers, choosing);
   const have = new Set(book.onPage.map((s) => s.index));
 
@@ -79,11 +78,9 @@ export default function StickerBook({ player, signedIn, onSignIn, placing, onPla
           ))}
         </div>
         <div className="sbook-page">
-          <h2 className="sbook-title">{signedIn ? `${player.name}'s sticker book` : 'Sticker book'}</h2>
+          <h2 className="sbook-title">{`${player.name}'s sticker book`}</h2>
           <p className="sbook-count">
-            {signedIn
-              ? `${book.page ? `Page ${book.page + 1} · ` : ''}${book.onPage.length} of ${BOOK_SIZE}${book.page ? ` · ${book.total} stickers in all` : ''}`
-              : 'Make an account to keep every sticker you earn in your own sticker book'}
+            {`${book.page ? `Page ${book.page + 1} · ` : ''}${book.onPage.length} of ${BOOK_SIZE}${book.page ? ` · ${book.total} stickers in all` : ''}`}
           </p>
           {choosing && (
             <p className="sbook-hint">
@@ -160,9 +157,13 @@ export default function StickerBook({ player, signedIn, onSignIn, placing, onPla
             </p>
           )}
           {!signedIn && (
-            <button className="pill-btn-secondary sbook-signin" onClick={onSignIn}>
-              Sign in or create account
-            </button>
+            <p className="sbook-guest-note">
+              Your stickers are kept on this phone.{' '}
+              <button className="sbook-signin-link" onClick={onSignIn}>
+                Sign in
+              </button>{' '}
+              to keep them on every iPhone and iPad.
+            </p>
           )}
         </div>
       </div>

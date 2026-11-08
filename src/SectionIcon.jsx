@@ -116,6 +116,17 @@ const DRAWINGS = {
       </text>
     </g>
   ),
+  madminute: (
+    <g>
+      {/* A stopwatch. */}
+      <rect x="27" y="2" width="10" height="6" rx="2" fill={W} />
+      <circle cx="32" cy="27" r="19" fill={W} />
+      <circle cx="32" cy="27" r="14" fill={Y} />
+      <path d="M32 27V16" stroke="#d43c3c" strokeWidth="4" strokeLinecap="round" />
+      <path d="M32 27l7 5" stroke="#d43c3c" strokeWidth="4" strokeLinecap="round" />
+      <path d="M49 10l4-4" stroke={W} strokeWidth="5" strokeLinecap="round" />
+    </g>
+  ),
   coloring: (
     <g>
       {/* Three crayons. */}

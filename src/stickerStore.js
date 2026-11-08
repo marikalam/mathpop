@@ -3,8 +3,8 @@ import { BOOK_SIZE, STICKERS } from './stickers.js';
 // Each player's sticker book (the same as PitchPop's): a sticker for every
 // finished round of ten problems, no limit. The player picks which one;
 // each sticker appears once per page of BOOK_SIZE, then a new page starts.
-// Only signed-in families keep stickers (the book syncs with the family
-// account, stickerSync.js); a guest still gets to pick one each round.
+// Every player keeps their book on this phone; for a signed-in family it
+// also syncs with the family account (stickerSync.js).
 //
 // Saved per player: [{ index, at, from }] (`from` is the game played;
 // `at` is when it was stuck in, and tells stickers apart when phones sync).
