@@ -1,30 +1,30 @@
-// Pip's Closet: hats, glasses and capes for Pip, bought with ★ that each
-// player earns by playing (1 ★ a finished round, 1 more for a "Just for
-// me" round from Today's practice). Kept on this device, per player:
-// { earned, spent, owned: [item ids], wear: { hat, glasses, cape } }.
-// A player who played before the closet existed starts with 1 ★ for each
-// round they've already finished.
+import { pendingStickers, playerStickers } from './stickerStore.js';
 
-const KEY = 'mathpop-pip-closet-v1';
-const LOG_KEY = 'mathpop-round-log-v1';
+// Pip's Closet: hats, glasses and capes for Pip that unlock as a player's
+// sticker book fills up (a sticker for every finished round). Nothing is
+// spent: stickers stay in the book, and each item unlocks for good once
+// the player has that many stickers. Kept on this device, per player:
+// { seen: [item ids already tried on], wear: { hat, glasses, cape } }.
 
-// [id, kind, name, price]. Price 0: everyone has it from the start.
+const KEY = 'mathpop-pip-closet-v2';
+
+// [id, kind, name, stickers needed]. 0: everyone has it from the start.
 export const CLOSET_ITEMS = [
   ['party', 'hat', 'party hat', 0],
-  ['bow', 'hat', 'bow', 3],
-  ['cap', 'hat', 'baseball cap', 5],
-  ['crown', 'hat', 'crown', 8],
-  ['bunny', 'hat', 'bunny ears', 11],
-  ['wizard', 'hat', 'wizard hat', 15],
   ['round', 'glasses', 'round glasses', 0],
-  ['stars', 'glasses', 'star glasses', 4],
-  ['sun', 'glasses', 'sunglasses', 7],
-  ['hearts', 'glasses', 'heart glasses', 10],
+  ['bow', 'hat', 'bow', 2],
+  ['stars', 'glasses', 'star glasses', 3],
+  ['cap', 'hat', 'baseball cap', 4],
   ['red', 'cape', 'red cape', 5],
-  ['purple', 'cape', 'purple cape', 9],
-  ['rainbow', 'cape', 'rainbow cape', 14],
-  ['gold', 'cape', 'gold cape', 20],
-].map(([id, kind, name, price]) => ({ id, kind, name, price }));
+  ['crown', 'hat', 'crown', 7],
+  ['sun', 'glasses', 'sunglasses', 9],
+  ['bunny', 'hat', 'bunny ears', 11],
+  ['purple', 'cape', 'purple cape', 13],
+  ['hearts', 'glasses', 'heart glasses', 15],
+  ['wizard', 'hat', 'wizard hat', 18],
+  ['rainbow', 'cape', 'rainbow cape', 21],
+  ['gold', 'cape', 'gold cape', 25],
+].map(([id, kind, name, need]) => ({ id, kind, name, need }));
 
 export const CLOSET_KINDS = [
   ['hat', 'Hats'],
@@ -33,6 +33,14 @@ export const CLOSET_KINDS = [
 ];
 
 export const itemById = (id) => CLOSET_ITEMS.find((i) => i.id === id);
+export const anItem = (name) => `${/^[aeiou]/.test(name) ? 'an' : 'a'} ${name}`;
+
+// Every sticker the player has earned: in the book, or waiting to be stuck.
+export function stickerCount(playerId) {
+  return playerStickers(playerId).length + pendingStickers(playerId);
+}
+
+export const isUnlocked = (item, count) => count >= item.need;
 
 function readAll() {
   try {
@@ -43,71 +51,41 @@ function readAll() {
   }
 }
 
-function writeAll(all) {
+function save(playerId, closet) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(all));
+    localStorage.setItem(KEY, JSON.stringify({ ...readAll(), [playerId]: closet }));
   } catch {
     /* private mode */
   }
   window.dispatchEvent(new Event('mathpop-closet-changed'));
 }
 
-function roundsPlayedBefore(playerId) {
-  try {
-    const log = JSON.parse(localStorage.getItem(LOG_KEY)) || {};
-    return (log[playerId] || []).length;
-  } catch {
-    return 0;
-  }
-}
-
 export function closetFor(playerId) {
-  const all = readAll();
-  const saved = all[playerId];
-  if (saved) return saved;
-  return {
-    earned: roundsPlayedBefore(playerId),
-    spent: 0,
-    owned: CLOSET_ITEMS.filter((i) => !i.price).map((i) => i.id),
-    wear: {},
-  };
+  return readAll()[playerId] || { seen: CLOSET_ITEMS.filter((i) => !i.need).map((i) => i.id), wear: {} };
 }
 
-function save(playerId, closet) {
-  writeAll({ ...readAll(), [playerId]: closet });
-}
-
-export const starsLeft = (closet) => Math.max(0, closet.earned - closet.spent);
-
-// A finished round: +1 ★, and +1 more for a Today's practice round.
-export function earnStars(playerId, n) {
-  const c = closetFor(playerId);
-  save(playerId, { ...c, earned: c.earned + n });
-}
-
-// Puts an owned item on (or takes it off, if it's already on).
-export function toggleWear(playerId, id) {
+// Puts an unlocked item on (or takes it off, if it's already on). The
+// first time, it's new: returns { closet, isNew }.
+export function tryOn(playerId, id) {
   const c = closetFor(playerId);
   const item = itemById(id);
-  if (!item || !c.owned.includes(id)) return c;
-  const wear = { ...c.wear, [item.kind]: c.wear[item.kind] === id ? null : id };
-  const next = { ...c, wear };
+  if (!item || !isUnlocked(item, stickerCount(playerId))) return { closet: c, isNew: false };
+  const isNew = !c.seen.includes(id);
+  const wear = { ...c.wear, [item.kind]: c.wear[item.kind] === id && !isNew ? null : id };
+  const next = { ...c, wear, seen: isNew ? [...c.seen, id] : c.seen };
   save(playerId, next);
-  return next;
+  return { closet: next, isNew };
 }
 
-// Buys an item (and puts it on), if there are enough ★. Returns the
-// closet, or null when there aren't.
-export function buyItem(playerId, id) {
+// Unlocked but not tried on yet (the home page's "New for Pip!" card).
+export function newItems(playerId) {
   const c = closetFor(playerId);
-  const item = itemById(id);
-  if (!item || c.owned.includes(id) || starsLeft(c) < item.price) return null;
-  const next = { ...c, spent: c.spent + item.price, owned: [...c.owned, id], wear: { ...c.wear, [item.kind]: id } };
-  save(playerId, next);
-  return next;
+  const n = stickerCount(playerId);
+  return CLOSET_ITEMS.filter((i) => isUnlocked(i, n) && !c.seen.includes(i.id));
 }
 
-// The cheapest item not owned yet (what to save up for next).
-export function nextItem(closet) {
-  return CLOSET_ITEMS.filter((i) => !closet.owned.includes(i.id)).sort((a, b) => a.price - b.price)[0] || null;
+// The next item to unlock (what the stickers are going towards).
+export function nextItem(playerId) {
+  const n = stickerCount(playerId);
+  return CLOSET_ITEMS.find((i) => !isUnlocked(i, n)) || null;
 }

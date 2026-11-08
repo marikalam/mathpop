@@ -5,8 +5,9 @@ import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
 import { getVoiceQuality, languagesWithVoices, playFeedbackAndSpeak, playLogoSound, playStickerPick, prewarmVoices, speakInLanguage, speakProblem, speakResults, unlockAudio } from './sound.js';
 import Pip from './Pip.jsx';
 import TapBoard from './TapBoards.jsx';
-import PipCloset, { roundStars } from './PipCloset.jsx';
-import { closetFor, earnStars, nextItem, starsLeft } from './pipCloset.js';
+import PipCloset from './PipCloset.jsx';
+import MadMinute, { madMinuteBest } from './MadMinute.jsx';
+import { anItem, closetFor, newItems, nextItem, stickerCount } from './pipCloset.js';
 import { COLORING_PACKS, ColoringPage, ColoringPrint } from './ColoringPages.jsx';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
@@ -845,7 +846,9 @@ export default function App() {
 
   // Goes up each time the home greeting is tapped (its animation).
   const [heroPlaying, setHeroPlaying] = useState(0);
-  // Pip's Closet (pipCloset.js): the home page redraws when ★ or outfits change.
+  // Mad Minute: goes up to start a fresh minute.
+  const [madKey, setMadKey] = useState(0);
+  // Pip's Closet (pipCloset.js): the home page redraws when stickers or outfits change.
   const [, setClosetTick] = useState(0);
   useEffect(() => {
     const update = () => setClosetTick((n) => n + 1);
@@ -1489,11 +1492,7 @@ export default function App() {
   function nextProblem() {
     if (roundIndex + 1 >= SESSION_ROUNDS) {
       // Every finished round earns a sticker (picked on the "All done!" screen).
-      if (signedIn) earnSticker(currentProfile.id);
-      // ★ for Pip's Closet (counted before the round is logged, so a first
-      // visit to the closet doesn't count this round twice).
-      closetFor(currentProfile.id);
-      earnStars(currentProfile.id, roundStars(operation));
+      earnSticker(currentProfile.id);
       recordRound(currentProfile.id, operation, gradeInfo(level).id, sessionCorrect, SESSION_ROUNDS);
       if (operation === 'path' && pathBefore.current) {
         const after = pathStatus(currentProfile.id, level, progress[currentProfile.id] || {});
@@ -1663,12 +1662,12 @@ export default function App() {
                   Next to it, Pip's Closet and the ★ to spend there. */}
               <div className="home-hero-btns">
               <button className="home-closet" onClick={() => setView('closet')}>
-                Pip's Closet <span className="home-closet-stars">★ {starsLeft(closetFor(currentProfile.id))}</span>
+                Pip's Closet {newItems(currentProfile.id).length > 0 && <span className="home-closet-stars">NEW</span>}
               </button>
               <button className="home-stickers" onClick={() => openStickerBook()}>
                 <Icon name="book" size="1.4em" />
                 Sticker book
-                {signedIn && pendingStickers(currentProfile.id) > 0 && (
+                {pendingStickers(currentProfile.id) > 0 && (
                   <span className="home-stickers-badge" aria-label={`${pendingStickers(currentProfile.id)} waiting`}>
                     <Icon name="gift" /> {pendingStickers(currentProfile.id)}
                   </span>
@@ -1710,18 +1709,17 @@ export default function App() {
               );
             })()}
 
-            {/* Enough ★ for something new in Pip's Closet. */}
+            {/* Enough stickers for something new in Pip's Closet. */}
             {(() => {
-              const closet = closetFor(currentProfile.id);
-              const item = nextItem(closet);
-              if (!item || !item.price || starsLeft(closet) < item.price) return null;
+              const item = newItems(currentProfile.id).at(-1);
+              if (!item) return null;
               return (
                 <button type="button" className="closet-card" onClick={() => setView('closet')}>
                   <span className="closet-card-new">NEW</span>
                   <Pip size={54} wear={{ [item.kind]: item.id }} />
                   <span>
-                    <strong>You can get Pip {/^[aeiou]/.test(item.name) ? 'an' : 'a'} {item.name}!</strong>
-                    <span>You have ★ {starsLeft(closet)}. Tap to go to Pip's Closet.</span>
+                    <strong>Pip got {anItem(item.name)}!</strong>
+                    <span>{stickerCount(currentProfile.id)} stickers unlocked it. Tap to try it on.</span>
                   </span>
                 </button>
               );
@@ -1739,7 +1737,8 @@ export default function App() {
             {/* Every section, and Explore Numbers, as small tiles under it. */}
             {(() => {
               const sections = gradeSections(gradeInfo(level).id);
-              const n = sections.length + 1 + (TAP_BOARDS_FOR.includes(gradeInfo(level).id) ? TAP_BOARDS.length + 1 : 0);
+              const madMinute = gradeInfo(level).id !== 'p';
+              const n = sections.length + 1 + (madMinute ? 1 : 0) + (TAP_BOARDS_FOR.includes(gradeInfo(level).id) ? TAP_BOARDS.length + 1 : 0);
               // Three across (two or three for the youngest grades).
               const cols = n <= 3 ? n : 3;
               return (
@@ -1802,6 +1801,26 @@ export default function App() {
                       <span className="home-tile-title">Coloring Pages</span>
                     </button>
                   )}
+                  {/* Mad Minute (MadMinute.jsx): as many facts as you can in a minute. */}
+                  {madMinute && (
+                    <button
+                      className="home-tile"
+                      style={{ '--card-from': '#ef5b5b', '--card-to': '#d43c3c' }}
+                      onClick={() => {
+                        unlockAudio();
+                        setMadKey((k) => k + 1);
+                        setView('madminute');
+                      }}
+                    >
+                      <span className="home-tile-icon" aria-hidden="true">
+                        <SectionIcon id="madminute" />
+                      </span>
+                      <span className="home-tile-title">Mad Minute</span>
+                      {madMinuteBest(currentProfile.id, gradeInfo(level).id) > 0 && (
+                        <span className="home-tile-best">Best {madMinuteBest(currentProfile.id, gradeInfo(level).id)}</span>
+                      )}
+                    </button>
+                  )}
                 </div>
               );
             })()}
@@ -1825,6 +1844,34 @@ export default function App() {
               onSignIn={openAccount}
               placing={placingSticker}
               onPlaced={() => setPlacingSticker(null)}
+            />
+          </>
+        )}
+
+        {view === 'madminute' && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
+            <h2 className="screen-title">Mad Minute</h2>
+            <MadMinute
+              key={`${currentProfile.id}-${level}-${madKey}`}
+              playerId={currentProfile.id}
+              grade={gradeInfo(level).id}
+              onDone={(right, total) => {
+                earnSticker(currentProfile.id);
+                recordRound(currentProfile.id, 'madminute', gradeInfo(level).id, right, Math.max(1, total));
+                statRoundDone({ grade: gradeInfo(level).id, topic: 'madminute', lang: 'en', correct: right, total: Math.max(1, total) });
+              }}
+              onAgain={() => setMadKey((k) => k + 1)}
+              stickerSlot={
+                <StickerPicker
+                  key={`mm-${madKey}`}
+                  playerId={currentProfile.id}
+                  signedIn={signedIn}
+                  from="madminute"
+                  onStick={(index) => openStickerBook(index)}
+                  onSignIn={openAccount}
+                />
+              }
             />
           </>
         )}
@@ -2565,9 +2612,20 @@ export default function App() {
                   Review answers
                 </button>
               )}
-              <button type="button" className="closet-earned" onClick={() => setView('closet')}>
-                +{roundStars(operation)} <span className="closet-star">★</span> for Pip's Closet
-              </button>
+              {/* What the stickers are going towards in Pip's Closet. */}
+              {(() => {
+                const next = nextItem(currentProfile.id);
+                const left = next ? next.need - stickerCount(currentProfile.id) : 0;
+                return (
+                  <button type="button" className="closet-earned" onClick={() => setView('closet')}>
+                    {newItems(currentProfile.id).length
+                      ? "Pip's Closet: something new is unlocked!"
+                      : next
+                        ? `${left} more ${left === 1 ? 'sticker' : 'stickers'} for Pip's ${next.name}`
+                        : "Pip's Closet"}
+                  </button>
+                );
+              })()}
               {/* Come back tomorrow: the streak to keep going, and (iPhone
                   app) a daily reminder a grown-up can set. */}
               {(() => {
