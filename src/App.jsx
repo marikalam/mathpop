@@ -6,6 +6,7 @@ import { getVoiceQuality, languagesWithVoices, playFeedbackAndSpeak, playLogoSou
 import Pip from './Pip.jsx';
 import TapBoard from './TapBoards.jsx';
 import PipCloset from './PipCloset.jsx';
+import { Confetti, CountUp } from './Celebrate.jsx';
 import MadMinute, { madMinuteBest } from './MadMinute.jsx';
 import { anItem, closetFor, newItems, nextItem, rememberUnlocks, stickerCount } from './pipCloset.js';
 import { COLORING_PACKS, ColoringPage, ColoringPrint } from './ColoringPages.jsx';
@@ -1897,7 +1898,7 @@ export default function App() {
               onAgain={() => setMadKey((k) => k + 1)}
               stickerSlot={
                 <p className="star-earned">
-                  +1 <span className="closet-star">★</span> · {stickerCount(currentProfile.id)} stars
+                  +1 <span className="closet-star">★</span> · {stickerCount(currentProfile.id)} {stickerCount(currentProfile.id) === 1 ? 'star' : 'stars'}
                 </p>
               }
             />
@@ -2590,13 +2591,19 @@ export default function App() {
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={sessionBack} />
             <div className="complete-wrap">
-              <div className="complete-emoji"><Icon name="party" size="1em" /></div>
+              {/* The party: confetti, and Pip (in their outfit) jumping for joy. */}
+              <Confetti />
+              <span className="complete-pip">
+                <Pip size={110} mood="cheer" wear={closetFor(currentProfile.id).wear} />
+              </span>
               <h2 className="screen-title">{tr('All done!', 'できた！')}</h2>
               <p className="screen-sub">
                 {tr(`You went through ${SESSION_ROUNDS} ${modeLabel} problems.`, `${SESSION_ROUNDS}もん ぜんぶ おわったよ！`)}
               </p>
               <div className="results-score-ring">
-                <span className="results-score-number">{sessionCorrect}</span>
+                <span className="results-score-number">
+                  <CountUp to={sessionCorrect} />
+                </span>
                 <span className="results-score-total">/ {SESSION_ROUNDS}</span>
               </div>
               {/* "Just for me": the steps mastered in this round, and what's next. */}
@@ -2611,7 +2618,7 @@ export default function App() {
               )}
               {/* The star this round earned (they unlock Pip's outfits). */}
               <p className="star-earned">
-                  +1 <span className="closet-star">★</span> · {stickerCount(currentProfile.id)} stars
+                  +1 <span className="closet-star">★</span> · {stickerCount(currentProfile.id)} {stickerCount(currentProfile.id) === 1 ? 'star' : 'stars'}
                 </p>
               {Object.keys(sessionResults).length > 0 && (
                 <div className="result-breakdown">
