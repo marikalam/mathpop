@@ -348,6 +348,35 @@ export async function mergeCloudStickers(profileId, stickers) {
   }
 }
 
+// Pip's Closet (pipCloset.js) for the family account's players: what Pip
+// is wearing and what's been tried on, kept on each player's row so every
+// phone signed in to the family shows the same Pip. Null when offline.
+export async function loadCloudClosets() {
+  if (!(await sessionUser())) return null;
+  try {
+    const { data, error } = await supabase.from('mathpop_profiles').select('profile_key, pip_closet');
+    if (error) return null;
+    return Object.fromEntries(data.filter((r) => r.pip_closet).map((r) => [r.profile_key, r.pip_closet]));
+  } catch {
+    return null;
+  }
+}
+
+export async function saveCloudCloset(profileId, closet) {
+  const user = await sessionUser();
+  if (!user) return false;
+  try {
+    const { error } = await supabase
+      .from('mathpop_profiles')
+      .update({ pip_closet: closet })
+      .eq('owner_id', user.id)
+      .eq('profile_key', profileId);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
 // MathPop's own anonymous usage stats (supabase/mathpop_stats.sql, sent
 // by stats.js). Never throws: stats must not get in the way of playing.
 export async function sendStatEvents(events) {

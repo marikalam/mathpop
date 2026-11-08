@@ -51,13 +51,35 @@ function readAll() {
   }
 }
 
-function save(playerId, closet) {
+function writeOne(playerId, closet) {
   try {
     localStorage.setItem(KEY, JSON.stringify({ ...readAll(), [playerId]: closet }));
   } catch {
     /* private mode */
   }
   window.dispatchEvent(new Event('mathpop-closet-changed'));
+}
+
+// A change made here: stamped with the time (the newest change wins when
+// phones sync, closetSync.js) and sent to the family account.
+function save(playerId, closet) {
+  const stamped = { ...closet, at: new Date().toISOString() };
+  writeOne(playerId, stamped);
+  window.dispatchEvent(new CustomEvent('mathpop-closet-saved', { detail: playerId }));
+}
+
+// Takes in a player's closet from the family account, when it's newer
+// than this phone's (what's been tried on is kept from both).
+export function mergeCloudCloset(playerId, remote) {
+  if (!remote || typeof remote !== 'object') return false;
+  const local = readAll()[playerId];
+  const seen = [...new Set([...(local?.seen || []), ...(remote.seen || [])])];
+  if (local?.at && remote.at && local.at >= remote.at) {
+    if (seen.length !== (local.seen || []).length) writeOne(playerId, { ...local, seen });
+    return local.at > remote.at; // this phone's is newer: send it up
+  }
+  writeOne(playerId, { wear: remote.wear || {}, seen, at: remote.at || local?.at });
+  return false;
 }
 
 export function closetFor(playerId) {

@@ -564,8 +564,12 @@ export default function TopicVisual({ v }) {
         <Panel wide>
           <span className="tv-line">
             <span className="tv-line-left">left</span>
+            {/* A number under each one (1, 2, 3...), to count along. */}
             {v.items.map((e, i) => (
-              <Thing key={i} id={e} size={36} />
+              <span key={i} className="tv-line-item">
+                <Thing id={e} size={36} />
+                <span className="tv-line-num">{i + 1}</span>
+              </span>
             ))}
           </span>
         </Panel>

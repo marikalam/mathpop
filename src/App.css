@@ -7118,3 +7118,20 @@ body {
   color: #d43c3c;
   font: 700 11px 'Fredoka', ui-rounded, system-ui, sans-serif;
 }
+
+/* Ordinal numbers: each animal in the line with its number under it. */
+.tv-line-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.tv-line-num {
+  min-width: 20px;
+  padding: 1px 0;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3b6fef;
+  font: 700 13px/1.2 'Fredoka', ui-rounded, system-ui, sans-serif;
+  text-align: center;
+}
