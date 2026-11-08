@@ -7404,3 +7404,21 @@ body {
     opacity: 0;
   }
 }
+
+/* Stars: what a round earns (they unlock Pip's outfits). */
+.star-earned {
+  margin: 4px 0;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: #fff3c4;
+  color: #8a5a00;
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  text-align: center;
+}
+.home-pair-stars {
+  margin-left: 6px;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}

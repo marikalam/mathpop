@@ -30,9 +30,7 @@ import Icon from './Icon.jsx';
 import { CompareChoices } from './CompareSigns.jsx';
 import ProfileSwitcher from './ProfileSwitcher.jsx';
 import EmailHandoff from './EmailHandoff.jsx';
-import StickerPicker from './StickerPicker.jsx';
-import StickerBook from './StickerBook.jsx';
-import { earnSticker, pendingStickers } from './stickerStore.js';
+import { earnSticker, settlePending } from './stickerStore.js';
 import { startStickerSync } from './stickerSync.js';
 import { startClosetSync } from './closetSync.js';
 import { PlayButton } from './TodayPlan.jsx';
@@ -1282,8 +1280,6 @@ export default function App() {
   // A sticker for every finished round. Signed-in families keep them in
   // each player's sticker book, synced across their phones.
   const signedIn = profileOwner === 'account' && !!cloudUser;
-  const [placingSticker, setPlacingSticker] = useState(null);
-  const [stickerBackTo, setStickerBackTo] = useState('home');
   const [, setStickerTick] = useState(0);
   const profilesRef = useRef(profiles);
   profilesRef.current = profiles;
@@ -1294,6 +1290,8 @@ export default function App() {
       profilesRef.current.forEach((p) => rememberUnlocks(p.id));
     };
     window.addEventListener('mathpop-stickers-changed', reload);
+    // Stickers earned before stars that were never picked become stars.
+    profilesRef.current.forEach((p) => settlePending(p.id));
     return () => window.removeEventListener('mathpop-stickers-changed', reload);
   }, []);
   const profileIds = profiles.map((p) => p.id).join(',');
@@ -1308,11 +1306,6 @@ export default function App() {
     };
   }, [signedIn, profileIds]);
 
-  function openStickerBook(placing = null) {
-    setPlacingSticker(placing);
-    setStickerBackTo(view === 'complete' ? 'complete' : 'home');
-    setView('stickers');
-  }
 
   // Only the languages this device has a voice for.
   const [exploreLanguages, setExploreLanguages] = useState(EXPLORE_LANGUAGES);
@@ -1768,16 +1761,12 @@ export default function App() {
               );
             })()}
 
-            {/* Pip's Closet and the sticker book, side by side (a red NEW
+            {/* Pip's Closet, with the stars to unlock outfits (a red NEW
                 when something's newly unlocked for Pip). */}
             <div className="home-pair">
               <button className="home-pair-btn home-pair-closet" onClick={() => setView('closet')}>
-                Pip's Closet
+                Pip's Closet <span className="home-pair-stars">★ {stickerCount(currentProfile.id)}</span>
                 {newItems(currentProfile.id).length > 0 && <span className="home-pair-new">NEW</span>}
-              </button>
-              <button className="home-pair-btn home-pair-book" onClick={() => openStickerBook()}>
-                Sticker book · {stickerCount(currentProfile.id)}
-                {pendingStickers(currentProfile.id) > 0 && <span className="home-pair-new">{pendingStickers(currentProfile.id)} to stick</span>}
               </button>
             </div>
 
@@ -1891,19 +1880,6 @@ export default function App() {
           </>
         )}
 
-        {view === 'stickers' && (
-          <>
-            <AppHeader level={level} players={headerPlayers} showBack onBack={() => { setPlacingSticker(null); setView(stickerBackTo); }} />
-            <StickerBook
-              key={currentProfile.id}
-              player={currentProfile}
-              signedIn={signedIn}
-              onSignIn={openAccount}
-              placing={placingSticker}
-              onPlaced={() => setPlacingSticker(null)}
-            />
-          </>
-        )}
 
         {view === 'madminute' && (
           <>
@@ -1920,14 +1896,9 @@ export default function App() {
               }}
               onAgain={() => setMadKey((k) => k + 1)}
               stickerSlot={
-                <StickerPicker
-                  key={`mm-${madKey}`}
-                  playerId={currentProfile.id}
-                  signedIn={signedIn}
-                  from="madminute"
-                  onStick={(index) => openStickerBook(index)}
-                  onSignIn={openAccount}
-                />
+                <p className="star-earned">
+                  +1 <span className="closet-star">★</span> · {stickerCount(currentProfile.id)} stars
+                </p>
               }
             />
           </>
@@ -2638,14 +2609,10 @@ export default function App() {
                   </span>
                 </div>
               )}
-              <StickerPicker
-                key={`${currentProfile.id}-${roundIndex}`}
-                playerId={currentProfile.id}
-                signedIn={signedIn}
-                from={operation}
-                onStick={(index) => openStickerBook(index)}
-                onSignIn={openAccount}
-              />
+              {/* The star this round earned (they unlock Pip's outfits). */}
+              <p className="star-earned">
+                  +1 <span className="closet-star">★</span> · {stickerCount(currentProfile.id)} stars
+                </p>
               {Object.keys(sessionResults).length > 0 && (
                 <div className="result-breakdown">
                   <p className="result-label">By operation:</p>
@@ -2668,7 +2635,7 @@ export default function App() {
                   Review answers
                 </button>
               )}
-              {/* What the stickers are going towards in Pip's Closet. */}
+              {/* What the stars are going towards in Pip's Closet. */}
               {(() => {
                 const next = nextItem(currentProfile.id);
                 const left = next ? next.need - stickerCount(currentProfile.id) : 0;
@@ -2677,7 +2644,7 @@ export default function App() {
                     {newItems(currentProfile.id).length
                       ? "Pip's Closet: something new is unlocked!"
                       : next
-                        ? `${left} more ${left === 1 ? 'sticker' : 'stickers'} for Pip's ${next.name}`
+                        ? `${left} more ${left === 1 ? 'star' : 'stars'} for Pip's ${next.name}`
                         : "Pip's Closet"}
                   </button>
                 );
