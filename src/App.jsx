@@ -20,6 +20,7 @@ import AdditionHelp from './AdditionHelp.jsx';
 import ExplainPanel from './ExplainPanel.jsx';
 import PrintSheet from './PrintSheet.jsx';
 import { PREK_CONCEPTS, ShapeIcon } from './preK.jsx';
+import FitText, { WordProblem } from './FitText.jsx';
 import { RichText, Speaker, Thing } from './Drawings.jsx';
 import { CountBoard, CountCelebration, sayCountCelebration } from './ToddlerCount.jsx';
 import { compareAfterPicture, problemPicture } from './ProblemPicture.jsx';
@@ -2215,7 +2216,9 @@ export default function App() {
               ) : problem.type === 'skill' && problem.visual ? (
                 <span className="problem-visual-wrap">
                   <TopicVisual v={problem.visual} />
-                  <span className="problem-text problem-text-sentence"><RichText text={problem.prompt} size={34} /></span>
+                  <span className="problem-text problem-text-sentence problem-text-fit-small">
+                    <FitText min={18} max={34}><RichText text={problem.prompt} size={34} /></FitText>
+                  </span>
                 </span>
               ) : problem.type === 'skill' && problem.promptKind === 'count' ? (
                 <span className="prek-count" aria-hidden="true">
@@ -2263,11 +2266,20 @@ export default function App() {
                         : 'problem-text'
                     }
                   >
-                    {problem.type === 'sentence'
-                      ? problem.text
-                      : problem.type === 'skill'
-                        ? <RichText text={problem.prompt} size={problem.prompt.length > 24 ? 34 : 48} />
-                        : `${problem.a} ${problem.symbol} ${problem.b}`}
+                    {problem.type === 'sentence' ? (
+                      // Word problems: as big as the card allows.
+                      <FitText min={20} max={problemPicture(problem) ? 34 : 50}>
+                        <WordProblem text={problem.text} />
+                      </FitText>
+                    ) : problem.type === 'skill' && problem.prompt.length > 24 ? (
+                      <FitText min={20} max={problemPicture(problem) ? 36 : 50}>
+                        <RichText text={problem.prompt} size={34} />
+                      </FitText>
+                    ) : problem.type === 'skill' ? (
+                      <RichText text={problem.prompt} size={48} />
+                    ) : (
+                      `${problem.a} ${problem.symbol} ${problem.b}`
+                    )}
                   </span>
                   {/* Ten-frames, a cookie tray or a bar model (ProblemPicture.jsx). */}
                   {problemPicture(problem) && <span className="problem-picture">{problemPicture(problem)}</span>}
