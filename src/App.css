@@ -6855,3 +6855,47 @@ body {
   font: 700 16px 'Fredoka', ui-rounded, system-ui, sans-serif;
   cursor: pointer;
 }
+
+/* The header's language menu. */
+.lang-wrap {
+  position: relative;
+}
+.lang-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 200px;
+  padding: 10px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(23, 58, 102, 0.2);
+  transform: translateX(-50%);
+}
+.lang-option {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: #f3f5fb;
+  color: var(--ink);
+  font: 700 16px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  cursor: pointer;
+}
+.lang-option-on {
+  border-color: #3b6fef;
+  background: #eef4ff;
+}
+.lang-option:disabled {
+  opacity: 0.45;
+}
+.lang-note {
+  font: 500 12px/1.35 'IBM Plex Sans', sans-serif;
+  color: #5b6077;
+}
