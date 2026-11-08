@@ -520,6 +520,8 @@ function AppHeader({ level, onBack, showBack, players, logoSignal = 0 }) {
   const rowRef = useRef(null);
   const compact = useCompactLogo(rowRef);
   const [logoPlaying, setLogoPlaying] = useState(0);
+  // The language menu (a tap opens it, so a stray tap can't switch).
+  const [langOpen, setLangOpen] = useState(false);
   useEffect(() => {
     if (logoSignal) setLogoPlaying((n) => n + 1);
   }, [logoSignal]);
@@ -548,15 +550,49 @@ function AppHeader({ level, onBack, showBack, players, logoSignal = 0 }) {
           {/* The player's language, on every page: one tap switches between
               English and Japanese. */}
           {players.lang && (
-            <button
-              type="button"
-              className="lang-btn"
-              onClick={players.onToggleLang}
-              aria-label={players.lang === 'ja' ? '日本語: tap for English' : 'English: tap for Japanese'}
-            >
-              <Icon name={players.lang === 'ja' ? 'flagJP' : 'flagUS'} size="1.5em" />
-              <span>{players.lang === 'ja' ? '日本語' : 'EN'}</span>
-            </button>
+            <span className="lang-wrap">
+              <button
+                type="button"
+                className="lang-btn"
+                onClick={() => setLangOpen((o) => !o)}
+                aria-expanded={langOpen}
+                aria-label={`Language: ${players.lang === 'ja' ? '日本語' : 'English'}`}
+              >
+                <Icon name={players.lang === 'ja' ? 'flagJP' : 'flagUS'} size="1.5em" />
+                <span>{players.lang === 'ja' ? '日本語' : 'EN'}</span>
+              </button>
+              {langOpen && (
+                <span className="lang-menu" role="menu">
+                  {[
+                    ['en', 'flagUS', 'English'],
+                    ['ja', 'flagJP', '日本語'],
+                  ].map(([id, icon, label]) => {
+                    const off = id === 'ja' && !players.jaVoice;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={players.lang === id}
+                        disabled={off}
+                        className={`lang-option${players.lang === id ? ' lang-option-on' : ''}`}
+                        onClick={() => {
+                          players.onSetLang(id);
+                          setLangOpen(false);
+                        }}
+                      >
+                        <Icon name={icon} size="1.4em" /> {label}
+                      </button>
+                    );
+                  })}
+                  <span className="lang-note">
+                    {players.jaVoice
+                      ? 'Japanese is for the Toddler games so far.'
+                      : 'This device has no Japanese voice. Add one in Settings → Accessibility → Spoken Content → Voices.'}
+                  </span>
+                </span>
+              )}
+            </span>
           )}
           <ProfileSwitcher
             profile={players.profile}
@@ -1038,12 +1074,17 @@ export default function App() {
   // Kept on this device, per player (older versions had one setting for all).
   const answerFor = (id) => settings.answerBy?.[id] || settings.inputMethod || 'write';
   // And the language they play in (English, or Japanese for Pre-K).
-  const langFor = (id) => settings.langBy?.[id] || 'en';
-  // The header's language button: switches the current player between
-  // English and Japanese (kept with the rest of the settings).
-  function toggleLang() {
+  // Japanese only when this device has a Japanese voice to say it (without
+  // one, iOS reads Japanese text with its English voice, which is gibberish).
+  const [jaVoice, setJaVoice] = useState(true);
+  useEffect(() => {
+    languagesWithVoices(['ja-JP']).then((l) => setJaVoice(l.length > 0));
+  }, []);
+  const langFor = (id) => (settings.langBy?.[id] === 'ja' && jaVoice ? 'ja' : 'en');
+  // The header's language menu: sets the current player's language (kept
+  // with the rest of the settings).
+  function setLang(next) {
     const id = currentProfile.id;
-    const next = langFor(id) === 'ja' ? 'en' : 'ja';
     setSettings((prev) => {
       const updated = { ...prev, langBy: { ...prev.langBy, [id]: next } };
       saveSettings(updated);
@@ -1137,7 +1178,8 @@ export default function App() {
   const [settings, setSettings] = useState(loadSettings);
   // The header's language button (needs the settings, so added here).
   headerPlayers.lang = langFor(currentProfile.id);
-  headerPlayers.onToggleLang = toggleLang;
+  headerPlayers.onSetLang = setLang;
+  headerPlayers.jaVoice = jaVoice;
   const playerProgress = progress[currentProfile.id] || {};
   const levelStats = playerProgress[level] || { total: 0, correct: 0 };
 
