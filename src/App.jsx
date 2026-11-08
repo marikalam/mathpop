@@ -53,7 +53,7 @@ import {
 import { listenForAppLinks } from './appLink.js';
 import { statAppOpened, statRoundDone } from './stats.js';
 import StatsScreen from './StatsScreen.jsx';
-import ZoomView from './ZoomView.jsx';
+import PinchZoom from './PinchZoom.jsx';
 import { Printer } from '@capgo/capacitor-printer';
 import WeekCard from './WeekCard.jsx';
 import TrialRecap from './TrialRecap.jsx';
@@ -190,7 +190,8 @@ const OPERATIONS = {
 const ALL_META = { ...OPERATIONS, ...SKILL_META };
 
 // The measuring pictures, which can be opened up big to look closely
-// (ZoomView.jsx): rulers, sides, areas, angles, coins - and clocks.
+// (PinchZoom.jsx, pinched right in the question): rulers, sides, areas,
+// angles, coins - and clocks.
 const ZOOM_KINDS = new Set(['ruler', 'rect', 'lshape', 'grid', 'angle', 'angleSplit', 'compass', 'money']);
 function canZoom(problem) {
   return problem.type === 'clock' || (problem.type === 'skill' && ZOOM_KINDS.has(problem.visual?.kind));
@@ -866,8 +867,6 @@ export default function App() {
   }, []);
   // Which tap-and-hear board is open (TapBoards.jsx).
   const [tapBoard, setTapBoard] = useState('shapes');
-  // The problem whose picture is zoomed in on (ZoomView), if any.
-  const [zoomed, setZoomed] = useState(null);
   useEffect(() => {
     let live = true;
     if (cloudUser) canViewStats().then((ok) => live && setStatsViewer(ok));
@@ -2317,10 +2316,19 @@ export default function App() {
               }
             >
               {problem.type === 'clock' ? (
-                <ClockFace hour={problem.hour} minute={problem.minute} />
+                <PinchZoom key={`${roundIndex}-${problem.hour}-${problem.minute}`}>
+                  <ClockFace hour={problem.hour} minute={problem.minute} />
+                </PinchZoom>
               ) : problem.type === 'skill' && problem.visual ? (
                 <span className="problem-visual-wrap">
-                  <TopicVisual v={problem.visual} />
+                  {/* Measuring pictures can be pinched to zoom (PinchZoom.jsx). */}
+                  {canZoom(problem) ? (
+                    <PinchZoom key={roundIndex}>
+                      <TopicVisual v={problem.visual} />
+                    </PinchZoom>
+                  ) : (
+                    <TopicVisual v={problem.visual} />
+                  )}
                   <span className="problem-text problem-text-sentence problem-text-fit-small">
                     <FitText min={18} max={34}><RichText text={problem.prompt} size={34} /></FitText>
                   </span>
@@ -2391,16 +2399,6 @@ export default function App() {
                 </>
               )}
             </button>
-            )}
-            {canZoom(problem) && (
-              <button className="zoom-open-btn" onClick={() => setZoomed(problem)}>
-                <Icon name="zoom" /> {tr('Zoom in', 'おおきく する')}
-              </button>
-            )}
-            {zoomed === problem && (
-              <ZoomView onClose={() => setZoomed(null)}>
-                {problem.type === 'clock' ? <ClockFace hour={problem.hour} minute={problem.minute} /> : <TopicVisual v={problem.visual} />}
-              </ZoomView>
             )}
             {problem.type === 'skill' && problem.hint && <p className="screen-sub skill-hint"><Icon name="bulb" /> <RichText text={problem.hint} size={22} /></p>}
             {!(problem.promptKind === 'count' && problem.toddler) && <p className="screen-sub tap-to-hear">{tr('Tap the problem to hear it', 'もんだいを タップすると きこえるよ')}</p>}
