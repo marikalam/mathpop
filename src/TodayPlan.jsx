@@ -119,3 +119,38 @@ export default function TodayPlan({ playerId, signedIn, working, meter, little =
     </section>
   );
 }
+
+// The home page's one big button (layout A): today's round, with today's
+// three stars on it. Signed in, it's the "Just for me" round (as above);
+// without an account, a round of the grade's mix.
+export function PlayButton({ playerId, signedIn, working, onStart, onGuestPlay }) {
+  const [, refresh] = useState(0);
+  useEffect(() => {
+    const update = () => refresh((n) => n + 1);
+    const events = ['mathpop-today-changed', 'mathpop-stickers-changed'];
+    events.forEach((e) => window.addEventListener(e, update));
+    return () => events.forEach((e) => window.removeEventListener(e, update));
+  }, []);
+  const done = signedIn ? pathRoundsToday(playerId) : 0;
+  const allDone = done >= DAILY_ROUNDS;
+  useEffect(() => {
+    if (signedIn) giveBonusIfDone(playerId, done);
+  });
+  return (
+    <button type="button" className="play-big" onClick={signedIn ? onStart : onGuestPlay}>
+      <span className="play-big-text">
+        <span className="play-big-title">{allDone ? 'Play one more' : done ? 'Play the next round' : 'Play today’s round'}</span>
+        <span className="play-big-sub">{signedIn ? working : 'A mix of this grade’s math'}</span>
+      </span>
+      {signedIn && (
+        <span className="play-big-stars" aria-label={`${Math.min(done, DAILY_ROUNDS)} of ${DAILY_ROUNDS} rounds today`}>
+          {Array.from({ length: DAILY_ROUNDS }, (_, i) => (
+            <svg key={i} viewBox="0 0 40 40" className={i < done ? 'on' : ''} aria-hidden="true">
+              <path d="M20 3l5.2 10.6 11.7 1.7-8.5 8.2 2 11.6L20 29.6 9.6 35.1l2-11.6-8.5-8.2 11.7-1.7z" />
+            </svg>
+          ))}
+        </span>
+      )}
+    </button>
+  );
+}

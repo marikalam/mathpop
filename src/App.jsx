@@ -35,7 +35,7 @@ import StickerBook from './StickerBook.jsx';
 import { earnSticker, pendingStickers } from './stickerStore.js';
 import { startStickerSync } from './stickerSync.js';
 import { startClosetSync } from './closetSync.js';
-import TodayPlan from './TodayPlan.jsx';
+import { PlayButton } from './TodayPlan.jsx';
 import { assignedTopics, clearMistake, dayKey, loadMistakes, mistakeRound, recordMistake, recordRound, streakDays, weekSummary } from './todayPlan.js';
 import { pathRound, pathStatus, recordPathAnswer } from './myPath.js';
 import LogoMark from './LogoMark.jsx';
@@ -1640,54 +1640,22 @@ export default function App() {
                 <Pip size={96} mood={streakDays(currentProfile.id) >= 2 ? 'cheer' : 'wave'} wear={closetFor(currentProfile.id).wear} />
               </button>
               <div className="home-hero-main">
-              <h2 className="home-hello">
-                Hi {currentProfile.name}! Ready to pop some math?
-              </h2>
-              {/* The playing player's grade. A grown-up sets it in Players &
-                  grades (the player menu), not here. */}
-              <div className="home-hero-row">
-                <LevelSwitcher level={level} readOnly />
-                {levelStats.total ? (
-                  <>
-                    {/* Days in a row, once there's a streak to keep going. */}
-                    {streakDays(currentProfile.id) >= 2 ? (
-                      <span className="home-stat home-stat-streak"><Icon name="fire" /> {streakDays(currentProfile.id)} days in a row</span>
-                    ) : (
-                      <span className="home-stat"><Icon name="check" /> {levelStats.total} solved</span>
-                    )}
-                    <span className="home-stat"><Icon name="target" /> {Math.round((levelStats.correct / levelStats.total) * 100)}% right</span>
-                  </>
-                ) : (
-                  <span className="home-stat"><Icon name="star" /> Start your first round</span>
-                )}
-                {/* The free trial's days left, or (no Plus) today's free round. */}
-                {(plusStatus.why === 'trial' || !plusStatus.plus) && (
-                  <button className="home-stat home-stat-plus" onClick={() => openPlus('home')}>
-                    <Icon name="sparkle" />{' '}
-                    {plusStatus.why === 'trial'
-                      ? `Free trial: ${trialDaysLeft(plusStatus)} ${trialDaysLeft(plusStatus) === 1 ? 'day' : 'days'} left`
-                      : freeRoundLeft()
-                        ? '1 free round today'
-                        : 'Unlock MathPop'}
-                  </button>
-                )}
-              </div>
-              {/* The sticker book, as in PitchPop: earned by finishing rounds.
-                  Next to it, Pip's Closet and the ★ to spend there. */}
-              <div className="home-hero-btns">
-              <button className="home-closet" onClick={() => setView('closet')}>
-                Pip's Closet {newItems(currentProfile.id).length > 0 && <span className="home-closet-stars">NEW</span>}
-              </button>
-              <button className="home-stickers" onClick={() => openStickerBook()}>
-                <Icon name="book" size="1.4em" />
-                Sticker book
-                {pendingStickers(currentProfile.id) > 0 && (
-                  <span className="home-stickers-badge" aria-label={`${pendingStickers(currentProfile.id)} waiting`}>
-                    <Icon name="gift" /> {pendingStickers(currentProfile.id)}
-                  </span>
-                )}
-              </button>
-              </div>
+              <h2 className="home-hello">Hi {currentProfile.name}!</h2>
+              {/* Grade and streak in one quiet line (the grade is set by a
+                  grown-up in Players & grades). The free trial, small. */}
+              <p className="home-hero-line">
+                {gradeInfo(level).label}
+                {streakDays(currentProfile.id) >= 2 && ` · ${streakDays(currentProfile.id)} days in a row`}
+              </p>
+              {(plusStatus.why === 'trial' || !plusStatus.plus) && (
+                <button className="home-hero-plus" onClick={() => openPlus('home')}>
+                  {plusStatus.why === 'trial'
+                    ? `Free trial: ${trialDaysLeft(plusStatus)} ${trialDaysLeft(plusStatus) === 1 ? 'day' : 'days'} left`
+                    : freeRoundLeft()
+                      ? '1 free round today'
+                      : 'Unlock MathPop'}
+                </button>
+              )}
               </div>
             </section>
 
@@ -1707,37 +1675,30 @@ export default function App() {
                 ...path.current.slice(0, 2).map(label),
               ];
               return (
-                <TodayPlan
+                <PlayButton
                   key={`${currentProfile.id}-${level}`}
                   playerId={currentProfile.id}
                   signedIn={signedIn}
-                  little={little}
                   working={parts.length ? parts.join(' · ') : 'You’ve done every step!'}
-                  meter={{
-                    pct: Math.round((100 * path.gradeDone) / Math.max(1, path.gradeSize)),
-                    label: `${gradeInfo(path.grade).label}: ${path.gradeDone} of ${path.gradeSize} steps done`,
-                  }}
                   onStart={() => startOperation('path', 'home')}
-                  onSignIn={() => signupOpen('sign-up')}
+                  onGuestPlay={() => startOperation(gradeInfo(level).id === 'p' ? 'count' : 'random', 'home')}
                 />
               );
             })()}
 
-            {/* Enough stickers for something new in Pip's Closet. */}
-            {(() => {
-              const item = newItems(currentProfile.id).at(-1);
-              if (!item) return null;
-              return (
-                <button type="button" className="closet-card" onClick={() => setView('closet')}>
-                  <span className="closet-card-new">NEW</span>
-                  <Pip size={54} wear={{ [item.kind]: item.id }} />
-                  <span>
-                    <strong>Pip got {anItem(item.name)}!</strong>
-                    <span>{stickerCount(currentProfile.id)} stickers unlocked it. Tap to try it on.</span>
-                  </span>
-                </button>
-              );
-            })()}
+            {/* Pip's Closet and the sticker book, side by side (a red NEW
+                when something's newly unlocked for Pip). */}
+            <div className="home-pair">
+              <button className="home-pair-btn home-pair-closet" onClick={() => setView('closet')}>
+                Pip's Closet
+                {newItems(currentProfile.id).length > 0 && <span className="home-pair-new">NEW</span>}
+              </button>
+              <button className="home-pair-btn home-pair-book" onClick={() => openStickerBook()}>
+                Sticker book · {stickerCount(currentProfile.id)}
+                {pendingStickers(currentProfile.id) > 0 && <span className="home-pair-new">{pendingStickers(currentProfile.id)} to stick</span>}
+              </button>
+            </div>
+
             {installPrompt && (
               <button type="button" className="install-banner" onClick={installApp}>
                 <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="" />
@@ -1748,6 +1709,7 @@ export default function App() {
                 <span className="install-banner-btn">Install</span>
               </button>
             )}
+            <p className="home-topics-label">Practice a topic</p>
             {/* Every section, and Explore Numbers, as small tiles under it. */}
             {(() => {
               const sections = gradeSections(gradeInfo(level).id);
@@ -1838,7 +1800,6 @@ export default function App() {
                 </div>
               );
             })()}
-            <p className="curriculum-note">Topics follow Singapore math and Beast Academy for {gradeInfo(level).label}.</p>
 
             {!IS_NATIVE && (
               <a className="all-apps-link" href="https://marikalam.github.io/apps/">
