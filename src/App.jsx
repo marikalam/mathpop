@@ -34,6 +34,7 @@ import StickerPicker from './StickerPicker.jsx';
 import StickerBook from './StickerBook.jsx';
 import { earnSticker, pendingStickers } from './stickerStore.js';
 import { startStickerSync } from './stickerSync.js';
+import { startClosetSync } from './closetSync.js';
 import TodayPlan from './TodayPlan.jsx';
 import { assignedTopics, clearMistake, dayKey, loadMistakes, mistakeRound, recordMistake, recordRound, streakDays, weekSummary } from './todayPlan.js';
 import { pathRound, pathStatus, recordPathAnswer } from './myPath.js';
@@ -1285,7 +1286,13 @@ export default function App() {
   const profileIds = profiles.map((p) => p.id).join(',');
   useEffect(() => {
     if (!signedIn || !profileIds) return undefined;
-    return startStickerSync(profileIds.split(','));
+    const stopStickers = startStickerSync(profileIds.split(','));
+    // Pip's Closet too (closetSync.js), so Pip is dressed the same on every phone.
+    const stopCloset = startClosetSync(profileIds.split(','));
+    return () => {
+      stopStickers();
+      stopCloset();
+    };
   }, [signedIn, profileIds]);
 
   function openStickerBook(placing = null) {

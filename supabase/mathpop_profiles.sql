@@ -25,6 +25,9 @@ alter table public.mathpop_profiles
 
 alter table public.mathpop_profiles enable row level security;
 
+-- Pip's Closet (what Pip wears, what's been tried on), synced by closetSync.js.
+alter table public.mathpop_profiles add column if not exists pip_closet jsonb;
+
 drop policy if exists "Families read their own MathPop players" on public.mathpop_profiles;
 create policy "Families read their own MathPop players" on public.mathpop_profiles
   for select to authenticated using (owner_id = auth.uid());
