@@ -454,13 +454,19 @@ export async function speak(text) {
 // (MathPop's own voice only speaks English).
 const LANG_TAGS = { ja: 'ja-JP' };
 
+// A name the Japanese voice can say: one written in English letters
+// ("Melody") comes out spelled letter by letter (M-E-L-O-D-Y), so in
+// Japanese the player is only called by a name written in Japanese.
+const jaName = (name) => (name && !/[A-Za-z]/.test(name) ? name : null);
+
 // Asked by name ("Marcus, what is 5 plus 3?") when the problem says so
 // (`callName`, about half of them).
 export function speakProblem(problem) {
   const name = problem.callName ? playerName() : null;
   if (LANG_TAGS[problem.lang]) {
     const text = problem.speech || problem.prompt;
-    speakInLanguage(name ? `${name}、${text}` : text, LANG_TAGS[problem.lang]);
+    const ja = jaName(name);
+    speakInLanguage(ja ? `${ja}、${text}` : text, LANG_TAGS[problem.lang]);
   } else if (problem.type === 'sentence') {
     speak(problem.text);
   } else if (problem.type === 'clock') {
@@ -484,10 +490,11 @@ export function playFeedbackAndSpeak(correct, correctAnswer, lang) {
     // Often by name: "Great job, Marcus!"
     const name = Math.random() < 0.5 ? playerName() : null;
     if (lang === 'ja') {
+      const ja = jaName(name);
       speakInLanguage(
         correct
-          ? `${name ? `${name}、` : ''}せいかい！ ${correctAnswer}！`
-          : `おしい！ ${name ? `${name}、` : ''}こたえは ${correctAnswer}。`,
+          ? `${ja ? `${ja}、` : ''}せいかい！ ${correctAnswer}！`
+          : `おしい！ ${ja ? `${ja}、` : ''}こたえは ${correctAnswer}。`,
         LANG_TAGS.ja,
       );
       return;
@@ -506,7 +513,8 @@ export function speakResults(correct, total, lang) {
   const wrong = total - correct;
   const name = playerName();
   if (lang === 'ja') {
-    const you = name ? `${name}、` : '';
+    const ja = jaName(name);
+    const you = ja ? `${ja}、` : '';
     speakInLanguage(correct === total ? `${you}すごい！ ${total}もん ぜんぶ せいかい！` : `${you}${total}もんちゅう ${correct}もん せいかい！ よく がんばったね！`, LANG_TAGS.ja);
     return;
   }
