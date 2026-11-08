@@ -456,8 +456,16 @@ const LANG_TAGS = { ja: 'ja-JP' };
 
 // Asked by name ("Marcus, what is 5 plus 3?") when the problem says so
 // (`callName`, about half of them).
+// The player's name for the Japanese voice: only a name written in
+// Japanese (the Japanese voice spells an English name out letter by
+// letter, "M-E-L-O-D-Y", so in Japanese an English name isn't said).
+function jaName() {
+  const name = playerName();
+  return name && !/[A-Za-z]/.test(name) ? name : null;
+}
+
 export function speakProblem(problem) {
-  const name = problem.callName ? playerName() : null;
+  const name = problem.callName ? (LANG_TAGS[problem.lang] ? jaName() : playerName()) : null;
   if (LANG_TAGS[problem.lang]) {
     const text = problem.speech || problem.prompt;
     speakInLanguage(name ? `${name}、${text}` : text, LANG_TAGS[problem.lang]);
@@ -482,7 +490,7 @@ export function playFeedbackAndSpeak(correct, correctAnswer, lang) {
   }
   setTimeout(() => {
     // Often by name: "Great job, Marcus!"
-    const name = Math.random() < 0.5 ? playerName() : null;
+    const name = Math.random() < 0.5 ? (lang === 'ja' ? jaName() : playerName()) : null;
     if (lang === 'ja') {
       speakInLanguage(
         correct
@@ -506,7 +514,7 @@ export function speakResults(correct, total, lang) {
   const wrong = total - correct;
   const name = playerName();
   if (lang === 'ja') {
-    const you = name ? `${name}、` : '';
+    const you = jaName() ? `${jaName()}、` : '';
     speakInLanguage(correct === total ? `${you}すごい！ ${total}もん ぜんぶ せいかい！` : `${you}${total}もんちゅう ${correct}もん せいかい！ よく がんばったね！`, LANG_TAGS.ja);
     return;
   }
