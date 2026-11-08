@@ -7,7 +7,7 @@ import Pip from './Pip.jsx';
 import TapBoard from './TapBoards.jsx';
 import PipCloset from './PipCloset.jsx';
 import MadMinute, { madMinuteBest } from './MadMinute.jsx';
-import { anItem, closetFor, newItems, nextItem, stickerCount } from './pipCloset.js';
+import { anItem, closetFor, newItems, nextItem, rememberUnlocks, stickerCount } from './pipCloset.js';
 import { COLORING_PACKS, ColoringPage, ColoringPrint } from './ColoringPages.jsx';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
 import WritePad from './WritePad.jsx';
@@ -1278,8 +1278,14 @@ export default function App() {
   const [placingSticker, setPlacingSticker] = useState(null);
   const [stickerBackTo, setStickerBackTo] = useState('home');
   const [, setStickerTick] = useState(0);
+  const profilesRef = useRef(profiles);
+  profilesRef.current = profiles;
   useEffect(() => {
-    const reload = () => setStickerTick((t) => t + 1);
+    const reload = () => {
+      setStickerTick((t) => t + 1);
+      // A new sticker can unlock something for Pip: saved for good (and synced).
+      profilesRef.current.forEach((p) => rememberUnlocks(p.id));
+    };
     window.addEventListener('mathpop-stickers-changed', reload);
     return () => window.removeEventListener('mathpop-stickers-changed', reload);
   }, []);
