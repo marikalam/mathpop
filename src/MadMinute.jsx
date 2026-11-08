@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Pip from './Pip.jsx';
+import { Confetti, CountUp } from './Celebrate.jsx';
 import { playCorrectChime, playIncorrectBuzz, speak } from './sound.js';
 
 // Mad Minute: as many quick facts as you can in one minute. The facts
@@ -160,10 +161,16 @@ export default function MadMinute({ playerId, grade, onDone, stickerSlot, onAgai
   if (phase === 'done' && result) {
     return (
       <div className="mm mm-done">
-        <Pip size={96} mood="cheer" />
+        <Confetti />
+        <span className="complete-pip">
+          <Pip size={96} mood="cheer" />
+        </span>
         <h2 className="screen-title">Time's up!</h2>
         <div className="mm-score">
-          <span>{result.right}</span> right in one minute
+          <span>
+            <CountUp to={result.right} />
+          </span>{' '}
+          right in one minute
         </div>
         <p className="mm-best">
           {result.isBest && result.before ? (
