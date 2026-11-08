@@ -6899,3 +6899,60 @@ body {
   font: 500 12px/1.35 'IBM Plex Sans', sans-serif;
   color: #5b6077;
 }
+
+/* Word problems and long prompts grow to fill the problem card (FitText.jsx):
+   the text box takes the card's free space, and the font size is the
+   biggest that fits. Numbers sit in white bubbles; the question ("How
+   many ...?") gets a line of its own. */
+.problem-card .problem-text-sentence:has(.fit-box) {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+}
+.fit-box {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.fit-text {
+  display: block;
+  width: 100%;
+  line-height: 1.32;
+  text-align: center;
+  font-weight: 600;
+}
+.fit-text .thing-inline {
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: -0.25em;
+}
+.num-chip {
+  display: inline-block;
+  background: #fff;
+  color: #1f2340;
+  font-weight: 700;
+  padding: 0 0.32em;
+  margin: 0.04em 0.06em;
+  border-radius: 0.4em;
+  line-height: 1.2;
+  box-shadow: 0 0.08em 0 rgba(0, 0, 0, 0.18);
+}
+.wp-story {
+  display: block;
+}
+.wp-question {
+  display: block;
+  margin-top: 0.45em;
+  font-weight: 700;
+  padding-top: 0.4em;
+  border-top: 2px dashed rgba(255, 255, 255, 0.55);
+}
+.wp-story:empty + .wp-question {
+  margin-top: 0;
+  border-top: 0;
+}
