@@ -16,7 +16,7 @@ import { loadDigitModel } from './digitModel.js';
 import { DEFAULT_GRADE, gradeInfo, gradeOps, gradeTier } from './grades.js';
 import { buildProblem, formatTime } from './problems.js';
 import { TOPIC_ICONS, gradeSection, gradeSections, gradeTopics } from './curriculum.js';
-import TopicVisual from './TopicVisual.jsx';
+import TopicVisual, { PatternShape } from './TopicVisual.jsx';
 import { setStoryPlayer } from './storyNames.js';
 import AdditionHelp from './AdditionHelp.jsx';
 import ExplainPanel from './ExplainPanel.jsx';
@@ -37,6 +37,7 @@ import { startClosetSync } from './closetSync.js';
 import { PlayButton } from './TodayPlan.jsx';
 import { assignedTopics, clearMistake, dayKey, loadMistakes, mistakeRound, recordMistake, recordRound, streakDays, weekSummary } from './todayPlan.js';
 import { pathRound, pathStatus, recordPathAnswer } from './myPath.js';
+import { hasLevels, recordLevelAnswer, topicLevel } from './autoLevel.js';
 import LogoMark from './LogoMark.jsx';
 import { AccountButton, AccountScreen, AddPlayerForm, PlayerSettingsCard, SyncStatus } from './Account.jsx';
 import {
@@ -325,7 +326,7 @@ function buildOptions(problem) {
   return shuffle([correct, ...distractors.slice(0, 3)]);
 }
 
-function makeProblem(op, grade, lang) {
+function makeProblem(op, grade, lang, playerId) {
   // Pre-K's Random Mix: one of its picture games each time.
   if (op === 'random' && gradeInfo(grade).id === 'p') op = shuffle(PREK_CONCEPTS.map((c) => c.id))[0];
   // Random Mix: any topic from the grade's sections; a section's Mix: any
@@ -334,6 +335,12 @@ function makeProblem(op, grade, lang) {
   else if (op.startsWith('section:')) {
     const section = gradeSection(gradeInfo(grade).id, op.slice(8));
     op = shuffle(section ? section.topics.map((t) => t.id) : gradeOps(grade))[0];
+  }
+  // The player's level in the topic (autoLevel.js) picks how hard it is.
+  if (playerId && hasLevels(grade, op)) {
+    const at = topicLevel(playerId, grade, op);
+    const p = isSkillConcept(op) ? buildSkillProblem(op, at.tier, at.grade, lang) : buildProblem(op, at.grade);
+    return { ...p, topicLevel: at.level };
   }
   if (isSkillConcept(op)) return buildSkillProblem(op, gradeTier(grade), gradeInfo(grade).id, lang);
   return buildProblem(op, grade);
@@ -1361,6 +1368,9 @@ export default function App() {
   const pathQueue = useRef([]);
   const pathBefore = useRef(null);
   const [levelUp, setLevelUp] = useState(null);
+  // Topics whose level (autoLevel.js) went up in this round.
+  const levelMoves = useRef([]);
+  const [topicUps, setTopicUps] = useState([]);
   // About half the questions are asked by name ("Marcus, how many
   // apples?"), when they're read out (sound.js).
   function roundProblem(op) {
@@ -1377,7 +1387,7 @@ export default function App() {
       const step = next || pathBefore.current?.current[0] || { topic: 'random', grade: level };
       return { ...makeProblem(step.topic, step.grade, lang), pathGrade: step.grade };
     }
-    if (op !== 'mistakes') return makeProblem(op, level, lang);
+    if (op !== 'mistakes') return makeProblem(op, level, lang, currentProfile.id);
     if (mistakeQueue.current.length) return mistakeQueue.current.shift();
     return makeProblem(mistakeOps.current.length ? shuffle(mistakeOps.current)[0] : 'random', level, lang);
   }
@@ -1445,6 +1455,8 @@ export default function App() {
     setAnswerCorrect(Boolean(r.answerCorrect));
     setTypedAnswer('');
     setLevelUp(null);
+    setTopicUps([]);
+    levelMoves.current = [];
     setReturnView(r.returnView || 'home');
     setView(r.at === 'feedback' ? 'feedback' : 'question');
     clearPaused();
@@ -1490,6 +1502,8 @@ export default function App() {
       pathQueue.current = shuffle([...fixes, ...picked, ...steps]);
     }
     setLevelUp(null);
+    setTopicUps([]);
+    levelMoves.current = [];
     const first = roundProblem(op);
     setOperation(op);
     setRoundIndex(0);
@@ -1526,6 +1540,10 @@ export default function App() {
       if (correct) clearMistake(currentProfile.id, problem);
       else recordMistake(currentProfile.id, grade, problem);
       recordPathAnswer(currentProfile.id, grade, problem.op, correct);
+      if (operation !== 'path' && operation !== 'mistakes') {
+        const moved = recordLevelAnswer(currentProfile.id, level, problem.op, correct);
+        if (moved === 'up') levelMoves.current = [...levelMoves.current.filter((t) => t !== problem.op), problem.op];
+      }
 
       setSessionResults((prev) => {
         const opStats = prev[problem.op] || { correct: 0, wrong: 0 };
@@ -1545,7 +1563,7 @@ export default function App() {
           correct,
           prompt: problemPromptText(problem),
           // A picture answer (a cat, a red marble) is kept as "{{cat}}" so it's drawn.
-          yourAnswer: problem.choiceKind === 'emoji' || problem.choiceKind === 'thing' ? `{{${value}}}` : value,
+          yourAnswer: problem.choiceKind === 'emoji' || problem.choiceKind === 'thing' ? `{{${value}}}` : problem.choiceNames?.[value] || value,
           answerText: problemAnswerText(problem),
         },
       ]);
@@ -1589,6 +1607,8 @@ export default function App() {
         const got = pathBefore.current.current.filter((n) => !stillOn.has(n.id));
         if (got.length) setLevelUp({ got, next: after.current[0] || null });
       }
+      setTopicUps(levelMoves.current.map((op) => ({ op, ...topicLevel(currentProfile.id, level, op) })));
+      levelMoves.current = [];
       statRoundDone({ grade: gradeInfo(level).id, topic: operation, lang: problem?.lang || 'en', correct: sessionCorrect, total: SESSION_ROUNDS });
       clearPaused();
       setView('complete');
@@ -2035,6 +2055,9 @@ export default function App() {
                         </span>
                         <span className="topic-card-side">
                           <span className="topic-card-from">{topic.from}</span>
+                          {hasLevels(level, topic.id) && (
+                            <span className="topic-level">Level {topicLevel(currentProfile.id, level, topic.id).level}</span>
+                          )}
                           {stats?.total ? (
                             <span className="topic-card-score">
                               {Math.round((stats.correct / stats.total) * 100)}% · {stats.total}
@@ -2490,7 +2513,7 @@ export default function App() {
                     className={`option-btn${problem.choiceKind ? ` option-btn-${problem.choiceKind}` : ''}${countLocked ? ' option-btn-waiting' : countDone && problem.promptKind === 'count' && problem.toddler ? ' option-btn-ready' : ''}`}
                     onClick={() => chooseAnswer(value)}
                     disabled={countLocked}
-                    aria-label={problem.choiceKind === 'size' ? `The ${value} one` : String(value)}
+                    aria-label={problem.choiceKind === 'size' ? `The ${value} one` : problem.choiceNames?.[value] || String(value)}
                   >
                     {problem.choiceKind === 'shape' ? (
                       <ShapeIcon shape={value} color={problem.shapeColors[value]} size={problem.toddler ? 110 : 72} />
@@ -2506,6 +2529,8 @@ export default function App() {
                           <Thing key={i} id={problem.groups[value].thing} size={problem.groups[value].n > 4 ? 58 : 72} />
                         ))}
                       </span>
+                    ) : problem.choiceKind === 'pshape' ? (
+                      <PatternShape id={value} color={problem.shapeColor} size={58} />
                     ) : problem.choiceKind === 'thing' || problem.choiceKind === 'emoji' ? (
                       <Thing id={value} size={64} />
                     ) : (
@@ -2555,7 +2580,7 @@ export default function App() {
             {/* Right or wrong, the answer is shown and the round moves on (a
                 wrong one isn't asked again); Show me how explains it. */}
             <p className="screen-sub">
-              {answerCorrect ? tr("That's right!", 'せいかい！') : <RichText text={tr(`You picked ${problem.choiceKind === 'emoji' || problem.choiceKind === 'thing' ? `{{${chosen}}}` : String(chosen)}. Here's the answer:`, 'こたえは これだよ。')} size={26} />}
+              {answerCorrect ? tr("That's right!", 'せいかい！') : <RichText text={tr(`You picked ${problem.choiceKind === 'emoji' || problem.choiceKind === 'thing' ? `{{${chosen}}}` : problem.choiceNames?.[chosen] || String(chosen)}. Here's the answer:`, 'こたえは これだよ。')} size={26} />}
             </p>
             <div className="answer-card" style={{ background: ALL_META[problem.op].color }}>
               <div className="answer-equation"><RichText text={problemAnswerText(problem)} size={44} /></div>
@@ -2616,6 +2641,15 @@ export default function App() {
                   </span>
                 </div>
               )}
+              {/* Topics that went up a level by themselves (autoLevel.js). */}
+              {topicUps.map((t) => (
+                <div key={t.op} className="level-up">
+                  <Icon name="rocket" size="44px" />
+                  <span>
+                    <strong>Level up!</strong> {ALL_META[t.op]?.label || t.op} is now level {t.level}. Great work!
+                  </span>
+                </div>
+              ))}
               {/* The star this round earned (they unlock Pip's outfits). */}
               <p className="star-earned">
                   +1 <span className="closet-star">★</span> · {stickerCount(currentProfile.id)} {stickerCount(currentProfile.id) === 1 ? 'star' : 'stars'}
