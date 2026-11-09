@@ -7521,3 +7521,37 @@ body {
     animation: none;
   }
 }
+
+/* Beast Academy shape patterns (topics.js shapePattern). */
+.tv-shape-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.tv-shape-next {
+  font: 700 34px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #e0577f;
+  margin-left: 4px;
+}
+.tv-svg-big {
+  max-height: 230px;
+}
+.option-btn-pshape {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* A topic's level (autoLevel.js) on its button. */
+.topic-level {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #5c4300;
+  font: 700 12px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}

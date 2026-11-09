@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom';
 import { ClockFace } from './icons.jsx';
-import TopicVisual from './TopicVisual.jsx';
+import TopicVisual, { PatternShape } from './TopicVisual.jsx';
 import { RichText } from './Drawings.jsx';
 
 // A printable worksheet: numbered problems in two columns with room to
@@ -65,7 +65,7 @@ function Problem({ problem }) {
             Circle one:
             {problem.choices.map((c) => (
               <span key={c} className="ws-choice">
-                {c}
+                {problem.choiceKind === 'pshape' ? <PatternShape id={c} color={problem.shapeColor} size={30} /> : c}
               </span>
             ))}
           </span>

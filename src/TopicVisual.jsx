@@ -119,10 +119,11 @@ function LShape({ w, h, cw, ch }) {
   );
 }
 
-function Grid({ cols, rows, cells }) {
+function Grid({ cols, rows, cells, outline }) {
   const s = 30;
   return (
-    <svg viewBox={`0 0 ${cols * s + 4} ${rows * s + 4}`} className="tv-svg tv-svg-shape" role="img" aria-label="Squares on a grid">
+    <svg viewBox={`0 0 ${cols * s + 4} ${rows * s + 4}`} className={`tv-svg tv-svg-shape${outline && cols > 4 ? ' tv-svg-big' : ''}`} role="img" aria-label="Squares on a grid">
+
       {Array.from({ length: cols * rows }, (_, i) => (
         <rect
           key={i}
@@ -135,6 +136,62 @@ function Grid({ cols, rows, cells }) {
           strokeWidth="1.5"
         />
       ))}
+      {outline && <rect x="2" y="2" width={cols * s} height={rows * s} fill="none" stroke="#e0577f" strokeWidth="4" />}
+    </svg>
+  );
+}
+
+// Beast Academy's sum grid: 10 over each column, 20 by each row.
+function SumGrid({ cells }) {
+  const s = 46;
+  const x0 = 40;
+  const y0 = 30;
+  return (
+    <svg viewBox={`0 0 ${x0 + 4 * s + 6} ${y0 + 2 * s + 6}`} className="tv-svg tv-svg-shape" role="img" aria-label="Sum grid">
+      {[0, 1, 2, 3].map((c) => (
+        <text key={c} x={x0 + c * s + s / 2} y={22} textAnchor="middle" fontSize="18" fontWeight="700" fill="#8e4fd6">10</text>
+      ))}
+      {[0, 1].map((r) => (
+        <text key={r} x={x0 - 8} y={y0 + r * s + s / 2 + 6} textAnchor="end" fontSize="18" fontWeight="700" fill="#e0577f">20</text>
+      ))}
+      {cells.map((row, r) =>
+        row.map((v, c) => (
+          <g key={`${r}-${c}`}>
+            <rect x={x0 + c * s} y={y0 + r * s} width={s} height={s} fill={v === '?' ? '#fff4cc' : '#fff'} stroke={INK} strokeWidth="2" />
+            <text x={x0 + c * s + s / 2} y={y0 + r * s + s / 2 + 8} textAnchor="middle" fontSize="24" fontWeight="700" fill={v === '?' ? '#c26a00' : INK}>
+              {v}
+            </text>
+          </g>
+        )),
+      )}
+    </svg>
+  );
+}
+
+// One shape of a pattern (topics.js shapePattern): "triangle:90:1" is a
+// triangle turned a quarter turn, empty inside.
+const PSHAPE_PATHS = {
+  triangle: <path d="M50 12 L90 84 L10 84 Z" />,
+  square: <rect x="16" y="16" width="68" height="68" />,
+  diamond: <path d="M50 8 L88 50 L50 92 L12 50 Z" />,
+  hexagon: <path d="M28 12 H72 L94 50 L72 88 H28 L6 50 Z" />,
+  circle: <circle cx="50" cy="50" r="38" />,
+  pentagon: <path d="M50 8 L92 40 L76 90 H24 L8 40 Z" />,
+  arrow: <path d="M50 8 L88 48 H64 V92 H36 V48 H12 Z" />,
+};
+export function PatternShape({ id, color, size = 44 }) {
+  const [shape, turn, empty] = id.split(':');
+  return (
+    <svg viewBox="-6 -6 112 112" width={size} height={size} aria-hidden="true">
+      <g
+        transform={`rotate(${turn || 0} 50 50)`}
+        fill={empty === '1' ? '#fff' : color}
+        stroke={color}
+        strokeWidth="8"
+        strokeLinejoin="round"
+      >
+        {PSHAPE_PATHS[shape]}
+      </g>
     </svg>
   );
 }
@@ -658,10 +715,27 @@ export default function TopicVisual({ v }) {
           <LShape w={v.w} h={v.h} cw={v.cw} ch={v.ch} />
         </Panel>
       );
+    case 'sumGrid':
+      return (
+        <Panel>
+          <SumGrid cells={v.cells} />
+        </Panel>
+      );
+    case 'shapeRow':
+      return (
+        <Panel wide>
+          <span className="tv-shape-row">
+            {v.items.map((id, i) => (
+              <PatternShape key={i} id={id} color={v.color} size={v.items.length > 8 ? 34 : 42} />
+            ))}
+            <span className="tv-shape-next">?</span>
+          </span>
+        </Panel>
+      );
     case 'grid':
       return (
         <Panel>
-          <Grid cols={v.cols} rows={v.rows} cells={v.cells} />
+          <Grid cols={v.cols} rows={v.rows} cells={v.cells} outline={v.outline} />
         </Panel>
       );
     case 'angle':

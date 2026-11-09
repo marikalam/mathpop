@@ -29,6 +29,7 @@ export const TOPIC_ICONS = {
   ordinal: 'medal', addStrategy: 'tenframe', equalGroups: 'cookie', sharing: 'share', ruler: 'ruler', money: 'coin',
   shapeSides: 'octagon', position: 'grid', pictureGraph: 'chart', oddEven: 'pairs', subStrategy: 'brain',
   add100: 'plus', numberLineAdd: 'arrow', hundredChart: 'hundred',
+  sumGrid: 'grid', shapePattern: 'pattern', gridSquares: 'grid', tensOnes: 'blocks', howManyMore: 'scale',
   regroup: 'blocks', missingDigit: 'question', fractionPicture: 'pizza', fraction: 'pizza', compareFractions: 'scale',
   measurement: 'ruler', massVolume: 'scale', duration: 'clock', expression: 'abacus', riddle: 'zoom',
   shortcut: 'bolt', estimate: 'target', remainder: 'candy', squares: 'grid', distributive: 'scissors',
@@ -118,6 +119,8 @@ const SECTIONS = {
         t('addStrategy', 'Make a Ten', 'Doubles & tens', 'P1 · BA 1B'),
         t('add', 'Addition', 'Within 100', 'P1 · BA 1B'),
         t('subtract', 'Subtraction', 'Within 100', 'P1 · BA 1B'),
+        t('tensOnes', 'Tens & Ones Adding', '45 + 32 = 70 + 7', 'BA 1C'),
+        t('howManyMore', 'How Many More?', 'Find the difference', 'P1 · BA 1C'),
         t('sentence', 'Word Problems', 'Math in a story', 'P1'),
       ],
     },
@@ -146,7 +149,6 @@ const SECTIONS = {
       sub: 'Sides, patterns, grids',
       topics: [
         t('shapeSides', 'Sides & Corners', 'Name the shape', 'P1 · BA 1A'),
-        t('pattern', 'Patterns', 'What comes next?', 'P1 · BA 1C'),
         t('position', 'Rows & Columns', 'Where is it?', 'BA 1D'),
       ],
     },
@@ -155,6 +157,16 @@ const SECTIONS = {
       title: 'Graphs',
       sub: 'Picture graphs',
       topics: [t('pictureGraph', 'Picture Graphs', 'Read the graph', 'P1 · BA 1B')],
+    },
+    {
+      id: 'puzzles',
+      title: 'Puzzles',
+      sub: 'Beast Academy brain teasers',
+      topics: [
+        t('sumGrid', 'Sum Grids', 'Columns 10, rows 20', 'BA 1B'),
+        t('shapePattern', 'Pattern Puzzles', 'What comes next?', 'P1 · BA 1C'),
+        t('gridSquares', 'Perfect Squares', 'Count the squares', 'BA 1B'),
+      ],
     },
   ],
   2: [

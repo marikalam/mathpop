@@ -2737,7 +2737,261 @@ function hundredChartProblem() {
   };
 }
 
+// ---- Beast Academy 1 puzzles ----
+// `tier` ('easy' | 'medium' | 'hard') is the player's level in the topic
+// (autoLevel.js), so each puzzle gets harder as they get good at it.
+const harder = (tier) => (tier === 'hard' ? 2 : tier === 'medium' ? 1 : 0);
+
+// Sum grids (BA 1B): the two numbers in each column add up to 10 and the
+// four in each row add up to 20. One box has a "?".
+function sumGridProblem(tier) {
+  const step = harder(tier);
+  let top;
+  for (;;) {
+    top = [randInt(0, 10), randInt(0, 10), randInt(0, 10)];
+    const last = 20 - top[0] - top[1] - top[2];
+    if (last >= 0 && last <= 10) {
+      top.push(last);
+      break;
+    }
+  }
+  const rows = [top, top.map((n) => 10 - n)];
+  const r = randInt(0, 1);
+  const c = randInt(0, 3);
+  const cells = rows.map((row) => row.map(String));
+  const answer = rows[r][c];
+  const other = 1 - r;
+  const rowWord = r ? 'bottom' : 'top';
+  let explain;
+  if (step === 0) {
+    // The number under (or over) it is there: think of the column.
+    cells[r][c] = '?';
+    const rest = [0, 1, 2, 3].filter((x) => x !== c);
+    for (const x of shuffle(rest).slice(0, 2)) cells[randInt(0, 1)][x] = '';
+    explain = [
+      'Each column adds up to 10.',
+      `The other number in the ? column is ${rows[other][c]}.`,
+      `${rows[other][c]} plus what makes 10?`,
+    ];
+  } else if (step === 1) {
+    // Its column is empty, so use the row: the other three are there.
+    cells[r][c] = '?';
+    cells[other][c] = '';
+    const others = [0, 1, 2, 3].filter((x) => x !== c).map((x) => rows[r][x]);
+    const sum = others.reduce((a, b) => a + b, 0);
+    explain = [
+      'The ? column has no other number, so look at the row.',
+      `Each row adds up to 20. The ${rowWord} row has ${others.join(', ')}.`,
+      `${others.join(' + ')} = ${sum}.`,
+      `${sum} plus what makes 20?`,
+    ];
+  } else {
+    // Two steps: fill another box from its column, then use the row.
+    cells[r][c] = '?';
+    cells[other][c] = '';
+    const d = shuffle([0, 1, 2, 3].filter((x) => x !== c))[0];
+    cells[r][d] = '';
+    const others = [0, 1, 2, 3].filter((x) => x !== c).map((x) => rows[r][x]);
+    const sum = others.reduce((a, b) => a + b, 0);
+    explain = [
+      `First fill the empty box in the ${rowWord} row. Its column adds up to 10: 10 − ${rows[other][d]} = ${rows[r][d]}.`,
+      `Now the ${rowWord} row has ${others.join(', ')} and the ?.`,
+      `${others.join(' + ')} = ${sum}.`,
+      `Each row adds up to 20. ${sum} plus what makes 20?`,
+    ];
+  }
+  const prompt = 'What number goes in the ? box?';
+  return {
+    visual: { kind: 'sumGrid', cells },
+    prompt,
+    speech: 'In this sum grid, each column adds up to 10 and each row adds up to 20. What number goes in the box with the question mark?',
+    correct: answer,
+    answerType: 'numeric',
+    answerLabel: `The ? is ${answer}`,
+    explain,
+    questionTitle: 'Sum grid',
+  };
+}
+
+// Squares on a grid (BA 1B): how many small squares make the big one?
+// 1, 4, 9, 16... the perfect squares.
+function gridSquaresProblem(tier) {
+  const step = harder(tier);
+  const n = step === 0 ? randInt(2, 4) : step === 1 ? randInt(4, 7) : randInt(6, 10);
+  const rect = step === 1 && Math.random() < 0.35;
+  const cols = n;
+  const rows = rect ? n + (Math.random() < 0.5 ? -1 : 1) : n;
+  const correct = cols * rows;
+  const name = rect ? `${rows}-by-${cols} rectangle` : `${n}-by-${n} square`;
+  return {
+    visual: { kind: 'grid', cols, rows, cells: [], outline: true },
+    prompt: `How many small squares are inside this ${name}?`,
+    speech: `How many small squares are inside this ${rect ? `${rows} by ${cols} rectangle` : `${n} by ${n} square`}?`,
+    correct,
+    answerType: 'numeric',
+    answerLabel: `${rows} rows of ${cols} make ${correct}`,
+    explain: [
+      `Count the rows. There ${rows === 1 ? 'is 1 row' : `are ${rows} rows`}.`,
+      `Each row has ${cols} small squares.`,
+      rows <= 5 ? `Count by ${cols}s, one row at a time: ${Array.from({ length: rows }, (_, i) => cols * (i + 1)).slice(0, -1).join(', ')}, and then?` : `${rows - 1} rows make ${cols * (rows - 1)}. Add one more row of ${cols}. What do you get?`,
+    ],
+    questionTitle: rect ? 'Squares in a rectangle' : 'Perfect squares',
+  };
+}
+
+// Shape patterns (BA 1C): what comes next? Easy: shapes that take turns.
+// Medium: one shape turning around. Hard: the shape and the filling
+// each have their own pattern.
+const PSHAPES = ['triangle', 'square', 'diamond', 'hexagon', 'circle', 'pentagon'];
+const PSHAPE_COLORS = ['#8e4fd6', '#e5484d', '#2f7fe0', '#e0a100', '#2fae6b', '#e0577f'];
+const TURN_WORDS = { 0: 'pointing up', 90: 'pointing right', 180: 'pointing down', 270: 'pointing left' };
+const pkey = (s, r = 0, h = false) => `${s}:${r}:${h ? 1 : 0}`;
+export function pshapeName(key) {
+  const [s, r, h] = key.split(':');
+  const turn = s === 'triangle' || s === 'arrow' ? ` ${TURN_WORDS[r]}` : '';
+  return `${h === '1' ? 'an empty' : 'a filled'} ${s}${turn}`;
+}
+
+function shapePatternProblem(tier) {
+  const step = harder(tier);
+  const color = pick(PSHAPE_COLORS);
+  let seq;
+  let rule;
+  let wrong;
+  if (step === 0) {
+    const kind = pick([[0, 1], [0, 1, 2], [0, 0, 1], [0, 1, 1], [0, 1, 2]]);
+    const shapes = shuffle(PSHAPES).slice(0, 4);
+    const len = kind.length * 2 + randInt(1, kind.length);
+    seq = Array.from({ length: len + 1 }, (_, i) => pkey(shapes[kind[i % kind.length]]));
+    rule = `The shapes go ${kind.map((k) => shapes[k]).join(', ')}, then start again.`;
+    wrong = shapes.map((x) => pkey(x));
+  } else if (step === 1) {
+    const s = pick(['triangle', 'arrow']);
+    const turn = pick([90, 90, 180, 270]);
+    const start = pick([0, 90, 180, 270]);
+    const len = randInt(5, 8);
+    seq = Array.from({ length: len + 1 }, (_, i) => pkey(s, (start + i * turn) % 360));
+    rule = `The ${s} turns ${turn === 180 ? 'a half turn' : turn === 90 ? 'a quarter turn to the right' : 'a quarter turn to the left'} each time.`;
+    wrong = [0, 90, 180, 270].map((r) => pkey(s, r));
+  } else {
+    const shapes = shuffle(PSHAPES).slice(0, 3);
+    const fills = pick([[false, true], [true, false], [false, false, true]]);
+    const len = randInt(7, 10);
+    seq = Array.from({ length: len + 1 }, (_, i) => pkey(shapes[i % 3], 0, fills[i % fills.length]));
+    rule = `Two patterns at once! The shapes go ${shapes.join(', ')}. The filling goes ${fills.map((f) => (f ? 'empty' : 'filled')).join(', ')}.`;
+    wrong = shapes.flatMap((x) => [pkey(x, 0, false), pkey(x, 0, true)]);
+  }
+  const correct = seq.pop();
+  const choices = shuffle([correct, ...shuffle([...new Set(wrong)].filter((w) => w !== correct)).slice(0, 3)]);
+  return {
+    visual: { kind: 'shapeRow', items: seq, color },
+    prompt: 'What comes next?',
+    speech: 'Look at the pattern. What comes next?',
+    correct,
+    answerType: 'choice',
+    choiceKind: 'pshape',
+    shapeColor: color,
+    choices,
+    choiceNames: Object.fromEntries(choices.map((c) => [c, pshapeName(c)])),
+    answerLabel: `Next comes ${pshapeName(correct)}`,
+    explain: [rule, 'Point to each one and say it out loud.', 'Keep the pattern going. What comes next?'],
+    explainAnswer: `Next comes ${pshapeName(correct)}!`,
+    questionTitle: 'What comes next?',
+  };
+}
+
+// Tens and ones (BA 1C): 45 + 32 = 70 + 7 = 77. Add the tens, add the
+// ones, then put them together. One box is the "?".
+function tensOnesProblem(tier) {
+  const step = harder(tier);
+  let a;
+  let b;
+  for (let i = 0; i < 80; i++) {
+    a = randInt(11, 78);
+    b = randInt(11, 99 - a);
+    const carry = (a % 10) + (b % 10) >= 10;
+    if (a % 10 && b % 10 && carry === (step === 2)) break;
+  }
+  const tens = Math.floor(a / 10) * 10 + Math.floor(b / 10) * 10;
+  const ones = (a % 10) + (b % 10);
+  const total = a + b;
+  const ask = step === 0 ? 'total' : pick(['tens', 'ones', 'total']);
+  const box = (k, v) => (ask === k ? '?' : String(v));
+  const prompt = `${a} + ${b} = ${box('tens', tens)} + ${box('ones', ones)} = ${box('total', total)}`;
+  const correct = ask === 'tens' ? tens : ask === 'ones' ? ones : total;
+  return {
+    prompt,
+    speech: `${a} plus ${b}. Add the tens, then the ones. What number goes in the box with the question mark?`,
+    correct,
+    answerType: 'numeric',
+    answerLabel: `${a} + ${b} = ${tens} + ${ones} = ${total}`,
+    explain: [
+      `Break them into tens and ones: ${a} is ${Math.floor(a / 10) * 10} and ${a % 10}. ${b} is ${Math.floor(b / 10) * 10} and ${b % 10}.`,
+      `The tens: ${Math.floor(a / 10) * 10} + ${Math.floor(b / 10) * 10} = ${ask === 'tens' ? '?' : tens}.`,
+      `The ones: ${a % 10} + ${b % 10} = ${ask === 'ones' ? '?' : ones}.`,
+      ask === 'total' ? `Put them together: ${tens} + ${ones} = ?` : 'Which number goes in the ? box?',
+    ],
+    questionTitle: 'Tens and ones',
+  };
+}
+
+// How many more? (BA 1C: equal differences). Tip: add the same to both
+// numbers to make the smaller one a ten, and the difference stays the same.
+function howManyMoreProblem(tier) {
+  const step = harder(tier);
+  let small;
+  let big;
+  if (step === 0) {
+    big = randInt(8, 20);
+    small = randInt(2, big - 2);
+  } else {
+    for (let i = 0; i < 80; i++) {
+      small = randInt(12, 70);
+      big = randInt(small + 5, 99);
+      const borrow = big % 10 < small % 10;
+      if (small % 10 && borrow === (step === 2)) break;
+    }
+  }
+  const diff = big - small;
+  const [p, q] = storyNames(2);
+  const kind = pick(step === 2 ? ['age', 'pages', 'money', 'lesson', 'plain'] : ['age', 'peas', 'pages', 'money', 'plain']);
+  const stories = {
+    age: [`${p} is ${small}. ${q} is ${big}. How many years older is ${q} than ${p}?`, 'years'],
+    peas: [`${p} has ${small} peas. ${q} has ${big} peas. How many more peas does ${q} have than ${p}?`, 'peas'],
+    pages: [`${p} and ${q} are reading the same book. ${p} is on page ${small} and ${q} is on page ${big}. How many more pages has ${q} read?`, 'pages'],
+    money: [`${q} has ${big} dollars. ${p} has ${small} dollars. How many more dollars does ${q} have than ${p}?`, 'dollars'],
+    lesson: [`${p}'s piano lesson starts in ${small} minutes and ends in ${big} minutes. How long is the lesson?`, 'minutes'],
+    plain: [`${big} − ${small} = ?`, ''],
+  };
+  const [prompt, unit] = stories[kind];
+  const up = small % 10 ? 10 - (small % 10) : 0;
+  const explain = [
+    kind === 'plain' ? 'The numbers are close, so find the difference: how far apart are they?' : `To find how many more, find the difference: ${big} − ${small}.`,
+    ...(up && step > 0
+      ? [
+          `Trick: add ${up} to both numbers. The difference stays the same!`,
+          `${small} + ${up} = ${small + up}, and ${big} + ${up} = ${big + up}.`,
+          `So what is ${big + up} − ${small + up}?`,
+        ]
+      : [`Count up from ${small} to ${big}. How many is that?`]),
+  ];
+  return {
+    prompt,
+    speech: kind === 'plain' ? `${big} minus ${small} equals what?` : prompt,
+    correct: diff,
+    answerType: 'numeric',
+    answerLabel: `${big} − ${small} = ${diff}${unit ? ` ${unit}` : ''}`,
+    explain,
+    questionTitle: 'How many more?',
+  };
+}
+
 export const TOPIC_BUILDERS = {
+  sumGrid: sumGridProblem,
+  gridSquares: gridSquaresProblem,
+  shapePattern: shapePatternProblem,
+  tensOnes: tensOnesProblem,
+  howManyMore: howManyMoreProblem,
   add100: add100Problem,
   numberLineAdd: numberLineAddProblem,
   hundredChart: hundredChartProblem,
