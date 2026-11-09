@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import LevelSwitcher from './LevelSwitcher.jsx';
 import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
-import { getVoiceQuality, languagesWithVoices, playFeedbackAndSpeak, playLogoSound, playStickerPick, prewarmVoices, speakInLanguage, speakProblem, speakResults, unlockAudio } from './sound.js';
+import { getVoiceQuality, languagesWithVoices, playFeedbackAndSpeak, playLogoSound, playStickerPick, prewarmVoices, speakInLanguage, speakProblem, speakResults, unlockAudio, stopSpeaking } from './sound.js';
 import Pip from './Pip.jsx';
 import TapBoard from './TapBoards.jsx';
 import PipCloset from './PipCloset.jsx';
@@ -38,6 +38,7 @@ import { PlayButton } from './TodayPlan.jsx';
 import { assignedTopics, clearMistake, dayKey, loadMistakes, mistakeRound, recordMistake, recordRound, streakDays, weekSummary } from './todayPlan.js';
 import { pathRound, pathStatus, recordPathAnswer } from './myPath.js';
 import { hasLevels, recordLevelAnswer, topicLevel } from './autoLevel.js';
+import { markTaught, recordTeachAnswer, teachKind } from './learnFirst.js';
 import LogoMark from './LogoMark.jsx';
 import { AccountButton, AccountScreen, AddPlayerForm, PlayerSettingsCard, SyncStatus } from './Account.jsx';
 import {
@@ -1224,6 +1225,9 @@ export default function App() {
   // The help under an addition problem, open or not (closes on each new one).
   const [showHelp, setShowHelp] = useState(false);
   useEffect(() => setShowHelp(false), [problem]);
+  // "Learn it first" (learnFirst.js): a new topic, or one got wrong twice in
+  // a row, is explained before it's answered: 'new' | 'again' | null.
+  const [teach, setTeach] = useState(null);
 
   const [exploreSession, setExploreSession] = useState(loadExploreSession);
   const [explorePlayed, setExplorePlayed] = useState(null);
@@ -1247,8 +1251,25 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (view === 'question' && problem && problem.type !== 'sentence') speakProblem(problem);
+    if (view !== 'question' || !problem) return;
+    // Not for the toddler games (they're shown, not explained) or a problem
+    // already tried once.
+    const kind = gradeInfo(level).id !== 'p' && !problem.toddler && firstAttempt ? teachKind(currentProfile.id, problem.op, playerProgress) : null;
+    setTeach(kind);
+    if (kind) {
+      markTaught(currentProfile.id, problem.op);
+      return;
+    }
+    if (problem.type !== 'sentence') speakProblem(problem);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, problem]);
+
+  // Done learning (or skipped): now the question, read out as usual.
+  function endTeach() {
+    stopSpeaking();
+    setTeach(null);
+    if (problem && problem.type !== 'sentence') speakProblem(problem);
+  }
 
   useEffect(() => {
     if (view === 'complete') speakResults(sessionCorrect, SESSION_ROUNDS, problem?.lang);
@@ -1540,6 +1561,7 @@ export default function App() {
       if (correct) clearMistake(currentProfile.id, problem);
       else recordMistake(currentProfile.id, grade, problem);
       recordPathAnswer(currentProfile.id, grade, problem.op, correct);
+      recordTeachAnswer(currentProfile.id, problem.op, correct);
       if (operation !== 'path' && operation !== 'mistakes') {
         const moved = recordLevelAnswer(currentProfile.id, level, problem.op, correct);
         if (moved === 'up') levelMoves.current = [...levelMoves.current.filter((t) => t !== problem.op), problem.op];
@@ -2280,7 +2302,23 @@ export default function App() {
                 adding up to two digits, the make-a-ten blocks show too.
                 It sits above the problem, away from the answer buttons at
                 the bottom, so it isn't tapped by mistake when answering. */}
-            {showHelp && (
+            {teach && (
+              <ExplainPanel
+                problem={problem}
+                title={teach === 'new' ? tr("New! Let's learn it", 'あたらしい もんだい！') : tr("Let's go over it together", 'いっしょに やってみよう')}
+                onClose={endTeach}
+              >
+                <div className="teach-actions">
+                  <button className="pill-btn-primary pill-btn-full" onClick={endTeach}>
+                    {tr('Got it! Let me try', 'わかった！ やってみる')}
+                  </button>
+                  <button className="back-link back-link-center" onClick={endTeach}>
+                    {tr('Skip', 'スキップ')}
+                  </button>
+                </div>
+              </ExplainPanel>
+            )}
+            {showHelp && !teach && (
               <ExplainPanel problem={problem} onClose={() => setShowHelp(false)}>
                 {problem.op === 'add' && problem.type !== 'sentence' && problem.type !== 'skill' && problem.a < 100 && problem.b < 100 && (
                   <AdditionHelp a={problem.a} b={problem.b} bare />
@@ -2400,6 +2438,7 @@ export default function App() {
 
             {/* Toddler "listen and pick" games: the answers are the big part. */}
             <div
+              style={teach ? { display: 'none' } : undefined}
               className={`answer-area${problem.toddler && problem.promptKind === 'say' ? ' answer-area-fill' : ''}${
                 answerFor(currentProfile.id) === 'write' && problem.type !== 'clock' && problem.answerType !== 'choice' ? ' answer-area-write' : ''
               }`}

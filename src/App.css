@@ -7555,3 +7555,11 @@ body {
   color: #5c4300;
   font: 700 12px 'Fredoka', ui-rounded, system-ui, sans-serif;
 }
+/* "Learn it first" (learnFirst.js): the buttons under the explanation. */
+.teach-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-top: 12px;
+}
