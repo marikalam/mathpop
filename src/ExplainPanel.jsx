@@ -9,7 +9,7 @@ import { RichText } from './Drawings.jsx';
 // one step at a time, lighting up each step on screen as it's said (for
 // kids who can't read yet, the voice is the main thing). `withAnswer`
 // (after a wrong try) finishes with the answer.
-export default function ExplainPanel({ problem, withAnswer = false, onClose, children }) {
+export default function ExplainPanel({ problem, withAnswer = false, onClose, title, children }) {
   const steps = explainSteps(problem, withAnswer);
   const ja = problem.lang === 'ja';
   const [current, setCurrent] = useState(-1);
@@ -44,7 +44,7 @@ export default function ExplainPanel({ problem, withAnswer = false, onClose, chi
         <span className={`explain-speaker${playing ? ' explain-speaker-on' : ''}`} aria-hidden="true">
           <Icon name="hand" />
         </span>
-        <h3 className="explain-title">{ja ? 'いっしょに やってみよう！' : 'Let me show you!'}</h3>
+        <h3 className="explain-title">{title || (ja ? 'いっしょに やってみよう！' : 'Let me show you!')}</h3>
         <button className="explain-close" onClick={onClose} aria-label="Close">
           <Icon name="cross" size="0.8em" />
         </button>
