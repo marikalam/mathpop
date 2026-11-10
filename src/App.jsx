@@ -1939,7 +1939,6 @@ export default function App() {
                 recordRound(currentProfile.id, 'madminute', gradeInfo(level).id, right, Math.max(1, total));
                 statRoundDone({ grade: gradeInfo(level).id, topic: 'madminute', lang: 'en', correct: right, total: Math.max(1, total) });
               }}
-              onAgain={() => setMadKey((k) => k + 1)}
               stickerSlot={
                 <p className="star-earned">
                   +1 <span className="closet-star">★</span> · {stickerCount(currentProfile.id)} {stickerCount(currentProfile.id) === 1 ? 'star' : 'stars'}
