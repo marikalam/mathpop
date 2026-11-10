@@ -490,6 +490,8 @@ export function gradeSection(grade, id) {
 }
 
 // Every topic a grade practises, for Random Mix.
+// (Japanese Math is its own pick, shown in Japanese mode, so it isn't
+// mixed in.)
 export function gradeTopics(grade) {
-  return [...new Set(gradeSections(grade).flatMap((s) => s.topics.map((x) => x.id)))];
+  return [...new Set(gradeSections(grade).filter((s) => s.id !== 'japanese').flatMap((s) => s.topics.map((x) => x.id)))];
 }
