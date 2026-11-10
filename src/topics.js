@@ -6,6 +6,7 @@
 // TopicVisual.jsx (plain data, so worksheets can tell problems apart).
 
 import { playerName, storyName, storyNames } from './storyNames.js';
+import { JAPANESE_BUILDERS } from './japanese.js';
 
 // "Melody, what is this shape called?": asked by the player's name (when
 // they have one), on screen and out loud. callName: false so the voice
@@ -2987,6 +2988,7 @@ function howManyMoreProblem(tier) {
 }
 
 export const TOPIC_BUILDERS = {
+  ...JAPANESE_BUILDERS,
   sumGrid: sumGridProblem,
   gridSquares: gridSquaresProblem,
   shapePattern: shapePatternProblem,

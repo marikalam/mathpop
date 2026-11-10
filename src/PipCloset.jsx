@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react';
 import Pip from './Pip.jsx';
 import { CLOSET_ITEMS, CLOSET_KINDS, anItem, closetFor, nextItem, rememberUnlocks, stickerCount, tryOn, unlockedSet } from './pipCloset.js';
-import { playCorrectChime, playStickerPick, speak } from './sound.js';
+import { playCorrectChime, playStickerPick, speak, speakInLanguage } from './sound.js';
 
 // Pip's Closet (pipCloset.js): hats, glasses and capes for Pip that unlock
 // as the player earns stars. Tap one that's unlocked to put
 // it on (tap again to take it off); the first time, Pip cheers. A locked
 // one says how many more stars it needs.
-export default function PipCloset({ playerId }) {
+export default function PipCloset({ playerId, lang = 'en' }) {
+  // Japanese (the player's language is 日本語): words, item names and voice.
+  const ja = lang === 'ja';
+  const say = (text) => (ja ? speakInLanguage(text, 'ja-JP') : speak(text));
+  const nameOf = (item) => (ja ? item.ja : item.name);
   const [closet, setCloset] = useState(() => closetFor(playerId));
   const [count, setCount] = useState(() => stickerCount(playerId));
   const [kind, setKind] = useState('hat');
@@ -38,25 +42,29 @@ export default function PipCloset({ playerId }) {
       if (isNew) {
         playCorrectChime();
         setCheer((n) => n + 1);
-        setNote(`Ta-da! My new ${item.name}!`);
-        speak(`Ta-da! My new ${item.name}!`);
+        const line = ja ? `じゃーん！ あたらしい ${item.ja}！` : `Ta-da! My new ${item.name}!`;
+        setNote(line);
+        say(line);
       } else {
         playStickerPick();
         const on = after.wear[item.kind] === item.id;
-        setNote(on ? `Do you like my ${item.name}?` : null);
-        if (on) speak(`Do you like my ${item.name}?`);
+        const line = ja ? `${item.ja}、にあう？` : `Do you like my ${item.name}?`;
+        setNote(on ? line : null);
+        if (on) say(line);
       }
       return;
     }
     const more = item.need - count;
-    const line = `${more} more ${more === 1 ? 'star' : 'stars'} for ${anItem(item.name)}. Finish a round to get a star!`;
+    const line = ja
+      ? `あと ほし ${more}こで ${item.ja}！ 1かい おわると ほしが 1こ もらえるよ。`
+      : `${more} more ${more === 1 ? 'star' : 'stars'} for ${anItem(item.name)}. Finish a round to get a star!`;
     setNote(line);
-    speak(line);
+    say(line);
   }
 
   return (
     <div className="closet">
-      <div className="closet-stars" aria-label={`${count} stars`}>
+      <div className="closet-stars" aria-label={ja ? `ほし ${count}こ` : `${count} stars`}>
         <span className="closet-star">★</span> {count}
       </div>
       <div className="closet-stage">
@@ -66,7 +74,7 @@ export default function PipCloset({ playerId }) {
         </span>
       </div>
       <div className="closet-tabs" role="tablist">
-        {CLOSET_KINDS.map(([id, label]) => (
+        {CLOSET_KINDS.map(([id, label, jaLabel]) => (
           <button
             key={id}
             type="button"
@@ -75,7 +83,7 @@ export default function PipCloset({ playerId }) {
             className={`closet-tab${kind === id ? ' closet-tab-on' : ''}`}
             onClick={() => setKind(id)}
           >
-            {label}
+            {ja ? jaLabel : label}
           </button>
         ))}
       </div>
@@ -89,7 +97,7 @@ export default function PipCloset({ playerId }) {
               type="button"
               className={`closet-item${on ? ' closet-item-on' : ''}${isOpen ? (unseen.has(item.id) ? ' closet-item-ready' : '') : ' closet-item-locked'}`}
               onClick={() => tap(item)}
-              aria-label={isOpen ? `${item.name}${on ? ', wearing' : ''}` : `${item.name}, unlocks at ${item.need} stars`}
+              aria-label={isOpen ? `${nameOf(item)}${on ? (ja ? '、きている' : ', wearing') : ''}` : ja ? `${item.ja}、ほし ${item.need}こ` : `${item.name}, unlocks at ${item.need} stars`}
             >
               <Pip size={62} wear={{ [item.kind]: item.id }} />
               {!isOpen && (
@@ -97,7 +105,7 @@ export default function PipCloset({ playerId }) {
                   <span className="closet-star">★</span> {item.need}
                 </span>
               )}
-              {isOpen && unseen.has(item.id) && <span className="closet-new">NEW</span>}
+              {isOpen && unseen.has(item.id) && <span className="closet-new">{ja ? 'あたらしい' : 'NEW'}</span>}
             </button>
           );
         })}
@@ -108,7 +116,9 @@ export default function PipCloset({ playerId }) {
             <i style={{ width: `${Math.min(100, (count / next.need) * 100)}%` }} />
           </div>
           <span>
-            {next.need - count} more {next.need - count === 1 ? 'star' : 'stars'} for {anItem(next.name)}. Every round you finish gets a star!
+            {ja
+              ? `あと ほし ${next.need - count}こで ${next.ja}！ 1かい おわるごとに ほしが 1こ もらえるよ。`
+              : `${next.need - count} more ${next.need - count === 1 ? 'star' : 'stars'} for ${anItem(next.name)}. Every round you finish gets a star!`}
           </span>
         </div>
       )}

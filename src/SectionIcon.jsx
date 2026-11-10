@@ -107,6 +107,16 @@ const DRAWINGS = {
       </text>
     </g>
   ),
+  japanese: (
+    <g>
+      {/* A card with the rising sun and あ. */}
+      <rect x="6" y="6" width="52" height="36" rx="8" fill={W} />
+      <circle cx="22" cy="24" r="9" fill="#d63c55" />
+      <text x="44" y="32" {...FONT} fontSize="20" fill="#d63c55">
+        あ
+      </text>
+    </g>
+  ),
   explore: (
     <g>
       {/* A speech bubble saying the numbers: hear them out loud. */}

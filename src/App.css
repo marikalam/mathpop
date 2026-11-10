@@ -7563,3 +7563,18 @@ body {
   gap: 6px;
   margin-top: 12px;
 }
+/* Japanese Math: line breaks in a question, and romaji under kana answers. */
+.problem-text {
+  white-space: pre-line;
+}
+.kana-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+.kana-choice small {
+  font-size: 0.5em;
+  opacity: 0.75;
+  margin-top: 2px;
+}

@@ -19,6 +19,7 @@ const SECTION_STYLE = {
   shapes: { icon: 'shapes', short: 'Shapes', from: '#e0577f', to: '#c43c66' },
   data: { icon: 'chart', short: 'Graphs', from: '#f0954f', to: '#e0793a' },
   puzzles: { icon: 'brain', short: 'Puzzles', from: '#8e4fd6', to: '#6f35b8' },
+  japanese: { icon: 'flagJP', short: 'Japanese Math', from: '#f2667a', to: '#d63c55' },
 };
 
 // Each topic's picture on its card.
@@ -29,6 +30,7 @@ export const TOPIC_ICONS = {
   ordinal: 'medal', addStrategy: 'tenframe', equalGroups: 'cookie', sharing: 'share', ruler: 'ruler', money: 'coin',
   shapeSides: 'octagon', position: 'grid', pictureGraph: 'chart', oddEven: 'pairs', subStrategy: 'brain',
   add100: 'plus', numberLineAdd: 'arrow', hundredChart: 'hundred',
+  kuku: 'repeat', kanjiNumbers: 'pencil', counters: 'keypad', yenShop: 'coin',
   sumGrid: 'grid', shapePattern: 'pattern', gridSquares: 'grid', tensOnes: 'blocks', howManyMore: 'scale',
   regroup: 'blocks', missingDigit: 'question', fractionPicture: 'pizza', fraction: 'pizza', compareFractions: 'scale',
   measurement: 'ruler', massVolume: 'scale', duration: 'clock', expression: 'abacus', riddle: 'zoom',
@@ -94,6 +96,16 @@ const SECTIONS = {
         t('shapes', 'Shapes', 'Name the shape', 'K2 · BA 1A'),
         t('bigSmall', 'Big & Small', 'Compare sizes', 'K2'),
         t('pattern', 'Patterns', 'What comes next?', 'K2'),
+      ],
+    },
+    {
+      id: 'japanese',
+      title: 'Japanese Math',
+      sub: 'Numbers the Japanese way',
+      topics: [
+        t('kanjiNumbers', 'Kanji Numbers', '一 二 三', 'Japan'),
+        t('counters', 'Counting Words', 'さんびき, さんぼん', 'Japan'),
+        t('yenShop', 'Yen Shop', 'Shop with えん', 'Japan'),
       ],
     },
   ],
@@ -166,6 +178,16 @@ const SECTIONS = {
         t('sumGrid', 'Sum Grids', 'Columns 10, rows 20', 'BA 1B'),
         t('shapePattern', 'Pattern Puzzles', 'What comes next?', 'P1 · BA 1C'),
         t('gridSquares', 'Perfect Squares', 'Count the squares', 'BA 1B'),
+      ],
+    },
+    {
+      id: 'japanese',
+      title: 'Japanese Math',
+      sub: 'Numbers the Japanese way',
+      topics: [
+        t('kanjiNumbers', 'Kanji Numbers', '一 二 三', 'Japan'),
+        t('counters', 'Counting Words', 'さんびき, さんぼん', 'Japan'),
+        t('yenShop', 'Yen Shop', 'Shop with えん', 'Japan'),
       ],
     },
   ],
@@ -254,6 +276,17 @@ const SECTIONS = {
         t('shortcut', 'Smart Shortcuts', 'Spot what cancels', 'BA 2C'),
       ],
     },
+    {
+      id: 'japanese',
+      title: 'Japanese Math',
+      sub: 'Numbers the Japanese way',
+      topics: [
+        t('kuku', 'Kuku Times Tables', 'にさんがろく', 'Japan'),
+        t('kanjiNumbers', 'Kanji Numbers', '一 二 三', 'Japan'),
+        t('counters', 'Counting Words', 'さんびき, さんぼん', 'Japan'),
+        t('yenShop', 'Yen Shop', 'Shop with えん', 'Japan'),
+      ],
+    },
   ],
   3: [
     {
@@ -340,6 +373,17 @@ const SECTIONS = {
         t('riddle', 'Number Riddles', 'Use the clues', 'BA 3B'),
       ],
     },
+    {
+      id: 'japanese',
+      title: 'Japanese Math',
+      sub: 'Numbers the Japanese way',
+      topics: [
+        t('kuku', 'Kuku Times Tables', 'にさんがろく', 'Japan'),
+        t('kanjiNumbers', 'Kanji Numbers', '一 二 三', 'Japan'),
+        t('counters', 'Counting Words', 'さんびき, さんぼん', 'Japan'),
+        t('yenShop', 'Yen Shop', 'Shop with えん', 'Japan'),
+      ],
+    },
   ],
   4: [
     {
@@ -421,6 +465,17 @@ const SECTIONS = {
         t('counting', 'Counting', 'How many ways?', 'BA 4B'),
         t('probability', 'Probability', 'How likely?', 'BA 4D'),
         t('multistep', 'Multi-Step', 'Two-step stories', 'P4'),
+      ],
+    },
+    {
+      id: 'japanese',
+      title: 'Japanese Math',
+      sub: 'Numbers the Japanese way',
+      topics: [
+        t('kuku', 'Kuku Times Tables', 'にさんがろく', 'Japan'),
+        t('kanjiNumbers', 'Kanji Numbers', '一 二 三', 'Japan'),
+        t('counters', 'Counting Words', 'さんびき, さんぼん', 'Japan'),
+        t('yenShop', 'Yen Shop', 'Shop with えん', 'Japan'),
       ],
     },
   ],
