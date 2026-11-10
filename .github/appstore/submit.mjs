@@ -234,10 +234,18 @@ if (SCREENSHOTS === 'yes') {
   await new Promise((r) => setTimeout(r, 30000));
 }
 
-// Submit: reuse a submission that hasn't been sent yet, or start one.
+// Submit: reuse a submission that hasn't been sent yet, or one Apple sent
+// back (UNRESOLVED_ISSUES: a rejected version, resubmitted with the fix),
+// or start one.
 let submission = (
   await api('GET', `/v1/reviewSubmissions?filter[app]=${app.id}&filter[platform]=IOS&filter[state]=READY_FOR_REVIEW`)
 ).data[0];
+if (!submission) {
+  submission = (
+    await api('GET', `/v1/reviewSubmissions?filter[app]=${app.id}&filter[platform]=IOS&filter[state]=UNRESOLVED_ISSUES`)
+  ).data[0];
+  if (submission) console.log('Resubmitting the submission Apple sent back');
+}
 if (!submission) {
   submission = (
     await api('POST', '/v1/reviewSubmissions', {
