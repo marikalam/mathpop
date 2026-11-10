@@ -112,9 +112,12 @@ export async function refreshPlus(user) {
     // (renewals included).
     if (sub?.jwsRepresentation && user) verifyPlusPurchase(sub.jwsRepresentation);
     const paidUntil = family?.paidUntil && new Date(family.paidUntil) > new Date() ? family.paidUntil : sub?.expirationDate || null;
-    const founder = Boolean(
-      firstSeen < start || (app?.originalPurchaseDate && app.originalPurchaseDate.slice(0, 10) < start) || family?.founder,
-    );
+    // The App Store's first-download day only counts from the real App
+    // Store: on Apple's test devices (App Review, TestFlight) it's a made-up
+    // old date, which made App Review a founding family who never saw
+    // the subscription.
+    const realDownload = app?.environment === 'Production' && app?.originalPurchaseDate;
+    const founder = Boolean(firstSeen < start || (realDownload && app.originalPurchaseDate.slice(0, 10) < start) || family?.founder);
     // The 7-day free trial starts the first time MathPop opens on this
     // device, no account or email needed, so kids can play everything
     // straight away. Making a family account (signed in) starts it from
