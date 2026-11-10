@@ -18,7 +18,7 @@ const KEY = 'mathpop-topic-levels-v1';
 const KEEP = 10;
 const ORDER = GRADES.map((g) => g.id);
 const TIERS = ['easy', 'medium', 'hard'];
-const TIERED = new Set(['sumGrid', 'gridSquares', 'shapePattern', 'tensOnes', 'howManyMore']);
+const TIERED = new Set(['sumGrid', 'gridSquares', 'shapePattern', 'tensOnes', 'howManyMore', 'kuku', 'kanjiNumbers', 'counters', 'yenShop']);
 const CORE = new Set(['add', 'subtract', 'multiply', 'divide']);
 
 function read() {

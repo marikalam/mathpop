@@ -465,6 +465,11 @@ function jaName() {
 }
 
 export function speakProblem(problem) {
+  // Japanese Math (japanese.js): the Japanese part, said by a Japanese voice.
+  if (problem.speechJa) {
+    speakInLanguage(problem.speechJa, LANG_TAGS.ja);
+    return;
+  }
   const name = problem.callName ? (LANG_TAGS[problem.lang] ? jaName() : playerName()) : null;
   if (LANG_TAGS[problem.lang]) {
     const text = problem.speech || problem.prompt;

@@ -39,6 +39,7 @@ import { assignedTopics, clearMistake, dayKey, loadMistakes, mistakeRound, recor
 import { pathRound, pathStatus, recordPathAnswer } from './myPath.js';
 import { hasLevels, recordLevelAnswer, topicLevel } from './autoLevel.js';
 import { markTaught, recordTeachAnswer, teachKind } from './learnFirst.js';
+import { romaji } from './japanese.js';
 import LogoMark from './LogoMark.jsx';
 import { AccountButton, AccountScreen, AddPlayerForm, PlayerSettingsCard, SyncStatus } from './Account.jsx';
 import {
@@ -591,7 +592,7 @@ function AppHeader({ level, onBack, showBack, players, logoSignal = 0 }) {
                 <span className="lang-menu" role="menu">
                   {[
                     ['en', 'English', 'English screens and voice'],
-                    ['ja', '日本語', players.jaVoice ? 'Toddler games in Japanese: screens and voice' : 'This device has no Japanese voice. Add one in Settings → Accessibility → Spoken Content → Voices.'],
+                    ['ja', '日本語', players.jaVoice ? "Toddler games and Pip's Closet in Japanese: screens and voice" : 'This device has no Japanese voice. Add one in Settings → Accessibility → Spoken Content → Voices.'],
                   ].map(([id, label, sub]) => (
                     <button
                       key={id}
@@ -1546,7 +1547,7 @@ export default function App() {
     setAnswerCorrect(correct);
     setShowHelp(false);
     if (correct && problem.promptKind === 'count' && problem.toddler) sayCountCelebration(problem);
-    else playFeedbackAndSpeak(correct, problem.speechAnswer ?? problem.correct, problem.lang);
+    else playFeedbackAndSpeak(correct, problem.speechAnswer ?? problem.correct, problem.voiceLang || problem.lang);
     if (navigator.vibrate) navigator.vibrate(correct ? 20 : [20, 40, 20]);
 
     // Each problem is answered once: it counts toward the score and log,
@@ -1808,8 +1809,8 @@ export default function App() {
                 when something's newly unlocked for Pip). */}
             <div className="home-pair">
               <button className="home-pair-btn home-pair-closet" onClick={() => setView('closet')}>
-                Pip's Closet <span className="home-pair-stars">★ {stickerCount(currentProfile.id)}</span>
-                {newItems(currentProfile.id).length > 0 && <span className="home-pair-new">NEW</span>}
+                {langFor(currentProfile.id) === 'ja' ? 'ピップの クローゼット' : "Pip's Closet"} <span className="home-pair-stars">★ {stickerCount(currentProfile.id)}</span>
+                {newItems(currentProfile.id).length > 0 && <span className="home-pair-new">{langFor(currentProfile.id) === 'ja' ? 'あたらしい' : 'NEW'}</span>}
               </button>
             </div>
 
@@ -1950,8 +1951,8 @@ export default function App() {
         {view === 'closet' && (
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
-            <h2 className="screen-title">Pip's Closet</h2>
-            <PipCloset key={currentProfile.id} playerId={currentProfile.id} />
+            <h2 className="screen-title">{langFor(currentProfile.id) === 'ja' ? 'ピップの クローゼット' : "Pip's Closet"}</h2>
+            <PipCloset key={currentProfile.id} playerId={currentProfile.id} lang={langFor(currentProfile.id)} />
           </>
         )}
 
@@ -2568,6 +2569,11 @@ export default function App() {
                           <Thing key={i} id={problem.groups[value].thing} size={problem.groups[value].n > 4 ? 58 : 72} />
                         ))}
                       </span>
+                    ) : problem.choiceKind === 'kana' ? (
+                      <span className="kana-choice">
+                        {value}
+                        <small>{romaji(value)}</small>
+                      </span>
                     ) : problem.choiceKind === 'pshape' ? (
                       <PatternShape id={value} color={problem.shapeColor} size={58} />
                     ) : problem.choiceKind === 'thing' || problem.choiceKind === 'emoji' ? (
@@ -2721,11 +2727,17 @@ export default function App() {
                 const left = next ? next.need - stickerCount(currentProfile.id) : 0;
                 return (
                   <button type="button" className="closet-earned" onClick={() => setView('closet')}>
-                    {newItems(currentProfile.id).length
-                      ? "Pip's Closet: something new is unlocked!"
-                      : next
-                        ? `${left} more ${left === 1 ? 'star' : 'stars'} for Pip's ${next.name}`
-                        : "Pip's Closet"}
+                    {langFor(currentProfile.id) === 'ja'
+                      ? newItems(currentProfile.id).length
+                        ? 'ピップの クローゼット：あたらしい ものが あるよ！'
+                        : next
+                          ? `あと ほし ${left}こで ${next.ja}！`
+                          : 'ピップの クローゼット'
+                      : newItems(currentProfile.id).length
+                        ? "Pip's Closet: something new is unlocked!"
+                        : next
+                          ? `${left} more ${left === 1 ? 'star' : 'stars'} for Pip's ${next.name}`
+                          : "Pip's Closet"}
                   </button>
                 );
               })()}

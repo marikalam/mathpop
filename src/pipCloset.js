@@ -8,28 +8,29 @@ import { pendingStickers, playerStickers } from './stickerStore.js';
 
 const KEY = 'mathpop-pip-closet-v2';
 
-// [id, kind, name, stickers needed]. 0: everyone has it from the start.
+// [id, kind, name, stars needed, Japanese name]. 0: everyone has it from the start.
 export const CLOSET_ITEMS = [
-  ['party', 'hat', 'party hat', 0],
-  ['round', 'glasses', 'round glasses', 0],
-  ['bow', 'hat', 'bow', 2],
-  ['stars', 'glasses', 'star glasses', 3],
-  ['cap', 'hat', 'baseball cap', 4],
-  ['red', 'cape', 'red cape', 5],
-  ['crown', 'hat', 'crown', 7],
-  ['sun', 'glasses', 'sunglasses', 9],
-  ['bunny', 'hat', 'bunny ears', 11],
-  ['purple', 'cape', 'purple cape', 13],
-  ['hearts', 'glasses', 'heart glasses', 15],
-  ['wizard', 'hat', 'wizard hat', 18],
-  ['rainbow', 'cape', 'rainbow cape', 21],
-  ['gold', 'cape', 'gold cape', 25],
-].map(([id, kind, name, need]) => ({ id, kind, name, need }));
+  ['party', 'hat', 'party hat', 0, 'パーティーぼうし'],
+  ['round', 'glasses', 'round glasses', 0, 'まるメガネ'],
+  ['bow', 'hat', 'bow', 2, 'リボン'],
+  ['stars', 'glasses', 'star glasses', 3, 'ほしの メガネ'],
+  ['cap', 'hat', 'baseball cap', 4, 'やきゅうぼう'],
+  ['red', 'cape', 'red cape', 5, 'あかい マント'],
+  ['crown', 'hat', 'crown', 7, 'おうかん'],
+  ['sun', 'glasses', 'sunglasses', 9, 'サングラス'],
+  ['bunny', 'hat', 'bunny ears', 11, 'うさみみ'],
+  ['purple', 'cape', 'purple cape', 13, 'むらさきの マント'],
+  ['hearts', 'glasses', 'heart glasses', 15, 'ハートの メガネ'],
+  ['wizard', 'hat', 'wizard hat', 18, 'まほうつかいの ぼうし'],
+  ['rainbow', 'cape', 'rainbow cape', 21, 'にじいろの マント'],
+  ['gold', 'cape', 'gold cape', 25, 'きんいろの マント'],
+].map(([id, kind, name, need, ja]) => ({ id, kind, name, need, ja }));
 
+// [kind, English tab, Japanese tab]
 export const CLOSET_KINDS = [
-  ['hat', 'Hats'],
-  ['glasses', 'Glasses'],
-  ['cape', 'Capes'],
+  ['hat', 'Hats', 'ぼうし'],
+  ['glasses', 'Glasses', 'メガネ'],
+  ['cape', 'Capes', 'マント'],
 ];
 
 export const itemById = (id) => CLOSET_ITEMS.find((i) => i.id === id);
