@@ -1827,7 +1827,8 @@ export default function App() {
             <p className="home-topics-label">Practice a topic</p>
             {/* Every section, and Explore Numbers, as small tiles under it. */}
             {(() => {
-              const sections = gradeSections(gradeInfo(level).id);
+              // Japanese Math shows only when the player's language is 日本語.
+              const sections = gradeSections(gradeInfo(level).id).filter((sec) => sec.id !== 'japanese' || langFor(currentProfile.id) === 'ja');
               const madMinute = gradeInfo(level).id !== 'p';
               const n = sections.length + 1 + (madMinute ? 1 : 0) + (TAP_BOARDS_FOR.includes(gradeInfo(level).id) ? TAP_BOARDS.length + 1 : 0);
               // Three across (two or three for the youngest grades).
