@@ -1085,6 +1085,14 @@ export default function App() {
   }
 
   function changeProfile(id) {
+    // Picking a player says hi to them ("Hi, Melody!"), in Japanese for a
+    // player who plays in Japanese.
+    const player = id !== profile && profiles.find((p) => p.id === id);
+    if (player) {
+      const name = (player.name || '').trim();
+      if (langFor(id) === 'ja') speakInLanguage(name ? `こんにちは、${name}!` : 'こんにちは!', 'ja-JP');
+      else speak(name ? `Hi, ${name}!` : 'Hi!');
+    }
     setProfile(id);
     // A round in progress was built for the other player's grade.
     setView((v) => (['question', 'feedback', 'complete', 'review'].includes(v) ? 'home' : v));
