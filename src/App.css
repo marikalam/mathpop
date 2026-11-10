@@ -7578,3 +7578,28 @@ body {
   opacity: 0.75;
   margin-top: 2px;
 }
+/* The hint is a button: tap it and Pip reads it out loud. */
+.skill-hint-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  border: 2px solid #f3dc9a;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.skill-hint-btn:active {
+  transform: scale(0.98);
+}
+.skill-hint-speaker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ffe9a8;
+}
