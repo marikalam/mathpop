@@ -7616,3 +7616,54 @@ body {
   font-weight: 600;
   font-size: 15px;
 }
+/* Mad Minute: pick adding or times tables (from 2nd grade). */
+.mm-mode {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 18px;
+  border: none;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #ef5b5b, #d43c3c);
+  box-shadow: 0 6px 0 #a82d2d;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+.mm-mode-times,
+.mm-mode-mixed {
+  background: linear-gradient(135deg, #a065e6, #7c3fc4);
+  box-shadow: 0 6px 0 #5e2c99;
+}
+.mm-mode:active {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+.mm-mode-sign {
+  flex: none;
+  min-width: 64px;
+  height: 64px;
+  padding: 0 8px;
+  border-radius: 18px;
+  background: #fff;
+  color: #d43c3c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 46px 'IBM Plex Sans', system-ui, sans-serif;
+}
+.mm-mode-times .mm-mode-sign,
+.mm-mode-mixed .mm-mode-sign {
+  color: #7c3fc4;
+}
+.mm-mode-text {
+  display: flex;
+  flex-direction: column;
+  font: 700 22px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.mm-mode-text small {
+  font: 600 14px 'IBM Plex Sans', sans-serif;
+  opacity: 0.9;
+  margin-top: 2px;
+}
