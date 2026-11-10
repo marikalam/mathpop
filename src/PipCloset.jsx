@@ -17,6 +17,11 @@ export default function PipCloset({ playerId, lang = 'en' }) {
   const [kind, setKind] = useState('hat');
   const [note, setNote] = useState(null);
   const [cheer, setCheer] = useState(0);
+  // Pip says hello when the closet opens (in Japanese in Japanese mode).
+  useEffect(() => {
+    say(ja ? 'ピップの クローゼットだよ！ ふくを タップして、きせかえしてね！' : "Welcome to my closet! Tap an outfit to dress me up!");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     // Whatever the stickers have unlocked is saved for good (and synced).
     rememberUnlocks(playerId);
