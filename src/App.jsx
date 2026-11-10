@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import LevelSwitcher from './LevelSwitcher.jsx';
 import { CheckIcon, ClockFace, XIcon } from './icons.jsx';
-import { getVoiceQuality, languagesWithVoices, playFeedbackAndSpeak, playLogoSound, playStickerPick, prewarmVoices, speakInLanguage, speakProblem, speakResults, unlockAudio, stopSpeaking } from './sound.js';
+import { getVoiceQuality, languagesWithVoices, playFeedbackAndSpeak, playLogoSound, playStickerPick, prewarmVoices, speak, speakInLanguage, speakProblem, speakResults, unlockAudio, stopSpeaking } from './sound.js';
 import Pip from './Pip.jsx';
 import TapBoard from './TapBoards.jsx';
 import PipCloset from './PipCloset.jsx';
@@ -2434,7 +2434,25 @@ export default function App() {
               )}
             </button>
             )}
-            {problem.type === 'skill' && problem.hint && <p className="screen-sub skill-hint"><Icon name="bulb" /> <RichText text={problem.hint} size={22} /></p>}
+            {/* The hint, read out loud when tapped (kids who can't read yet). */}
+            {problem.type === 'skill' && problem.hint && (
+              <button
+                type="button"
+                className="screen-sub skill-hint skill-hint-btn"
+                onClick={() => {
+                  unlockAudio();
+                  const said = String(problem.hint).replace(/\{\{\w+\}\}/g, '').replace(/ \+ /g, ' plus ').replace(/ [−-] /g, ' minus ').replace(/ × /g, ' times ').replace(/ ÷ /g, ' divided by ').replace(/ = /g, ' equals ');
+                  if (problem.lang === 'ja') speakInLanguage(problem.hint, 'ja-JP');
+                  else speak(said);
+                }}
+                aria-label={`Hint: ${problem.hint}. Tap to hear it.`}
+              >
+                <Icon name="bulb" /> <RichText text={problem.hint} size={22} />
+                <span className="skill-hint-speaker" aria-hidden="true">
+                  <Speaker size={20} color="#8a6a1f" />
+                </span>
+              </button>
+            )}
             {!(problem.promptKind === 'count' && problem.toddler) && <p className="screen-sub tap-to-hear">{tr('Tap the problem to hear it', 'もんだいを タップすると きこえるよ')}</p>}
 
             {/* Toddler "listen and pick" games: the answers are the big part. */}
