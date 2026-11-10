@@ -1941,7 +1941,10 @@ export default function App() {
               }}
               stickerSlot={
                 <p className="star-earned">
-                  +1 <span className="closet-star">★</span> · {stickerCount(currentProfile.id)} {stickerCount(currentProfile.id) === 1 ? 'star' : 'stars'}
+                  +1 <span className="closet-star">★</span> ·{' '}
+                  {langFor(currentProfile.id) === 'ja'
+                    ? `ほし ${stickerCount(currentProfile.id)}こ`
+                    : `${stickerCount(currentProfile.id)} ${stickerCount(currentProfile.id) === 1 ? 'star' : 'stars'}`}
                 </p>
               }
             />
@@ -2715,7 +2718,10 @@ export default function App() {
               ))}
               {/* The star this round earned (they unlock Pip's outfits). */}
               <p className="star-earned">
-                  +1 <span className="closet-star">★</span> · {stickerCount(currentProfile.id)} {stickerCount(currentProfile.id) === 1 ? 'star' : 'stars'}
+                  +1 <span className="closet-star">★</span> ·{' '}
+                  {langFor(currentProfile.id) === 'ja'
+                    ? `ほし ${stickerCount(currentProfile.id)}こ`
+                    : `${stickerCount(currentProfile.id)} ${stickerCount(currentProfile.id) === 1 ? 'star' : 'stars'}`}
                 </p>
               {Object.keys(sessionResults).length > 0 && (
                 <div className="result-breakdown">
