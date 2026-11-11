@@ -1,0 +1,537 @@
+import { useEffect, useRef, useState } from 'react';
+import Pip from './Pip.jsx';
+import { Confetti, CountUp } from './Celebrate.jsx';
+import { Thing } from './Drawings.jsx';
+import { ShapeIcon } from './preK.jsx';
+import { madMinuteFact } from './MadMinute.jsx';
+import { playCorrectChime, playIncorrectBuzz, playStickerPick, speak } from './sound.js';
+
+// Games: quick, replayable games with a best score to beat, like Mad
+// Minute. Each one follows the player's grade.
+//   - bubbles: Pop the Bubbles. Pop the bubble with the answer.
+//   - make10: Make 10. Tap two tiles that add up to 10 (5 for toddlers,
+//     20 from 2nd grade) to clear the board.
+//   - bakery: Pip's Bakery. Fill each order with boxes of cupcakes.
+//   - shapes: Speed Shapes. Pip says a shape: tap it, fast.
+// A finished game earns a star (onDone), and each player's best per game
+// and grade is kept on this phone.
+
+export const GAMES = [
+  { id: 'bubbles', title: 'Pop the Bubbles', sub: 'Pop the right answer', how: 'Pop the bubble with the answer!', seconds: 60, color: ['#4e8ff7', '#3a6fd8'] },
+  { id: 'make10', title: 'Make 10', sub: 'Tap two that make 10', how: 'Tap two numbers that make the target!', seconds: 60, color: ['#38c07f', '#2a9e60'] },
+  { id: 'bakery', title: "Pip's Bakery", sub: 'Pack the cupcake orders', how: 'Pack the boxes to fill each order!', seconds: 0, color: ['#f5a524', '#e08a12'] },
+  { id: 'shapes', title: 'Speed Shapes', sub: 'Find the shape, fast', how: 'Pip says a shape. Tap it, fast!', seconds: 45, color: ['#e0577f', '#c43c66'] },
+];
+
+const BEST_KEY = 'mathpop-games-best-v1';
+const rand = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const shuffle = (list) => {
+  const a = [...list];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+function readBest() {
+  try {
+    return JSON.parse(localStorage.getItem(BEST_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+// A game's name (Make 10 is Make 5 for toddlers and Make 20 from 2nd grade).
+export function gameTitle(id, grade) {
+  const t = GAMES.find((g) => g.id === id)?.title || '';
+  return t.replace('Make 10', `Make ${targetFor(grade)}`);
+}
+
+export function gameBest(playerId, grade, game) {
+  return readBest()[`${playerId}:${grade}:${game}`] || 0;
+}
+function saveBest(playerId, grade, game, score) {
+  try {
+    localStorage.setItem(BEST_KEY, JSON.stringify({ ...readBest(), [`${playerId}:${grade}:${game}`]: score }));
+  } catch {
+    /* private mode */
+  }
+}
+
+// The timer for the timed games: seconds left, and done at 0.
+function useCountdown(seconds, running) {
+  const [left, setLeft] = useState(seconds);
+  useEffect(() => {
+    if (!running || !seconds) return undefined;
+    const end = Date.now() + seconds * 1000;
+    const id = setInterval(() => {
+      const s = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+      setLeft(s);
+      if (s === 0) clearInterval(id);
+    }, 200);
+    return () => clearInterval(id);
+  }, [running, seconds]);
+  return left;
+}
+
+function TimerBar({ left, seconds, score, label }) {
+  return (
+    <>
+      <div className="mm-top">
+        <span className={`mm-time${left <= 10 ? ' mm-time-low' : ''}`}>{left}s</span>
+        <span className="mm-right">
+          {score} {label}
+        </span>
+      </div>
+      <div className="mm-bar">
+        <i style={{ width: `${(left / seconds) * 100}%` }} />
+      </div>
+    </>
+  );
+}
+
+// ---- Pop the Bubbles ----
+function bubbleRound(grade) {
+  if (grade === 'p') {
+    const n = rand(1, 10);
+    return { text: `Pop ${n}!`, say: `Pop the number ${n}!`, answer: n, others: shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter((x) => x !== n)).slice(0, 4) };
+  }
+  const f = madMinuteFact(grade);
+  const near = shuffle([1, 2, 3, -1, -2, 10, -10].map((d) => f.answer + d).filter((x) => x >= 0 && x !== f.answer));
+  return { text: `${f.text} = ?`, say: null, answer: f.answer, others: [...new Set(near)].slice(0, 4) };
+}
+
+let bubbleId = 0;
+// New bubbles start part way up (a negative delay), so the tank is never
+// empty; one that floated off comes back from the bottom.
+const newBubble = (value, slot, fromBottom = false) => {
+  const speed = rand(60, 90) / 10;
+  return { id: ++bubbleId, value, slot, speed, delay: fromBottom ? rand(0, 8) / 10 : -rand(15, 55) / 100 * speed };
+};
+
+function Bubbles({ grade, onEnd }) {
+  const seconds = 60;
+  const left = useCountdown(seconds, true);
+  const [round, setRound] = useState(() => bubbleRound(grade));
+  const [bubbles, setBubbles] = useState(() => makeBubbles(round));
+  const [score, setScore] = useState(0);
+  const [popped, setPopped] = useState(null);
+  const [wobble, setWobble] = useState(null);
+
+  function makeBubbles(r) {
+    return shuffle([r.answer, ...r.others]).map((v, i) => newBubble(v, i));
+  }
+  useEffect(() => {
+    if (round.say) speak(round.say);
+  }, [round]);
+  useEffect(() => {
+    if (left === 0) onEnd(score);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [left]);
+
+  function tap(b) {
+    if (left === 0 || popped) return;
+    if (b.value === round.answer) {
+      playCorrectChime();
+      setPopped(b.id);
+      setScore((s) => s + 1);
+      setTimeout(() => {
+        const next = bubbleRound(grade);
+        setRound(next);
+        setBubbles(makeBubbles(next));
+        setPopped(null);
+      }, 280);
+    } else {
+      playIncorrectBuzz();
+      setWobble(b.id);
+      setTimeout(() => setWobble(null), 400);
+    }
+  }
+  // A bubble that floats off the top comes back from the bottom.
+  function again(b) {
+    setBubbles((list) => list.map((x) => (x.id === b.id ? newBubble(b.value, b.slot, true) : x)));
+  }
+
+  return (
+    <div className="game game-bubbles">
+      <TimerBar left={left} seconds={seconds} score={score} label="popped" />
+      <div className="game-question">{round.text}</div>
+      <div className="bubble-tank">
+        {bubbles.map((b) => (
+          <button
+            key={b.id}
+            type="button"
+            className={`bubble${popped === b.id ? ' bubble-pop' : ''}${wobble === b.id ? ' bubble-wobble' : ''}`}
+            style={{ left: `${4 + b.slot * 19}%`, animationDuration: `${b.speed}s`, animationDelay: `${b.delay}s` }}
+            onClick={() => tap(b)}
+            onAnimationEnd={(e) => e.animationName === 'bubble-rise' && again(b)}
+          >
+            {b.value}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---- Make 10 ----
+const targetFor = (grade) => (grade === 'p' ? 5 : ['k', '1'].includes(grade) ? 10 : 20);
+function makeBoard(target) {
+  const tiles = [];
+  for (let i = 0; i < 6; i++) {
+    const a = rand(1, target - 1);
+    tiles.push(a, target - a);
+  }
+  return shuffle(tiles).map((n, i) => ({ id: `${Date.now()}-${i}`, n, gone: false }));
+}
+
+function Make10({ grade, onEnd }) {
+  const seconds = 60;
+  const target = targetFor(grade);
+  const left = useCountdown(seconds, true);
+  const [tiles, setTiles] = useState(() => makeBoard(target));
+  const [picked, setPicked] = useState(null);
+  const [bad, setBad] = useState([]);
+  const [score, setScore] = useState(0);
+  useEffect(() => {
+    speak(`Tap two numbers that make ${target}!`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (left === 0) onEnd(score);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [left]);
+
+  function tap(t) {
+    if (left === 0 || t.gone) return;
+    if (!picked) {
+      playStickerPick();
+      setPicked(t.id);
+      return;
+    }
+    if (picked === t.id) {
+      setPicked(null);
+      return;
+    }
+    const first = tiles.find((x) => x.id === picked);
+    if (first.n + t.n === target) {
+      playCorrectChime();
+      setScore((s) => s + 1);
+      const next = tiles.map((x) => (x.id === t.id || x.id === picked ? { ...x, gone: true } : x));
+      setTiles(next);
+      setPicked(null);
+      // A cleared board: a new one.
+      if (next.every((x) => x.gone)) setTimeout(() => setTiles(makeBoard(target)), 350);
+    } else {
+      playIncorrectBuzz();
+      setBad([picked, t.id]);
+      setPicked(null);
+      setTimeout(() => setBad([]), 450);
+    }
+  }
+
+  return (
+    <div className="game game-make10">
+      <TimerBar left={left} seconds={seconds} score={score} label="pairs" />
+      <div className="game-question">Make {target}!</div>
+      <div className="make10-grid">
+        {tiles.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            disabled={t.gone}
+            className={`make10-tile${t.gone ? ' make10-gone' : ''}${picked === t.id ? ' make10-picked' : ''}${bad.includes(t.id) ? ' make10-bad' : ''}`}
+            onClick={() => tap(t)}
+          >
+            {t.gone ? '' : t.n}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---- Pip's Bakery ----
+const ORDERS = 6;
+function bakeryOrder(grade) {
+  const sizes = { p: [1], k: [1, 2], 1: [2, 5, 10], 2: [2, 3, 4, 5, 10], 3: [3, 4, 6, 7, 8, 9], 4: [4, 6, 7, 8, 9, 12] }[grade] || [2, 5, 10];
+  const size = sizes[rand(0, sizes.length - 1)];
+  const boxes = grade === 'p' ? rand(1, 5) : rand(2, size === 1 ? 6 : size >= 10 ? 5 : 6);
+  const who = ['Bunny', 'Bear', 'Fox', 'Panda', 'Frog', 'Duck'][rand(0, 5)];
+  return { size, boxes, want: size * boxes, who };
+}
+const WHO_THING = { Bunny: 'bunny', Bear: 'bear', Fox: 'fox', Panda: 'panda', Frog: 'frog', Duck: 'duck' };
+
+function Bakery({ grade, onEnd }) {
+  const [order, setOrder] = useState(() => bakeryOrder(grade));
+  const [boxes, setBoxes] = useState(0);
+  const [done, setDone] = useState(0);
+  const [coins, setCoins] = useState(0);
+  const [tries, setTries] = useState(0);
+  const [note, setNote] = useState(null);
+  const say = (o) =>
+    o.size === 1 ? `${o.who} wants ${o.want} cupcakes!` : `${o.who} wants ${o.want} cupcakes. Each box holds ${o.size}. How many boxes?`;
+  useEffect(() => {
+    speak(say(order));
+    setNote(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order]);
+
+  function serve() {
+    const have = boxes * order.size;
+    if (have === order.want) {
+      playCorrectChime();
+      const earned = tries === 0 ? 3 : 1;
+      const nextCoins = coins + earned;
+      setCoins(nextCoins);
+      setNote(`Yum! Thank you! +${earned} coins`);
+      speak('Yum! Thank you!');
+      setTimeout(() => {
+        if (done + 1 >= ORDERS) onEnd(nextCoins);
+        else {
+          setDone((d) => d + 1);
+          setBoxes(0);
+          setTries(0);
+          setOrder(bakeryOrder(grade));
+        }
+      }, 1100);
+    } else {
+      playIncorrectBuzz();
+      setTries((t) => t + 1);
+      const line = have > order.want ? `Too many! That's ${have}. I want ${order.want}.` : `Not enough! That's ${have}. I want ${order.want}.`;
+      setNote(line);
+      speak(line);
+    }
+  }
+
+  return (
+    <div className="game game-bakery">
+      <div className="mm-top">
+        <span className="mm-time">
+          Order {done + 1} of {ORDERS}
+        </span>
+        <span className="mm-right">{coins} coins</span>
+      </div>
+      <button type="button" className="bakery-order" onClick={() => speak(say(order))}>
+        <Thing id={WHO_THING[order.who]} size={64} />
+        <span>
+          <strong>
+            {order.who} wants {order.want} cupcakes!
+          </strong>
+          {order.size > 1 && <small>Each box holds {order.size}.</small>}
+        </span>
+      </button>
+      <div className="bakery-boxes">
+        {Array.from({ length: boxes }, (_, i) => (
+          <span key={i} className="bakery-box">
+            {Array.from({ length: Math.min(order.size, 12) }, (_, j) => (
+              <Thing key={j} id="cupcake" size={order.size > 6 ? 24 : order.size > 2 ? 34 : 40} />
+            ))}
+          </span>
+        ))}
+        {!boxes && <span className="bakery-empty">Tap Add a box</span>}
+      </div>
+      <p className="bakery-count">
+        {boxes} {boxes === 1 ? 'box' : 'boxes'} · {boxes * order.size} cupcakes
+      </p>
+      {note && <p className="bakery-note">{note}</p>}
+      <div className="bakery-actions">
+        <button type="button" className="bakery-btn" disabled={!boxes} onClick={() => { playStickerPick(); setBoxes((b) => Math.max(0, b - 1)); }}>
+          − Take one out
+        </button>
+        <button type="button" className="bakery-btn bakery-add" onClick={() => { playStickerPick(); setBoxes((b) => Math.min(20, b + 1)); }}>
+          + Add a box
+        </button>
+      </div>
+      <button type="button" className="pill-btn-primary pill-btn-full" disabled={!boxes} onClick={serve}>
+        Serve it!
+      </button>
+    </div>
+  );
+}
+
+// ---- Speed Shapes ----
+const SHAPE_SET = ['circle', 'square', 'triangle', 'rectangle', 'star', 'heart', 'oval', 'diamond'];
+const SHAPE_COLORS = ['#EF4444', '#3B6FEF', '#2FAE6B', '#F5A623', '#8E4FD6', '#EC4899'];
+function shapeRound(grade) {
+  const pool = grade === 'p' ? SHAPE_SET.slice(0, 6) : SHAPE_SET;
+  const opts = shuffle(pool).slice(0, 4);
+  const colors = shuffle(SHAPE_COLORS);
+  return { want: opts[rand(0, 3)], opts: opts.map((s, i) => ({ s, c: colors[i] })), id: Math.random() };
+}
+
+function Shapes({ grade, onEnd }) {
+  const seconds = 45;
+  const left = useCountdown(seconds, true);
+  const [round, setRound] = useState(() => shapeRound(grade));
+  const [score, setScore] = useState(0);
+  const [bad, setBad] = useState(null);
+  const busy = useRef(false);
+  useEffect(() => {
+    speak(`${round.want}!`);
+  }, [round]);
+  useEffect(() => {
+    if (left === 0) onEnd(score);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [left]);
+
+  function tap(o) {
+    if (left === 0 || busy.current) return;
+    if (o.s === round.want) {
+      playCorrectChime();
+      setScore((s) => s + 1);
+      busy.current = true;
+      setTimeout(() => {
+        busy.current = false;
+        setRound(shapeRound(grade));
+      }, 200);
+    } else {
+      playIncorrectBuzz();
+      setBad(o.s);
+      setTimeout(() => setBad(null), 400);
+    }
+  }
+
+  return (
+    <div className="game game-shapes">
+      <TimerBar left={left} seconds={seconds} score={score} label="found" />
+      <button type="button" className="game-question" onClick={() => speak(`${round.want}!`)}>
+        Find the {round.want}!
+      </button>
+      <div className="shapes-grid">
+        {round.opts.map((o) => (
+          <button key={`${round.id}-${o.s}`} type="button" className={`shapes-btn${bad === o.s ? ' make10-bad' : ''}`} onClick={() => tap(o)} aria-label={o.s}>
+            <ShapeIcon shape={o.s} color={o.c} size={110} />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const PLAY = { bubbles: Bubbles, make10: Make10, bakery: Bakery, shapes: Shapes };
+const SCORE_WORD = { bubbles: 'popped', make10: 'pairs', bakery: 'coins', shapes: 'shapes found' };
+
+// One game: how to play (said out loud), 3-2-1, play, and the result.
+export function Game({ game, playerId, grade, onDone, stickerSlot, onExit }) {
+  const info = GAMES.find((g) => g.id === game);
+  const [phase, setPhase] = useState('ready');
+  const [count, setCount] = useState(3);
+  const [result, setResult] = useState(null);
+  const [run, setRun] = useState(0);
+  const best = gameBest(playerId, grade, game);
+
+  useEffect(() => {
+    if (phase !== 'ready') return undefined;
+    speak(`${info.how} Ready? 3, 2, 1, go!`);
+    setCount(3);
+    const id = setInterval(() => {
+      setCount((c) => {
+        if (c <= 1) {
+          clearInterval(id);
+          setPhase('play');
+          return 0;
+        }
+        return c - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, run]);
+
+  function end(score) {
+    const isBest = score > best;
+    if (isBest) saveBest(playerId, grade, game, score);
+    setResult({ score, isBest, before: best });
+    setPhase('done');
+    speak(isBest && best ? `New best! ${score}!` : `Great game! ${score} ${SCORE_WORD[game]}!`);
+    onDone?.(game, score);
+  }
+
+  if (phase === 'ready') {
+    return (
+      <div className="mm mm-ready">
+        <p className="mm-how">{info.how}</p>
+        <div className="mm-count" key={count}>
+          {count || 'Go!'}
+        </div>
+        <p className="mm-best">{best ? `Your best: ${best}` : 'Your first game!'}</p>
+      </div>
+    );
+  }
+  if (phase === 'done' && result) {
+    return (
+      <div className="mm mm-done">
+        <Confetti />
+        <span className="complete-pip">
+          <Pip size={96} mood="cheer" />
+        </span>
+        <h2 className="screen-title">{game === 'bakery' ? 'Bakery closed!' : "Time's up!"}</h2>
+        <div className="mm-score">
+          <span>
+            <CountUp to={result.score} />
+          </span>{' '}
+          {SCORE_WORD[game]}
+        </div>
+        <p className="mm-best">
+          {result.isBest && result.before ? <strong>New best! (was {result.before})</strong> : result.isBest ? 'Your first best score. Try to beat it!' : `Your best: ${result.before}`}
+        </p>
+        {stickerSlot}
+        <button
+          className="pill-btn-primary pill-btn-full"
+          onClick={() => {
+            setResult(null);
+            setRun((r) => r + 1);
+            setPhase('ready');
+          }}
+        >
+          Play again →
+        </button>
+        <button type="button" className="back-link back-link-center" onClick={onExit}>
+          More games
+        </button>
+      </div>
+    );
+  }
+  const Play = PLAY[game];
+  return <Play key={run} grade={grade} onEnd={end} />;
+}
+
+// The list of games.
+export default function GamesMenu({ playerId, grade, onPick }) {
+  useEffect(() => {
+    speak('Pick a game!');
+  }, []);
+  return (
+    <div className="games-menu">
+      {GAMES.map((g) => (
+        <button
+          key={g.id}
+          type="button"
+          className="games-card"
+          style={{ background: `linear-gradient(135deg, ${g.color[0]}, ${g.color[1]})` }}
+          onClick={() => onPick(g.id)}
+        >
+          <span className="games-card-art" aria-hidden="true">
+            {g.id === 'bubbles' ? (
+              <span className="games-art-bubble">7</span>
+            ) : g.id === 'make10' ? (
+              <span className="games-art-tiles">
+                <i>3</i>
+                <i>7</i>
+              </span>
+            ) : g.id === 'bakery' ? (
+              <Thing id="cupcake" size={56} />
+            ) : (
+              <ShapeIcon shape="star" color="#ffd23f" size={58} />
+            )}
+          </span>
+          <span className="games-card-text">
+            {g.title.replace('Make 10', `Make ${targetFor(grade)}`)}
+            <small>{gameBest(playerId, grade, g.id) ? `Best: ${gameBest(playerId, grade, g.id)}` : g.sub.replace('make 10', `make ${targetFor(grade)}`)}</small>
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}

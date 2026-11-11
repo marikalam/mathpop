@@ -8,6 +8,7 @@ import TapBoard from './TapBoards.jsx';
 import PipCloset from './PipCloset.jsx';
 import { Confetti, CountUp } from './Celebrate.jsx';
 import MadMinute, { madMinuteBest } from './MadMinute.jsx';
+import GamesMenu, { Game, gameTitle } from './Games.jsx';
 import { anItem, closetFor, newItems, nextItem, rememberUnlocks, stickerCount } from './pipCloset.js';
 import { COLORING_PACKS, ColoringPage, ColoringPrint } from './ColoringPages.jsx';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
@@ -866,6 +867,8 @@ export default function App() {
   const [heroPlaying, setHeroPlaying] = useState(0);
   // Mad Minute: goes up to start a fresh minute.
   const [madKey, setMadKey] = useState(0);
+  // Games (Games.jsx): the one being played.
+  const [gameId, setGameId] = useState(null);
   // Pip's Closet (pipCloset.js): the home page redraws when stickers or outfits change.
   const [, setClosetTick] = useState(0);
   useEffect(() => {
@@ -1838,7 +1841,7 @@ export default function App() {
               // Japanese Math shows only when the player's language is 日本語.
               const sections = gradeSections(gradeInfo(level).id).filter((sec) => sec.id !== 'japanese' || langFor(currentProfile.id) === 'ja');
               const madMinute = gradeInfo(level).id !== 'p';
-              const n = sections.length + 1 + (madMinute ? 1 : 0) + (TAP_BOARDS_FOR.includes(gradeInfo(level).id) ? TAP_BOARDS.length + 1 : 0);
+              const n = sections.length + 2 + (madMinute ? 1 : 0) + (TAP_BOARDS_FOR.includes(gradeInfo(level).id) ? TAP_BOARDS.length + 1 : 0);
               // Three across (two or three for the youngest grades).
               const cols = n <= 3 ? n : 3;
               return (
@@ -1921,6 +1924,20 @@ export default function App() {
                       )}
                     </button>
                   )}
+                  {/* Games (Games.jsx): Pop the Bubbles, Make 10, Pip's Bakery, Speed Shapes. */}
+                  <button
+                    className="home-tile"
+                    style={{ '--card-from': '#2bb8c4', '--card-to': '#1a8f9a' }}
+                    onClick={() => {
+                      unlockAudio();
+                      setView('games');
+                    }}
+                  >
+                    <span className="home-tile-icon" aria-hidden="true">
+                      <SectionIcon id="games" />
+                    </span>
+                    <span className="home-tile-title">Games</span>
+                  </button>
                 </div>
               );
             })()}
@@ -1953,6 +1970,45 @@ export default function App() {
                   {langFor(currentProfile.id) === 'ja'
                     ? `ほし ${stickerCount(currentProfile.id)}こ`
                     : `${stickerCount(currentProfile.id)} ${stickerCount(currentProfile.id) === 1 ? 'star' : 'stars'}`}
+                </p>
+              }
+            />
+          </>
+        )}
+
+        {view === 'games' && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
+            <h2 className="screen-title">Games</h2>
+            <GamesMenu
+              playerId={currentProfile.id}
+              grade={gradeInfo(level).id}
+              onPick={(id) => {
+                unlockAudio();
+                setGameId(id);
+                setView('game');
+              }}
+            />
+          </>
+        )}
+
+        {view === 'game' && gameId && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={() => setView('games')} />
+            <h2 className="screen-title">{gameTitle(gameId, gradeInfo(level).id)}</h2>
+            <Game
+              key={`${currentProfile.id}-${level}-${gameId}`}
+              game={gameId}
+              playerId={currentProfile.id}
+              grade={gradeInfo(level).id}
+              onDone={(id, score) => {
+                earnSticker(currentProfile.id);
+                statRoundDone({ grade: gradeInfo(level).id, topic: `game-${id}`, lang: 'en', correct: score, total: Math.max(1, score) });
+              }}
+              onExit={() => setView('games')}
+              stickerSlot={
+                <p className="star-earned">
+                  +1 <span className="closet-star">★</span> · {stickerCount(currentProfile.id)} {stickerCount(currentProfile.id) === 1 ? 'star' : 'stars'}
                 </p>
               }
             />

@@ -117,6 +117,15 @@ const DRAWINGS = {
       </text>
     </g>
   ),
+  games: (
+    <g>
+      {/* A game controller. */}
+      <rect x="4" y="12" width="56" height="28" rx="14" fill={W} />
+      <path d="M17 20v12M11 26h12" stroke="#1a8f9a" strokeWidth="4.5" strokeLinecap="round" />
+      <circle cx="44" cy="22" r="4" fill={Y} stroke="#e0a100" strokeWidth="1.5" />
+      <circle cx="51" cy="30" r="4" fill="#ff7b9c" />
+    </g>
+  ),
   explore: (
     <g>
       {/* A speech bubble saying the numbers: hear them out loud. */}
