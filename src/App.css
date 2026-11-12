@@ -7954,3 +7954,72 @@ body {
   line-height: 1.15;
   text-align: center;
 }
+
+/* The home page's Games row (scrolls sideways). */
+.home-games {
+  flex: none;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 31%;
+  gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.home-games::-webkit-scrollbar {
+  display: none;
+}
+.home-game {
+  position: relative;
+  appearance: none;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 92px;
+  padding: 8px 4px;
+  border: none;
+  border-radius: 18px;
+  background: var(--card-from);
+  color: #fff;
+  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.13);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.home-game:active {
+  transform: scale(0.96);
+}
+.home-game-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+}
+.home-game-art .section-icon {
+  width: 52px;
+  height: 40px;
+}
+.home-game-art .games-art-bubble {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+}
+.home-game-art .games-art-tiles i {
+  width: 24px;
+  height: 30px;
+  font-size: 18px;
+  background: #fff;
+  color: #2a9e60;
+}
+.home-game-title {
+  font: 700 13.5px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  line-height: 1.1;
+  text-align: center;
+}
+.home-game-best {
+  font: 600 10.5px 'IBM Plex Sans', sans-serif;
+  opacity: 0.9;
+}

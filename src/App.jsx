@@ -8,7 +8,7 @@ import TapBoard from './TapBoards.jsx';
 import PipCloset from './PipCloset.jsx';
 import { Confetti, CountUp } from './Celebrate.jsx';
 import MadMinute, { madMinuteBest } from './MadMinute.jsx';
-import GamesMenu, { Game, gameTitle } from './Games.jsx';
+import GamesMenu, { GAMES, Game, GameArt, gameBest, gameTitle } from './Games.jsx';
 import { anItem, closetFor, newItems, nextItem, rememberUnlocks, stickerCount } from './pipCloset.js';
 import { COLORING_PACKS, ColoringPage, ColoringPrint } from './ColoringPages.jsx';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
@@ -1840,8 +1840,7 @@ export default function App() {
             {(() => {
               // Japanese Math shows only when the player's language is 日本語.
               const sections = gradeSections(gradeInfo(level).id).filter((sec) => sec.id !== 'japanese' || langFor(currentProfile.id) === 'ja');
-              const madMinute = gradeInfo(level).id !== 'p';
-              const n = sections.length + 2 + (madMinute ? 1 : 0) + (TAP_BOARDS_FOR.includes(gradeInfo(level).id) ? TAP_BOARDS.length + 1 : 0);
+              const n = sections.length + 1 + (TAP_BOARDS_FOR.includes(gradeInfo(level).id) ? TAP_BOARDS.length + 1 : 0);
               // Three across (two or three for the youngest grades).
               const cols = n <= 3 ? n : 3;
               return (
@@ -1904,43 +1903,54 @@ export default function App() {
                       <span className="home-tile-title">Coloring Pages</span>
                     </button>
                   )}
-                  {/* Mad Minute (MadMinute.jsx): as many facts as you can in a minute. */}
-                  {madMinute && (
-                    <button
-                      className="home-tile"
-                      style={{ '--card-from': '#ef5b5b', '--card-to': '#d43c3c' }}
-                      onClick={() => {
-                        unlockAudio();
-                        setMadKey((k) => k + 1);
-                        setView('madminute');
-                      }}
-                    >
-                      <span className="home-tile-icon" aria-hidden="true">
-                        <SectionIcon id="madminute" />
-                      </span>
-                      <span className="home-tile-title">Mad Minute</span>
-                      {madMinuteBest(currentProfile.id, gradeInfo(level).id) > 0 && (
-                        <span className="home-tile-best">Best {madMinuteBest(currentProfile.id, gradeInfo(level).id)}</span>
-                      )}
-                    </button>
-                  )}
-                  {/* Games (Games.jsx): Pop the Bubbles, Make 10, Pip's Bakery, Speed Shapes. */}
-                  <button
-                    className="home-tile"
-                    style={{ '--card-from': '#2bb8c4', '--card-to': '#1a8f9a' }}
-                    onClick={() => {
-                      unlockAudio();
-                      setView('games');
-                    }}
-                  >
-                    <span className="home-tile-icon" aria-hidden="true">
-                      <SectionIcon id="games" />
-                    </span>
-                    <span className="home-tile-title">Games</span>
-                  </button>
                 </div>
               );
             })()}
+
+            {/* Games, right on the home page: Mad Minute and the games in
+                Games.jsx, in one row that scrolls sideways. */}
+            <p className="home-topics-label">Games</p>
+            <div className="home-games">
+              {gradeInfo(level).id !== 'p' && (
+                <button
+                  className="home-game"
+                  style={{ '--card-from': '#ef5b5b' }}
+                  onClick={() => {
+                    unlockAudio();
+                    setMadKey((k) => k + 1);
+                    setView('madminute');
+                  }}
+                >
+                  <span className="home-game-art" aria-hidden="true">
+                    <SectionIcon id="madminute" />
+                  </span>
+                  <span className="home-game-title">Mad Minute</span>
+                  {madMinuteBest(currentProfile.id, gradeInfo(level).id) > 0 && (
+                    <span className="home-game-best">Best {madMinuteBest(currentProfile.id, gradeInfo(level).id)}</span>
+                  )}
+                </button>
+              )}
+              {GAMES.map((g) => (
+                <button
+                  key={g.id}
+                  className="home-game"
+                  style={{ '--card-from': g.color[0] }}
+                  onClick={() => {
+                    unlockAudio();
+                    setGameId(g.id);
+                    setView('game');
+                  }}
+                >
+                  <span className="home-game-art" aria-hidden="true">
+                    <GameArt id={g.id} />
+                  </span>
+                  <span className="home-game-title">{gameTitle(g.id, gradeInfo(level).id)}</span>
+                  {gameBest(currentProfile.id, gradeInfo(level).id, g.id) > 0 && (
+                    <span className="home-game-best">Best {gameBest(currentProfile.id, gradeInfo(level).id, g.id)}</span>
+                  )}
+                </button>
+              ))}
+            </div>
 
             {!IS_NATIVE && (
               <a className="all-apps-link" href="https://marikalam.github.io/apps/">
@@ -1994,7 +2004,7 @@ export default function App() {
 
         {view === 'game' && gameId && (
           <>
-            <AppHeader level={level} players={headerPlayers} showBack onBack={() => setView('games')} />
+            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
             <h2 className="screen-title">{gameTitle(gameId, gradeInfo(level).id)}</h2>
             <Game
               key={`${currentProfile.id}-${level}-${gameId}`}
@@ -2005,7 +2015,7 @@ export default function App() {
                 earnSticker(currentProfile.id);
                 statRoundDone({ grade: gradeInfo(level).id, topic: `game-${id}`, lang: 'en', correct: score, total: Math.max(1, score) });
               }}
-              onExit={() => setView('games')}
+              onExit={goHome}
               stickerSlot={
                 <p className="star-earned">
                   +1 <span className="closet-star">★</span> · {stickerCount(currentProfile.id)} {stickerCount(currentProfile.id) === 1 ? 'star' : 'stars'}

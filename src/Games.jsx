@@ -583,13 +583,28 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit }) {
           Play again →
         </button>
         <button type="button" className="back-link back-link-center" onClick={onExit}>
-          More games
+          Back home
         </button>
       </div>
     );
   }
   const Play = PLAY[game];
   return <Play key={run} grade={grade} onEnd={end} />;
+}
+
+// Each game's little picture (the games list and the home page).
+export function GameArt({ id }) {
+  if (id === 'bubbles') return <span className="games-art-bubble">7</span>;
+  if (id === 'make10') {
+    return (
+      <span className="games-art-tiles">
+        <i>3</i>
+        <i>7</i>
+      </span>
+    );
+  }
+  if (id === 'bakery') return <Thing id="cupcake" size={48} />;
+  return <ShapeIcon shape="star" color="#ffd23f" size={50} />;
 }
 
 // The list of games.
@@ -608,18 +623,7 @@ export default function GamesMenu({ playerId, grade, onPick }) {
           onClick={() => onPick(g.id)}
         >
           <span className="games-card-art" aria-hidden="true">
-            {g.id === 'bubbles' ? (
-              <span className="games-art-bubble">7</span>
-            ) : g.id === 'make10' ? (
-              <span className="games-art-tiles">
-                <i>3</i>
-                <i>7</i>
-              </span>
-            ) : g.id === 'bakery' ? (
-              <Thing id="cupcake" size={56} />
-            ) : (
-              <ShapeIcon shape="star" color="#ffd23f" size={58} />
-            )}
+            <GameArt id={g.id} />
           </span>
           <span className="games-card-text">
             {g.title.replace('Make 10', `Make ${targetFor(grade)}`)}
