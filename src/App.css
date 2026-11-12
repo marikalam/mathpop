@@ -7949,3 +7949,8 @@ body {
     animation-duration: 14s !important;
   }
 }
+.game-question-long {
+  font-size: 26px;
+  line-height: 1.15;
+  text-align: center;
+}
