@@ -116,14 +116,20 @@ export async function refreshPlus(user) {
     // Store: on Apple's test devices (App Review, TestFlight) it's a made-up
     // old date, which made App Review a founding family who never saw
     // the subscription.
-    const realDownload = app?.environment === 'Production' && app?.originalPurchaseDate;
-    const founder = Boolean(firstSeen < start || (realDownload && app.originalPurchaseDate.slice(0, 10) < start) || family?.founder);
+    // App Review also updates an older install of MathPop on its iPads,
+    // so on Apple's test devices this device's history doesn't make a
+    // founding family either: only a founding family account does. The
+    // reviewer gets the free trial, with the subscriptions to buy.
+    const realDownload = !testing && app?.environment === 'Production' && app?.originalPurchaseDate;
+    const founder = Boolean((!testing && firstSeen < start) || (realDownload && app.originalPurchaseDate.slice(0, 10) < start) || family?.founder);
     // The 7-day free trial starts the first time MathPop opens on this
     // device, no account or email needed, so kids can play everything
     // straight away. Making a family account (signed in) starts it from
     // the account's day instead, so a grown-up who signs up after the
     // device's week gets a fresh week.
-    const trialStart = family?.accountCreated ? new Date(family.accountCreated) : new Date(`${firstSeen}T00:00:00`);
+    const trialStart = family?.accountCreated
+      ? new Date(family.accountCreated)
+      : new Date(`${testing && firstSeen < today() ? today() : firstSeen}T00:00:00`);
     const trialEnds = new Date(trialStart.getTime() + TRIAL_DAYS * 86400000).toISOString();
     const previous = read(STATUS_KEY);
     if (founder) status = { plus: true, why: 'founder' };
