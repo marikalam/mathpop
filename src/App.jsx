@@ -1908,7 +1908,7 @@ export default function App() {
             })()}
 
             {/* Games, right on the home page: Mad Minute and the games in
-                Games.jsx, in one row that scrolls sideways. */}
+                Games.jsx, all of them showing, three across. */}
             <p className="home-topics-label">Games</p>
             <div className="home-games">
               {gradeInfo(level).id !== 'p' && (
