@@ -20,7 +20,7 @@ export const GAMES = [
   { id: 'bubbles', title: 'Pop the Bubbles', sub: 'Pop the right answer', how: 'Pop the bubble with the answer!', seconds: 60, color: ['#4e8ff7', '#3a6fd8'] },
   { id: 'make10', title: 'Make 10', sub: 'Tap two that make 10', how: 'Tap two numbers that make the target!', seconds: 60, color: ['#38c07f', '#2a9e60'] },
   { id: 'bakery', title: "Pip's Bakery", sub: 'Pack the cupcake orders', how: 'Pack the boxes to fill each order!', seconds: 0, color: ['#f5a524', '#e08a12'] },
-  { id: 'shapes', title: 'Speed Shapes', sub: 'Find the shape, fast', how: 'Pip says a shape. Tap it, fast!', seconds: 45, color: ['#e0577f', '#c43c66'] },
+  { id: 'shapes', title: 'Speed Shapes', sub: 'Find the shape, fast', how: 'Listen to Pip, and tap the right shape, fast!', seconds: 45, color: ['#e0577f', '#c43c66'] },
 ];
 
 const BEST_KEY = 'mathpop-games-best-v1';
@@ -351,13 +351,108 @@ function Bakery({ grade, onEnd }) {
 }
 
 // ---- Speed Shapes ----
+// Toddler and K: find the circle, star, heart... 1st grade: polygon names
+// (pentagon, hexagon, octagon). 2nd grade: count sides and corners on
+// lopsided shapes, and name them. 3rd and 4th: quadrilaterals (rhombus,
+// trapezoid, parallelogram, kite) and the shape with a right angle.
 const SHAPE_SET = ['circle', 'square', 'triangle', 'rectangle', 'star', 'heart', 'oval', 'diamond'];
 const SHAPE_COLORS = ['#EF4444', '#3B6FEF', '#2FAE6B', '#F5A623', '#8E4FD6', '#EC4899'];
+const POLY_NAMES = { 3: 'triangle', 4: 'quadrilateral', 5: 'pentagon', 6: 'hexagon', 7: 'heptagon', 8: 'octagon' };
+const QUADS = {
+  square: [[20, 20], [80, 20], [80, 80], [20, 80]],
+  rectangle: [[8, 30], [92, 30], [92, 70], [8, 70]],
+  rhombus: [[50, 6], [84, 50], [50, 94], [16, 50]],
+  parallelogram: [[28, 28], [96, 28], [72, 72], [4, 72]],
+  trapezoid: [[32, 24], [68, 24], [94, 76], [6, 76]],
+  kite: [[50, 6], [80, 38], [50, 94], [20, 38]],
+};
+const RIGHT = { 'right triangle': [[14, 14], [14, 86], [86, 86]], rectangle: QUADS.rectangle, square: QUADS.square };
+const NOT_RIGHT = {
+  triangle: [[50, 10], [92, 84], [8, 84]],
+  rhombus: QUADS.rhombus,
+  parallelogram: QUADS.parallelogram,
+  trapezoid: QUADS.trapezoid,
+  kite: QUADS.kite,
+};
+const regular = (n) => Array.from({ length: n }, (_, i) => {
+  const t = -Math.PI / 2 + (i * 2 * Math.PI) / n;
+  return [50 + 42 * Math.cos(t), 52 + 42 * Math.sin(t)];
+});
+// A lopsided shape with n sides (so the sides have to be counted).
+const lopsided = (n) => Array.from({ length: n }, (_, i) => {
+  const t = (i * 2 * Math.PI) / n + ((Math.random() - 0.5) * Math.PI) / (n * 1.6);
+  const r = 34 + Math.random() * 10;
+  return [50 + r * Math.cos(t), 50 + r * Math.sin(t)];
+});
+const poly = (points, name, extra = {}) => ({ points, name, rot: rand(0, 3) * 90 + rand(-20, 20), ...extra });
+
 function shapeRound(grade) {
-  const pool = grade === 'p' ? SHAPE_SET.slice(0, 6) : SHAPE_SET;
-  const opts = shuffle(pool).slice(0, 4);
   const colors = shuffle(SHAPE_COLORS);
-  return { want: opts[rand(0, 3)], opts: opts.map((s, i) => ({ s, c: colors[i] })), id: Math.random() };
+  const finish = (clue, say, opts, correct) => ({
+    clue,
+    say,
+    opts: opts.map((o, i) => ({ ...o, key: `${i}`, c: colors[i] })),
+    correct: `${opts.indexOf(correct)}`,
+    id: Math.random(),
+  });
+  if (grade === 'p' || grade === 'k') {
+    const pool = grade === 'p' ? SHAPE_SET.slice(0, 6) : SHAPE_SET;
+    const opts = shuffle(pool).slice(0, 4).map((icon) => ({ icon, name: icon }));
+    const want = opts[rand(0, 3)];
+    return finish(`Find the ${want.name}!`, `${want.name}!`, opts, want);
+  }
+  if (grade === '1') {
+    const names = shuffle(['triangle', 'square', 'rectangle', 'pentagon', 'hexagon', 'octagon', 'circle']).slice(0, 4);
+    const opts = names.map((name) => {
+      if (name === 'circle') return { icon: 'circle', name };
+      if (name === 'square') return poly(QUADS.square, name, { rot: 0 });
+      if (name === 'rectangle') return poly(QUADS.rectangle, name, { rot: 0 });
+      const n = { triangle: 3, pentagon: 5, hexagon: 6, octagon: 8 }[name];
+      return poly(regular(n), name, { rot: 0 });
+    });
+    const want = opts[rand(0, 3)];
+    return finish(`Find the ${want.name}!`, `${want.name}!`, opts, want);
+  }
+  const kind = grade === '2' ? (Math.random() < 0.6 ? 'count' : 'name') : pick3(['count', 'quad', 'quad', 'right']);
+  if (kind === 'count' || kind === 'name') {
+    const sides = shuffle(grade === '2' ? [3, 4, 5, 6, 8] : [3, 4, 5, 6, 7, 8]).slice(0, 4);
+    const opts = sides.map((n) => poly(lopsided(n), POLY_NAMES[n], { sides: n }));
+    const want = opts[rand(0, 3)];
+    if (kind === 'name') return finish(`Find the ${want.name}!`, `${want.name}!`, opts, want);
+    const corners = Math.random() < 0.4;
+    const clue = `Find the shape with ${want.sides} ${corners ? 'corners' : 'sides'}!`;
+    return finish(clue, clue, opts, want);
+  }
+  if (kind === 'quad') {
+    const names = shuffle(Object.keys(QUADS)).slice(0, 4);
+    const opts = names.map((name) => poly(QUADS[name], name));
+    const want = opts[rand(0, 3)];
+    return finish(`Find the ${want.name}!`, `${want.name}!`, opts, want);
+  }
+  const [rName, rPts] = pick3(Object.entries(RIGHT));
+  const others = shuffle(Object.entries(NOT_RIGHT)).slice(0, 3);
+  const want = poly(rPts, rName);
+  const opts = shuffle([want, ...others.map(([n, pts]) => poly(pts, n))]);
+  return finish('Find the shape with a right angle!', 'Find the shape with a right angle!', opts, want);
+}
+function pick3(list) {
+  return list[rand(0, list.length - 1)];
+}
+
+function ShapePic({ o }) {
+  if (o.icon) return <ShapeIcon shape={o.icon} color={o.c} size={110} />;
+  return (
+    <svg viewBox="0 0 100 100" width={110} height={110} aria-hidden="true">
+      <polygon
+        points={o.points.map((p) => p.map((v) => v.toFixed(1)).join(',')).join(' ')}
+        transform={`rotate(${o.rot} 50 50)`}
+        fill={o.c}
+        stroke="rgba(0,0,0,0.15)"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 function Shapes({ grade, onEnd }) {
@@ -368,7 +463,7 @@ function Shapes({ grade, onEnd }) {
   const [bad, setBad] = useState(null);
   const busy = useRef(false);
   useEffect(() => {
-    speak(`${round.want}!`);
+    speak(round.say);
   }, [round]);
   useEffect(() => {
     if (left === 0) onEnd(score);
@@ -377,7 +472,7 @@ function Shapes({ grade, onEnd }) {
 
   function tap(o) {
     if (left === 0 || busy.current) return;
-    if (o.s === round.want) {
+    if (o.key === round.correct) {
       playCorrectChime();
       setScore((s) => s + 1);
       busy.current = true;
@@ -387,7 +482,7 @@ function Shapes({ grade, onEnd }) {
       }, 200);
     } else {
       playIncorrectBuzz();
-      setBad(o.s);
+      setBad(o.key);
       setTimeout(() => setBad(null), 400);
     }
   }
@@ -395,13 +490,13 @@ function Shapes({ grade, onEnd }) {
   return (
     <div className="game game-shapes">
       <TimerBar left={left} seconds={seconds} score={score} label="found" />
-      <button type="button" className="game-question" onClick={() => speak(`${round.want}!`)}>
-        Find the {round.want}!
+      <button type="button" className={`game-question${round.clue.length > 22 ? ' game-question-long' : ''}`} onClick={() => speak(round.say)}>
+        {round.clue}
       </button>
       <div className="shapes-grid">
         {round.opts.map((o) => (
-          <button key={`${round.id}-${o.s}`} type="button" className={`shapes-btn${bad === o.s ? ' make10-bad' : ''}`} onClick={() => tap(o)} aria-label={o.s}>
-            <ShapeIcon shape={o.s} color={o.c} size={110} />
+          <button key={`${round.id}-${o.key}`} type="button" className={`shapes-btn${bad === o.key ? ' make10-bad' : ''}`} onClick={() => tap(o)} aria-label={o.name}>
+            <ShapePic o={o} />
           </button>
         ))}
       </div>
