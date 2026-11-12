@@ -4,7 +4,7 @@ import { Confetti, CountUp } from './Celebrate.jsx';
 import { Thing } from './Drawings.jsx';
 import { ShapeIcon } from './preK.jsx';
 import { madMinuteFact } from './MadMinute.jsx';
-import { playCorrectChime, playIncorrectBuzz, playStickerPick, speak } from './sound.js';
+import { playCorrectChime, playIncorrectBuzz, playStickerPick, speak, speakInLanguage } from './sound.js';
 import { TimerBar, rand, shuffle, useCountdown } from './gameKit.jsx';
 import { BarModel, BondPop, EqualDiff, LogicLock, MakeTen, PatternStreak, PizzaShop, SumGridRush, TimesTiles } from './GamesSG.jsx';
 import { PatternShape } from './TopicVisual.jsx';
@@ -22,7 +22,16 @@ import { PatternShape } from './TopicVisual.jsx';
 export const GAMES = [
   { id: 'bubbles', title: 'Pop the Bubbles', sub: 'Pop the right answer', how: 'Pop the bubble with the answer!', seconds: 60, color: ['#4e8ff7', '#3a6fd8'] },
   { id: 'make10', title: 'Make 10', sub: 'Tap two that make 10', how: 'Tap two numbers that make the target!', seconds: 60, color: ['#38c07f', '#2a9e60'] },
-  { id: 'bakery', title: "Pip's Bakery", sub: 'Pack the cupcake orders', how: 'Pack the boxes to fill each order!', seconds: 0, color: ['#f5a524', '#e08a12'] },
+  {
+    id: 'bakery',
+    title: "Pip's Bakery",
+    sub: 'Pack the cupcake orders',
+    how: 'Pack the boxes to fill each order!',
+    seconds: 0,
+    color: ['#f5a524', '#e08a12'],
+    // Played in Japanese when the player's language is 日本語.
+    ja: { title: 'ピップの ケーキやさん', sub: 'カップケーキを はこに つめよう', how: 'はこに つめて、ちゅうもんを とどけよう！' },
+  },
   { id: 'shapes', title: 'Speed Shapes', sub: 'Find the shape, fast', how: 'Listen to Pip, and tap the right shape, fast!', seconds: 45, color: ['#e0577f', '#c43c66'] },
   // Singapore math and Beast Academy games (GamesSG.jsx), for the grades
   // that learn them.
@@ -37,6 +46,12 @@ export const GAMES = [
   { id: 'logicLock', title: 'Logic Lock', sub: 'Crack the code', how: 'Use the clues to crack the code!', color: ['#475569', '#334155'], grades: ['2', '3', '4'] },
 ];
 
+// Says a line in the player's language: Japanese goes to the device's
+// Japanese voice (MathPop's own voice only speaks English).
+const sayIn = (lang) => (text) => (lang === 'ja' ? speakInLanguage(text, 'ja-JP') : speak(text));
+// Whether a game can be played in Japanese.
+export const hasJa = (id) => Boolean(GAMES.find((g) => g.id === id)?.ja);
+
 // The games a grade plays.
 export const gamesFor = (grade) => GAMES.filter((g) => !g.grades || g.grades.includes(grade));
 
@@ -49,8 +64,10 @@ function readBest() {
   }
 }
 // A game's name (Make 10 is Make 5 for toddlers and Make 20 from 2nd grade).
-export function gameTitle(id, grade) {
-  const t = GAMES.find((g) => g.id === id)?.title || '';
+export function gameTitle(id, grade, lang) {
+  const g = GAMES.find((x) => x.id === id);
+  if (lang === 'ja' && g?.ja) return g.ja.title;
+  const t = g?.title || '';
   return t.replace('Make 10', `Make ${targetFor(grade)}`);
 }
 
@@ -236,8 +253,11 @@ function bakeryOrder(grade) {
   return { size, boxes, want: size * boxes, who };
 }
 const WHO_THING = { Bunny: 'bunny', Bear: 'bear', Fox: 'fox', Panda: 'panda', Frog: 'frog', Duck: 'duck' };
+const WHO_JA = { Bunny: 'うさぎさん', Bear: 'くまさん', Fox: 'きつねさん', Panda: 'パンダさん', Frog: 'かえるさん', Duck: 'あひるさん' };
 
-function Bakery({ grade, onEnd }) {
+function Bakery({ grade, onEnd, lang }) {
+  const ja = lang === 'ja';
+  const talk = sayIn(lang);
   const [order, setOrder] = useState(() => bakeryOrder(grade));
   const [boxes, setBoxes] = useState(0);
   const [done, setDone] = useState(0);
@@ -247,9 +267,15 @@ function Bakery({ grade, onEnd }) {
   const [happy, setHappy] = useState(false);
   const [lit, setLit] = useState(-1);
   const say = (o) =>
-    o.size === 1 ? `${o.who} wants ${o.want} cupcakes!` : `${o.who} wants ${o.want} cupcakes. Each box holds ${o.size}. How many boxes?`;
+    ja
+      ? o.size === 1
+        ? `${WHO_JA[o.who]}は カップケーキが ${o.want}こ ほしいって！`
+        : `${WHO_JA[o.who]}は カップケーキが ${o.want}こ ほしいって。ひとはこに ${o.size}こ はいるよ。なんはこ いるかな？`
+      : o.size === 1
+        ? `${o.who} wants ${o.want} cupcakes!`
+        : `${o.who} wants ${o.want} cupcakes. Each box holds ${o.size}. How many boxes?`;
   useEffect(() => {
-    speak(say(order));
+    talk(say(order));
     setNote(null);
     setHappy(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -262,7 +288,7 @@ function Bakery({ grade, onEnd }) {
     const n = boxes + 1;
     setBoxes(n);
     setLit(n - 1);
-    speak(String(n * order.size));
+    talk(String(n * order.size));
   }
   function takeOut() {
     if (!boxes) return;
@@ -270,12 +296,12 @@ function Bakery({ grade, onEnd }) {
     const n = boxes - 1;
     setBoxes(n);
     setLit(n - 1);
-    if (n) speak(String(n * order.size));
+    if (n) talk(String(n * order.size));
   }
   // Tapping a box counts up to it: 5, 10, 15.
   function countTo(i) {
     setLit(i);
-    speak(Array.from({ length: i + 1 }, (_, k) => (k + 1) * order.size).join(', '));
+    talk(Array.from({ length: i + 1 }, (_, k) => (k + 1) * order.size).join(ja ? '、' : ', '));
   }
 
   function serve() {
@@ -286,8 +312,13 @@ function Bakery({ grade, onEnd }) {
       const nextCoins = coins + earned;
       setCoins(nextCoins);
       setHappy(true);
-      setNote(`Yum! Thank you! +${earned} coins`);
-      speak(`${boxes} ${boxes === 1 ? 'box' : 'boxes'} of ${order.size} is ${have}. Yum! Thank you!`);
+      if (ja) {
+        setNote(`おいしい！ ありがとう！ +${earned}コイン`);
+        talk(`${order.size}こいりが ${boxes}はこで ${have}こ。おいしい！ ありがとう！`);
+      } else {
+        setNote(`Yum! Thank you! +${earned} coins`);
+        talk(`${boxes} ${boxes === 1 ? 'box' : 'boxes'} of ${order.size} is ${have}. Yum! Thank you!`);
+      }
       setTimeout(() => {
         if (done + 1 >= ORDERS) onEnd(nextCoins);
         else {
@@ -301,9 +332,13 @@ function Bakery({ grade, onEnd }) {
     } else {
       playIncorrectBuzz();
       setTries((t) => t + 1);
-      const line = have > order.want ? `Too many! That's ${have}. I want ${order.want}.` : `Not enough! That's ${have}. I want ${order.want}.`;
+      const line = ja
+        ? `${have > order.want ? 'おおすぎるよ！' : 'たりないよ！'} それだと ${have}こ。${order.want}こ ほしいな。`
+        : have > order.want
+          ? `Too many! That's ${have}. I want ${order.want}.`
+          : `Not enough! That's ${have}. I want ${order.want}.`;
       setNote(line);
-      speak(line);
+      talk(line);
     }
   }
 
@@ -312,7 +347,7 @@ function Bakery({ grade, onEnd }) {
     <div className="game game-bakery">
       <div className="mm-top">
         <span className="mm-time">
-          Order {done + 1} of {ORDERS}
+          {ja ? `ちゅうもん ${done + 1} / ${ORDERS}` : `Order ${done + 1} of ${ORDERS}`}
         </span>
         <span className="mm-right">
           <span className="bake-coin" aria-hidden="true" /> {coins}
@@ -320,23 +355,23 @@ function Bakery({ grade, onEnd }) {
       </div>
       <div className="bake-shop">
         <div className="bake-awning" aria-hidden="true" />
-        <div className="bake-sign">Pip&apos;s Bakery</div>
+        <div className="bake-sign">{ja ? 'ピップの ケーキやさん' : "Pip's Bakery"}</div>
         <div className="bake-shelf" aria-hidden="true">
           {['cupcake', 'donut', 'cookie', 'cupcake', 'donut'].map((id, i) => (
             <Thing key={i} id={id} size={30} />
           ))}
         </div>
-        <button type="button" className="bake-customer" onClick={() => speak(say(order))}>
+        <button type="button" className="bake-customer" onClick={() => talk(say(order))}>
           <span className={`bake-who${happy ? ' bake-who-happy' : ''}`}>
             <Thing id={WHO_THING[order.who]} size={70} />
           </span>
           <span className="bake-bubble">
-            <strong>I want {order.want} cupcakes!</strong>
-            {order.size > 1 && <small>A box holds {order.size}.</small>}
+            <strong>{ja ? `カップケーキ ${order.want}こ ちょうだい！` : `I want ${order.want} cupcakes!`}</strong>
+            {order.size > 1 && <small>{ja ? `ひとはこに ${order.size}こ` : `A box holds ${order.size}.`}</small>}
           </span>
         </button>
         <div className="bake-counter">
-          {boxes === 0 && <span className="bake-empty">Tap “Add a box” to pack the order</span>}
+          {boxes === 0 && <span className="bake-empty">{ja ? '「はこを たす」を タップして つめてね' : 'Tap “Add a box” to pack the order'}</span>}
           {Array.from({ length: boxes }, (_, i) => (
             <button key={i} type="button" className={`bake-box${lit === i ? ' bake-box-lit' : ''}`} onClick={() => countTo(i)} aria-label={`${(i + 1) * order.size}`}>
               <span className="bake-total">{(i + 1) * order.size}</span>
@@ -351,19 +386,19 @@ function Bakery({ grade, onEnd }) {
         </div>
       </div>
       <p className="bakery-count">
-        {boxes ? Array.from({ length: boxes }, (_, i) => (i + 1) * order.size).join(', ') : '0'} cupcakes
+        {boxes ? Array.from({ length: boxes }, (_, i) => (i + 1) * order.size).join(', ') : '0'} {ja ? 'こ' : 'cupcakes'}
       </p>
       {note && <p className={`bakery-note${happy ? ' bakery-note-good' : ''}`}>{note}</p>}
       <div className="bakery-actions">
         <button type="button" className="bakery-btn" disabled={!boxes} onClick={takeOut}>
-          − Take one out
+          {ja ? '− ひとつ だす' : '− Take one out'}
         </button>
         <button type="button" className="bakery-btn bakery-add" onClick={add}>
-          + Add a box
+          {ja ? '+ はこを たす' : '+ Add a box'}
         </button>
       </div>
       <button type="button" className="bake-serve" disabled={!boxes || happy} onClick={serve}>
-        Serve it!
+        {ja ? 'どうぞ！' : 'Serve it!'}
       </button>
     </div>
   );
@@ -557,8 +592,12 @@ const SCORE_WORD = {
 const TIMED = ['bubbles', 'make10', 'shapes', 'bondPop', 'makeTen', 'sumGridRush', 'timesTiles'];
 
 // One game: how to play (said out loud), 3-2-1, play, and the result.
-export function Game({ game, playerId, grade, onDone, stickerSlot, onExit }) {
+export function Game({ game, playerId, grade, onDone, stickerSlot, onExit, lang }) {
   const info = GAMES.find((g) => g.id === game);
+  // Japanese only for the games that have it (the rest stay in English).
+  const ja = lang === 'ja' && Boolean(info.ja);
+  const talk = sayIn(ja ? 'ja' : 'en');
+  const scoreWord = ja ? 'コイン' : SCORE_WORD[game];
   const [phase, setPhase] = useState('ready');
   const [count, setCount] = useState(3);
   const [result, setResult] = useState(null);
@@ -567,7 +606,7 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit }) {
 
   useEffect(() => {
     if (phase !== 'ready') return undefined;
-    speak(`${info.how} Ready? 3, 2, 1, go!`);
+    talk(ja ? `${info.ja.how} よーい、3、2、1、スタート！` : `${info.how} Ready? 3, 2, 1, go!`);
     setCount(3);
     const id = setInterval(() => {
       setCount((c) => {
@@ -588,18 +627,19 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit }) {
     if (isBest) saveBest(playerId, grade, game, score);
     setResult({ score, isBest, before: best });
     setPhase('done');
-    speak(isBest && best ? `New best! ${score}!` : `Great game! ${score} ${SCORE_WORD[game]}!`);
+    if (ja) talk(isBest && best ? `しんきろく！ ${score}コイン！` : `よく できました！ ${score}コイン！`);
+    else talk(isBest && best ? `New best! ${score}!` : `Great game! ${score} ${SCORE_WORD[game]}!`);
     onDone?.(game, score);
   }
 
   if (phase === 'ready') {
     return (
       <div className="mm mm-ready">
-        <p className="mm-how">{info.how}</p>
+        <p className="mm-how">{ja ? info.ja.how : info.how}</p>
         <div className="mm-count" key={count}>
-          {count || 'Go!'}
+          {count || (ja ? 'スタート！' : 'Go!')}
         </div>
-        <p className="mm-best">{best ? `Your best: ${best}` : 'Your first game!'}</p>
+        <p className="mm-best">{ja ? (best ? `さいこう: ${best}` : 'はじめての ゲーム！') : best ? `Your best: ${best}` : 'Your first game!'}</p>
       </div>
     );
   }
@@ -610,15 +650,23 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit }) {
         <span className="complete-pip">
           <Pip size={96} mood="cheer" />
         </span>
-        <h2 className="screen-title">{TIMED.includes(game) ? "Time's up!" : 'Great game!'}</h2>
+        <h2 className="screen-title">{ja ? 'よく できました！' : TIMED.includes(game) ? "Time's up!" : 'Great game!'}</h2>
         <div className="mm-score">
           <span>
             <CountUp to={result.score} />
           </span>{' '}
-          {SCORE_WORD[game]}
+          {scoreWord}
         </div>
         <p className="mm-best">
-          {result.isBest && result.before ? <strong>New best! (was {result.before})</strong> : result.isBest ? 'Your first best score. Try to beat it!' : `Your best: ${result.before}`}
+          {ja ? (
+            result.isBest && result.before ? <strong>しんきろく！（まえは {result.before}）</strong> : result.isBest ? 'はじめての きろく！ つぎは こえられるかな？' : `さいこう: ${result.before}`
+          ) : result.isBest && result.before ? (
+            <strong>New best! (was {result.before})</strong>
+          ) : result.isBest ? (
+            'Your first best score. Try to beat it!'
+          ) : (
+            `Your best: ${result.before}`
+          )}
         </p>
         {stickerSlot}
         <button
@@ -629,16 +677,16 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit }) {
             setPhase('ready');
           }}
         >
-          Play again →
+          {ja ? 'もう いっかい →' : 'Play again →'}
         </button>
         <button type="button" className="back-link back-link-center" onClick={onExit}>
-          Back home
+          {ja ? 'ホームに もどる' : 'Back home'}
         </button>
       </div>
     );
   }
   const Play = PLAY[game];
-  return <Play key={run} grade={grade} onEnd={end} />;
+  return <Play key={run} grade={grade} onEnd={end} lang={ja ? 'ja' : 'en'} />;
 }
 
 // Each game's little picture (the games list and the home page).
@@ -695,7 +743,7 @@ export function GameArt({ id }) {
 }
 
 // The list of games.
-export default function GamesMenu({ playerId, grade, onPick }) {
+export default function GamesMenu({ playerId, grade, onPick, lang }) {
   useEffect(() => {
     speak('Pick a game!');
   }, []);
@@ -713,8 +761,14 @@ export default function GamesMenu({ playerId, grade, onPick }) {
             <GameArt id={g.id} />
           </span>
           <span className="games-card-text">
-            {g.title.replace('Make 10', `Make ${targetFor(grade)}`)}
-            <small>{gameBest(playerId, grade, g.id) ? `Best: ${gameBest(playerId, grade, g.id)}` : g.sub.replace('make 10', `make ${targetFor(grade)}`)}</small>
+            {gameTitle(g.id, grade, lang)}
+            <small>
+              {gameBest(playerId, grade, g.id)
+                ? `${lang === 'ja' && g.ja ? 'さいこう' : 'Best'}: ${gameBest(playerId, grade, g.id)}`
+                : lang === 'ja' && g.ja
+                  ? g.ja.sub
+                  : g.sub.replace('make 10', `make ${targetFor(grade)}`)}
+            </small>
           </span>
         </button>
       ))}
