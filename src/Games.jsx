@@ -244,13 +244,39 @@ function Bakery({ grade, onEnd }) {
   const [coins, setCoins] = useState(0);
   const [tries, setTries] = useState(0);
   const [note, setNote] = useState(null);
+  const [happy, setHappy] = useState(false);
+  const [lit, setLit] = useState(-1);
   const say = (o) =>
     o.size === 1 ? `${o.who} wants ${o.want} cupcakes!` : `${o.who} wants ${o.want} cupcakes. Each box holds ${o.size}. How many boxes?`;
   useEffect(() => {
     speak(say(order));
     setNote(null);
+    setHappy(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order]);
+
+  // Adding a box counts on out loud: 5, 10, 15...
+  function add() {
+    if (boxes >= 12) return;
+    playStickerPick();
+    const n = boxes + 1;
+    setBoxes(n);
+    setLit(n - 1);
+    speak(String(n * order.size));
+  }
+  function takeOut() {
+    if (!boxes) return;
+    playStickerPick();
+    const n = boxes - 1;
+    setBoxes(n);
+    setLit(n - 1);
+    if (n) speak(String(n * order.size));
+  }
+  // Tapping a box counts up to it: 5, 10, 15.
+  function countTo(i) {
+    setLit(i);
+    speak(Array.from({ length: i + 1 }, (_, k) => (k + 1) * order.size).join(', '));
+  }
 
   function serve() {
     const have = boxes * order.size;
@@ -259,17 +285,19 @@ function Bakery({ grade, onEnd }) {
       const earned = tries === 0 ? 3 : 1;
       const nextCoins = coins + earned;
       setCoins(nextCoins);
+      setHappy(true);
       setNote(`Yum! Thank you! +${earned} coins`);
-      speak('Yum! Thank you!');
+      speak(`${boxes} ${boxes === 1 ? 'box' : 'boxes'} of ${order.size} is ${have}. Yum! Thank you!`);
       setTimeout(() => {
         if (done + 1 >= ORDERS) onEnd(nextCoins);
         else {
           setDone((d) => d + 1);
           setBoxes(0);
+          setLit(-1);
           setTries(0);
           setOrder(bakeryOrder(grade));
         }
-      }, 1100);
+      }, 1800);
     } else {
       playIncorrectBuzz();
       setTries((t) => t + 1);
@@ -279,46 +307,62 @@ function Bakery({ grade, onEnd }) {
     }
   }
 
+  const small = order.size > 6;
   return (
     <div className="game game-bakery">
       <div className="mm-top">
         <span className="mm-time">
           Order {done + 1} of {ORDERS}
         </span>
-        <span className="mm-right">{coins} coins</span>
-      </div>
-      <button type="button" className="bakery-order" onClick={() => speak(say(order))}>
-        <Thing id={WHO_THING[order.who]} size={64} />
-        <span>
-          <strong>
-            {order.who} wants {order.want} cupcakes!
-          </strong>
-          {order.size > 1 && <small>Each box holds {order.size}.</small>}
+        <span className="mm-right">
+          <span className="bake-coin" aria-hidden="true" /> {coins}
         </span>
-      </button>
-      <div className="bakery-boxes">
-        {Array.from({ length: boxes }, (_, i) => (
-          <span key={i} className="bakery-box">
-            {Array.from({ length: Math.min(order.size, 12) }, (_, j) => (
-              <Thing key={j} id="cupcake" size={order.size > 6 ? 24 : order.size > 2 ? 34 : 40} />
-            ))}
+      </div>
+      <div className="bake-shop">
+        <div className="bake-awning" aria-hidden="true" />
+        <div className="bake-sign">Pip&apos;s Bakery</div>
+        <div className="bake-shelf" aria-hidden="true">
+          {['cupcake', 'donut', 'cookie', 'cupcake', 'donut'].map((id, i) => (
+            <Thing key={i} id={id} size={30} />
+          ))}
+        </div>
+        <button type="button" className="bake-customer" onClick={() => speak(say(order))}>
+          <span className={`bake-who${happy ? ' bake-who-happy' : ''}`}>
+            <Thing id={WHO_THING[order.who]} size={70} />
           </span>
-        ))}
-        {!boxes && <span className="bakery-empty">Tap Add a box</span>}
+          <span className="bake-bubble">
+            <strong>I want {order.want} cupcakes!</strong>
+            {order.size > 1 && <small>A box holds {order.size}.</small>}
+          </span>
+        </button>
+        <div className="bake-counter">
+          {boxes === 0 && <span className="bake-empty">Tap “Add a box” to pack the order</span>}
+          {Array.from({ length: boxes }, (_, i) => (
+            <button key={i} type="button" className={`bake-box${lit === i ? ' bake-box-lit' : ''}`} onClick={() => countTo(i)} aria-label={`${(i + 1) * order.size}`}>
+              <span className="bake-total">{(i + 1) * order.size}</span>
+              <span className="bake-lid" aria-hidden="true" />
+              <span className={`bake-window${small ? ' bake-window-small' : ''}`}>
+                {Array.from({ length: Math.min(order.size, 12) }, (_, j) => (
+                  <Thing key={j} id="cupcake" size={small ? 17 : order.size > 4 ? 23 : order.size > 1 ? 28 : 36} />
+                ))}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
       <p className="bakery-count">
-        {boxes} {boxes === 1 ? 'box' : 'boxes'} · {boxes * order.size} cupcakes
+        {boxes ? Array.from({ length: boxes }, (_, i) => (i + 1) * order.size).join(', ') : '0'} cupcakes
       </p>
-      {note && <p className="bakery-note">{note}</p>}
+      {note && <p className={`bakery-note${happy ? ' bakery-note-good' : ''}`}>{note}</p>}
       <div className="bakery-actions">
-        <button type="button" className="bakery-btn" disabled={!boxes} onClick={() => { playStickerPick(); setBoxes((b) => Math.max(0, b - 1)); }}>
+        <button type="button" className="bakery-btn" disabled={!boxes} onClick={takeOut}>
           − Take one out
         </button>
-        <button type="button" className="bakery-btn bakery-add" onClick={() => { playStickerPick(); setBoxes((b) => Math.min(20, b + 1)); }}>
+        <button type="button" className="bakery-btn bakery-add" onClick={add}>
           + Add a box
         </button>
       </div>
-      <button type="button" className="pill-btn-primary pill-btn-full" disabled={!boxes} onClick={serve}>
+      <button type="button" className="bake-serve" disabled={!boxes || happy} onClick={serve}>
         Serve it!
       </button>
     </div>
