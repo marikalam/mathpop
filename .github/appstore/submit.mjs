@@ -244,7 +244,22 @@ if (!submission) {
   submission = (
     await api('GET', `/v1/reviewSubmissions?filter[app]=${app.id}&filter[platform]=IOS&filter[state]=UNRESOLVED_ISSUES`)
   ).data[0];
-  if (submission) console.log('Resubmitting the submission Apple sent back');
+  if (submission && SUBSCRIPTIONS === 'yes') {
+    // Apple won't add the subscriptions to a submission it sent back, so
+    // take that one out and start a fresh one with the version and the
+    // subscriptions together.
+    await api('PATCH', `/v1/reviewSubmissions/${submission.id}`, { type: 'reviewSubmissions', id: submission.id, attributes: { canceled: true } });
+    console.log('Took the sent-back submission out, to start a new one with the subscriptions');
+    for (let i = 0; i < 20; i++) {
+      await new Promise((r) => setTimeout(r, 10000));
+      const st = (await api('GET', `/v1/reviewSubmissions/${submission.id}`)).data.attributes.state;
+      if (!['UNRESOLVED_ISSUES', 'CANCELING'].includes(st)) {
+        console.log(`It is now ${st}`);
+        break;
+      }
+    }
+    submission = null;
+  } else if (submission) console.log('Resubmitting the submission Apple sent back');
 }
 if (!submission) {
   submission = (
@@ -288,7 +303,7 @@ if (SUBSCRIPTIONS === 'yes') {
         });
         console.log(`Subscription ${sub.attributes.productId} sent for review with this version`);
       } catch (err) {
-        console.log(`Subscription ${sub.attributes.productId} could not be added: ${String(err).split('\n')[0]}`);
+        console.log(`Subscription ${sub.attributes.productId} could not be added: ${String(err)}`);
         console.log(
           `Not sent. In App Store Connect, open MathPop -> iOS App ${VERSION} -> "In-App Purchases and Subscriptions", ` +
             'add both MathPop Plus subscriptions, then press "Add for Review" and "Submit to App Review".',
