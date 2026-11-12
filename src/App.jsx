@@ -8,7 +8,7 @@ import TapBoard from './TapBoards.jsx';
 import PipCloset from './PipCloset.jsx';
 import { Confetti, CountUp } from './Celebrate.jsx';
 import MadMinute, { madMinuteBest } from './MadMinute.jsx';
-import GamesMenu, { GAMES, Game, GameArt, gameBest, gameTitle } from './Games.jsx';
+import GamesMenu, { Game, GameArt, gameBest, gameTitle, gamesFor } from './Games.jsx';
 import { anItem, closetFor, newItems, nextItem, rememberUnlocks, stickerCount } from './pipCloset.js';
 import { COLORING_PACKS, ColoringPage, ColoringPrint } from './ColoringPages.jsx';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
@@ -1930,7 +1930,7 @@ export default function App() {
                   )}
                 </button>
               )}
-              {GAMES.map((g) => (
+              {gamesFor(gradeInfo(level).id).map((g) => (
                 <button
                   key={g.id}
                   className="home-game"

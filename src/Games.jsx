@@ -5,6 +5,9 @@ import { Thing } from './Drawings.jsx';
 import { ShapeIcon } from './preK.jsx';
 import { madMinuteFact } from './MadMinute.jsx';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, speak } from './sound.js';
+import { TimerBar, rand, shuffle, useCountdown } from './gameKit.jsx';
+import { BarModel, BondPop, EqualDiff, LogicLock, MakeTen, PatternStreak, PizzaShop, SumGridRush, TimesTiles } from './GamesSG.jsx';
+import { PatternShape } from './TopicVisual.jsx';
 
 // Games: quick, replayable games with a best score to beat, like Mad
 // Minute. Each one follows the player's grade.
@@ -21,19 +24,23 @@ export const GAMES = [
   { id: 'make10', title: 'Make 10', sub: 'Tap two that make 10', how: 'Tap two numbers that make the target!', seconds: 60, color: ['#38c07f', '#2a9e60'] },
   { id: 'bakery', title: "Pip's Bakery", sub: 'Pack the cupcake orders', how: 'Pack the boxes to fill each order!', seconds: 0, color: ['#f5a524', '#e08a12'] },
   { id: 'shapes', title: 'Speed Shapes', sub: 'Find the shape, fast', how: 'Listen to Pip, and tap the right shape, fast!', seconds: 45, color: ['#e0577f', '#c43c66'] },
+  // Singapore math and Beast Academy games (GamesSG.jsx), for the grades
+  // that learn them.
+  { id: 'bondPop', title: 'Number Bond Pop', sub: 'Find the missing part', how: 'Find the missing part of the number bond!', color: ['#ffb000', '#e08a00'], grades: ['k', '1', '2'] },
+  { id: 'makeTen', title: 'Make a Ten Race', sub: '8 + 5 = 10 + 3', how: 'Make a ten first, then add the rest!', color: ['#14b8a6', '#0f9384'], grades: ['1', '2'] },
+  { id: 'barModel', title: 'Bar Model Builder', sub: 'Pick the model, then solve', how: 'Read the story, pick the bar model, then solve it!', color: ['#3b6fef', '#2a54c4'], grades: ['k', '1', '2', '3', '4'] },
+  { id: 'sumGridRush', title: 'Sum Grid Rush', sub: 'Columns 10, rows 20', how: 'Fill the sum grids: columns make 10, rows make 20!', color: ['#8e4fd6', '#6f35b8'], grades: ['1', '2', '3'] },
+  { id: 'patternStreak', title: 'Pattern Streak', sub: 'What comes next?', how: 'What comes next? See how many you get in a row!', color: ['#e5484d', '#c23237'], grades: ['k', '1', '2', '3', '4'] },
+  { id: 'equalDiff', title: 'Equal Differences', sub: 'Slide, then subtract', how: 'Slide both numbers to make it easy, then subtract!', color: ['#2fae6b', '#238a54'], grades: ['1', '2', '3', '4'] },
+  { id: 'timesTiles', title: 'Times Table Tiles', sub: 'Match facts to answers', how: 'Match each times fact to its answer!', color: ['#a065e6', '#7c3fc4'], grades: ['2', '3', '4'] },
+  { id: 'pizza', title: 'Fraction Pizza Shop', sub: 'Cut and serve fractions', how: 'Cut the pizza, then serve the right fraction!', color: ['#f0954f', '#e0793a'], grades: ['2', '3', '4'] },
+  { id: 'logicLock', title: 'Logic Lock', sub: 'Crack the code', how: 'Use the clues to crack the code!', color: ['#475569', '#334155'], grades: ['2', '3', '4'] },
 ];
 
-const BEST_KEY = 'mathpop-games-best-v1';
-const rand = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
-const shuffle = (list) => {
-  const a = [...list];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-};
+// The games a grade plays.
+export const gamesFor = (grade) => GAMES.filter((g) => !g.grades || g.grades.includes(grade));
 
+const BEST_KEY = 'mathpop-games-best-v1';
 function readBest() {
   try {
     return JSON.parse(localStorage.getItem(BEST_KEY)) || {};
@@ -56,38 +63,6 @@ function saveBest(playerId, grade, game, score) {
   } catch {
     /* private mode */
   }
-}
-
-// The timer for the timed games: seconds left, and done at 0.
-function useCountdown(seconds, running) {
-  const [left, setLeft] = useState(seconds);
-  useEffect(() => {
-    if (!running || !seconds) return undefined;
-    const end = Date.now() + seconds * 1000;
-    const id = setInterval(() => {
-      const s = Math.max(0, Math.ceil((end - Date.now()) / 1000));
-      setLeft(s);
-      if (s === 0) clearInterval(id);
-    }, 200);
-    return () => clearInterval(id);
-  }, [running, seconds]);
-  return left;
-}
-
-function TimerBar({ left, seconds, score, label }) {
-  return (
-    <>
-      <div className="mm-top">
-        <span className={`mm-time${left <= 10 ? ' mm-time-low' : ''}`}>{left}s</span>
-        <span className="mm-right">
-          {score} {label}
-        </span>
-      </div>
-      <div className="mm-bar">
-        <i style={{ width: `${(left / seconds) * 100}%` }} />
-      </div>
-    </>
-  );
 }
 
 // ---- Pop the Bubbles ----
@@ -504,8 +479,38 @@ function Shapes({ grade, onEnd }) {
   );
 }
 
-const PLAY = { bubbles: Bubbles, make10: Make10, bakery: Bakery, shapes: Shapes };
-const SCORE_WORD = { bubbles: 'popped', make10: 'pairs', bakery: 'coins', shapes: 'shapes found' };
+const PLAY = {
+  bubbles: Bubbles,
+  make10: Make10,
+  bakery: Bakery,
+  shapes: Shapes,
+  barModel: BarModel,
+  bondPop: BondPop,
+  makeTen: MakeTen,
+  sumGridRush: SumGridRush,
+  patternStreak: PatternStreak,
+  equalDiff: EqualDiff,
+  timesTiles: TimesTiles,
+  pizza: PizzaShop,
+  logicLock: LogicLock,
+};
+const SCORE_WORD = {
+  bubbles: 'popped',
+  make10: 'pairs',
+  bakery: 'coins',
+  shapes: 'shapes found',
+  barModel: 'stars',
+  bondPop: 'bonds',
+  makeTen: 'done',
+  sumGridRush: 'grids',
+  patternStreak: 'in a row',
+  equalDiff: 'stars',
+  timesTiles: 'matches',
+  pizza: 'coins',
+  logicLock: 'stars',
+};
+// The games that end with Time's up (the others end their own way).
+const TIMED = ['bubbles', 'make10', 'shapes', 'bondPop', 'makeTen', 'sumGridRush', 'timesTiles'];
 
 // One game: how to play (said out loud), 3-2-1, play, and the result.
 export function Game({ game, playerId, grade, onDone, stickerSlot, onExit }) {
@@ -561,7 +566,7 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit }) {
         <span className="complete-pip">
           <Pip size={96} mood="cheer" />
         </span>
-        <h2 className="screen-title">{game === 'bakery' ? 'Bakery closed!' : "Time's up!"}</h2>
+        <h2 className="screen-title">{TIMED.includes(game) ? "Time's up!" : 'Great game!'}</h2>
         <div className="mm-score">
           <span>
             <CountUp to={result.score} />
@@ -604,7 +609,45 @@ export function GameArt({ id }) {
     );
   }
   if (id === 'bakery') return <Thing id="cupcake" size={48} />;
-  return <ShapeIcon shape="star" color="#ffd23f" size={50} />;
+  if (id === 'shapes') return <ShapeIcon shape="star" color="#ffd23f" size={50} />;
+  if (id === 'patternStreak') return <PatternShape id="triangle:90:0" color="#fff" size={44} />;
+  if (id === 'pizza') {
+    return (
+      <svg viewBox="0 0 50 50" width="46" height="46">
+        <circle cx="25" cy="25" r="22" fill="#ffe08a" stroke="#fff" strokeWidth="3" />
+        <path d="M25 25 L25 3 A22 22 0 0 1 47 25 Z" fill="#e5484d" stroke="#fff" strokeWidth="3" />
+      </svg>
+    );
+  }
+  if (id === 'logicLock') {
+    return (
+      <svg viewBox="0 0 50 50" width="44" height="44">
+        <path d="M15 22v-6a10 10 0 0 1 20 0v6" fill="none" stroke="#fff" strokeWidth="5" />
+        <rect x="9" y="22" width="32" height="24" rx="6" fill="#ffd23f" />
+        <circle cx="25" cy="33" r="4" fill="#334155" />
+      </svg>
+    );
+  }
+  if (id === 'barModel') {
+    return (
+      <span className="games-art-bars">
+        <i style={{ width: '70%' }} />
+        <i style={{ width: '45%', background: '#ffb84d' }} />
+      </span>
+    );
+  }
+  if (id === 'bondPop') {
+    return (
+      <svg viewBox="0 0 50 50" width="46" height="46">
+        <path d="M25 14 L12 36 M25 14 L38 36" stroke="#fff" strokeWidth="3" />
+        <circle cx="25" cy="13" r="9" fill="#fff" />
+        <circle cx="12" cy="37" r="8" fill="#fff" />
+        <circle cx="38" cy="37" r="8" fill="#ffd23f" />
+      </svg>
+    );
+  }
+  const TEXT = { makeTen: '8+2', sumGridRush: '10', equalDiff: '−', timesTiles: '3×4' };
+  return <span className="games-art-text">{TEXT[id] || '?'}</span>;
 }
 
 // The list of games.
@@ -614,7 +657,7 @@ export default function GamesMenu({ playerId, grade, onPick }) {
   }, []);
   return (
     <div className="games-menu">
-      {GAMES.map((g) => (
+      {gamesFor(grade).map((g) => (
         <button
           key={g.id}
           type="button"
