@@ -46,7 +46,7 @@ export const GAMES = [
   { id: 'equalDiff', title: 'Equal Differences', sub: 'Slide, then subtract', how: 'Slide both numbers to make it easy, then subtract!', color: ['#2fae6b', '#238a54'], grades: ['1', '2', '3', '4'] },
   { id: 'timesTiles', title: 'Times Table Tiles', sub: 'Match facts to answers', how: 'Match each times fact to its answer!', color: ['#a065e6', '#7c3fc4'], grades: ['2', '3', '4'] },
   { id: 'pizza', title: 'Fraction Pizza Shop', sub: 'Cut and serve fractions', how: 'Cut the pizza, then serve the right fraction!', color: ['#f0954f', '#e0793a'], grades: ['2', '3', '4'] },
-  { id: 'logicLock', title: 'Logic Lock', sub: 'Crack the code', how: 'Use the clues to crack the code!', color: ['#475569', '#334155'], grades: ['2', '3', '4'] },
+  { id: 'logicLock', title: 'Logic Lock', sub: 'Crack the code', how: 'Use the clues to crack the code!', color: ['#475569', '#334155'] },
 ];
 
 // Says a line in the player's language: Japanese goes to the device's
