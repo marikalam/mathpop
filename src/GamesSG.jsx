@@ -3,7 +3,9 @@ import { Thing } from './Drawings.jsx';
 import TopicVisual, { PatternShape } from './TopicVisual.jsx';
 import { TOPIC_BUILDERS } from './topics.js';
 import { storyNames } from './storyNames.js';
-import { playCorrectChime, playIncorrectBuzz, playStickerPick, speak } from './sound.js';
+import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
+import Pip from './Pip.jsx';
+import { Finale, TREASURES, TreasureChest, addReward } from './Rewards.jsx';
 import { NumPad, RoundBar, TimerBar, pick, rand, shuffle, useCountdown } from './gameKit.jsx';
 
 // Games built on Singapore math and Beast Academy ideas (Games.jsx lists
@@ -747,35 +749,56 @@ function lockRound(grade) {
   return { code: len === 2 ? 42 : 246, len, clues: len === 2 ? ['The tens digit is 4.', 'The ones digit is 2.'] : ['It is 246.'], id: 0 };
 }
 
-export function LogicLock({ grade, onEnd }) {
+// Five locks, one padlock off the treasure chest each. A miss is never a
+// dead end: the 1st reads the clues again, and from the 2nd on Pip fills
+// in one digit per miss (turned green), so every lock opens in the end.
+// After the last lock the chest flies open and a treasure pops out.
+export function LogicLock({ grade, onEnd, playerId }) {
   const N = 5;
   const [n, setN] = useState(0);
   const [r, setR] = useState(() => lockRound(grade));
   const [dials, setDials] = useState(() => Array(r.len).fill(0));
+  const [known, setKnown] = useState(() => Array(r.len).fill(false));
   const [tries, setTries] = useState(0);
   const [score, setScore] = useState(0);
   const [note, setNote] = useState(null);
   const [open, setOpen] = useState(false);
+  const [party, setParty] = useState(null);
+  const [chestOpen, setChestOpen] = useState(false);
+  const timers = useRef([]);
+  const later = (fn, ms) => timers.current.push(setTimeout(fn, ms));
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const digits = String(r.code).split('').map(Number);
+  const places = r.len === 2 ? ['tens', 'ones'] : PLACE;
   useEffect(() => {
     speak(`Crack the code! ${r.clues.join(' ')}`);
     setDials(Array(r.len).fill(0));
+    setKnown(Array(r.len).fill(false));
   }, [r]);
   function turn(i, d) {
+    if (known[i] || open) return;
     playStickerPick();
     setDials((list) => list.map((v, k) => (k === i ? (v + d + 10) % 10 : v)));
   }
   function tryOpen() {
+    if (open) return;
     const guess = Number(dials.join(''));
     if (guess === r.code) {
       playCorrectChime();
       setOpen(true);
-      const pts = tries ? 1 : 3;
+      const pts = tries === 0 ? 3 : tries === 1 ? 2 : 1;
       const total = score + pts;
       setScore(total);
       setNote(`Click! It opened! +${pts} stars`);
-      setTimeout(() => {
-        if (n + 1 >= N) onEnd(total);
-        else {
+      later(() => {
+        if (n + 1 >= N) {
+          const found = addReward(playerId, 'chests');
+          const treasure = TREASURES[(found - 1) % TREASURES.length];
+          setParty({ found, treasure, total });
+          playStickerStick();
+          speak(`You opened the treasure chest! You found ${treasure.en}!`);
+          later(() => setChestOpen(true), 700);
+        } else {
           setN(n + 1);
           setR(lockRound(grade));
           setTries(0);
@@ -783,15 +806,32 @@ export function LogicLock({ grade, onEnd }) {
           setOpen(false);
         }
       }, 1200);
-    } else {
-      playIncorrectBuzz();
-      setTries((t) => t + 1);
-      setNote('Still locked. Check each clue again!');
+      return;
     }
+    playIncorrectBuzz();
+    const t = tries + 1;
+    setTries(t);
+    if (t === 1) {
+      setNote('Still locked. Tap each clue to hear it again!');
+      speak(`Still locked. Let's read the clues again. ${r.clues.join(' ')}`);
+      return;
+    }
+    // Pip fills in a digit: a wrong one first.
+    let i = digits.findIndex((d, k) => !known[k] && dials[k] !== d);
+    if (i < 0) i = known.findIndex((k) => !k);
+    if (i < 0) return;
+    setKnown((list) => list.map((v, k) => (k === i ? true : v)));
+    setDials((list) => list.map((v, k) => (k === i ? digits[i] : v)));
+    setNote(`Pip's help: the ${places[i]} digit is ${digits[i]}!`);
+    speak(`Here's some help! The ${places[i]} digit is ${digits[i]}. It's green now. Try again!`);
   }
   return (
     <div className="game game-lock">
       <RoundBar at={n + 1} of={N} word="Lock" score={score} label="stars" />
+      <div className="lock-chest-row">
+        <TreasureChest total={N} opened={n + (open ? 1 : 0)} size={140} />
+        <span className="lock-chest-text">{N - n - (open ? 1 : 0) ? `${N - n - (open ? 1 : 0)} more to open the treasure!` : 'Treasure time!'}</span>
+      </div>
       <ol className="lock-clues">
         {r.clues.map((c) => (
           <li key={c}>
@@ -807,22 +847,37 @@ export function LogicLock({ grade, onEnd }) {
         </svg>
         <div className="lock-dials">
           {dials.map((v, i) => (
-            <div key={i} className="lock-dial">
-              <button type="button" onClick={() => turn(i, 1)} aria-label="Up">
+            <div key={i} className={`lock-dial${known[i] ? ' lock-dial-known' : ''}`}>
+              <button type="button" onClick={() => turn(i, 1)} disabled={known[i]} aria-label="Up">
                 ▲
               </button>
-              <span>{v}</span>
-              <button type="button" onClick={() => turn(i, -1)} aria-label="Down">
+              <span key={`${v}-${known[i]}`}>{v}</span>
+              <button type="button" onClick={() => turn(i, -1)} disabled={known[i]} aria-label="Down">
                 ▼
               </button>
             </div>
           ))}
         </div>
       </div>
-      {note && <p className="bakery-note">{note}</p>}
-      <button type="button" className="pill-btn-primary pill-btn-full" onClick={tryOpen}>
+      {note && (
+        <p className={`bakery-note${open ? ' bakery-note-good' : ''}${tries >= 2 && !open ? ' bakery-note-pip' : ''}`}>
+          {tries >= 2 && !open && <Pip size={34} mood="wave" />}
+          <span>{note}</span>
+        </p>
+      )}
+      <button type="button" className="pill-btn-primary pill-btn-full" disabled={open} onClick={tryOpen}>
         Open the lock
       </button>
+      {party && (
+        <Finale
+          title="You opened the treasure chest!"
+          line={`You found ${party.treasure.en}! Treasures found: ${party.found}`}
+          button="Awesome! →"
+          onDone={() => onEnd(party.total)}
+        >
+          <TreasureChest total={N} opened={N} open={chestOpen} treasure={party.treasure.id} size={190} />
+        </Finale>
+      )}
     </div>
   );
 }

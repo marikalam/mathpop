@@ -4,7 +4,8 @@ import { Confetti, CountUp } from './Celebrate.jsx';
 import { Thing } from './Drawings.jsx';
 import { ShapeIcon } from './preK.jsx';
 import { madMinuteFact } from './MadMinute.jsx';
-import { playCorrectChime, playIncorrectBuzz, playStickerPick, speak, speakInLanguage } from './sound.js';
+import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak, speakInLanguage } from './sound.js';
+import { CAKE_SIZE, Finale, PartyCake, SHOP_DECOR, ShopDecor, addReward, rewardCount } from './Rewards.jsx';
 import { TimerBar, rand, shuffle, useCountdown } from './gameKit.jsx';
 import { BarModel, BondPop, EqualDiff, LogicLock, MakeTen, PatternStreak, PizzaShop, SumGridRush, TimesTiles } from './GamesSG.jsx';
 import { PatternShape } from './TopicVisual.jsx';
@@ -244,7 +245,11 @@ function Make10({ grade, onEnd }) {
 }
 
 // ---- Pip's Bakery ----
-const ORDERS = 6;
+// Six orders build a party cake, one piece per order. A miss is never a
+// dead end: Pip helps a little more each time (count along, then dotted
+// spots to fill, then Pip packs it and the kid serves it), so every game
+// ends with the candles lit. Each finished cake decorates the shop.
+const ORDERS = CAKE_SIZE;
 function bakeryOrder(grade) {
   const sizes = { p: [1], k: [1, 2], 1: [2, 5, 10], 2: [2, 3, 4, 5, 10], 3: [3, 4, 6, 7, 8, 9], 4: [4, 6, 7, 8, 9, 12] }[grade] || [2, 5, 10];
   const size = sizes[rand(0, sizes.length - 1)];
@@ -255,7 +260,7 @@ function bakeryOrder(grade) {
 const WHO_THING = { Bunny: 'bunny', Bear: 'bear', Fox: 'fox', Panda: 'panda', Frog: 'frog', Duck: 'duck' };
 const WHO_JA = { Bunny: 'うさぎさん', Bear: 'くまさん', Fox: 'きつねさん', Panda: 'パンダさん', Frog: 'かえるさん', Duck: 'あひるさん' };
 
-function Bakery({ grade, onEnd, lang }) {
+function Bakery({ grade, onEnd, lang, playerId }) {
   const ja = lang === 'ja';
   const talk = sayIn(lang);
   const [order, setOrder] = useState(() => bakeryOrder(grade));
@@ -266,6 +271,16 @@ function Bakery({ grade, onEnd, lang }) {
   const [note, setNote] = useState(null);
   const [happy, setHappy] = useState(false);
   const [lit, setLit] = useState(-1);
+  // Pip packing the order to show how (taps wait until Pip is done).
+  const [demo, setDemo] = useState(false);
+  const [served, setServed] = useState([]);
+  const [party, setParty] = useState(null);
+  const [cakes] = useState(() => rewardCount(playerId, 'cakes'));
+  const timers = useRef([]);
+  const later = (fn, ms) => timers.current.push(setTimeout(fn, ms));
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  const seqTo = (n) => Array.from({ length: n }, (_, k) => (k + 1) * order.size).join(ja ? '、' : ', ');
   const say = (o) =>
     ja
       ? o.size === 1
@@ -283,7 +298,7 @@ function Bakery({ grade, onEnd, lang }) {
 
   // Adding a box counts on out loud: 5, 10, 15...
   function add() {
-    if (boxes >= 12) return;
+    if (boxes >= 12 || demo) return;
     playStickerPick();
     const n = boxes + 1;
     setBoxes(n);
@@ -291,7 +306,7 @@ function Bakery({ grade, onEnd, lang }) {
     talk(String(n * order.size));
   }
   function takeOut() {
-    if (!boxes) return;
+    if (!boxes || demo) return;
     playStickerPick();
     const n = boxes - 1;
     setBoxes(n);
@@ -300,18 +315,48 @@ function Bakery({ grade, onEnd, lang }) {
   }
   // Tapping a box counts up to it: 5, 10, 15.
   function countTo(i) {
+    if (demo) return;
     setLit(i);
-    talk(Array.from({ length: i + 1 }, (_, k) => (k + 1) * order.size).join(ja ? '、' : ', '));
+    talk(seqTo(i + 1));
+  }
+
+  // Pip packs the order, one box at a time, then the kid serves it.
+  function showHow() {
+    setDemo(true);
+    setBoxes(0);
+    setLit(-1);
+    const n = order.boxes;
+    setNote(ja ? 'ピップが やってみるね。みてて！' : 'Watch Pip pack it!');
+    talk(
+      ja
+        ? `みてて！ ${seqTo(n)}。${n}はこで ${order.want}こ だよ！`
+        : `Watch me! ${seqTo(n)}. ${n} ${n === 1 ? 'box' : 'boxes'} make ${order.want}!`,
+    );
+    for (let k = 1; k <= n; k++) {
+      later(() => {
+        playStickerPick();
+        setBoxes(k);
+        setLit(k - 1);
+      }, 650 * k);
+    }
+    later(() => {
+      setDemo(false);
+      setNote(ja ? 'こんどは 「どうぞ！」を タップしてね' : 'Now you tap “Serve it!”');
+    }, 650 * n + 500);
   }
 
   function serve() {
+    if (demo) return;
     const have = boxes * order.size;
     if (have === order.want) {
       playCorrectChime();
-      const earned = tries === 0 ? 3 : 1;
+      const earned = tries === 0 ? 3 : tries === 1 ? 2 : 1;
       const nextCoins = coins + earned;
+      const nextDone = done + 1;
       setCoins(nextCoins);
       setHappy(true);
+      setDone(nextDone);
+      setServed((list) => [...list, order.who]);
       if (ja) {
         setNote(`おいしい！ ありがとう！ +${earned}コイン`);
         talk(`${order.size}こいりが ${boxes}はこで ${have}こ。おいしい！ ありがとう！`);
@@ -319,50 +364,81 @@ function Bakery({ grade, onEnd, lang }) {
         setNote(`Yum! Thank you! +${earned} coins`);
         talk(`${boxes} ${boxes === 1 ? 'box' : 'boxes'} of ${order.size} is ${have}. Yum! Thank you!`);
       }
-      setTimeout(() => {
-        if (done + 1 >= ORDERS) onEnd(nextCoins);
-        else {
-          setDone((d) => d + 1);
+      later(() => {
+        if (nextDone >= ORDERS) {
+          // The cake is done: light the candles and have a party.
+          const made = addReward(playerId, 'cakes');
+          const decor = SHOP_DECOR[made - 1];
+          setParty({ made, decor, coins: nextCoins });
+          playStickerStick();
+          talk(
+            ja
+              ? `やったね！ パーティー ケーキの できあがり！ おめでとう！${decor ? ` おみせに ${decor.ja}が ふえたよ！` : ''}`
+              : `You did it! You built the party cake! Happy party!${decor ? ` Your shop got ${decor.en}!` : ''}`,
+          );
+        } else {
           setBoxes(0);
           setLit(-1);
           setTries(0);
           setOrder(bakeryOrder(grade));
         }
       }, 1800);
+      return;
+    }
+    playIncorrectBuzz();
+    const t = tries + 1;
+    setTries(t);
+    const line = ja
+      ? `${have > order.want ? 'おおすぎるよ！' : 'たりないよ！'} それだと ${have}こ。${order.want}こ ほしいな。`
+      : have > order.want
+        ? `Too many! That's ${have}. I want ${order.want}.`
+        : `Not enough! That's ${have}. I want ${order.want}.`;
+    if (t === 1) {
+      // 1st miss: count the boxes together.
+      setNote(line);
+      talk(ja ? `${line} いっしょに かぞえよう。${seqTo(boxes)}。` : `${line} Let's count: ${seqTo(boxes)}.`);
+    } else if (t === 2) {
+      // 2nd miss: dotted spots show how many boxes fit the order.
+      const tip = ja ? 'ヒント！ てんてんの ところに はこを いれてね。' : 'Tip: fill the dotted spots!';
+      setNote(`${line} ${tip}`);
+      talk(`${line} ${tip}`);
     } else {
-      playIncorrectBuzz();
-      setTries((t) => t + 1);
-      const line = ja
-        ? `${have > order.want ? 'おおすぎるよ！' : 'たりないよ！'} それだと ${have}こ。${order.want}こ ほしいな。`
-        : have > order.want
-          ? `Too many! That's ${have}. I want ${order.want}.`
-          : `Not enough! That's ${have}. I want ${order.want}.`;
+      // 3rd miss: Pip shows how.
+      later(showHow, 900);
       setNote(line);
       talk(line);
     }
   }
 
+  const hint = tries >= 2;
+  const slots = hint ? Math.max(boxes, order.boxes) : boxes;
   const small = order.size > 6;
+  const cupSize = small ? 17 : order.size > 4 ? 23 : order.size > 1 ? 28 : 36;
   return (
     <div className="game game-bakery">
       <div className="mm-top">
-        <span className="mm-time">
-          {ja ? `ちゅうもん ${done + 1} / ${ORDERS}` : `Order ${done + 1} of ${ORDERS}`}
-        </span>
+        <span className="mm-time">{ja ? `ちゅうもん ${Math.min(done + 1, ORDERS)} / ${ORDERS}` : `Order ${Math.min(done + 1, ORDERS)} of ${ORDERS}`}</span>
         <span className="mm-right">
           <span className="bake-coin" aria-hidden="true" /> {coins}
         </span>
       </div>
       <div className="bake-shop">
         <div className="bake-awning" aria-hidden="true" />
+        <ShopDecor count={cakes} />
         <div className="bake-sign">{ja ? 'ピップの ケーキやさん' : "Pip's Bakery"}</div>
         <div className="bake-shelf" aria-hidden="true">
-          {['cupcake', 'donut', 'cookie', 'cupcake', 'donut'].map((id, i) => (
-            <Thing key={i} id={id} size={30} />
-          ))}
+          <span className="bake-shelf-side">
+            <Thing id="cupcake" size={30} />
+            <Thing id="donut" size={30} />
+          </span>
+          <PartyCake pieces={done} />
+          <span className="bake-shelf-side">
+            <Thing id="cookie" size={30} />
+            <Thing id="cupcake" size={30} />
+          </span>
         </div>
         <button type="button" className="bake-customer" onClick={() => talk(say(order))}>
-          <span className={`bake-who${happy ? ' bake-who-happy' : ''}`}>
+          <span key={done} className={`bake-who${happy ? ' bake-who-happy' : ' bake-who-in'}`}>
             <Thing id={WHO_THING[order.who]} size={70} />
           </span>
           <span className="bake-bubble">
@@ -371,35 +447,84 @@ function Bakery({ grade, onEnd, lang }) {
           </span>
         </button>
         <div className="bake-counter">
-          {boxes === 0 && <span className="bake-empty">{ja ? '「はこを たす」を タップして つめてね' : 'Tap “Add a box” to pack the order'}</span>}
-          {Array.from({ length: boxes }, (_, i) => (
-            <button key={i} type="button" className={`bake-box${lit === i ? ' bake-box-lit' : ''}`} onClick={() => countTo(i)} aria-label={`${(i + 1) * order.size}`}>
-              <span className="bake-total">{(i + 1) * order.size}</span>
-              <span className="bake-lid" aria-hidden="true" />
-              <span className={`bake-window${small ? ' bake-window-small' : ''}`}>
-                {Array.from({ length: Math.min(order.size, 12) }, (_, j) => (
-                  <Thing key={j} id="cupcake" size={small ? 17 : order.size > 4 ? 23 : order.size > 1 ? 28 : 36} />
-                ))}
+          {slots === 0 && <span className="bake-empty">{ja ? '「はこを たす」を タップして つめてね' : 'Tap “Add a box” to pack the order'}</span>}
+          {Array.from({ length: slots }, (_, i) =>
+            i < boxes ? (
+              <button
+                key={i}
+                type="button"
+                className={`bake-box${lit === i ? ' bake-box-lit' : ''}${hint && i >= order.boxes ? ' bake-box-extra' : ''}`}
+                onClick={() => countTo(i)}
+                aria-label={`${(i + 1) * order.size}`}
+              >
+                <span className="bake-total">{(i + 1) * order.size}</span>
+                <span className="bake-lid" aria-hidden="true" />
+                <span className={`bake-window${small ? ' bake-window-small' : ''}`}>
+                  {Array.from({ length: Math.min(order.size, 12) }, (_, j) => (
+                    <span key={j} className="bake-cup" style={{ animationDelay: `${0.05 * j}s` }}>
+                      <Thing id="cupcake" size={cupSize} />
+                    </span>
+                  ))}
+                </span>
+              </button>
+            ) : (
+              <span key={i} className="bake-slot" aria-hidden="true">
+                <span className="bake-total">{(i + 1) * order.size}</span>
               </span>
-            </button>
-          ))}
+            ),
+          )}
         </div>
       </div>
       <p className="bakery-count">
-        {boxes ? Array.from({ length: boxes }, (_, i) => (i + 1) * order.size).join(', ') : '0'} {ja ? 'こ' : 'cupcakes'}
+        {boxes ? seqTo(boxes) : '0'} {ja ? 'こ' : 'cupcakes'}
       </p>
-      {note && <p className={`bakery-note${happy ? ' bakery-note-good' : ''}`}>{note}</p>}
+      {note && (
+        <p className={`bakery-note${happy ? ' bakery-note-good' : ''}${tries >= 2 && !happy ? ' bakery-note-pip' : ''}`}>
+          {tries >= 2 && !happy && <Pip size={34} mood="wave" />}
+          <span>{note}</span>
+        </p>
+      )}
       <div className="bakery-actions">
-        <button type="button" className="bakery-btn" disabled={!boxes} onClick={takeOut}>
+        <button type="button" className="bakery-btn" disabled={!boxes || demo || happy} onClick={takeOut}>
           {ja ? '− ひとつ だす' : '− Take one out'}
         </button>
-        <button type="button" className="bakery-btn bakery-add" onClick={add}>
+        <button type="button" className="bakery-btn bakery-add" disabled={demo || happy} onClick={add}>
           {ja ? '+ はこを たす' : '+ Add a box'}
         </button>
       </div>
-      <button type="button" className="bake-serve" disabled={!boxes || happy} onClick={serve}>
+      <button
+        type="button"
+        className={`bake-serve${tries >= 3 && !demo && !happy && boxes === order.boxes ? ' bake-serve-pulse' : ''}`}
+        disabled={!boxes || happy || demo}
+        onClick={serve}
+      >
         {ja ? 'どうぞ！' : 'Serve it!'}
       </button>
+      {party && (
+        <Finale
+          title={ja ? 'パーティー ケーキ かんせい！' : 'You built the party cake!'}
+          line={
+            party.decor
+              ? ja
+                ? `おみせに ${party.decor.ja}が ふえたよ！`
+                : `New for your shop: ${party.decor.en}!`
+              : ja
+                ? `ケーキ ${party.made}こめ！`
+                : `Cake number ${party.made}!`
+          }
+          button={ja ? 'やったね！ →' : 'Yay! →'}
+          onDone={() => onEnd(party.coins)}
+        >
+          <PartyCake pieces={ORDERS} lit size={170} />
+          <span className="finale-guests">
+            {served.map((who, i) => (
+              <span key={i} className="finale-guest" style={{ animationDelay: `${i * 0.12}s` }}>
+                <Thing id={WHO_THING[who]} size={40} />
+              </span>
+            ))}
+          </span>
+        </Finale>
+      )}
     </div>
   );
 }
@@ -686,7 +811,7 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit, lang 
     );
   }
   const Play = PLAY[game];
-  return <Play key={run} grade={grade} onEnd={end} lang={ja ? 'ja' : 'en'} />;
+  return <Play key={run} grade={grade} onEnd={end} lang={ja ? 'ja' : 'en'} playerId={playerId} />;
 }
 
 // Each game's little picture (the games list and the home page).

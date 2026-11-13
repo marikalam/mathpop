@@ -8537,3 +8537,488 @@ body {
 .home-fit .home-tile {
   min-height: 96px;
 }
+
+/* ---- Rewards that build up during a game (Rewards.jsx) ---- */
+/* Party cake on the bakery shelf: faint pieces still to earn, a bouncy
+   drop for each new one, and a ring of sparkles when it lands. */
+.cake {
+  position: relative;
+  display: inline-block;
+  flex: none;
+}
+.cake svg {
+  overflow: visible;
+}
+.cake-ghost {
+  opacity: 0.16;
+  filter: grayscale(1);
+}
+.cake-piece-new {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: cake-drop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes cake-drop {
+  0% {
+    transform: translateY(-40px) scale(1, 1);
+    opacity: 0;
+  }
+  55% {
+    transform: translateY(0) scale(1.12, 0.85);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(0.95, 1.06);
+  }
+  100% {
+    transform: none;
+  }
+}
+.cake-sparkles {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  pointer-events: none;
+}
+.cake-sparkles i {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px;
+  border-radius: 50%;
+  background: #ffd23f;
+  box-shadow: 0 0 6px #ffd23f;
+  opacity: 0;
+  animation: cake-spark 0.8s 0.3s ease-out;
+}
+.cake-sparkles i:nth-child(even) {
+  background: #ff8fb1;
+  box-shadow: 0 0 6px #ff8fb1;
+}
+@keyframes cake-spark {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--a)) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateY(-56px) scale(0.3);
+  }
+}
+.cake-flame {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: flame-on 0.4s ease-out both, flame-flicker 0.5s 0.8s ease-in-out infinite alternate;
+}
+@keyframes flame-on {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+@keyframes flame-flicker {
+  from {
+    transform: scale(1, 1) rotate(-4deg);
+  }
+  to {
+    transform: scale(0.88, 1.12) rotate(4deg);
+  }
+}
+
+/* The shelf: treats either side of the cake. */
+.bake-shelf {
+  align-items: flex-end;
+}
+.bake-shelf-side {
+  display: flex;
+  gap: 4px;
+}
+
+/* A new customer walks in; a box's cupcakes pop in one by one. */
+.bake-who-in {
+  animation: bake-walk-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes bake-walk-in {
+  from {
+    transform: translateX(-60px) rotate(-10deg);
+    opacity: 0;
+  }
+}
+.bake-box {
+  animation: bake-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes bake-in {
+  0% {
+    transform: translateY(-30px) scale(0.7);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(0) scale(1.08, 0.9);
+    opacity: 1;
+  }
+}
+.bake-cup {
+  display: inline-block;
+  animation: bake-cup 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes bake-cup {
+  from {
+    transform: scale(0);
+  }
+}
+.bake-box-lit {
+  animation: bake-lit 0.35s ease-out;
+}
+@keyframes bake-lit {
+  50% {
+    transform: translateY(-6px) scale(1.06);
+  }
+}
+
+/* Hints: dotted spots for the boxes the order needs, extra boxes wobble. */
+.bake-slot {
+  position: relative;
+  display: inline-block;
+  width: 78px;
+  height: 78px;
+  border: 3px dashed rgba(255, 255, 255, 0.85);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.14);
+  animation: bake-slot 1.2s ease-in-out infinite;
+}
+.bake-slot .bake-total {
+  opacity: 0.7;
+}
+@keyframes bake-slot {
+  50% {
+    background: rgba(255, 255, 255, 0.32);
+  }
+}
+.bake-box-extra {
+  opacity: 0.55;
+  animation: bake-extra 0.9s ease-in-out infinite;
+}
+@keyframes bake-extra {
+  25% {
+    transform: rotate(-4deg);
+  }
+  75% {
+    transform: rotate(4deg);
+  }
+}
+.bakery-note-pip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #2a54c4;
+}
+.bake-serve-pulse {
+  animation: serve-pulse 0.9s ease-in-out infinite;
+}
+@keyframes serve-pulse {
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 5px 0 #b83c63, 0 0 0 10px rgba(255, 143, 177, 0.35);
+  }
+}
+
+/* The bakery's decorations (one per finished cake). */
+.shop-decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.decor {
+  position: absolute;
+  animation: decor-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes decor-in {
+  from {
+    transform: scale(0);
+  }
+}
+.decor-balloon-l {
+  top: 22px;
+  left: 6px;
+  animation: decor-sway 3s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+.decor-balloon-r {
+  top: 26px;
+  right: 8px;
+  animation: decor-sway 3.4s 0.5s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+@keyframes decor-sway {
+  50% {
+    transform: rotate(6deg) translateY(-3px);
+  }
+}
+.decor-star {
+  top: 36px;
+  left: calc(50% - 118px);
+  animation: decor-spin 4s linear infinite;
+}
+@keyframes decor-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.decor-flower {
+  left: 4px;
+  top: 106px;
+}
+.decor-cat {
+  right: 6px;
+  bottom: 6px;
+  z-index: 2;
+}
+.decor-lights {
+  position: absolute;
+  top: 24px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+}
+.decor-lights i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffd23f;
+  animation: decor-twinkle 1.4s ease-in-out infinite;
+}
+.decor-lights i:nth-child(3n + 1) {
+  background: #7ab8ff;
+}
+.decor-lights i:nth-child(3n + 2) {
+  background: #ff6b9a;
+}
+@keyframes decor-twinkle {
+  50% {
+    opacity: 0.3;
+    transform: scale(0.7);
+  }
+}
+
+/* Treasure chest: padlocks drop off one by one, then the lid flies open. */
+.chest {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  flex: none;
+}
+.chest svg {
+  position: relative;
+  overflow: visible;
+  z-index: 1;
+}
+.chest-lock-off {
+  animation: chest-lock-off 0.9s ease-in both;
+}
+@keyframes chest-lock-off {
+  0% {
+    transform: none;
+    opacity: 1;
+  }
+  20% {
+    transform: translateY(-6px) rotate(-15deg);
+  }
+  100% {
+    transform: translateY(70px) rotate(70deg);
+    opacity: 0;
+  }
+}
+.chest-lid {
+  transform-box: fill-box;
+  transform-origin: 0% 100%;
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.chest-open .chest-lid {
+  transform: translateY(-14px) rotate(-28deg);
+}
+.chest-rays {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  width: 320px;
+  height: 320px;
+  margin: -160px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(rgba(255, 210, 63, 0.55) 0 12deg, transparent 12deg 30deg);
+  -webkit-mask: radial-gradient(closest-side, #000 30%, transparent);
+  mask: radial-gradient(closest-side, #000 30%, transparent);
+  animation: chest-rays 6s linear infinite, decor-in 0.6s ease-out;
+}
+@keyframes chest-rays {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.chest-treasure {
+  position: absolute;
+  left: 50%;
+  bottom: 40%;
+  z-index: 2;
+  animation: chest-treasure 1s 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both, chest-float 2s 1.3s ease-in-out infinite;
+}
+@keyframes chest-treasure {
+  from {
+    transform: translate(-50%, 50%) scale(0.2);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0) scale(1);
+    opacity: 1;
+  }
+}
+@keyframes chest-float {
+  from {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, -8px);
+  }
+  to {
+    transform: translate(-50%, 0);
+  }
+}
+.lock-chest-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.lock-chest-text {
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #8a5a1e;
+  max-width: 150px;
+}
+.lock-dial span {
+  animation: dial-tick 0.18s ease-out;
+}
+@keyframes dial-tick {
+  from {
+    transform: translateY(-6px);
+    opacity: 0.4;
+  }
+}
+.lock-dial-known span {
+  background: #d9f7e6;
+  color: #1f8a51;
+  box-shadow: 0 0 0 3px #2fae6b;
+  animation: dial-known 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes dial-known {
+  from {
+    transform: scale(1.4);
+  }
+}
+.lock-dial button:disabled {
+  opacity: 0.2;
+  cursor: default;
+}
+.lock-open .lock-dials span {
+  background: #d9f7e6;
+}
+
+/* The big party at the end of a game. */
+.finale {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(23, 42, 80, 0.55);
+  animation: finale-fade 0.3s ease-out;
+}
+@keyframes finale-fade {
+  from {
+    opacity: 0;
+  }
+}
+.finale-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 22px 20px 20px;
+  border-radius: 28px;
+  background: #fff8ec;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(10, 30, 80, 0.4);
+  animation: finale-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes finale-pop {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+}
+.finale-show {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 200px;
+  justify-content: flex-end;
+  padding-top: 40px;
+}
+.finale-title {
+  margin: 12px 0 4px;
+  font: 700 26px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #5b3416;
+}
+.finale-line {
+  margin: 0 0 16px;
+  font-weight: 700;
+  color: #c2410c;
+}
+.finale-btn-wait {
+  opacity: 0.4;
+}
+.finale-guests {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 6px;
+}
+.finale-guest {
+  animation: bake-walk-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both, finale-dance 0.6s 0.8s ease-in-out infinite alternate;
+}
+@keyframes finale-dance {
+  from {
+    transform: translateY(0) rotate(-6deg);
+  }
+  to {
+    transform: translateY(-10px) rotate(6deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cake-piece-new,
+  .cake-sparkles i,
+  .cake-flame,
+  .bake-who-in,
+  .bake-cup,
+  .bake-box-extra,
+  .bake-slot,
+  .bake-serve-pulse,
+  .decor,
+  .decor-lights i,
+  .chest-rays,
+  .chest-treasure,
+  .finale-guest,
+  .finale-card {
+    animation: none;
+  }
+  .chest-treasure {
+    transform: translateX(-50%);
+  }
+  .chest-lock-off {
+    animation: none;
+    opacity: 0;
+  }
+}
