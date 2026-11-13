@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Thing } from './Drawings.jsx';
+import Icon from './Icon.jsx';
+import { Confetti } from './Celebrate.jsx';
 import TopicVisual, { PatternShape } from './TopicVisual.jsx';
 import { TOPIC_BUILDERS } from './topics.js';
 import { storyNames } from './storyNames.js';
@@ -324,6 +326,9 @@ function gridRound() {
   return { rows, blanks, id: Math.random() };
 }
 
+// Each column has its own color, so "these two make 10" is easy to see.
+const SG_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#a855f7'];
+
 export function SumGridRush({ onEnd }) {
   const seconds = 90;
   const left = useCountdown(seconds, true);
@@ -331,59 +336,99 @@ export function SumGridRush({ onEnd }) {
   const [filled, setFilled] = useState({});
   const [sel, setSel] = useState(0);
   const [score, setScore] = useState(0);
-  const [bad, setBad] = useState(false);
+  const [bad, setBad] = useState(null);
+  const [pop, setPop] = useState(null);
   useEndAtZero(left, score, onEnd);
-  useEffect(() => {
-    speak('Each column makes 10. Each row makes 20. Fill the empty boxes!');
-  }, []);
   const key = (r, c) => `${r}-${c}`;
+  const [sr, sc] = g.blanks[sel] || [0, 0];
+  const partner = g.rows[1 - sr][sc];
+  useEffect(() => {
+    speak(`The two numbers in each column make 10. ${partner} and what make 10?`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [g]);
+  function pickBox(i) {
+    setSel(i);
+    const [r, c] = g.blanks[i];
+    speak(`${g.rows[1 - r][c]} and what make 10?`);
+  }
   function put(v) {
     if (left === 0) return;
-    const [r, c] = g.blanks[sel];
-    if (g.rows[r][c] === v) {
+    if (g.rows[sr][sc] === v) {
       playCorrectChime();
-      const next = { ...filled, [key(r, c)]: v };
+      const next = { ...filled, [key(sr, sc)]: v };
       setFilled(next);
+      setPop(key(sr, sc));
       const open = g.blanks.findIndex(([rr, cc]) => next[key(rr, cc)] === undefined);
       if (open === -1) {
         setScore((s) => s + 1);
+        speak('You did it!');
         setTimeout(() => {
           setG(gridRound());
           setFilled({});
           setSel(0);
-        }, 350);
-      } else setSel(open);
+          setPop(null);
+        }, 700);
+      } else {
+        setSel(open);
+        const [r, c] = g.blanks[open];
+        speak(`${g.rows[1 - r][c]} and what make 10?`);
+      }
     } else {
       playIncorrectBuzz();
-      setBad(true);
-      setTimeout(() => setBad(false), 400);
+      setBad(v);
+      speak(`${partner} and ${v} make ${partner + v}. We need 10!`);
+      setTimeout(() => setBad(null), 500);
     }
   }
+  // A column the child filled in (columns with no empty box get no check).
+  const colDone = (c) => g.blanks.some(([, cc]) => cc === c) && g.blanks.every(([r, cc]) => cc !== c || filled[key(r, cc)] !== undefined);
   return (
     <div className="game game-sumgrid">
       <TimerBar left={left} seconds={seconds} score={score} label="grids" />
-      <div className={`sg-grid${bad ? ' make10-bad' : ''}`}>
-        <span />
+      <div className="sgk-board">
         {[0, 1, 2, 3].map((c) => (
-          <span key={c} className="sg-head">10</span>
+          <div key={c} className={`sgk-col${sc === c ? ' sgk-col-on' : ''}`} style={{ '--sgk': SG_COLORS[c] }}>
+            <span className={`sgk-ten${colDone(c) ? ' sgk-ten-done' : ''}`}>{colDone(c) ? '✓ 10' : '10'}</span>
+            {[0, 1].map((r) => {
+              const bi = g.blanks.findIndex(([rr, cc]) => rr === r && cc === c);
+              if (bi === -1) {
+                return (
+                  <span key={r} className="sgk-cell">
+                    {g.rows[r][c]}
+                  </span>
+                );
+              }
+              const v = filled[key(r, c)];
+              return (
+                <button
+                  key={r}
+                  type="button"
+                  className={`sgk-cell sgk-blank${sel === bi && v === undefined ? ' sgk-sel' : ''}${v !== undefined ? ' sgk-done' : ''}${pop === key(r, c) ? ' sgk-pop' : ''}`}
+                  onClick={() => v === undefined && pickBox(bi)}
+                  aria-label={v === undefined ? 'Empty box' : String(v)}
+                >
+                  {v ?? '?'}
+                </button>
+              );
+            })}
+          </div>
         ))}
-        {[0, 1].map((r) => [
-          <span key={`h${r}`} className="sg-head sg-row">20</span>,
-          ...[0, 1, 2, 3].map((c) => {
-            const bi = g.blanks.findIndex(([rr, cc]) => rr === r && cc === c);
-            if (bi === -1) return <span key={key(r, c)} className="sg-cell">{g.rows[r][c]}</span>;
-            const v = filled[key(r, c)];
-            return (
-              <button key={key(r, c)} type="button" className={`sg-cell sg-blank${sel === bi && v === undefined ? ' sg-sel' : ''}`} onClick={() => v === undefined && setSel(bi)}>
-                {v ?? '?'}
-              </button>
-            );
-          }),
-        ])}
       </div>
-      <div className="sg-pad">
-        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((v) => (
-          <button key={v} type="button" className="mm-key" onClick={() => put(v)}>
+      <p className="sgk-rows">Each row adds up to 20 too!</p>
+      <button type="button" className="sgk-help" style={{ '--sgk': SG_COLORS[sc] }} onClick={() => speak(`${partner} and what make 10?`)}>
+        {sr === 0 ? (
+          <>
+            <b>?</b> + {partner} = 10
+          </>
+        ) : (
+          <>
+            {partner} + <b>?</b> = 10
+          </>
+        )}
+      </button>
+      <div className="sgk-pad">
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 10].map((v) => (
+          <button key={v} type="button" className={`sgk-key${v === 10 ? ' sgk-key-wide' : ''}${bad === v ? ' make10-bad sgk-key-bad' : ''}`} onClick={() => put(v)}>
             {v}
           </button>
         ))}
@@ -901,20 +946,129 @@ function Padlock({ dials, known, rolls, max, open, rattle, lockId, onTurn }) {
   );
 }
 
-// Five locks, one padlock off the treasure chest each. A miss is never a
-// dead end: the 1st reads the clues again, and from the 2nd on Pip fills
-// in one digit per miss (turned green), so every lock opens in the end.
-// After the last lock the chest flies open and a treasure pops out.
+// Hints for the lock: the first explains one clue; then digits are shown.
+function clueTip(c) {
+  // The clues each grade gets (Pre-K to 1st, and rounding/multiples for 3rd and 4th).
+  let m = c.match(/^It is more than (\d+)/);
+  if (m) return `The code is bigger than ${m[1]}. Count up from ${m[1]}.`;
+  m = c.match(/^It is less than (\d+)/);
+  if (m) return `The code is smaller than ${m[1]}. Count down from ${m[1]}.`;
+  m = c.match(/one more than (\d+)/);
+  if (m) return `One more than ${m[1]} is the number right after ${m[1]}.`;
+  m = c.match(/one less than (\d+)/);
+  if (m) return `One less than ${m[1]} is the number right before ${m[1]}.`;
+  m = c.match(/It is (\d+) \+ (\d+)/);
+  if (m) return `Start at ${m[1]} and count on ${m[2]} more.`;
+  m = c.match(/10 more than (\d+)/);
+  if (m) return `10 more means one more ten: only the tens digit of ${m[1]} goes up.`;
+  m = c.match(/10 less than (\d+)/);
+  if (m) return `10 less means one less ten: only the tens digit of ${m[1]} goes down.`;
+  if (/has \d+ tens?\./.test(c)) return 'The tens digit tells you how many tens.';
+  if (/has \d+ ones?\./.test(c)) return 'The ones digit is the last digit.';
+  m = c.match(/nearest ten, it is (\d+)/);
+  if (m) return `Numbers that round to ${m[1]} go from ${+m[1] - 5} to ${+m[1] + 4}.`;
+  m = c.match(/nearest hundred, it is (\d+)/);
+  if (m) return `Numbers that round to ${m[1]} go from ${+m[1] - 50} to ${+m[1] + 49}.`;
+  m = c.match(/multiple of (\d+)/);
+  if (m) return `A multiple of ${m[1]} is in the ${m[1]} times table.`;
+  m = c.match(/multiply to (\d+)/);
+  if (m) return `Find digits that multiply to ${m[1]}: try its times-table facts.`;
+  if (/bigger than the tens digit/.test(c)) return 'The last digit is bigger than the first one.';
+  if (/smaller than the tens digit/.test(c)) return 'The last digit is smaller than the first one.';
+  m = c.match(/between (\d+) and (\d+)/);
+  if (m) return `The code is ${m[1]} or more, but less than ${m[2]}. So what is the first digit?`;
+  m = c.match(/add up to (\d+)/);
+  if (m) return `Find digits that add up to ${m[1]}, then check them with the other clues.`;
+  if (/even/.test(c)) return 'Even numbers end in 0, 2, 4, 6 or 8.';
+  if (/odd/.test(c)) return 'Odd numbers end in 1, 3, 5, 7 or 9.';
+  if (/double/.test(c)) return 'Double means two times as much: 6 is double 3, and 8 is double 4.';
+  m = c.match(/(\d+) more than/);
+  if (m) return `Pick a digit, then add ${m[1]} to it for the other one.`;
+  if (/different/.test(c)) return 'No digit can be used twice.';
+  return 'Try one clue at a time, and turn the dials to match it.';
+}
+
+// The surprise inside each opened lock: a different friend, doing a
+// different dance, with a number fact, every time.
+const SURPRISE_THINGS = ['panda', 'fox', 'bunny', 'frog', 'monkey', 'turtle', 'butterfly', 'duck', 'cat', 'dog', 'bear', 'fish', 'cupcake', 'donut', 'strawberry', 'balloon'];
+const SURPRISE_MOVES = [
+  ['spin', 'spinning'],
+  ['bounce', 'bouncing'],
+  ['wiggle', 'wiggling'],
+  ['float', 'floating'],
+  ['grow', 'growing'],
+  ['flip', 'flipping'],
+];
+const SURPRISE_BG = ['#ffd23f', '#ff8fb1', '#7fd8ff', '#b8f2c8', '#d9b8ff', '#ffb870'];
+const FACTS = [
+  'A spider has 8 legs.',
+  'An octopus has 3 hearts.',
+  'A week has 7 days.',
+  'A starfish has 5 arms.',
+  'Bees build honeycomb out of hexagons: shapes with 6 sides.',
+  'A year has 12 months.',
+  'Snowflakes have 6 points.',
+  'A piano has 88 keys.',
+  'There are 60 seconds in a minute.',
+  'Opposite sides of a dice always add up to 7.',
+  'A soccer team has 11 players on the field.',
+  '3 cats have 12 legs: 4 + 4 + 4.',
+  'A clock goes around 2 times every day.',
+  'An ant has 6 legs, so 2 ants have 12.',
+];
+function surprise(last) {
+  let s;
+  do {
+    s = { thing: pick(SURPRISE_THINGS), move: pick(SURPRISE_MOVES), bg: pick(SURPRISE_BG), fact: pick(FACTS) };
+  } while (last && (s.thing === last.thing || s.move === last.move || s.fact === last.fact));
+  return s;
+}
+
+function Surprise({ s, onNext, last }) {
+  return (
+    <div className="lock-surprise" style={{ '--sbg': s.bg }}>
+      <Confetti />
+      <p className="lock-surprise-title">Surprise!</p>
+      <div className="lock-chest" aria-hidden="true">
+        <span className="lock-chest-lid" />
+        <span className="lock-chest-box" />
+        <span className={`lock-surprise-thing surprise-${s.move[0]}`}>
+          <Thing id={s.thing} size={110} />
+        </span>
+      </div>
+      <p className="lock-surprise-what">
+        A {s.move[1]} {s.thing}!
+      </p>
+      <p className="lock-surprise-fact">{s.fact}</p>
+      <button type="button" className="pill-btn-primary pill-btn-full" onClick={onNext}>
+        {last ? 'Finish' : 'Next lock →'}
+      </button>
+    </div>
+  );
+}
+
+// Five locks, one padlock off the treasure chest each. Two kinds of help:
+// "Need a hint?" (the first explains a clue, the next ones show a digit,
+// never all of them; each hint costs a star), and Pip's help after a miss
+// (the 1st reads the clues again; from the 2nd on Pip fills in a digit per
+// miss), so every lock opens in the end. Each opened lock has a surprise
+// inside (a friend doing a dance, with a number fact); after the last one
+// the chest flies open and a treasure pops out.
 export function LogicLock({ grade, onEnd, playerId }) {
   const N = 5;
   const [n, setN] = useState(0);
   const [r, setR] = useState(() => lockRound(grade));
   const [dials, setDials] = useState(() => Array(r.len).fill(0));
+  // Digits filled in for the kid (by a hint or by Pip): green, and fixed.
   const [known, setKnown] = useState(() => Array(r.len).fill(false));
   const [tries, setTries] = useState(0);
+  const [hints, setHints] = useState(0);
+  const [tip, setTip] = useState(null);
   const [score, setScore] = useState(0);
   const [note, setNote] = useState(null);
   const [open, setOpen] = useState(false);
+  const [prize, setPrize] = useState(null);
+  const lastPrize = useRef(null);
   const [party, setParty] = useState(null);
   const [chestOpen, setChestOpen] = useState(false);
   // How each dial last turned (for the rolling digits) and a rattle on a miss.
@@ -925,11 +1079,15 @@ export function LogicLock({ grade, onEnd, playerId }) {
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const digits = lockDigits(r.code, r.len);
   const places = r.len === 3 ? PLACE : r.len === 2 ? ['tens', 'ones'] : ['ones'];
+  // Hint 1 explains a clue; then a digit at a time (never all of them).
+  const maxHints = 1 + (r.len - 1);
   useEffect(() => {
     speak(`Crack the code! ${r.clues.join(' ')}`);
     setDials(Array(r.len).fill(0));
     setKnown(Array(r.len).fill(false));
     setRolls(Array(r.len).fill({ dir: 0, n: 0 }));
+    setHints(0);
+    setTip(null);
   }, [r]);
   function turn(i, d) {
     if (known[i] || open) return;
@@ -937,40 +1095,52 @@ export function LogicLock({ grade, onEnd, playerId }) {
     setDials((list) => list.map((v, k) => (k === i ? (v + d + r.max + 1) % (r.max + 1) : v)));
     setRolls((list) => list.map((x, k) => (k === i ? { dir: d, n: x.n + 1 } : x)));
   }
+  // Fill in digit i for the kid.
+  function reveal(i) {
+    setKnown((list) => list.map((v, k) => (k === i ? true : v)));
+    setDials((list) => list.map((v, k) => (k === i ? digits[i] : v)));
+    setRolls((list) => list.map((x, k) => (k === i ? { dir: 0, n: x.n + 1 } : x)));
+  }
+  function hint() {
+    if (hints >= maxHints || open) return;
+    playStickerPick();
+    if (hints === 0) {
+      const line = clueTip(r.clues[0]);
+      setTip(line);
+      speak(line);
+    } else {
+      const i = [0, r.len - 1, 1].find((k) => !known[k]);
+      if (i === undefined) return;
+      reveal(i);
+      const line = `The ${places[i]} digit is ${digits[i]}.`;
+      setTip(line);
+      speak(line);
+    }
+    setHints((h) => h + 1);
+  }
   function tryOpen() {
     if (open) return;
     const guess = Number(dials.join(''));
     if (guess === r.code) {
       playCorrectChime();
       setOpen(true);
-      const pts = tries === 0 ? 3 : tries === 1 ? 2 : 1;
-      const total = score + pts;
-      setScore(total);
-      setNote(`Click! It opened! +${pts} stars`);
+      const pts = Math.max(1, (tries === 0 ? 3 : tries === 1 ? 2 : 1) - hints);
+      setScore((sc) => sc + pts);
+      setNote(`Click! It opened! +${pts} ${pts === 1 ? 'star' : 'stars'}`);
+      const s = surprise(lastPrize.current);
+      lastPrize.current = s;
       later(() => {
-        if (n + 1 >= N) {
-          const found = addReward(playerId, 'chests');
-          const treasure = TREASURES[(found - 1) % TREASURES.length];
-          setParty({ found, treasure, total });
-          playStickerStick();
-          speak(`You opened the treasure chest! You found ${treasure.en}!`);
-          later(() => setChestOpen(true), 700);
-        } else {
-          setN(n + 1);
-          setR(lockRound(grade));
-          setTries(0);
-          setNote(null);
-          setOpen(false);
-        }
-      }, 1200);
+        setPrize(s);
+        speak(`Surprise! A ${s.move[1]} ${s.thing}! ${s.fact}`);
+      }, 1100);
       return;
     }
     playIncorrectBuzz();
-    setRattle((n) => n + 1);
+    setRattle((x) => x + 1);
     const t = tries + 1;
     setTries(t);
     if (t === 1) {
-      setNote('Still locked. Tap each clue to hear it again!');
+      setNote('Still locked. Tap each clue to hear it again, or tap Need a hint!');
       speak(`Still locked. Let's read the clues again. ${r.clues.join(' ')}`);
       return;
     }
@@ -978,9 +1148,7 @@ export function LogicLock({ grade, onEnd, playerId }) {
     let i = digits.findIndex((d, k) => !known[k] && dials[k] !== d);
     if (i < 0) i = known.findIndex((k) => !k);
     if (i < 0) return;
-    setKnown((list) => list.map((v, k) => (k === i ? true : v)));
-    setDials((list) => list.map((v, k) => (k === i ? digits[i] : v)));
-    setRolls((list) => list.map((x, k) => (k === i ? { dir: 0, n: x.n + 1 } : x)));
+    reveal(i);
     if (r.len === 1) {
       setNote(`Pip's help: it's ${digits[i]}!`);
       speak(`Here's some help! The code is ${digits[i]}. It's green now. Tap open!`);
@@ -989,6 +1157,25 @@ export function LogicLock({ grade, onEnd, playerId }) {
       speak(`Here's some help! The ${places[i]} digit is ${digits[i]}. It's green now. Try again!`);
     }
   }
+  function next() {
+    setPrize(null);
+    if (n + 1 >= N) {
+      // The last lock: the treasure chest opens.
+      const found = addReward(playerId, 'chests');
+      const treasure = TREASURES[(found - 1) % TREASURES.length];
+      setParty({ found, treasure });
+      playStickerStick();
+      speak(`You opened the treasure chest! You found ${treasure.en}!`);
+      later(() => setChestOpen(true), 700);
+      return;
+    }
+    setN(n + 1);
+    setR(lockRound(grade));
+    setTries(0);
+    setNote(null);
+    setOpen(false);
+  }
+  if (prize) return <Surprise s={prize} onNext={next} last={n + 1 >= N} />;
   return (
     <div className="game game-lock">
       <RoundBar at={n + 1} of={N} word="Lock" score={score} label="stars" />
@@ -1006,21 +1193,31 @@ export function LogicLock({ grade, onEnd, playerId }) {
         ))}
       </ol>
       <Padlock dials={dials} known={known} rolls={rolls} max={r.max} open={open} rattle={rattle} lockId={r.id} onTurn={turn} />
+      {tip && (
+        <button type="button" className="lock-tip" onClick={() => speak(tip)}>
+          {tip}
+        </button>
+      )}
       {note && (
         <p className={`bakery-note${open ? ' bakery-note-good' : ''}${tries >= 2 && !open ? ' bakery-note-pip' : ''}`}>
           {tries >= 2 && !open && <Pip size={34} mood="wave" />}
           <span>{note}</span>
         </p>
       )}
-      <button type="button" className="pill-btn-primary pill-btn-full" disabled={open} onClick={tryOpen}>
-        Open the lock
-      </button>
+      <div className="lock-actions">
+        <button type="button" className="lock-hint-btn" onClick={hint} disabled={hints >= maxHints || open || known.every(Boolean)}>
+          <Icon name="bulb" /> {hints === 0 ? 'Need a hint?' : hints >= maxHints ? 'No more hints' : 'Another hint'}
+        </button>
+        <button type="button" className="pill-btn-primary lock-open-btn" onClick={tryOpen} disabled={open}>
+          Open the lock
+        </button>
+      </div>
       {party && (
         <Finale
           title="You opened the treasure chest!"
           line={`You found ${party.treasure.en}! Treasures found: ${party.found}`}
           button="Awesome! →"
-          onDone={() => onEnd(party.total)}
+          onDone={() => onEnd(score)}
         >
           <TreasureChest total={N} opened={N} open={chestOpen} treasure={party.treasure.id} size={190} />
         </Finale>

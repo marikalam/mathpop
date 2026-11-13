@@ -88,8 +88,11 @@ if (typeof document !== 'undefined') {
   window.addEventListener('pagehide', () => {
     audioStale = true;
   });
+  // Only once MathPop's sound has been used: a tap that plays nothing
+  // (opening the account, say) mustn't start the sound and stop other
+  // music (Spotify over CarPlay).
   const onTap = () => {
-    if (audioStale || (audioCtx && audioCtx.state !== 'running')) freshAudio();
+    if (audioCtx && (audioStale || audioCtx.state !== 'running')) freshAudio();
   };
   // Before anything else handles the tap, so its own sound plays.
   document.addEventListener('pointerdown', onTap, true);
