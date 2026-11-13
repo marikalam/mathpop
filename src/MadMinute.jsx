@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Pip from './Pip.jsx';
 import { Confetti, CountUp } from './Celebrate.jsx';
-import { playCorrectChime, playIncorrectBuzz, speak } from './sound.js';
+import { playCorrectChime, playIncorrectBuzz, speak, stopSpeaking } from './sound.js';
 
 // Mad Minute: as many quick facts as you can in one minute. The facts
 // follow the grade (adding within 10 in K; adding and taking away within
@@ -90,6 +90,8 @@ export default function MadMinute({ playerId, grade, onDone, stickerSlot }) {
   const [phase, setPhase] = useState(modes.length > 1 ? 'pick' : 'ready');
   const [count, setCount] = useState(3);
   const [left, setLeft] = useState(SECONDS);
+  // Leaving Mad Minute stops Pip mid-sentence.
+  useEffect(() => () => stopSpeaking(), []);
   const [fact, setFact] = useState(() => madMinuteFact(grade, modes[0]));
   const [typed, setTyped] = useState('');
   const [flash, setFlash] = useState(null); // 'right' | 'wrong'

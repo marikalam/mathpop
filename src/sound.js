@@ -302,10 +302,11 @@ async function pickVoice() {
   return [...voices].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0];
 }
 
-async function speakWithWebSpeechAPI(text) {
+async function speakWithWebSpeechAPI(text, run) {
   if (!('speechSynthesis' in window)) return;
   const utterance = new SpeechSynthesisUtterance(text);
   const voice = await pickVoice();
+  if (run !== undefined && run !== speechRun) return;
   if (voice) utterance.voice = voice;
   utterance.rate = 0.98;
   utterance.pitch = 1.0;
@@ -360,11 +361,12 @@ function scoreVoiceQuality(voice) {
 export async function speakInLanguage(text, lang) {
   if (!lang || lang.startsWith('en')) return speak(text);
   if (!('speechSynthesis' in window)) return;
-  speechRun++;
+  const run = ++speechRun;
   stopCurrent();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
   const voice = await pickVoiceForLang(lang);
+  if (run !== speechRun) return;
   if (voice) utterance.voice = voice;
   utterance.rate = 0.9;
   window.speechSynthesis.cancel();
@@ -427,13 +429,18 @@ export function stopSpeaking() {
 }
 
 export async function speak(text) {
-  speechRun++;
+  // Making the voice takes a moment: if stopSpeaking() (say, the kid left
+  // the game) or a newer line came in meanwhile, this one isn't played.
+  const run = ++speechRun;
+  stopCurrent();
   try {
     const { synthesizeSpeech } = await getPiperModule();
     const blob = await synthesizeSpeech(text);
+    if (run !== speechRun) return;
     const arrayBuffer = await blob.arrayBuffer();
     const ctx = ensureAudio();
     const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+    if (run !== speechRun) return;
 
     if (currentSource) {
       try {
@@ -448,8 +455,9 @@ export async function speak(text) {
     currentSource = source;
     source.start();
   } catch (err) {
+    if (run !== speechRun) return;
     console.warn('Piper TTS unavailable, falling back to the built-in voice', err);
-    speakWithWebSpeechAPI(text);
+    speakWithWebSpeechAPI(text, run);
   }
 }
 

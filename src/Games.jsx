@@ -4,7 +4,7 @@ import { Confetti, CountUp } from './Celebrate.jsx';
 import { Thing } from './Drawings.jsx';
 import { ShapeIcon } from './preK.jsx';
 import { madMinuteFact } from './MadMinute.jsx';
-import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak, speakInLanguage } from './sound.js';
+import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak, speakInLanguage, stopSpeaking } from './sound.js';
 import { CAKE_SIZE, Finale, PartyCake, SHOP_DECOR, ShopDecor, addReward, rewardCount } from './Rewards.jsx';
 import { TimerBar, rand, shuffle, useCountdown } from './gameKit.jsx';
 import { BarModel, BondPop, EqualDiff, LogicLock, MakeTen, PatternStreak, PizzaShop, SumGridRush, TimesTiles } from './GamesSG.jsx';
@@ -743,6 +743,8 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit, lang 
   const [result, setResult] = useState(null);
   const [run, setRun] = useState(0);
   const best = gameBest(playerId, grade, game);
+  // Leaving the game (Back, home, another screen) stops Pip mid-sentence.
+  useEffect(() => () => stopSpeaking(), []);
 
   useEffect(() => {
     if (phase !== 'ready') return undefined;
