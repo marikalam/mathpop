@@ -8,7 +8,7 @@ import TapBoard from './TapBoards.jsx';
 import PipCloset from './PipCloset.jsx';
 import { Confetti, CountUp } from './Celebrate.jsx';
 import MadMinute, { madMinuteBest } from './MadMinute.jsx';
-import GamesMenu, { Game, GameArt, gameBest, gameTitle, gamesFor } from './Games.jsx';
+import GamesMenu, { Game, GameArt, gameBest, gameTitle, gamesFor, hasJa } from './Games.jsx';
 import { anItem, closetFor, newItems, nextItem, rememberUnlocks, stickerCount } from './pipCloset.js';
 import { COLORING_PACKS, ColoringPage, ColoringPrint } from './ColoringPages.jsx';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
@@ -56,6 +56,7 @@ import {
 import { listenForAppLinks } from './appLink.js';
 import { statAppOpened, statRoundDone } from './stats.js';
 import StatsScreen from './StatsScreen.jsx';
+import { StockChart } from './StockTicker.jsx';
 import PinchZoom from './PinchZoom.jsx';
 import { Printer } from '@capgo/capacitor-printer';
 import WeekCard from './WeekCard.jsx';
@@ -1948,7 +1949,7 @@ export default function App() {
                   <span className="home-game-art" aria-hidden="true">
                     <GameArt id={g.id} />
                   </span>
-                  <span className="home-game-title">{gameTitle(g.id, gradeInfo(level).id)}</span>
+                  <span className="home-game-title">{gameTitle(g.id, gradeInfo(level).id, langFor(currentProfile.id))}</span>
                   {gameBest(currentProfile.id, gradeInfo(level).id, g.id) > 0 && (
                     <span className="home-game-best">Best {gameBest(currentProfile.id, gradeInfo(level).id, g.id)}</span>
                   )}
@@ -1996,6 +1997,7 @@ export default function App() {
             <h2 className="screen-title">Games</h2>
             <GamesMenu
               playerId={currentProfile.id}
+              lang={langFor(currentProfile.id)}
               grade={gradeInfo(level).id}
               onPick={(id) => {
                 unlockAudio();
@@ -2009,20 +2011,24 @@ export default function App() {
         {view === 'game' && gameId && (
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
-            <h2 className="screen-title">{gameTitle(gameId, gradeInfo(level).id)}</h2>
+            <h2 className="screen-title">{gameTitle(gameId, gradeInfo(level).id, langFor(currentProfile.id))}</h2>
             <Game
-              key={`${currentProfile.id}-${level}-${gameId}`}
+              key={`${currentProfile.id}-${level}-${gameId}-${langFor(currentProfile.id)}`}
               game={gameId}
+              lang={langFor(currentProfile.id)}
               playerId={currentProfile.id}
               grade={gradeInfo(level).id}
               onDone={(id, score) => {
                 earnSticker(currentProfile.id);
-                statRoundDone({ grade: gradeInfo(level).id, topic: `game-${id}`, lang: 'en', correct: score, total: Math.max(1, score) });
+                statRoundDone({ grade: gradeInfo(level).id, topic: `game-${id}`, lang: langFor(currentProfile.id) === 'ja' && hasJa(id) ? 'ja' : 'en', correct: score, total: Math.max(1, score) });
               }}
               onExit={goHome}
               stickerSlot={
                 <p className="star-earned">
-                  +1 <span className="closet-star">★</span> · {stickerCount(currentProfile.id)} {stickerCount(currentProfile.id) === 1 ? 'star' : 'stars'}
+                  +1 <span className="closet-star">★</span> ·{' '}
+                  {langFor(currentProfile.id) === 'ja' && hasJa(gameId)
+                    ? `ほし ${stickerCount(currentProfile.id)}こ`
+                    : `${stickerCount(currentProfile.id)} ${stickerCount(currentProfile.id) === 1 ? 'star' : 'stars'}`}
                 </p>
               }
             />
@@ -2295,6 +2301,7 @@ export default function App() {
             <p className="screen-sub">Set each player's grade and how they answer. They play at that grade, following Singapore math.</p>
             <SyncStatus user={profileOwner === 'account' ? cloudUser : null} onOpenAccount={openAccount} />
             {/* Only for the accounts that can see MathPop's stats (the owner). */}
+            {statsViewer && <StockChart onOpenStats={() => setView('stats')} />}
             {statsViewer && <MoneyCard app="mathpop" />}
             <div className="settings-list">
               {draftProfiles.map((p) => (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { loadAppleSales, loadMoneyProgress, loadSignups, loadStats, loadStoreStats } from './cloud.js';
+import StockTicker from './StockTicker.jsx';
 
 // MathPop stats (Account -> MathPop stats, for the accounts listed in
 // supabase/mathpop_stats.sql): how much the app is used, added up from
@@ -355,6 +356,8 @@ export default function StatsScreen({ topicName, gradeName }) {
   return (
     <div className="stats-screen">
       <TotalsCard />
+      {/* Up or down, like a stock app. */}
+      <StockTicker />
       <ProgressCard />
       {/* Everything else, folded away. */}
       <details className="stats-more">

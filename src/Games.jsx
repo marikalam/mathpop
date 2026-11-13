@@ -4,10 +4,13 @@ import { Confetti, CountUp } from './Celebrate.jsx';
 import { Thing } from './Drawings.jsx';
 import { ShapeIcon } from './preK.jsx';
 import { madMinuteFact } from './MadMinute.jsx';
-import { playCorrectChime, playIncorrectBuzz, playStickerPick, speak } from './sound.js';
+import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak, speakInLanguage } from './sound.js';
+import { CAKE_SIZE, Finale, PartyCake, SHOP_DECOR, ShopDecor, addReward, rewardCount } from './Rewards.jsx';
 import { TimerBar, rand, shuffle, useCountdown } from './gameKit.jsx';
 import { BarModel, BondPop, EqualDiff, LogicLock, MakeTen, PatternStreak, PizzaShop, SumGridRush, TimesTiles } from './GamesSG.jsx';
 import { PatternShape } from './TopicVisual.jsx';
+import NumberSnake from './NumberSnake.jsx';
+import { Coin, SetClock, ToyShop } from './LifeGames.jsx';
 
 // Games: quick, replayable games with a best score to beat, like Mad
 // Minute. Each one follows the player's grade.
@@ -22,7 +25,19 @@ import { PatternShape } from './TopicVisual.jsx';
 export const GAMES = [
   { id: 'bubbles', title: 'Pop the Bubbles', sub: 'Pop the right answer', how: 'Pop the bubble with the answer!', seconds: 60, color: ['#4e8ff7', '#3a6fd8'] },
   { id: 'make10', title: 'Make 10', sub: 'Tap two that make 10', how: 'Tap two numbers that make the target!', seconds: 60, color: ['#38c07f', '#2a9e60'] },
-  { id: 'bakery', title: "Pip's Bakery", sub: 'Pack the cupcake orders', how: 'Pack the boxes to fill each order!', seconds: 0, color: ['#f5a524', '#e08a12'] },
+  {
+    id: 'bakery',
+    title: "Pip's Bakery",
+    sub: 'Pack the cupcake orders',
+    how: 'Pack the boxes to fill each order!',
+    seconds: 0,
+    color: ['#f5a524', '#e08a12'],
+    // Played in Japanese when the player's language is 日本語.
+    ja: { title: 'ピップの ケーキやさん', sub: 'カップケーキを はこに つめよう', how: 'はこに つめて、ちゅうもんを とどけよう！' },
+  },
+  { id: 'snake', title: 'Number Snake', sub: 'Eat the right answer', how: 'Steer your snake to eat the answer!', seconds: 60, color: ['#2fae6b', '#1f8a51'] },
+  { id: 'toyShop', title: "Pip's Toy Shop", sub: 'Pay with coins', how: 'Pay for each toy with the right coins!', seconds: 0, color: ['#0ea5e9', '#0284c7'] },
+  { id: 'clock', title: 'Set the Clock', sub: 'Turn the hands to the time', how: 'Set the clock to the right time!', seconds: 0, color: ['#6366f1', '#4f46e5'] },
   { id: 'shapes', title: 'Speed Shapes', sub: 'Find the shape, fast', how: 'Listen to Pip, and tap the right shape, fast!', seconds: 45, color: ['#e0577f', '#c43c66'] },
   // Singapore math and Beast Academy games (GamesSG.jsx), for the grades
   // that learn them.
@@ -34,8 +49,14 @@ export const GAMES = [
   { id: 'equalDiff', title: 'Equal Differences', sub: 'Slide, then subtract', how: 'Slide both numbers to make it easy, then subtract!', color: ['#2fae6b', '#238a54'], grades: ['1', '2', '3', '4'] },
   { id: 'timesTiles', title: 'Times Table Tiles', sub: 'Match facts to answers', how: 'Match each times fact to its answer!', color: ['#a065e6', '#7c3fc4'], grades: ['2', '3', '4'] },
   { id: 'pizza', title: 'Fraction Pizza Shop', sub: 'Cut and serve fractions', how: 'Cut the pizza, then serve the right fraction!', color: ['#f0954f', '#e0793a'], grades: ['2', '3', '4'] },
-  { id: 'logicLock', title: 'Logic Lock', sub: 'Crack the code', how: 'Use the clues to crack the code!', color: ['#475569', '#334155'], grades: ['2', '3', '4'] },
+  { id: 'logicLock', title: 'Logic Lock', sub: 'Crack the code', how: 'Use the clues to crack the code!', color: ['#475569', '#334155'] },
 ];
+
+// Says a line in the player's language: Japanese goes to the device's
+// Japanese voice (MathPop's own voice only speaks English).
+const sayIn = (lang) => (text) => (lang === 'ja' ? speakInLanguage(text, 'ja-JP') : speak(text));
+// Whether a game can be played in Japanese.
+export const hasJa = (id) => Boolean(GAMES.find((g) => g.id === id)?.ja);
 
 // The games a grade plays.
 export const gamesFor = (grade) => GAMES.filter((g) => !g.grades || g.grades.includes(grade));
@@ -49,8 +70,10 @@ function readBest() {
   }
 }
 // A game's name (Make 10 is Make 5 for toddlers and Make 20 from 2nd grade).
-export function gameTitle(id, grade) {
-  const t = GAMES.find((g) => g.id === id)?.title || '';
+export function gameTitle(id, grade, lang) {
+  const g = GAMES.find((x) => x.id === id);
+  if (lang === 'ja' && g?.ja) return g.ja.title;
+  const t = g?.title || '';
   return t.replace('Make 10', `Make ${targetFor(grade)}`);
 }
 
@@ -227,7 +250,11 @@ function Make10({ grade, onEnd }) {
 }
 
 // ---- Pip's Bakery ----
-const ORDERS = 6;
+// Six orders build a party cake, one piece per order. A miss is never a
+// dead end: Pip helps a little more each time (count along, then dotted
+// spots to fill, then Pip packs it and the kid serves it), so every game
+// ends with the candles lit. Each finished cake decorates the shop.
+const ORDERS = CAKE_SIZE;
 function bakeryOrder(grade) {
   const sizes = { p: [1], k: [1, 2], 1: [2, 5, 10], 2: [2, 3, 4, 5, 10], 3: [3, 4, 6, 7, 8, 9], 4: [4, 6, 7, 8, 9, 12] }[grade] || [2, 5, 10];
   const size = sizes[rand(0, sizes.length - 1)];
@@ -236,8 +263,11 @@ function bakeryOrder(grade) {
   return { size, boxes, want: size * boxes, who };
 }
 const WHO_THING = { Bunny: 'bunny', Bear: 'bear', Fox: 'fox', Panda: 'panda', Frog: 'frog', Duck: 'duck' };
+const WHO_JA = { Bunny: 'うさぎさん', Bear: 'くまさん', Fox: 'きつねさん', Panda: 'パンダさん', Frog: 'かえるさん', Duck: 'あひるさん' };
 
-function Bakery({ grade, onEnd }) {
+function Bakery({ grade, onEnd, lang, playerId }) {
+  const ja = lang === 'ja';
+  const talk = sayIn(lang);
   const [order, setOrder] = useState(() => bakeryOrder(grade));
   const [boxes, setBoxes] = useState(0);
   const [done, setDone] = useState(0);
@@ -246,10 +276,26 @@ function Bakery({ grade, onEnd }) {
   const [note, setNote] = useState(null);
   const [happy, setHappy] = useState(false);
   const [lit, setLit] = useState(-1);
+  // Pip packing the order to show how (taps wait until Pip is done).
+  const [demo, setDemo] = useState(false);
+  const [served, setServed] = useState([]);
+  const [party, setParty] = useState(null);
+  const [cakes] = useState(() => rewardCount(playerId, 'cakes'));
+  const timers = useRef([]);
+  const later = (fn, ms) => timers.current.push(setTimeout(fn, ms));
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  const seqTo = (n) => Array.from({ length: n }, (_, k) => (k + 1) * order.size).join(ja ? '、' : ', ');
   const say = (o) =>
-    o.size === 1 ? `${o.who} wants ${o.want} cupcakes!` : `${o.who} wants ${o.want} cupcakes. Each box holds ${o.size}. How many boxes?`;
+    ja
+      ? o.size === 1
+        ? `${WHO_JA[o.who]}は カップケーキが ${o.want}こ ほしいって！`
+        : `${WHO_JA[o.who]}は カップケーキが ${o.want}こ ほしいって。ひとはこに ${o.size}こ はいるよ。なんはこ いるかな？`
+      : o.size === 1
+        ? `${o.who} wants ${o.want} cupcakes!`
+        : `${o.who} wants ${o.want} cupcakes. Each box holds ${o.size}. How many boxes?`;
   useEffect(() => {
-    speak(say(order));
+    talk(say(order));
     setNote(null);
     setHappy(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -257,114 +303,233 @@ function Bakery({ grade, onEnd }) {
 
   // Adding a box counts on out loud: 5, 10, 15...
   function add() {
-    if (boxes >= 12) return;
+    if (boxes >= 12 || demo) return;
     playStickerPick();
     const n = boxes + 1;
     setBoxes(n);
     setLit(n - 1);
-    speak(String(n * order.size));
+    talk(String(n * order.size));
   }
   function takeOut() {
-    if (!boxes) return;
+    if (!boxes || demo) return;
     playStickerPick();
     const n = boxes - 1;
     setBoxes(n);
     setLit(n - 1);
-    if (n) speak(String(n * order.size));
+    if (n) talk(String(n * order.size));
   }
   // Tapping a box counts up to it: 5, 10, 15.
   function countTo(i) {
+    if (demo) return;
     setLit(i);
-    speak(Array.from({ length: i + 1 }, (_, k) => (k + 1) * order.size).join(', '));
+    talk(seqTo(i + 1));
+  }
+
+  // Pip packs the order, one box at a time, then the kid serves it.
+  function showHow() {
+    setDemo(true);
+    setBoxes(0);
+    setLit(-1);
+    const n = order.boxes;
+    setNote(ja ? 'ピップが やってみるね。みてて！' : 'Watch Pip pack it!');
+    talk(
+      ja
+        ? `みてて！ ${seqTo(n)}。${n}はこで ${order.want}こ だよ！`
+        : `Watch me! ${seqTo(n)}. ${n} ${n === 1 ? 'box' : 'boxes'} make ${order.want}!`,
+    );
+    for (let k = 1; k <= n; k++) {
+      later(() => {
+        playStickerPick();
+        setBoxes(k);
+        setLit(k - 1);
+      }, 650 * k);
+    }
+    later(() => {
+      setDemo(false);
+      setNote(ja ? 'こんどは 「どうぞ！」を タップしてね' : 'Now you tap “Serve it!”');
+    }, 650 * n + 500);
   }
 
   function serve() {
+    if (demo) return;
     const have = boxes * order.size;
     if (have === order.want) {
       playCorrectChime();
-      const earned = tries === 0 ? 3 : 1;
+      const earned = tries === 0 ? 3 : tries === 1 ? 2 : 1;
       const nextCoins = coins + earned;
+      const nextDone = done + 1;
       setCoins(nextCoins);
       setHappy(true);
-      setNote(`Yum! Thank you! +${earned} coins`);
-      speak(`${boxes} ${boxes === 1 ? 'box' : 'boxes'} of ${order.size} is ${have}. Yum! Thank you!`);
-      setTimeout(() => {
-        if (done + 1 >= ORDERS) onEnd(nextCoins);
-        else {
-          setDone((d) => d + 1);
+      setDone(nextDone);
+      setServed((list) => [...list, order.who]);
+      if (ja) {
+        setNote(`おいしい！ ありがとう！ +${earned}コイン`);
+        talk(`${order.size}こいりが ${boxes}はこで ${have}こ。おいしい！ ありがとう！`);
+      } else {
+        setNote(`Yum! Thank you! +${earned} coins`);
+        talk(`${boxes} ${boxes === 1 ? 'box' : 'boxes'} of ${order.size} is ${have}. Yum! Thank you!`);
+      }
+      later(() => {
+        if (nextDone >= ORDERS) {
+          // The cake is done: light the candles and have a party.
+          const made = addReward(playerId, 'cakes');
+          const decor = SHOP_DECOR[made - 1];
+          setParty({ made, decor, coins: nextCoins });
+          playStickerStick();
+          talk(
+            ja
+              ? `やったね！ パーティー ケーキの できあがり！ おめでとう！${decor ? ` おみせに ${decor.ja}が ふえたよ！` : ''}`
+              : `You did it! You built the party cake! Happy party!${decor ? ` Your shop got ${decor.en}!` : ''}`,
+          );
+        } else {
           setBoxes(0);
           setLit(-1);
           setTries(0);
           setOrder(bakeryOrder(grade));
         }
       }, 1800);
-    } else {
-      playIncorrectBuzz();
-      setTries((t) => t + 1);
-      const line = have > order.want ? `Too many! That's ${have}. I want ${order.want}.` : `Not enough! That's ${have}. I want ${order.want}.`;
+      return;
+    }
+    playIncorrectBuzz();
+    const t = tries + 1;
+    setTries(t);
+    const line = ja
+      ? `${have > order.want ? 'おおすぎるよ！' : 'たりないよ！'} それだと ${have}こ。${order.want}こ ほしいな。`
+      : have > order.want
+        ? `Too many! That's ${have}. I want ${order.want}.`
+        : `Not enough! That's ${have}. I want ${order.want}.`;
+    if (t === 1) {
+      // 1st miss: count the boxes together.
       setNote(line);
-      speak(line);
+      talk(ja ? `${line} いっしょに かぞえよう。${seqTo(boxes)}。` : `${line} Let's count: ${seqTo(boxes)}.`);
+    } else if (t === 2) {
+      // 2nd miss: dotted spots show how many boxes fit the order.
+      const tip = ja ? 'ヒント！ てんてんの ところに はこを いれてね。' : 'Tip: fill the dotted spots!';
+      setNote(`${line} ${tip}`);
+      talk(`${line} ${tip}`);
+    } else {
+      // 3rd miss: Pip shows how.
+      later(showHow, 900);
+      setNote(line);
+      talk(line);
     }
   }
 
+  const hint = tries >= 2;
+  const slots = hint ? Math.max(boxes, order.boxes) : boxes;
   const small = order.size > 6;
+  const cupSize = small ? 17 : order.size > 4 ? 23 : order.size > 1 ? 28 : 36;
   return (
     <div className="game game-bakery">
       <div className="mm-top">
-        <span className="mm-time">
-          Order {done + 1} of {ORDERS}
-        </span>
+        <span className="mm-time">{ja ? `ちゅうもん ${Math.min(done + 1, ORDERS)} / ${ORDERS}` : `Order ${Math.min(done + 1, ORDERS)} of ${ORDERS}`}</span>
         <span className="mm-right">
           <span className="bake-coin" aria-hidden="true" /> {coins}
         </span>
       </div>
       <div className="bake-shop">
         <div className="bake-awning" aria-hidden="true" />
-        <div className="bake-sign">Pip&apos;s Bakery</div>
+        <ShopDecor count={cakes} />
+        <div className="bake-sign">{ja ? 'ピップの ケーキやさん' : "Pip's Bakery"}</div>
         <div className="bake-shelf" aria-hidden="true">
-          {['cupcake', 'donut', 'cookie', 'cupcake', 'donut'].map((id, i) => (
-            <Thing key={i} id={id} size={30} />
-          ))}
+          <span className="bake-shelf-side">
+            <Thing id="cupcake" size={30} />
+            <Thing id="donut" size={30} />
+          </span>
+          <PartyCake pieces={done} />
+          <span className="bake-shelf-side">
+            <Thing id="cookie" size={30} />
+            <Thing id="cupcake" size={30} />
+          </span>
         </div>
-        <button type="button" className="bake-customer" onClick={() => speak(say(order))}>
-          <span className={`bake-who${happy ? ' bake-who-happy' : ''}`}>
+        <button type="button" className="bake-customer" onClick={() => talk(say(order))}>
+          <span key={done} className={`bake-who${happy ? ' bake-who-happy' : ' bake-who-in'}`}>
             <Thing id={WHO_THING[order.who]} size={70} />
           </span>
           <span className="bake-bubble">
-            <strong>I want {order.want} cupcakes!</strong>
-            {order.size > 1 && <small>A box holds {order.size}.</small>}
+            <strong>{ja ? `カップケーキ ${order.want}こ ちょうだい！` : `I want ${order.want} cupcakes!`}</strong>
+            {order.size > 1 && <small>{ja ? `ひとはこに ${order.size}こ` : `A box holds ${order.size}.`}</small>}
           </span>
         </button>
         <div className="bake-counter">
-          {boxes === 0 && <span className="bake-empty">Tap “Add a box” to pack the order</span>}
-          {Array.from({ length: boxes }, (_, i) => (
-            <button key={i} type="button" className={`bake-box${lit === i ? ' bake-box-lit' : ''}`} onClick={() => countTo(i)} aria-label={`${(i + 1) * order.size}`}>
-              <span className="bake-total">{(i + 1) * order.size}</span>
-              <span className="bake-lid" aria-hidden="true" />
-              <span className={`bake-window${small ? ' bake-window-small' : ''}`}>
-                {Array.from({ length: Math.min(order.size, 12) }, (_, j) => (
-                  <Thing key={j} id="cupcake" size={small ? 17 : order.size > 4 ? 23 : order.size > 1 ? 28 : 36} />
-                ))}
+          {slots === 0 && <span className="bake-empty">{ja ? '「はこを たす」を タップして つめてね' : 'Tap “Add a box” to pack the order'}</span>}
+          {Array.from({ length: slots }, (_, i) =>
+            i < boxes ? (
+              <button
+                key={i}
+                type="button"
+                className={`bake-box${lit === i ? ' bake-box-lit' : ''}${hint && i >= order.boxes ? ' bake-box-extra' : ''}`}
+                onClick={() => countTo(i)}
+                aria-label={`${(i + 1) * order.size}`}
+              >
+                <span className="bake-total">{(i + 1) * order.size}</span>
+                <span className="bake-lid" aria-hidden="true" />
+                <span className={`bake-window${small ? ' bake-window-small' : ''}`}>
+                  {Array.from({ length: Math.min(order.size, 12) }, (_, j) => (
+                    <span key={j} className="bake-cup" style={{ animationDelay: `${0.05 * j}s` }}>
+                      <Thing id="cupcake" size={cupSize} />
+                    </span>
+                  ))}
+                </span>
+              </button>
+            ) : (
+              <span key={i} className="bake-slot" aria-hidden="true">
+                <span className="bake-total">{(i + 1) * order.size}</span>
               </span>
-            </button>
-          ))}
+            ),
+          )}
         </div>
       </div>
       <p className="bakery-count">
-        {boxes ? Array.from({ length: boxes }, (_, i) => (i + 1) * order.size).join(', ') : '0'} cupcakes
+        {boxes ? seqTo(boxes) : '0'} {ja ? 'こ' : 'cupcakes'}
       </p>
-      {note && <p className={`bakery-note${happy ? ' bakery-note-good' : ''}`}>{note}</p>}
+      {note && (
+        <p className={`bakery-note${happy ? ' bakery-note-good' : ''}${tries >= 2 && !happy ? ' bakery-note-pip' : ''}`}>
+          {tries >= 2 && !happy && <Pip size={34} mood="wave" />}
+          <span>{note}</span>
+        </p>
+      )}
       <div className="bakery-actions">
-        <button type="button" className="bakery-btn" disabled={!boxes} onClick={takeOut}>
-          − Take one out
+        <button type="button" className="bakery-btn" disabled={!boxes || demo || happy} onClick={takeOut}>
+          {ja ? '− ひとつ だす' : '− Take one out'}
         </button>
-        <button type="button" className="bakery-btn bakery-add" onClick={add}>
-          + Add a box
+        <button type="button" className="bakery-btn bakery-add" disabled={demo || happy} onClick={add}>
+          {ja ? '+ はこを たす' : '+ Add a box'}
         </button>
       </div>
-      <button type="button" className="bake-serve" disabled={!boxes || happy} onClick={serve}>
-        Serve it!
+      <button
+        type="button"
+        className={`bake-serve${tries >= 3 && !demo && !happy && boxes === order.boxes ? ' bake-serve-pulse' : ''}`}
+        disabled={!boxes || happy || demo}
+        onClick={serve}
+      >
+        {ja ? 'どうぞ！' : 'Serve it!'}
       </button>
+      {party && (
+        <Finale
+          title={ja ? 'パーティー ケーキ かんせい！' : 'You built the party cake!'}
+          line={
+            party.decor
+              ? ja
+                ? `おみせに ${party.decor.ja}が ふえたよ！`
+                : `New for your shop: ${party.decor.en}!`
+              : ja
+                ? `ケーキ ${party.made}こめ！`
+                : `Cake number ${party.made}!`
+          }
+          button={ja ? 'やったね！ →' : 'Yay! →'}
+          onDone={() => onEnd(party.coins)}
+        >
+          <PartyCake pieces={ORDERS} lit size={170} />
+          <span className="finale-guests">
+            {served.map((who, i) => (
+              <span key={i} className="finale-guest" style={{ animationDelay: `${i * 0.12}s` }}>
+                <Thing id={WHO_THING[who]} size={40} />
+              </span>
+            ))}
+          </span>
+        </Finale>
+      )}
     </div>
   );
 }
@@ -527,6 +692,9 @@ const PLAY = {
   bubbles: Bubbles,
   make10: Make10,
   bakery: Bakery,
+  snake: (props) => <NumberSnake {...props} makeRound={bubbleRound} />,
+  toyShop: ToyShop,
+  clock: SetClock,
   shapes: Shapes,
   barModel: BarModel,
   bondPop: BondPop,
@@ -542,6 +710,9 @@ const SCORE_WORD = {
   bubbles: 'popped',
   make10: 'pairs',
   bakery: 'coins',
+  snake: 'answers',
+  toyShop: 'stars',
+  clock: 'stars',
   shapes: 'shapes found',
   barModel: 'stars',
   bondPop: 'bonds',
@@ -554,11 +725,15 @@ const SCORE_WORD = {
   logicLock: 'stars',
 };
 // The games that end with Time's up (the others end their own way).
-const TIMED = ['bubbles', 'make10', 'shapes', 'bondPop', 'makeTen', 'sumGridRush', 'timesTiles'];
+const TIMED = ['bubbles', 'snake', 'make10', 'shapes', 'bondPop', 'makeTen', 'sumGridRush', 'timesTiles'];
 
 // One game: how to play (said out loud), 3-2-1, play, and the result.
-export function Game({ game, playerId, grade, onDone, stickerSlot, onExit }) {
+export function Game({ game, playerId, grade, onDone, stickerSlot, onExit, lang }) {
   const info = GAMES.find((g) => g.id === game);
+  // Japanese only for the games that have it (the rest stay in English).
+  const ja = lang === 'ja' && Boolean(info.ja);
+  const talk = sayIn(ja ? 'ja' : 'en');
+  const scoreWord = ja ? 'コイン' : SCORE_WORD[game];
   const [phase, setPhase] = useState('ready');
   const [count, setCount] = useState(3);
   const [result, setResult] = useState(null);
@@ -567,7 +742,7 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit }) {
 
   useEffect(() => {
     if (phase !== 'ready') return undefined;
-    speak(`${info.how} Ready? 3, 2, 1, go!`);
+    talk(ja ? `${info.ja.how} よーい、3、2、1、スタート！` : `${info.how} Ready? 3, 2, 1, go!`);
     setCount(3);
     const id = setInterval(() => {
       setCount((c) => {
@@ -588,18 +763,19 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit }) {
     if (isBest) saveBest(playerId, grade, game, score);
     setResult({ score, isBest, before: best });
     setPhase('done');
-    speak(isBest && best ? `New best! ${score}!` : `Great game! ${score} ${SCORE_WORD[game]}!`);
+    if (ja) talk(isBest && best ? `しんきろく！ ${score}コイン！` : `よく できました！ ${score}コイン！`);
+    else talk(isBest && best ? `New best! ${score}!` : `Great game! ${score} ${SCORE_WORD[game]}!`);
     onDone?.(game, score);
   }
 
   if (phase === 'ready') {
     return (
       <div className="mm mm-ready">
-        <p className="mm-how">{info.how}</p>
+        <p className="mm-how">{ja ? info.ja.how : info.how}</p>
         <div className="mm-count" key={count}>
-          {count || 'Go!'}
+          {count || (ja ? 'スタート！' : 'Go!')}
         </div>
-        <p className="mm-best">{best ? `Your best: ${best}` : 'Your first game!'}</p>
+        <p className="mm-best">{ja ? (best ? `さいこう: ${best}` : 'はじめての ゲーム！') : best ? `Your best: ${best}` : 'Your first game!'}</p>
       </div>
     );
   }
@@ -610,15 +786,23 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit }) {
         <span className="complete-pip">
           <Pip size={96} mood="cheer" />
         </span>
-        <h2 className="screen-title">{TIMED.includes(game) ? "Time's up!" : 'Great game!'}</h2>
+        <h2 className="screen-title">{ja ? 'よく できました！' : TIMED.includes(game) ? "Time's up!" : 'Great game!'}</h2>
         <div className="mm-score">
           <span>
             <CountUp to={result.score} />
           </span>{' '}
-          {SCORE_WORD[game]}
+          {scoreWord}
         </div>
         <p className="mm-best">
-          {result.isBest && result.before ? <strong>New best! (was {result.before})</strong> : result.isBest ? 'Your first best score. Try to beat it!' : `Your best: ${result.before}`}
+          {ja ? (
+            result.isBest && result.before ? <strong>しんきろく！（まえは {result.before}）</strong> : result.isBest ? 'はじめての きろく！ つぎは こえられるかな？' : `さいこう: ${result.before}`
+          ) : result.isBest && result.before ? (
+            <strong>New best! (was {result.before})</strong>
+          ) : result.isBest ? (
+            'Your first best score. Try to beat it!'
+          ) : (
+            `Your best: ${result.before}`
+          )}
         </p>
         {stickerSlot}
         <button
@@ -629,16 +813,16 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit }) {
             setPhase('ready');
           }}
         >
-          Play again →
+          {ja ? 'もう いっかい →' : 'Play again →'}
         </button>
         <button type="button" className="back-link back-link-center" onClick={onExit}>
-          Back home
+          {ja ? 'ホームに もどる' : 'Back home'}
         </button>
       </div>
     );
   }
   const Play = PLAY[game];
-  return <Play key={run} grade={grade} onEnd={end} />;
+  return <Play key={run} grade={grade} onEnd={end} lang={ja ? 'ja' : 'en'} playerId={playerId} />;
 }
 
 // Each game's little picture (the games list and the home page).
@@ -653,6 +837,34 @@ export function GameArt({ id }) {
     );
   }
   if (id === 'bakery') return <Thing id="cupcake" size={48} />;
+  if (id === 'toyShop') {
+    return (
+      <span className="games-art-coins">
+        <Coin value={25} size={40} />
+        <Coin value={10} size={30} />
+      </span>
+    );
+  }
+  if (id === 'clock') {
+    return (
+      <svg viewBox="0 0 50 50" width="46" height="46">
+        <circle cx="25" cy="25" r="21" fill="#fff" stroke="#ffd23f" strokeWidth="4" />
+        <path d="M25 25V12M25 25l8 5" stroke="#173a66" strokeWidth="3.5" strokeLinecap="round" />
+        <circle cx="25" cy="25" r="2.5" fill="#173a66" />
+      </svg>
+    );
+  }
+  if (id === 'snake') {
+    return (
+      <svg viewBox="0 0 50 50" width="48" height="48">
+        <path d="M8 40c6-10 14 2 20-8s-2-16 8-20" fill="none" stroke="#fff" strokeWidth="9" strokeLinecap="round" />
+        <circle cx="38" cy="12" r="7" fill="#fff" />
+        <circle cx="40" cy="10" r="2" fill="#1f8a51" />
+        <circle cx="12" cy="20" r="6" fill="#ffd23f" />
+        <text x="12" y="23.5" textAnchor="middle" fontSize="9" fontWeight="700" fill="#7a4a00">7</text>
+      </svg>
+    );
+  }
   if (id === 'shapes') return <ShapeIcon shape="star" color="#ffd23f" size={50} />;
   if (id === 'patternStreak') return <PatternShape id="triangle:90:0" color="#fff" size={44} />;
   if (id === 'pizza') {
@@ -695,7 +907,7 @@ export function GameArt({ id }) {
 }
 
 // The list of games.
-export default function GamesMenu({ playerId, grade, onPick }) {
+export default function GamesMenu({ playerId, grade, onPick, lang }) {
   useEffect(() => {
     speak('Pick a game!');
   }, []);
@@ -713,8 +925,14 @@ export default function GamesMenu({ playerId, grade, onPick }) {
             <GameArt id={g.id} />
           </span>
           <span className="games-card-text">
-            {g.title.replace('Make 10', `Make ${targetFor(grade)}`)}
-            <small>{gameBest(playerId, grade, g.id) ? `Best: ${gameBest(playerId, grade, g.id)}` : g.sub.replace('make 10', `make ${targetFor(grade)}`)}</small>
+            {gameTitle(g.id, grade, lang)}
+            <small>
+              {gameBest(playerId, grade, g.id)
+                ? `${lang === 'ja' && g.ja ? 'さいこう' : 'Best'}: ${gameBest(playerId, grade, g.id)}`
+                : lang === 'ja' && g.ja
+                  ? g.ja.sub
+                  : g.sub.replace('make 10', `make ${targetFor(grade)}`)}
+            </small>
           </span>
         </button>
       ))}
