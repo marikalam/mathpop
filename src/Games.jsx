@@ -11,6 +11,7 @@ import { BarModel, BondPop, EqualDiff, LogicLock, MakeTen, PatternStreak, PizzaS
 import { PatternShape } from './TopicVisual.jsx';
 import NumberSnake from './NumberSnake.jsx';
 import { Coin, SetClock, ToyShop } from './LifeGames.jsx';
+import GoFish from './GoFish.jsx';
 
 // Games: quick, replayable games with a best score to beat, like Mad
 // Minute. Each one follows the player's grade.
@@ -36,6 +37,7 @@ export const GAMES = [
     ja: { title: 'ピップの ケーキやさん', sub: 'カップケーキを はこに つめよう', how: 'はこに つめて、ちゅうもんを とどけよう！' },
   },
   { id: 'snake', title: 'Number Snake', sub: 'Eat the right answer', how: 'Steer your snake to eat the answer!', seconds: 60, color: ['#2fae6b', '#1f8a51'] },
+  { id: 'goFish', title: 'Go Fish!', sub: 'Find the matching cards', how: 'Find the matches! Ask Pip for a card, or go fish!', seconds: 0, color: ['#06b6d4', '#0e7490'] },
   { id: 'toyShop', title: "Pip's Toy Shop", sub: 'Pay with coins', how: 'Pay for each toy with the right coins!', seconds: 0, color: ['#0ea5e9', '#0284c7'] },
   { id: 'clock', title: 'Set the Clock', sub: 'Turn the hands to the time', how: 'Set the clock to the right time!', seconds: 0, color: ['#6366f1', '#4f46e5'] },
   { id: 'shapes', title: 'Speed Shapes', sub: 'Find the shape, fast', how: 'Listen to Pip, and tap the right shape, fast!', seconds: 45, color: ['#e0577f', '#c43c66'] },
@@ -693,6 +695,7 @@ const PLAY = {
   make10: Make10,
   bakery: Bakery,
   snake: (props) => <NumberSnake {...props} makeRound={bubbleRound} />,
+  goFish: GoFish,
   toyShop: ToyShop,
   clock: SetClock,
   shapes: Shapes,
@@ -711,6 +714,7 @@ const SCORE_WORD = {
   make10: 'pairs',
   bakery: 'coins',
   snake: 'answers',
+  goFish: 'pairs',
   toyShop: 'stars',
   clock: 'stars',
   shapes: 'shapes found',
@@ -837,6 +841,14 @@ export function GameArt({ id }) {
     );
   }
   if (id === 'bakery') return <Thing id="cupcake" size={48} />;
+  if (id === 'goFish') {
+    return (
+      <span className="games-art-gofish">
+        <span className="gf-art-card">3</span>
+        <Thing id="fish" size={30} />
+      </span>
+    );
+  }
   if (id === 'toyShop') {
     return (
       <span className="games-art-coins">

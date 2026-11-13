@@ -10493,3 +10493,401 @@ body {
     transform: translateY(-60px);
   }
 }
+
+/* ---- Go Fish (GoFish.jsx) ---- */
+.games-art-gofish {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+.gf-art-card {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 40px;
+  border-radius: 6px;
+  background: #fff;
+  color: #0e7490;
+  font: 700 22px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  transform: rotate(-10deg);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+}
+.gf-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 96px;
+  border-radius: 12px;
+  background: #fff;
+  border: 4px solid var(--card);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+.gf-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 120%, var(--card), transparent 70%);
+  opacity: 0.18;
+}
+.gf-card-small {
+  width: 34px;
+  height: 46px;
+  border-width: 2.5px;
+  border-radius: 7px;
+  box-shadow: none;
+}
+.gf-corner {
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  font: 700 15px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: var(--card);
+}
+.gf-card-small .gf-corner {
+  display: none;
+}
+.gf-pics {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: 1px;
+  max-width: 58px;
+}
+.gf-num {
+  position: relative;
+  font: 700 38px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: var(--card);
+  line-height: 1;
+}
+.gf-card-small .gf-num {
+  font-size: 17px;
+}
+.gf-fact {
+  position: relative;
+  font: 700 21px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: var(--card);
+  white-space: nowrap;
+}
+.gf-card-small .gf-fact {
+  font-size: 9px;
+}
+.gf-dots {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, 12px);
+  gap: 3px;
+}
+.gf-dots i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid #e2e8f0;
+}
+.gf-dots i.on {
+  background: var(--card);
+  border-color: var(--card);
+}
+.gf-card-small .gf-dots {
+  grid-template-columns: repeat(2, 5px);
+  gap: 1px;
+}
+.gf-card-small .gf-dots i {
+  width: 5px;
+  height: 5px;
+  border-width: 1px;
+}
+.gf-mini {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  max-width: 50px;
+  margin-top: 4px;
+}
+.gf-mini i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--card);
+  opacity: 0.6;
+}
+.gf-card-small .gf-mini {
+  display: none;
+}
+/* Pip's side. */
+.gf-pip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 104px;
+}
+.gf-pip-asking {
+  animation: toy-bob 1.2s ease-in-out infinite;
+}
+.gf-pip-hand {
+  position: relative;
+  flex: 1;
+  height: 100px;
+}
+.gf-back {
+  position: absolute;
+  top: 6px;
+  left: calc(var(--i) * min(34px, (100% - 70px) / max(1, var(--n) - 1)));
+  width: 56px;
+  height: 78px;
+  border-radius: 9px;
+  background: repeating-linear-gradient(45deg, #0891b2 0 6px, #06b6d4 6px 12px);
+  border: 3px solid #fff;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.18);
+  transform: rotate(calc((var(--i) - var(--n) / 2) * 4deg));
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: gf-deal 0.5s calc(var(--i) * 0.08s) cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.gf-back-fish {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.gf-back-fish::after {
+  content: '🐟';
+  font-size: 22px;
+}
+.gf-back-up {
+  z-index: 2;
+  width: auto;
+  height: auto;
+  border: none;
+  background: none;
+  box-shadow: none;
+  transform: translateY(-4px) scale(1.05);
+  animation: gf-flip 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes gf-deal {
+  from {
+    transform: translateY(80px) scale(0.5);
+    opacity: 0;
+  }
+}
+@keyframes gf-flip {
+  from {
+    transform: rotateY(90deg);
+  }
+}
+/* The pond. */
+.gf-pond {
+  position: relative;
+  height: 110px;
+  border: none;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 40%, #7dd3fc, #0ea5e9 70%, #0369a1);
+  box-shadow: inset 0 -8px 16px rgba(3, 105, 161, 0.5), 0 0 0 6px #bbf7d0, 0 0 0 10px #86efac;
+  overflow: hidden;
+  cursor: default;
+}
+.gf-pond-on {
+  cursor: pointer;
+  animation: gf-pond-call 1.1s ease-in-out infinite;
+}
+@keyframes gf-pond-call {
+  50% {
+    box-shadow: inset 0 -8px 16px rgba(3, 105, 161, 0.5), 0 0 0 6px #fde047, 0 0 0 14px #facc15;
+  }
+}
+.gf-swim {
+  position: absolute;
+  left: -40px;
+  animation: gf-swim 9s linear infinite;
+}
+.gf-swim:nth-child(odd) {
+  animation-duration: 12s;
+}
+@keyframes gf-swim {
+  0% {
+    transform: translateX(0) translateY(0);
+  }
+  25% {
+    transform: translateX(120px) translateY(-6px);
+  }
+  50% {
+    transform: translateX(240px) translateY(0);
+  }
+  75% {
+    transform: translateX(360px) translateY(6px);
+  }
+  100% {
+    transform: translateX(480px) translateY(0);
+  }
+}
+.gf-pond-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  color: #fff;
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  text-shadow: 0 2px 2px rgba(0, 0, 0, 0.3);
+}
+.gf-splash {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 20px;
+  height: 20px;
+  margin: -10px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.9);
+  animation: gf-splash 0.8s ease-out forwards;
+}
+@keyframes gf-splash {
+  to {
+    transform: scale(8);
+    opacity: 0;
+  }
+}
+/* A pair: the two cards slide together and float off. */
+.gf-pairflash {
+  position: fixed;
+  left: 50%;
+  top: 40%;
+  z-index: 30;
+  display: flex;
+  gap: 4px;
+  pointer-events: none;
+  animation: gf-pair 1.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.gf-pairflash .gf-card:first-child {
+  animation: gf-slide-l 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.gf-pairflash .gf-card:last-child {
+  animation: gf-slide-r 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes gf-pair {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0;
+  }
+  20%,
+  65% {
+    transform: translate(-50%, -50%) scale(1.25);
+    opacity: 1;
+    filter: drop-shadow(0 0 16px #fde047);
+  }
+  100% {
+    transform: translate(-50%, 160%) scale(0.4);
+    opacity: 0;
+  }
+}
+.gf-pairflash-pip {
+  animation-name: gf-pair-pip;
+}
+@keyframes gf-pair-pip {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0;
+  }
+  20%,
+  65% {
+    transform: translate(-50%, -50%) scale(1.25);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -260%) scale(0.4);
+    opacity: 0;
+  }
+}
+@keyframes gf-slide-l {
+  from {
+    transform: translateX(-60px) rotate(-15deg);
+  }
+}
+@keyframes gf-slide-r {
+  from {
+    transform: translateX(60px) rotate(15deg);
+  }
+}
+.gf-note {
+  min-height: 2.6em;
+}
+/* Your hand. */
+.gf-hand {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border-radius: 20px;
+  background: #ecfeff;
+  transition: box-shadow 0.3s;
+}
+.gf-hand-ask {
+  box-shadow: 0 0 0 3px #22d3ee;
+}
+.gf-hand-card {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.gf-hand-card:active:not(:disabled) {
+  transform: translateY(-8px) scale(1.05);
+}
+.gf-hand-card:disabled {
+  cursor: default;
+}
+.gf-new {
+  animation: gf-caught 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes gf-caught {
+  0% {
+    transform: translateY(-140px) rotate(-30deg) scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(6px) rotate(4deg);
+    opacity: 1;
+  }
+}
+.gf-gofish-btn {
+  background: linear-gradient(135deg, #22d3ee, #0891b2);
+  box-shadow: 0 5px 0 #0e7490;
+}
+.gf-pairs,
+.gf-party {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+.gf-pair {
+  display: inline-flex;
+  gap: 2px;
+}
+.gf-pair .gf-card-small + .gf-card-small {
+  margin-left: -12px;
+  transform: rotate(8deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .gf-swim,
+  .gf-back,
+  .gf-back-up,
+  .gf-pond-on,
+  .gf-pip-asking,
+  .gf-new,
+  .gf-splash,
+  .gf-pairflash,
+  .gf-pairflash .gf-card {
+    animation: none;
+  }
+  .gf-pairflash {
+    transform: translate(-50%, -50%);
+  }
+}
