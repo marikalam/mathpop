@@ -821,6 +821,86 @@ function lockRound(grade) {
   return { code, len: L.len, max: L.max, clues: [`It is ${code}.`], id: 0 };
 }
 
+// The padlock: a metal shackle, a polished gold body with rivets and a
+// keyhole, and number wheels that roll when turned (the digits above and
+// below peek out). A miss rattles it; the right code lights the wheels
+// green one by one and the shackle pops up and swings open.
+const Chevron = ({ up }) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+    <path d={up ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+function Padlock({ dials, known, rolls, max, open, rattle, lockId, onTurn }) {
+  const M = max + 1;
+  const body = useRef(null);
+  // Rattle on each miss (restart the animation in place).
+  useEffect(() => {
+    const el = body.current;
+    if (!rattle || !el) return;
+    el.classList.remove('padlock-rattle');
+    void el.offsetWidth;
+    el.classList.add('padlock-rattle');
+  }, [rattle]);
+  return (
+    <div key={lockId} className={`padlock${open ? ' padlock-open' : ''}`}>
+      <svg viewBox="0 0 120 92" className="padlock-shackle" aria-hidden="true">
+        <defs>
+          <linearGradient id="shackle-metal" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#8b95a8" />
+            <stop offset="0.3" stopColor="#eef2f8" />
+            <stop offset="0.55" stopColor="#b7c0cf" />
+            <stop offset="1" stopColor="#6b7486" />
+          </linearGradient>
+        </defs>
+        <path d="M28 92V46a32 32 0 0 1 64 0v46" fill="none" stroke="#5b6478" strokeWidth="19" />
+        <path d="M28 92V46a32 32 0 0 1 64 0v46" fill="none" stroke="url(#shackle-metal)" strokeWidth="15" />
+        <path d="M34 60V46a26 26 0 0 1 20-25" fill="none" stroke="#fff" strokeOpacity="0.7" strokeWidth="3" strokeLinecap="round" />
+      </svg>
+      <div ref={body} className="padlock-body">
+        <span className="padlock-shine" aria-hidden="true" />
+        {['tl', 'tr', 'bl', 'br'].map((c) => (
+          <span key={c} className={`padlock-rivet padlock-rivet-${c}`} aria-hidden="true" />
+        ))}
+        <div className="padlock-dials">
+          {dials.map((v, i) => {
+            const roll = rolls[i] || { dir: 0, n: 0 };
+            return (
+              <div key={i} className={`pl-dial${known[i] ? ' pl-dial-known' : ''}`} style={{ '--i': i }}>
+                <button type="button" className="pl-btn" onClick={() => onTurn(i, 1)} disabled={known[i] || open} aria-label="Up">
+                  <Chevron up />
+                </button>
+                <div className="pl-window">
+                  <div key={roll.n} className={`pl-strip pl-roll-${roll.dir > 0 ? 'up' : roll.dir < 0 ? 'down' : 'pop'}`}>
+                    <span>{(v + M - 1) % M}</span>
+                    <span className="pl-cur">{v}</span>
+                    <span>{(v + 1) % M}</span>
+                  </div>
+                  {known[i] && (
+                    <span className="pl-badge" aria-hidden="true">
+                      ★
+                    </span>
+                  )}
+                </div>
+                <button type="button" className="pl-btn" onClick={() => onTurn(i, -1)} disabled={known[i] || open} aria-label="Down">
+                  <Chevron />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+        <span className="padlock-keyhole" aria-hidden="true" />
+      </div>
+      {open && (
+        <span className="padlock-burst" aria-hidden="true">
+          {Array.from({ length: 12 }, (_, i) => (
+            <i key={i} style={{ '--a': `${i * 30}deg` }} />
+          ))}
+        </span>
+      )}
+    </div>
+  );
+}
+
 // Five locks, one padlock off the treasure chest each. A miss is never a
 // dead end: the 1st reads the clues again, and from the 2nd on Pip fills
 // in one digit per miss (turned green), so every lock opens in the end.
@@ -837,6 +917,9 @@ export function LogicLock({ grade, onEnd, playerId }) {
   const [open, setOpen] = useState(false);
   const [party, setParty] = useState(null);
   const [chestOpen, setChestOpen] = useState(false);
+  // How each dial last turned (for the rolling digits) and a rattle on a miss.
+  const [rolls, setRolls] = useState(() => Array(r.len).fill({ dir: 0, n: 0 }));
+  const [rattle, setRattle] = useState(0);
   const timers = useRef([]);
   const later = (fn, ms) => timers.current.push(setTimeout(fn, ms));
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -846,11 +929,13 @@ export function LogicLock({ grade, onEnd, playerId }) {
     speak(`Crack the code! ${r.clues.join(' ')}`);
     setDials(Array(r.len).fill(0));
     setKnown(Array(r.len).fill(false));
+    setRolls(Array(r.len).fill({ dir: 0, n: 0 }));
   }, [r]);
   function turn(i, d) {
     if (known[i] || open) return;
     playStickerPick();
     setDials((list) => list.map((v, k) => (k === i ? (v + d + r.max + 1) % (r.max + 1) : v)));
+    setRolls((list) => list.map((x, k) => (k === i ? { dir: d, n: x.n + 1 } : x)));
   }
   function tryOpen() {
     if (open) return;
@@ -881,6 +966,7 @@ export function LogicLock({ grade, onEnd, playerId }) {
       return;
     }
     playIncorrectBuzz();
+    setRattle((n) => n + 1);
     const t = tries + 1;
     setTries(t);
     if (t === 1) {
@@ -894,6 +980,7 @@ export function LogicLock({ grade, onEnd, playerId }) {
     if (i < 0) return;
     setKnown((list) => list.map((v, k) => (k === i ? true : v)));
     setDials((list) => list.map((v, k) => (k === i ? digits[i] : v)));
+    setRolls((list) => list.map((x, k) => (k === i ? { dir: 0, n: x.n + 1 } : x)));
     if (r.len === 1) {
       setNote(`Pip's help: it's ${digits[i]}!`);
       speak(`Here's some help! The code is ${digits[i]}. It's green now. Tap open!`);
@@ -918,24 +1005,7 @@ export function LogicLock({ grade, onEnd, playerId }) {
           </li>
         ))}
       </ol>
-      <div className={`lock-body${open ? ' lock-open' : ''}`}>
-        <svg viewBox="0 0 60 40" className="lock-shackle" aria-hidden="true">
-          <path d="M14 40V20a16 16 0 0 1 32 0v20" fill="none" stroke="#8a93a8" strokeWidth="8" />
-        </svg>
-        <div className="lock-dials">
-          {dials.map((v, i) => (
-            <div key={i} className={`lock-dial${known[i] ? ' lock-dial-known' : ''}`}>
-              <button type="button" onClick={() => turn(i, 1)} disabled={known[i]} aria-label="Up">
-                ▲
-              </button>
-              <span key={`${v}-${known[i]}`}>{v}</span>
-              <button type="button" onClick={() => turn(i, -1)} disabled={known[i]} aria-label="Down">
-                ▼
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
+      <Padlock dials={dials} known={known} rolls={rolls} max={r.max} open={open} rattle={rattle} lockId={r.id} onTurn={turn} />
       {note && (
         <p className={`bakery-note${open ? ' bakery-note-good' : ''}${tries >= 2 && !open ? ' bakery-note-pip' : ''}`}>
           {tries >= 2 && !open && <Pip size={34} mood="wave" />}
