@@ -1104,6 +1104,7 @@ export function LogicLock({ grade, onEnd, playerId }) {
   function hint() {
     if (hints >= maxHints || open) return;
     playStickerPick();
+    setNote(null);
     if (hints === 0) {
       const line = clueTip(r.clues[0]);
       setTip(line);
@@ -1124,6 +1125,7 @@ export function LogicLock({ grade, onEnd, playerId }) {
     if (guess === r.code) {
       playCorrectChime();
       setOpen(true);
+      setTip(null);
       const pts = Math.max(1, (tries === 0 ? 3 : tries === 1 ? 2 : 1) - hints);
       setScore((sc) => sc + pts);
       setNote(`Click! It opened! +${pts} ${pts === 1 ? 'star' : 'stars'}`);
@@ -1137,6 +1139,7 @@ export function LogicLock({ grade, onEnd, playerId }) {
     }
     playIncorrectBuzz();
     setRattle((x) => x + 1);
+    setTip(null);
     const t = tries + 1;
     setTries(t);
     if (t === 1) {
@@ -1180,7 +1183,7 @@ export function LogicLock({ grade, onEnd, playerId }) {
     <div className="game game-lock">
       <RoundBar at={n + 1} of={N} word="Lock" score={score} label="stars" />
       <div className="lock-chest-row">
-        <TreasureChest total={N} opened={n + (open ? 1 : 0)} size={140} />
+        <TreasureChest total={N} opened={n + (open ? 1 : 0)} size={96} />
         <span className="lock-chest-text">{N - n - (open ? 1 : 0) ? `${N - n - (open ? 1 : 0)} more to open the treasure!` : 'Treasure time!'}</span>
       </div>
       <ol className="lock-clues">

@@ -10891,3 +10891,56 @@ body {
     transform: translate(-50%, -50%);
   }
 }
+
+/* Logic Lock fits one phone screen: a smaller chest row and padlock,
+   and room above the home bar. */
+.game-lock {
+  gap: 10px;
+}
+.game-lock .lock-chest-row {
+  gap: 10px;
+}
+.game-lock .lock-chest-text {
+  font-size: 15px;
+  max-width: 170px;
+}
+.game-lock .lock-clues {
+  padding: 10px 14px 10px 32px;
+}
+.game-lock .lock-clues li {
+  margin: 2px 0;
+}
+.game-lock .lock-clues button {
+  font-size: 16px;
+}
+.game-lock .padlock-shackle {
+  width: 100px;
+  height: 77px;
+  margin-bottom: -32px;
+}
+.game-lock .padlock-body {
+  padding: 16px 18px 28px;
+  border-radius: 22px;
+}
+.game-lock .pl-dial {
+  gap: 4px;
+}
+.game-lock .pl-btn {
+  height: 30px;
+}
+.game-lock .pl-window {
+  height: 70px;
+}
+.game-lock .pl-strip {
+  top: -7px;
+}
+.game-lock .padlock-keyhole {
+  bottom: 7px;
+}
+.game-lock .bakery-note,
+.game-lock .lock-tip {
+  margin: 0;
+}
+.game-lock .lock-actions {
+  margin-bottom: 8px;
+}
