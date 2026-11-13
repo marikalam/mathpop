@@ -4,13 +4,15 @@ import { Confetti, CountUp } from './Celebrate.jsx';
 import { Thing } from './Drawings.jsx';
 import { ShapeIcon } from './preK.jsx';
 import { madMinuteFact } from './MadMinute.jsx';
-import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak, speakInLanguage } from './sound.js';
+import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak, speakInLanguage, stopSpeaking } from './sound.js';
 import { CAKE_SIZE, Finale, PartyCake, SHOP_DECOR, ShopDecor, addReward, rewardCount } from './Rewards.jsx';
 import { TimerBar, rand, shuffle, useCountdown } from './gameKit.jsx';
 import { BarModel, BondPop, EqualDiff, LogicLock, MakeTen, PatternStreak, PizzaShop, SumGridRush, TimesTiles } from './GamesSG.jsx';
 import { PatternShape } from './TopicVisual.jsx';
 import NumberSnake from './NumberSnake.jsx';
 import { Coin, SetClock, ToyShop } from './LifeGames.jsx';
+import GoFish from './GoFish.jsx';
+import { useDragDrop } from './dragDrop.js';
 
 // Games: quick, replayable games with a best score to beat, like Mad
 // Minute. Each one follows the player's grade.
@@ -35,7 +37,8 @@ export const GAMES = [
     // Played in Japanese when the player's language is 日本語.
     ja: { title: 'ピップの ケーキやさん', sub: 'カップケーキを はこに つめよう', how: 'はこに つめて、ちゅうもんを とどけよう！' },
   },
-  { id: 'snake', title: 'Number Snake', sub: 'Eat the right answer', how: 'Steer your snake to eat the answer!', seconds: 60, color: ['#2fae6b', '#1f8a51'] },
+  { id: 'snake', title: 'Number Snake', sub: 'Eat the right answer', how: 'Tap the fruit with the answer, and your snake goes to eat it!', seconds: 60, color: ['#2fae6b', '#1f8a51'] },
+  { id: 'goFish', title: 'Go Fish!', sub: 'Find the matching cards', how: 'Find the matches! Ask Pip for a card, or go fish!', seconds: 0, color: ['#06b6d4', '#0e7490'] },
   { id: 'toyShop', title: "Pip's Toy Shop", sub: 'Pay with coins', how: 'Pay for each toy with the right coins!', seconds: 0, color: ['#0ea5e9', '#0284c7'] },
   { id: 'clock', title: 'Set the Clock', sub: 'Turn the hands to the time', how: 'Set the clock to the right time!', seconds: 0, color: ['#6366f1', '#4f46e5'] },
   { id: 'shapes', title: 'Speed Shapes', sub: 'Find the shape, fast', how: 'Listen to Pip, and tap the right shape, fast!', seconds: 45, color: ['#e0577f', '#c43c66'] },
@@ -324,6 +327,21 @@ function Bakery({ grade, onEnd, lang, playerId }) {
     setLit(i);
     talk(seqTo(i + 1));
   }
+  // Boxes are dragged from the stack onto the counter (a tap on the stack
+  // works too); a box dragged off the counter goes back.
+  const { drag, start } = useDragDrop({
+    onDrop: (item, zone) => {
+      if (happy || demo) return;
+      if (item === 'new') {
+        if (zone === 'counter') add();
+      } else if (zone !== 'counter') takeOut();
+    },
+    onTap: (item) => {
+      if (happy || demo) return;
+      if (item === 'new') add();
+      else countTo(item);
+    },
+  });
 
   // Pip packs the order, one box at a time, then the kid serves it.
   function showHow() {
@@ -415,10 +433,23 @@ function Bakery({ grade, onEnd, lang, playerId }) {
     }
   }
 
+  const boxFace = (total) => (
+    <>
+      {total !== null && <span className="bake-total">{total}</span>}
+      <span className="bake-lid" aria-hidden="true" />
+      <span className={`bake-window${order.size > 6 ? ' bake-window-small' : ''}`}>
+        {Array.from({ length: Math.min(order.size, 12) }, (_, j) => (
+          <span key={j} className="bake-cup" style={{ animationDelay: `${0.05 * j}s` }}>
+            <Thing id="cupcake" size={order.size > 6 ? 17 : order.size > 4 ? 23 : order.size > 1 ? 28 : 36} />
+          </span>
+        ))}
+      </span>
+    </>
+  );
+  const dragNew = drag && drag.item === 'new';
+  const dragOff = drag && drag.item !== 'new' && drag.over !== 'counter';
   const hint = tries >= 2;
   const slots = hint ? Math.max(boxes, order.boxes) : boxes;
-  const small = order.size > 6;
-  const cupSize = small ? 17 : order.size > 4 ? 23 : order.size > 1 ? 28 : 36;
   return (
     <div className="game game-bakery">
       <div className="mm-top">
@@ -451,26 +482,26 @@ function Bakery({ grade, onEnd, lang, playerId }) {
             {order.size > 1 && <small>{ja ? `ひとはこに ${order.size}こ` : `A box holds ${order.size}.`}</small>}
           </span>
         </button>
-        <div className="bake-counter">
-          {slots === 0 && <span className="bake-empty">{ja ? '「はこを たす」を タップして つめてね' : 'Tap “Add a box” to pack the order'}</span>}
+        <div className={`bake-counter${dragNew && drag.over === 'counter' ? ' bake-counter-over' : ''}${dragNew ? ' bake-counter-ready' : ''}`} data-drop="counter">
+          {slots === 0 && (
+            <span className="bake-empty">
+              <span className="bake-empty-hand" aria-hidden="true">
+                👇
+              </span>
+              {ja ? 'ここに はこを おいてね' : 'Drag a box here!'}
+            </span>
+          )}
           {Array.from({ length: slots }, (_, i) =>
             i < boxes ? (
               <button
                 key={i}
                 type="button"
-                className={`bake-box${lit === i ? ' bake-box-lit' : ''}${hint && i >= order.boxes ? ' bake-box-extra' : ''}`}
-                onClick={() => countTo(i)}
+                className={`bake-box${lit === i ? ' bake-box-lit' : ''}${hint && i >= order.boxes ? ' bake-box-extra' : ''}${drag && drag.item === i ? ' bake-box-dragging' : ''}`}
+                onPointerDown={start(i)}
+                onKeyDown={(e) => e.key === 'Enter' && countTo(i)}
                 aria-label={`${(i + 1) * order.size}`}
               >
-                <span className="bake-total">{(i + 1) * order.size}</span>
-                <span className="bake-lid" aria-hidden="true" />
-                <span className={`bake-window${small ? ' bake-window-small' : ''}`}>
-                  {Array.from({ length: Math.min(order.size, 12) }, (_, j) => (
-                    <span key={j} className="bake-cup" style={{ animationDelay: `${0.05 * j}s` }}>
-                      <Thing id="cupcake" size={cupSize} />
-                    </span>
-                  ))}
-                </span>
+                {boxFace((i + 1) * order.size)}
               </button>
             ) : (
               <span key={i} className="bake-slot" aria-hidden="true">
@@ -489,14 +520,40 @@ function Bakery({ grade, onEnd, lang, playerId }) {
           <span>{note}</span>
         </p>
       )}
-      <div className="bakery-actions">
-        <button type="button" className="bakery-btn" disabled={!boxes || demo || happy} onClick={takeOut}>
-          {ja ? '− ひとつ だす' : '− Take one out'}
+      {/* The stack of boxes: drag one to the counter, or drag one back here. */}
+      <div className={`bake-stack-row${dragOff ? ' bake-stack-takeback' : ''}`} data-drop="stack">
+        <button
+          type="button"
+          className="bake-stack"
+          onPointerDown={start('new')}
+          onKeyDown={(e) => e.key === 'Enter' && add()}
+          disabled={demo || happy || boxes >= 12}
+          aria-label={ja ? 'はこを たす' : 'Add a box'}
+        >
+          {[2, 1, 0].map((k) => (
+            <span key={k} className="bake-stack-box" style={{ '--k': k }}>
+              <span className="bake-stack-lid" />
+              <Thing id="cupcake" size={22} />
+              <b>×{order.size}</b>
+            </span>
+          ))}
         </button>
-        <button type="button" className="bakery-btn bakery-add" disabled={demo || happy} onClick={add}>
-          {ja ? '+ はこを たす' : '+ Add a box'}
-        </button>
+        <span className="bake-stack-text">
+          {dragOff ? (
+            <strong>{ja ? 'ここで はなすと もどせるよ' : 'Let go to put it back'}</strong>
+          ) : (
+            <>
+              <strong>{ja ? 'はこを ドラッグ' : 'Drag a box to the counter'}</strong>
+              <small>{ja ? 'タップでも OK。もどすときは カウンターから ドラッグ' : 'or tap the boxes. Drag one off the counter to take it back.'}</small>
+            </>
+          )}
+        </span>
       </div>
+      {drag && (
+        <div className={`bake-ghost${drag.item !== 'new' && drag.over !== 'counter' ? ' bake-ghost-away' : ''}`} style={{ left: drag.x, top: drag.y }} aria-hidden="true">
+          <span className="bake-box">{boxFace(null)}</span>
+        </div>
+      )}
       <button
         type="button"
         className={`bake-serve${tries >= 3 && !demo && !happy && boxes === order.boxes ? ' bake-serve-pulse' : ''}`}
@@ -693,6 +750,7 @@ const PLAY = {
   make10: Make10,
   bakery: Bakery,
   snake: (props) => <NumberSnake {...props} makeRound={bubbleRound} />,
+  goFish: GoFish,
   toyShop: ToyShop,
   clock: SetClock,
   shapes: Shapes,
@@ -711,6 +769,7 @@ const SCORE_WORD = {
   make10: 'pairs',
   bakery: 'coins',
   snake: 'answers',
+  goFish: 'pairs',
   toyShop: 'stars',
   clock: 'stars',
   shapes: 'shapes found',
@@ -739,6 +798,8 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit, lang 
   const [result, setResult] = useState(null);
   const [run, setRun] = useState(0);
   const best = gameBest(playerId, grade, game);
+  // Leaving the game (Back, home, another screen) stops Pip mid-sentence.
+  useEffect(() => () => stopSpeaking(), []);
 
   useEffect(() => {
     if (phase !== 'ready') return undefined;
@@ -837,6 +898,14 @@ export function GameArt({ id }) {
     );
   }
   if (id === 'bakery') return <Thing id="cupcake" size={48} />;
+  if (id === 'goFish') {
+    return (
+      <span className="games-art-gofish">
+        <span className="gf-art-card">3</span>
+        <Thing id="fish" size={30} />
+      </span>
+    );
+  }
   if (id === 'toyShop') {
     return (
       <span className="games-art-coins">

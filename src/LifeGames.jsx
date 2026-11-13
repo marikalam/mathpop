@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Thing } from './Drawings.jsx';
 import Pip from './Pip.jsx';
 import { Finale } from './Rewards.jsx';
+import { useDragDrop } from './dragDrop.js';
 import { RoundBar, pick, rand, shuffle } from './gameKit.jsx';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
 
@@ -136,6 +137,12 @@ export function ToyShop({ grade, onEnd }) {
   const [shelf, setShelf] = useState([]);
   const [party, setParty] = useState(null);
   const [flying, setFlying] = useState(null);
+  const [wallToys] = useState(() => shuffle(TOYS.map((t) => t.id).concat(['ladybug', 'dog', 'cat', 'star'])).slice(0, 8));
+  const wallPrice = (id) => {
+    const L = MONEY_LEVELS[grade] || MONEY_LEVELS[1];
+    const h = [...id].reduce((x, ch) => x + ch.charCodeAt(0), 0);
+    return Math.round((L.lo + (h % (L.hi - L.lo + 1))) / L.by) * L.by;
+  };
   const want = r.items.reduce((s, t) => s + t.price, 0);
   const have = tray.reduce((s, c) => s + c, 0);
   const two = r.items.length > 1;
@@ -237,45 +244,90 @@ export function ToyShop({ grade, onEnd }) {
   const tip = tries >= 2 && !demo && !paid ? (have < want ? greedy(want - have, r.coins)[0] : null) : null;
   const tipOut = tries >= 2 && !demo && !paid && have > want;
   const shelfIds = shelf.slice(-12);
+  // Coins: tap or drag from the purse onto the mat to pay; tap one on the
+  // mat, or drag it off, to take it back.
+  const { drag, start } = useDragDrop({
+    onDrop: (item, zone) => {
+      if (item.from === 'wallet') {
+        if (zone === 'tray') add(item.v);
+      } else if (zone !== 'tray') remove(item.i);
+    },
+    onTap: (item) => (item.from === 'wallet' ? add(item.v) : remove(item.i)),
+  });
 
   return (
     <div className="game game-toyshop">
       <RoundBar at={n + 1} of={ROUNDS} word="Toy" score={score} label="stars" />
-      <div className="toy-shelf" aria-label="Your toys">
-        {Array.from({ length: Math.max(ROUNDS * (MONEY_LEVELS[grade]?.two ? 2 : 1), shelfIds.length) }, (_, i) => (
-          <span key={i} className={`toy-slot${shelfIds[i] ? ' toy-slot-full' : ''}`}>
-            {shelfIds[i] ? <Thing id={shelfIds[i]} size={28} /> : null}
+      <div className="ts-shop">
+        <div className="ts-awning" aria-hidden="true" />
+        <div className="ts-sign">
+          <span className="ts-bulbs" aria-hidden="true">
+            {Array.from({ length: 9 }, (_, i) => (
+              <i key={i} style={{ animationDelay: `${(i % 3) * 0.3}s` }} />
+            ))}
           </span>
-        ))}
-      </div>
-      <div className="toy-counter">
-        {r.items.map((t, i) => (
-          <button key={t.id + i} type="button" className={`toy-item${paid ? ' toy-item-bought' : ''}`} onClick={() => speak(ask(r))}>
-            <span className="toy-pic">
-              <Thing id={t.id} size={two ? 64 : 84} />
-            </span>
-            <span className="toy-tag">{money(t.price)}</span>
-          </button>
-        ))}
-        {two && <span className="toy-plus">+</span>}
-      </div>
-      <div className={`toy-tray${have === want && tray.length ? ' toy-tray-good' : ''}`}>
-        <span className="toy-tray-total" key={have}>
-          {money(have)}
-        </span>
-        <div className="toy-tray-coins">
-          {tray.length === 0 && <span className="toy-tray-empty">Tap coins to pay</span>}
-          {tray.map((c, i) => (
-            <button
-              key={i}
-              type="button"
-              className={`toy-paid${i === tray.length - 1 && flying ? ' toy-paid-new' : ''}${tipOut ? ' toy-glow' : ''}`}
-              onClick={() => remove(i)}
-              aria-label={`Take out ${MONEY[c].name}`}
-            >
-              <Coin value={c} size={MONEY[c].bill ? 64 : MONEY[c].size * 0.8} />
-            </button>
+          Pip&apos;s Toy Shop
+        </div>
+        {/* The wall: shelves of toys for sale. */}
+        <div className="ts-wall" aria-hidden="true">
+          {[0, 1].map((row) => (
+            <div key={row} className="ts-shelf">
+              {wallToys.slice(row * 4, row * 4 + 4).map((id, i) => (
+                <span key={id} className="ts-wall-toy" style={{ animationDelay: `${(row * 4 + i) * 0.4}s` }}>
+                  <Thing id={id} size={30} />
+                  <i>{money(wallPrice(id))}</i>
+                </span>
+              ))}
+            </div>
           ))}
+        </div>
+        {/* The counter: Pip, the toy you're buying, and the cash register. */}
+        <div className="ts-front">
+          <span className="ts-pip" aria-hidden="true">
+            <Pip size={58} mood={paid ? 'cheer' : 'wave'} />
+          </span>
+          <div className="ts-items">
+            {r.items.map((t, i) => (
+              <button key={t.id + n + i} type="button" className={`toy-item ts-item${paid ? ' toy-item-bought' : ''}`} onClick={() => speak(ask(r))}>
+                <span className="ts-spot" aria-hidden="true" />
+                <span className="toy-pic">
+                  <Thing id={t.id} size={two ? 58 : 76} />
+                </span>
+                <span className="toy-tag">{money(t.price)}</span>
+              </button>
+            ))}
+            {two && <span className="toy-plus">+</span>}
+          </div>
+          <span className={`ts-register${paid ? ' ts-register-open' : ''}`} aria-label={`Paid so far: ${money(have)}`}>
+            <span className="ts-screen" key={have}>
+              {money(have)}
+            </span>
+            <span className="ts-keys" aria-hidden="true">
+              {Array.from({ length: 6 }, (_, i) => (
+                <i key={i} />
+              ))}
+            </span>
+            <span className="ts-drawer" aria-hidden="true" />
+          </span>
+        </div>
+        <div className="ts-countertop">
+          <div
+            className={`ts-mat${have === want && tray.length ? ' ts-mat-good' : ''}${drag && drag.item.from === 'wallet' && drag.over === 'tray' ? ' ts-mat-over' : ''}${drag && drag.item.from === 'wallet' ? ' ts-mat-ready' : ''}`}
+            data-drop="tray"
+          >
+            {tray.length === 0 && <span className="toy-tray-empty">{drag ? 'Drop it here!' : 'Pay here: drag or tap your coins'}</span>}
+            {tray.map((c, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`toy-paid${i === tray.length - 1 && flying ? ' toy-paid-new' : ''}${tipOut ? ' toy-glow' : ''}${drag && drag.item.from === 'tray' && drag.item.i === i ? ' ts-dragging' : ''}`}
+                onPointerDown={start({ from: 'tray', i, v: c })}
+                aria-label={`Take out ${MONEY[c].name}`}
+              >
+                <Coin value={c} size={MONEY[c].bill ? 60 : MONEY[c].size * 0.78} />
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       {note && (
@@ -284,24 +336,51 @@ export function ToyShop({ grade, onEnd }) {
           <span>{note}</span>
         </p>
       )}
-      <div className="toy-wallet">
-        {r.coins.map((v) => (
-          <button key={v} type="button" className={`toy-coin-btn${tip === v ? ' toy-glow' : ''}`} onClick={() => add(v)} disabled={paid || demo} aria-label={`Add a ${MONEY[v].name}`}>
-            <Coin value={v} />
-            <small>{MONEY[v].name}</small>
-          </button>
-        ))}
+      {/* Your coin purse. */}
+      <div className={`ts-purse${drag && drag.item.from === 'tray' && drag.over !== 'tray' ? ' ts-purse-back' : ''}`} data-drop="purse">
+        <span className="ts-clasp" aria-hidden="true" />
+        <div className="ts-coins">
+          {r.coins.map((v) => (
+            <button
+              key={v}
+              type="button"
+              className={`toy-coin-btn${tip === v ? ' toy-glow' : ''}`}
+              onPointerDown={start({ from: 'wallet', v })}
+              disabled={paid || demo}
+              aria-label={`Add a ${MONEY[v].name}`}
+            >
+              <Coin value={v} />
+              <small>{MONEY[v].name}</small>
+            </button>
+          ))}
+        </div>
       </div>
       <button
         type="button"
-        className={`bake-serve${tries >= 3 && !demo && !paid && have === want ? ' bake-serve-pulse' : ''}`}
+        className={`bake-serve ts-pay${tries >= 3 && !demo && !paid && have === want ? ' bake-serve-pulse' : ''}`}
         disabled={!tray.length || paid || demo}
         onClick={pay}
       >
         Pay!
       </button>
+      {/* Your toy box: what you've bought. */}
+      <div className="ts-toybox" aria-label="Your toy box">
+        <span className="ts-toybox-label">Your toy box</span>
+        <span className="ts-toybox-slots">
+          {Array.from({ length: Math.max(ROUNDS * (MONEY_LEVELS[grade]?.two ? 2 : 1), shelfIds.length) }, (_, i) => (
+            <span key={i} className={`toy-slot${shelfIds[i] ? ' toy-slot-full' : ''}`}>
+              {shelfIds[i] ? <Thing id={shelfIds[i]} size={26} /> : null}
+            </span>
+          ))}
+        </span>
+      </div>
+      {drag && (
+        <span className="ts-ghost" style={{ left: drag.x, top: drag.y }} aria-hidden="true">
+          <Coin value={drag.item.v} />
+        </span>
+      )}
       {party && (
-        <Finale title="Your toy shelf is full!" line="You paid for every toy!" button="Yay! →" onDone={() => onEnd(party.total)}>
+        <Finale title="Your toy box is full!" line="You paid for every toy!" button="Yay! →" onDone={() => onEnd(party.total)}>
           <span className="toy-party">
             {shelf.map((id, i) => (
               <span key={i} className="finale-guest" style={{ animationDelay: `${i * 0.1}s` }}>

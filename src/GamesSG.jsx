@@ -8,6 +8,7 @@ import { storyNames } from './storyNames.js';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
 import Pip from './Pip.jsx';
 import { Finale, TREASURES, TreasureChest, addReward } from './Rewards.jsx';
+import { useDragDrop } from './dragDrop.js';
 import { NumPad, RoundBar, TimerBar, pick, rand, shuffle, useCountdown } from './gameKit.jsx';
 
 // Games built on Singapore math and Beast Academy ideas (Games.jsx lists
@@ -31,60 +32,75 @@ const useEndAtZero = (left, score, onEnd) =>
 const big = (grade) => (grade === 'k' || grade === '1' ? 20 : grade === '2' ? 100 : 1000);
 
 // ---------------------------------------------------------------- Bar Model
-const BAR_ITEMS = ['stickers', 'marbles', 'shells', 'cards', 'beads', 'stamps'];
+// Build the bar model from the story, then solve it. The bars are labeled
+// with the story's people (an animal face and a name) and "Together" (a
+// bracket over both parts) or "more" (the gap between two amounts). The
+// story's numbers, and a ? for the mystery number, are chips: drag each
+// one (or tap it, then tap a spot) onto its place. Then pick the mystery
+// number from three; the wrong ones are the add-or-subtract mix-up. Help:
+// a wrong spot says what to look for, then the right spot glows; a wrong
+// answer explains the sum, then the right answer glows.
+const BAR_ITEMS = [
+  { id: 'cookie', name: 'cookies' },
+  { id: 'star', name: 'stickers' },
+  { id: 'balloon', name: 'balloons' },
+  { id: 'strawberry', name: 'strawberries' },
+  { id: 'flower', name: 'flowers' },
+  { id: 'fish', name: 'fish' },
+];
+const BAR_FACES = ['bunny', 'bear', 'fox', 'panda', 'frog', 'monkey', 'cat', 'dog'];
 function barProblem(grade) {
   const top = big(grade);
   const [p, q] = storyNames(2);
-  const item = pick(BAR_ITEMS);
+  const [fp, fq] = shuffle(BAR_FACES);
+  const it = pick(BAR_ITEMS);
   const kind = pick(['total', 'part', 'more', 'compareTotal']);
-  const a = rand(Math.ceil(top * 0.2), Math.floor(top * 0.55));
-  const b = rand(Math.ceil(top * 0.1), Math.floor(top * 0.4));
-  if (kind === 'total') {
-    return { model: 'partWhole', text: `${p} has ${a} ${item}. ${q} has ${b} ${item}. How many do they have altogether?`, bars: [a, b], whole: '?', answer: a + b };
+  let a = rand(Math.ceil(top * 0.2), Math.floor(top * 0.55));
+  let b = rand(Math.ceil(top * 0.1), Math.floor(top * 0.4));
+  if (a === b) a += 1;
+  const P = { name: p, face: fp };
+  const Q = { name: q, face: fq };
+  if (kind === 'total' || kind === 'part') {
+    // One bar in two parts (P's and Q's), with "Together" over both.
+    const spots = { A: a, B: b, W: a + b };
+    const unknown = kind === 'total' ? 'W' : 'B';
+    const text =
+      kind === 'total'
+        ? [`${p} has ${a} ${it.name}.`, `${q} has ${b} ${it.name}.`, 'How many do they have together?']
+        : [`${p} and ${q} have ${a + b} ${it.name} together.`, `${p} has ${a}.`, `How many does ${q} have?`];
+    const sum = kind === 'total' ? `Together means add the parts: ${a} + ${b}` : `Take ${p}'s part away from the whole: ${a + b} − ${a}`;
+    const wrong = kind === 'total' ? Math.abs(a - b) : a + b + a;
+    return { model: 'partWhole', P, Q, item: it, spots, unknown, text, sum, choices: [spots[unknown], wrong] };
   }
-  if (kind === 'part') {
-    return { model: 'partWhole', text: `${p} and ${q} have ${a + b} ${item} altogether. ${p} has ${a}. How many does ${q} have?`, bars: [a, '?'], whole: a + b, answer: b, sizes: [a, b] };
-  }
+  // Two bars, one longer, with the "more" gap after the shorter one.
+  const small = a;
+  const more = b;
+  const bigV = a + b;
   if (kind === 'more') {
-    const big2 = a + b;
-    return { model: 'compare', text: `${p} has ${big2} ${item}. ${q} has ${a}. How many more does ${p} have?`, top: big2, bottom: a, diff: '?', answer: b };
+    const text = [`${p} has ${bigV} ${it.name}.`, `${q} has ${small}.`, `How many more does ${p} have?`];
+    return { model: 'compare', BIG: P, SMALL: Q, item: it, spots: { BIG: bigV, SMALL: small, D: more }, unknown: 'D', text, sum: `How many more: take the smaller away, ${bigV} − ${small}`, choices: [more, bigV + small] };
   }
-  return { model: 'compare', text: `${p} has ${a} ${item}. ${q} has ${b} more than ${p}. How many does ${q} have?`, top: a, bottom: a + b, flip: true, diff: b, answer: a + b };
+  const text = [`${p} has ${small} ${it.name}.`, `${q} has ${more} more than ${p}.`, `How many does ${q} have?`];
+  return { model: 'compare', BIG: Q, SMALL: P, item: it, spots: { BIG: bigV, SMALL: small, D: more }, unknown: 'BIG', text, sum: `${q} has ${p}'s and ${more} more: ${small} + ${more}`, choices: [bigV, Math.abs(small - more) || bigV + 10] };
+}
+// What each spot is called, for the hints.
+function spotName(pr, k) {
+  if (pr.model === 'partWhole') return k === 'A' ? `${pr.P.name}'s part` : k === 'B' ? `${pr.Q.name}'s part` : 'Together';
+  return k === 'BIG' ? `${pr.BIG.name}'s bar` : k === 'SMALL' ? `${pr.SMALL.name}'s bar` : 'the "more" gap';
 }
 
-function BarPic({ pr, which }) {
-  // which: the model drawn ('partWhole' or 'compare'), with this problem's labels.
-  const W = 300;
-  if (which === 'partWhole') {
-    const sizes = pr.model === 'partWhole' ? pr.sizes || pr.bars : [pr.bottom, pr.answer];
-    const total = sizes[0] + sizes[1];
-    const w0 = Math.max(60, Math.round((sizes[0] / total) * (W - 20)));
-    const labels = pr.model === 'partWhole' ? pr.bars : ['', ''];
-    return (
-      <svg viewBox={`0 0 ${W} 90`} className="bar-pic">
-        <rect x="10" y="30" width={w0} height="34" rx="6" fill="#5aa9ff" />
-        <rect x={10 + w0} y="30" width={W - 20 - w0} height="34" rx="6" fill="#ffb84d" />
-        <text x={10 + w0 / 2} y="53" textAnchor="middle" className="bar-txt">{labels[0]}</text>
-        <text x={10 + w0 + (W - 20 - w0) / 2} y="53" textAnchor="middle" className="bar-txt">{labels[1]}</text>
-        <path d={`M10 22 V14 H${W - 10} V22`} fill="none" stroke="#173a66" strokeWidth="2.5" />
-        <text x={W / 2} y="11" textAnchor="middle" className="bar-txt bar-txt-small">{pr.model === 'partWhole' ? pr.whole : ''}</text>
-      </svg>
-    );
-  }
-  const topV = pr.model === 'compare' ? Math.min(pr.top, pr.bottom) : pr.bars[0];
-  const botV = pr.model === 'compare' ? Math.max(pr.top, pr.bottom) : pr.bars[0] + (pr.sizes ? pr.sizes[1] : pr.bars[1]);
-  const wSmall = Math.max(70, Math.round((topV / botV) * (W - 20)));
-  const small = pr.model === 'compare' ? (pr.flip ? pr.top : pr.bottom) : '';
-  const large = pr.model === 'compare' ? (pr.flip ? '?' : pr.top) : '';
+function BarSpot({ pr, k, placed, glow, over, onTap, lit }) {
+  const v = placed[k];
   return (
-    <svg viewBox={`0 0 ${W} 110`} className="bar-pic">
-      <rect x="10" y="12" width={W - 20} height="30" rx="6" fill="#5aa9ff" />
-      <text x={W / 2} y="33" textAnchor="middle" className="bar-txt">{large}</text>
-      <rect x="10" y="62" width={wSmall} height="30" rx="6" fill="#ffb84d" />
-      <text x={10 + wSmall / 2} y="83" textAnchor="middle" className="bar-txt">{small}</text>
-      <path d={`M${10 + wSmall} 98 H${W - 10}`} stroke="#e5484d" strokeWidth="2.5" strokeDasharray="5 4" />
-      <text x={(10 + wSmall + W - 10) / 2} y="80" textAnchor="middle" className="bar-txt bar-txt-red">{pr.model === 'compare' ? pr.diff : ''}</text>
-    </svg>
+    <button
+      type="button"
+      data-drop={k}
+      className={`bm-spot${v !== undefined ? ' bm-spot-full' : ''}${glow ? ' toy-glow' : ''}${over ? ' bm-spot-over' : ''}${lit ? ' bm-spot-lit' : ''}`}
+      onClick={() => onTap(k)}
+      aria-label={spotName(pr, k)}
+    >
+      {v === undefined ? '' : <b key={String(v)}>{v}</b>}
+    </button>
   );
 }
 
@@ -92,80 +108,247 @@ export function BarModel({ grade, onEnd }) {
   const N = 6;
   const [n, setN] = useState(0);
   const [pr, setPr] = useState(() => barProblem(grade));
-  const [step, setStep] = useState('model');
-  const [typed, setTyped] = useState('');
+  const [placed, setPlaced] = useState({});
+  const [chosen, setChosen] = useState(null);
+  const [step, setStep] = useState('build');
+  const [choices, setChoices] = useState([]);
   const [score, setScore] = useState(0);
-  const [miss, setMiss] = useState(false);
+  const [misses, setMisses] = useState(0);
+  const [miss2, setMiss2] = useState(0);
   const [note, setNote] = useState(null);
-  const order = useRef(shuffle(['partWhole', 'compare']));
+  const [glowSpot, setGlowSpot] = useState(null);
+  const [solved, setSolved] = useState(false);
+  const [shake, setShake] = useState(null);
+  const timers = useRef([]);
+  const later = (fn, ms) => timers.current.push(setTimeout(fn, ms));
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const keys = pr.model === 'partWhole' ? ['A', 'B', 'W'] : ['BIG', 'SMALL', 'D'];
+  // The chips: the story's numbers and the ?.
+  const chips = useMemo(() => shuffle(keys.map((k) => ({ k, label: k === pr.unknown ? '?' : pr.spots[k] }))), [pr]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    speak(`${pr.text} First, pick the bar model.`);
-    order.current = shuffle(['partWhole', 'compare']);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    speak(`${pr.text.join(' ')} Drag each number onto the bars. The question mark goes where the mystery number is.`);
+    setPlaced({});
+    setChosen(null);
+    setStep('build');
+    setMisses(0);
+    setMiss2(0);
+    setNote(null);
+    setGlowSpot(null);
+    setSolved(false);
   }, [pr]);
 
-  function pickModel(m) {
-    if (m === pr.model) {
-      playCorrectChime();
-      setStep('solve');
+  function place(chip, k) {
+    if (step !== 'build' || placed[k] !== undefined) return;
+    if (chip.k === k) {
+      playStickerPick();
+      const next = { ...placed, [k]: chip.label };
+      setPlaced(next);
+      setChosen(null);
+      setGlowSpot(null);
       setNote(null);
-      speak('Yes! Now solve it.');
+      if (Object.keys(next).length === 3) {
+        // Built: now find the mystery number.
+        const right = pr.spots[pr.unknown];
+        const extra = right + (rand(0, 1) ? 1 : -1) * (right > 20 ? 10 : 1);
+        setChoices(shuffle([...new Set([right, ...pr.choices.slice(1), extra > 0 ? extra : right + 2])]).slice(0, 3));
+        later(() => {
+          playCorrectChime();
+          setStep('solve');
+          setNote(null);
+          speak('You built it! Now, what is the mystery number?');
+        }, 500);
+      }
     } else {
       playIncorrectBuzz();
-      setMiss(true);
-      setNote(pr.model === 'partWhole' ? 'Two parts make a whole here. Try the other one!' : 'We are comparing two amounts here. Try the other one!');
+      const m = misses + 1;
+      setMisses(m);
+      setShake(chip.k + Math.random());
+      const what = chip.label === '?' ? 'The ? goes where the mystery number is: what does the question ask?' : `Which line of the story says ${chip.label}? Put it on that bar.`;
+      if (m >= 2) {
+        setGlowSpot(chip.k);
+        setNote(`Try the glowing spot: ${spotName(pr, chip.k)}.`);
+        speak(`Try the glowing spot!`);
+      } else {
+        setNote(what);
+        speak(what);
+      }
     }
   }
-  function solve() {
-    if (Number(typed) === pr.answer) {
+  const { drag, start } = useDragDrop({
+    onDrop: (chip, zone) => zone && place(chip, zone),
+    onTap: (chip) => {
+      setChosen(chip.k);
+      playStickerPick();
+      speak(chip.label === '?' ? 'The mystery number. Where does it go?' : `${chip.label}. Where does it go?`);
+    },
+  });
+  function tapSpot(k) {
+    const chip = chips.find((c) => c.k === chosen);
+    if (chip) place(chip, k);
+  }
+  function answer(v) {
+    if (solved) return;
+    const right = pr.spots[pr.unknown];
+    if (v === right) {
       playCorrectChime();
-      const pts = miss ? 1 : 3;
+      setSolved(true);
+      setPlaced((x) => ({ ...x, [pr.unknown]: right }));
+      const pts = Math.max(1, 3 - (misses ? 1 : 0) - (miss2 ? 1 : 0));
       const total = score + pts;
       setScore(total);
-      setNote(`Yes! ${pr.answer}. +${pts} stars`);
-      setTimeout(() => {
+      setNote(`Yes! ${right}! +${pts} ${pts === 1 ? 'star' : 'stars'}`);
+      speak(`Yes! The mystery number is ${right}!`);
+      later(() => {
         if (n + 1 >= N) onEnd(total);
         else {
           setN(n + 1);
           setPr(barProblem(grade));
-          setStep('model');
-          setTyped('');
-          setMiss(false);
-          setNote(null);
         }
-      }, 1000);
+      }, 2200);
     } else {
       playIncorrectBuzz();
-      setMiss(true);
-      setTyped('');
-      setNote('Not quite. Look at the bar model and try again!');
+      const m = miss2 + 1;
+      setMiss2(m);
+      setShake(`c${v}${Math.random()}`);
+      setNote(m >= 2 ? `${pr.sum} = ? Try the glowing one!` : `${pr.sum} = ?`);
+      speak(`${pr.sum.replace('−', 'minus')}.`);
     }
   }
+
+  // Bar sizes from the real amounts (so a bigger number is a longer bar).
+  const pw = pr.model === 'partWhole';
+  const wA = pw ? Math.max(28, Math.min(72, (pr.spots.A / pr.spots.W) * 100)) : 0;
+  const wS = pw ? 0 : Math.max(30, Math.min(78, (pr.spots.SMALL / pr.spots.BIG) * 100));
+  const over = drag?.over;
+  const picsIn = (count) => Math.min(count, 8);
+  const fill = (count, cls) =>
+    solved && (
+      <span className={`bm-fill ${cls || ''}`} aria-hidden="true">
+        {Array.from({ length: picsIn(count) }, (_, i) => (
+          <span key={i} style={{ animationDelay: `${i * 0.06}s` }}>
+            <Thing id={pr.item.id} size={16} />
+          </span>
+        ))}
+      </span>
+    );
   return (
     <div className="game game-bar">
       <RoundBar at={n + 1} of={N} word="Problem" score={score} label="stars" />
-      <button type="button" className="game-story" onClick={() => speak(pr.text)}>
-        {pr.text}
-      </button>
-      {step === 'model' ? (
-        <>
-          <p className="game-ask">Which bar model fits?</p>
-          {order.current.map((m) => (
-            <button key={m} type="button" className="bar-choice" onClick={() => pickModel(m)}>
-              <BarPic pr={pr} which={m} />
-              <span>{m === 'partWhole' ? 'Part + part = whole' : 'Compare two amounts'}</span>
-            </button>
+      <button type="button" className="bm-story" onClick={() => speak(pr.text.join(' '))}>
+        <Thing id={pr.item.id} size={34} />
+        <span>
+          {pr.text.map((line, i) => (
+            <span key={i} className={i === 2 ? 'bm-q' : ''}>
+              {line}{' '}
+            </span>
           ))}
-        </>
+        </span>
+      </button>
+
+      <div className={`bm-board${solved ? ' bm-board-solved' : ''}`}>
+        {pw ? (
+          <>
+            <div className="bm-brace">
+              <span className="bm-brace-label">Together</span>
+              <BarSpot pr={pr} k="W" placed={placed} glow={glowSpot === 'W'} over={over === 'W'} lit={chosen && placed.W === undefined} onTap={tapSpot} />
+            </div>
+            <div className="bm-row">
+              <div className="bm-seg bm-seg-a" style={{ width: `${wA}%` }}>
+                <span className="bm-who">
+                  <Thing id={pr.P.face} size={22} /> {pr.P.name}
+                </span>
+                <BarSpot pr={pr} k="A" placed={placed} glow={glowSpot === 'A'} over={over === 'A'} lit={chosen && placed.A === undefined} onTap={tapSpot} />
+                {fill(pr.spots.A)}
+              </div>
+              <div className="bm-seg bm-seg-b" style={{ width: `${100 - wA}%` }}>
+                <span className="bm-who">
+                  <Thing id={pr.Q.face} size={22} /> {pr.Q.name}
+                </span>
+                <BarSpot pr={pr} k="B" placed={placed} glow={glowSpot === 'B'} over={over === 'B'} lit={chosen && placed.B === undefined} onTap={tapSpot} />
+                {fill(pr.spots.B)}
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="bm-row bm-row-label">
+              <span className="bm-who">
+                <Thing id={pr.BIG.face} size={22} /> {pr.BIG.name}
+              </span>
+            </div>
+            <div className="bm-row">
+              <div className="bm-seg bm-seg-a" style={{ width: '100%' }}>
+                <BarSpot pr={pr} k="BIG" placed={placed} glow={glowSpot === 'BIG'} over={over === 'BIG'} lit={chosen && placed.BIG === undefined} onTap={tapSpot} />
+                {fill(pr.spots.BIG)}
+              </div>
+            </div>
+            <div className="bm-row bm-row-label">
+              <span className="bm-who">
+                <Thing id={pr.SMALL.face} size={22} /> {pr.SMALL.name}
+              </span>
+            </div>
+            <div className="bm-row">
+              <div className="bm-seg bm-seg-b" style={{ width: `${wS}%` }}>
+                <BarSpot pr={pr} k="SMALL" placed={placed} glow={glowSpot === 'SMALL'} over={over === 'SMALL'} lit={chosen && placed.SMALL === undefined} onTap={tapSpot} />
+                {fill(pr.spots.SMALL)}
+              </div>
+              <div className="bm-gap" style={{ width: `${100 - wS}%` }}>
+                <span className="bm-gap-label">more</span>
+                <BarSpot pr={pr} k="D" placed={placed} glow={glowSpot === 'D'} over={over === 'D'} lit={chosen && placed.D === undefined} onTap={tapSpot} />
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {step === 'build' ? (
+        <div className="bm-chips">
+          <span className="bm-chips-label">Drag each one onto the bars</span>
+          {chips.map((c) =>
+            placed[c.k] !== undefined ? (
+              <span key={c.k} className="bm-chip bm-chip-used" />
+            ) : (
+              <button
+                key={c.k}
+                type="button"
+                className={`bm-chip${c.label === '?' ? ' bm-chip-q' : ''}${chosen === c.k ? ' bm-chip-chosen' : ''}${drag?.item?.k === c.k ? ' bm-chip-dragging' : ''}${String(shake).startsWith(c.k) ? ' bm-shake' : ''}`}
+               
+                onPointerDown={start(c)}
+              >
+                {c.label}
+              </button>
+            ),
+          )}
+        </div>
       ) : (
-        <>
-          <div className="bar-choice bar-chosen">
-            <BarPic pr={pr} which={pr.model} />
+        <div className="bm-solve">
+          <span className="bm-chips-label">What is the mystery number?</span>
+          <div className="bm-answers">
+            {choices.map((v) => (
+              <button
+                key={v}
+                type="button"
+                className={`bm-answer${miss2 >= 2 && !solved && v === pr.spots[pr.unknown] ? ' toy-glow' : ''}${solved && v === pr.spots[pr.unknown] ? ' bm-answer-right' : ''}${String(shake).startsWith(`c${v}`) ? ' bm-shake' : ''}`}
+                onClick={() => answer(v)}
+                disabled={solved}
+              >
+                {v}
+              </button>
+            ))}
           </div>
-          <NumPad value={typed} onChange={setTyped} onSubmit={solve} />
-        </>
+        </div>
       )}
-      {note && <p className="bakery-note">{note}</p>}
+      {note && (
+        <p className={`bakery-note${solved ? ' bakery-note-good' : ''}${(misses >= 1 || miss2 >= 1) && !solved ? ' bakery-note-pip' : ''}`}>
+          {(misses >= 1 || miss2 >= 1) && !solved && <Pip size={30} mood="wave" />}
+          <span>{note}</span>
+        </p>
+      )}
+      {drag && (
+        <span className={`bm-chip bm-chip-ghost${drag.item.label === '?' ? ' bm-chip-q' : ''}`} style={{ left: drag.x, top: drag.y }} aria-hidden="true">
+          {drag.item.label}
+        </span>
+      )}
     </div>
   );
 }
@@ -1104,6 +1287,7 @@ export function LogicLock({ grade, onEnd, playerId }) {
   function hint() {
     if (hints >= maxHints || open) return;
     playStickerPick();
+    setNote(null);
     if (hints === 0) {
       const line = clueTip(r.clues[0]);
       setTip(line);
@@ -1124,6 +1308,7 @@ export function LogicLock({ grade, onEnd, playerId }) {
     if (guess === r.code) {
       playCorrectChime();
       setOpen(true);
+      setTip(null);
       const pts = Math.max(1, (tries === 0 ? 3 : tries === 1 ? 2 : 1) - hints);
       setScore((sc) => sc + pts);
       setNote(`Click! It opened! +${pts} ${pts === 1 ? 'star' : 'stars'}`);
@@ -1137,6 +1322,7 @@ export function LogicLock({ grade, onEnd, playerId }) {
     }
     playIncorrectBuzz();
     setRattle((x) => x + 1);
+    setTip(null);
     const t = tries + 1;
     setTries(t);
     if (t === 1) {
@@ -1180,7 +1366,7 @@ export function LogicLock({ grade, onEnd, playerId }) {
     <div className="game game-lock">
       <RoundBar at={n + 1} of={N} word="Lock" score={score} label="stars" />
       <div className="lock-chest-row">
-        <TreasureChest total={N} opened={n + (open ? 1 : 0)} size={140} />
+        <TreasureChest total={N} opened={n + (open ? 1 : 0)} size={96} />
         <span className="lock-chest-text">{N - n - (open ? 1 : 0) ? `${N - n - (open ? 1 : 0)} more to open the treasure!` : 'Treasure time!'}</span>
       </div>
       <ol className="lock-clues">

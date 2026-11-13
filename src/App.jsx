@@ -1315,6 +1315,8 @@ export default function App() {
   }
 
   function goHome() {
+    // Whatever Pip was saying on the last screen stops.
+    stopSpeaking();
     setView('home');
   }
 
