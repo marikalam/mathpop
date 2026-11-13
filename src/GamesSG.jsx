@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Thing } from './Drawings.jsx';
+import Icon from './Icon.jsx';
+import { Confetti } from './Celebrate.jsx';
 import TopicVisual, { PatternShape } from './TopicVisual.jsx';
 import { TOPIC_BUILDERS } from './topics.js';
 import { storyNames } from './storyNames.js';
@@ -790,48 +792,160 @@ function lockRound(grade) {
   return { code: len === 2 ? 42 : 246, len, clues: len === 2 ? ['The tens digit is 4.', 'The ones digit is 2.'] : ['It is 246.'], id: 0 };
 }
 
+// Hints for the lock: the first explains one clue; then digits are shown.
+function clueTip(c) {
+  let m = c.match(/between (\d+) and (\d+)/);
+  if (m) return `The code is ${m[1]} or more, but less than ${m[2]}. So what is the first digit?`;
+  m = c.match(/add up to (\d+)/);
+  if (m) return `Find digits that add up to ${m[1]}, then check them with the other clues.`;
+  if (/even/.test(c)) return 'Even numbers end in 0, 2, 4, 6 or 8.';
+  if (/odd/.test(c)) return 'Odd numbers end in 1, 3, 5, 7 or 9.';
+  if (/double/.test(c)) return 'Double means two times as much: 6 is double 3, and 8 is double 4.';
+  m = c.match(/(\d+) more than/);
+  if (m) return `Pick a digit, then add ${m[1]} to it for the other one.`;
+  if (/different/.test(c)) return 'No digit can be used twice.';
+  return 'Try one clue at a time, and turn the dials to match it.';
+}
+
+// The surprise inside each opened lock: a different friend, doing a
+// different dance, with a number fact, every time.
+const SURPRISE_THINGS = ['panda', 'fox', 'bunny', 'frog', 'monkey', 'turtle', 'butterfly', 'duck', 'cat', 'dog', 'bear', 'fish', 'cupcake', 'donut', 'strawberry', 'balloon'];
+const SURPRISE_MOVES = [
+  ['spin', 'spinning'],
+  ['bounce', 'bouncing'],
+  ['wiggle', 'wiggling'],
+  ['float', 'floating'],
+  ['grow', 'growing'],
+  ['flip', 'flipping'],
+];
+const SURPRISE_BG = ['#ffd23f', '#ff8fb1', '#7fd8ff', '#b8f2c8', '#d9b8ff', '#ffb870'];
+const FACTS = [
+  'A spider has 8 legs.',
+  'An octopus has 3 hearts.',
+  'A week has 7 days.',
+  'A starfish has 5 arms.',
+  'Bees build honeycomb out of hexagons: shapes with 6 sides.',
+  'A year has 12 months.',
+  'Snowflakes have 6 points.',
+  'A piano has 88 keys.',
+  'There are 60 seconds in a minute.',
+  'Opposite sides of a dice always add up to 7.',
+  'A soccer team has 11 players on the field.',
+  '3 cats have 12 legs: 4 + 4 + 4.',
+  'A clock goes around 2 times every day.',
+  'An ant has 6 legs, so 2 ants have 12.',
+];
+function surprise(last) {
+  let s;
+  do {
+    s = { thing: pick(SURPRISE_THINGS), move: pick(SURPRISE_MOVES), bg: pick(SURPRISE_BG), fact: pick(FACTS) };
+  } while (last && (s.thing === last.thing || s.move === last.move || s.fact === last.fact));
+  return s;
+}
+
+function Surprise({ s, onNext, last }) {
+  return (
+    <div className="lock-surprise" style={{ '--sbg': s.bg }}>
+      <Confetti />
+      <p className="lock-surprise-title">Surprise!</p>
+      <div className="lock-chest" aria-hidden="true">
+        <span className="lock-chest-lid" />
+        <span className="lock-chest-box" />
+        <span className={`lock-surprise-thing surprise-${s.move[0]}`}>
+          <Thing id={s.thing} size={110} />
+        </span>
+      </div>
+      <p className="lock-surprise-what">
+        A {s.move[1]} {s.thing}!
+      </p>
+      <p className="lock-surprise-fact">{s.fact}</p>
+      <button type="button" className="pill-btn-primary pill-btn-full" onClick={onNext}>
+        {last ? 'Finish' : 'Next lock →'}
+      </button>
+    </div>
+  );
+}
+
 export function LogicLock({ grade, onEnd }) {
   const N = 5;
   const [n, setN] = useState(0);
   const [r, setR] = useState(() => lockRound(grade));
   const [dials, setDials] = useState(() => Array(r.len).fill(0));
   const [tries, setTries] = useState(0);
+  const [hints, setHints] = useState(0);
+  const [tip, setTip] = useState(null);
+  const [shown, setShown] = useState([]);
   const [score, setScore] = useState(0);
   const [note, setNote] = useState(null);
   const [open, setOpen] = useState(false);
+  const [prize, setPrize] = useState(null);
+  const lastPrize = useRef(null);
+  const digits = String(r.code).split('').map(Number);
+  // Hint 1 explains a clue; then a digit at a time (never all of them).
+  const maxHints = 1 + (r.len - 1);
   useEffect(() => {
     speak(`Crack the code! ${r.clues.join(' ')}`);
     setDials(Array(r.len).fill(0));
+    setHints(0);
+    setTip(null);
+    setShown([]);
   }, [r]);
   function turn(i, d) {
+    if (shown.includes(i) || open) return;
     playStickerPick();
     setDials((list) => list.map((v, k) => (k === i ? (v + d + 10) % 10 : v)));
+  }
+  function hint() {
+    if (hints >= maxHints || open) return;
+    playStickerPick();
+    if (hints === 0) {
+      const line = clueTip(r.clues[0]);
+      setTip(line);
+      speak(line);
+    } else {
+      const i = [0, r.len - 1, 1].find((k) => !shown.includes(k));
+      setShown((list) => [...list, i]);
+      setDials((list) => list.map((v, k) => (k === i ? digits[i] : v)));
+      const place = r.len === 2 ? ['tens', 'ones'][i] : ['hundreds', 'tens', 'ones'][i];
+      const line = `The ${place} digit is ${digits[i]}.`;
+      setTip(line);
+      speak(line);
+    }
+    setHints((h) => h + 1);
   }
   function tryOpen() {
     const guess = Number(dials.join(''));
     if (guess === r.code) {
       playCorrectChime();
       setOpen(true);
-      const pts = tries ? 1 : 3;
-      const total = score + pts;
-      setScore(total);
-      setNote(`Click! It opened! +${pts} stars`);
+      const pts = Math.max(1, (tries ? 1 : 3) - hints);
+      setScore((sc) => sc + pts);
+      setNote(`Click! It opened! +${pts} ${pts === 1 ? 'star' : 'stars'}`);
+      const s = surprise(lastPrize.current);
+      lastPrize.current = s;
       setTimeout(() => {
-        if (n + 1 >= N) onEnd(total);
-        else {
-          setN(n + 1);
-          setR(lockRound(grade));
-          setTries(0);
-          setNote(null);
-          setOpen(false);
-        }
-      }, 1200);
+        setPrize(s);
+        speak(`Surprise! A ${s.move[1]} ${s.thing}! ${s.fact}`);
+      }, 700);
     } else {
       playIncorrectBuzz();
       setTries((t) => t + 1);
-      setNote('Still locked. Check each clue again!');
+      setNote('Still locked. Check each clue again, or tap Need a hint!');
     }
   }
+  function next() {
+    setPrize(null);
+    if (n + 1 >= N) {
+      onEnd(score);
+      return;
+    }
+    setN(n + 1);
+    setR(lockRound(grade));
+    setTries(0);
+    setNote(null);
+    setOpen(false);
+  }
+  if (prize) return <Surprise s={prize} onNext={next} last={n + 1 >= N} />;
   return (
     <div className="game game-lock">
       <RoundBar at={n + 1} of={N} word="Lock" score={score} label="stars" />
@@ -850,22 +964,32 @@ export function LogicLock({ grade, onEnd }) {
         </svg>
         <div className="lock-dials">
           {dials.map((v, i) => (
-            <div key={i} className="lock-dial">
-              <button type="button" onClick={() => turn(i, 1)} aria-label="Up">
+            <div key={i} className={`lock-dial${shown.includes(i) ? ' lock-dial-shown' : ''}`}>
+              <button type="button" onClick={() => turn(i, 1)} aria-label="Up" disabled={shown.includes(i)}>
                 ▲
               </button>
               <span>{v}</span>
-              <button type="button" onClick={() => turn(i, -1)} aria-label="Down">
+              <button type="button" onClick={() => turn(i, -1)} aria-label="Down" disabled={shown.includes(i)}>
                 ▼
               </button>
             </div>
           ))}
         </div>
       </div>
+      {tip && (
+        <button type="button" className="lock-tip" onClick={() => speak(tip)}>
+          {tip}
+        </button>
+      )}
       {note && <p className="bakery-note">{note}</p>}
-      <button type="button" className="pill-btn-primary pill-btn-full" onClick={tryOpen}>
-        Open the lock
-      </button>
+      <div className="lock-actions">
+        <button type="button" className="lock-hint-btn" onClick={hint} disabled={hints >= maxHints || open}>
+          <Icon name="bulb" /> {hints === 0 ? 'Need a hint?' : hints >= maxHints ? 'No more hints' : 'Another hint'}
+        </button>
+        <button type="button" className="pill-btn-primary lock-open-btn" onClick={tryOpen} disabled={open}>
+          Open the lock
+        </button>
+      </div>
     </div>
   );
 }
