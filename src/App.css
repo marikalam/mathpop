@@ -10944,3 +10944,435 @@ body {
 .game-lock .lock-actions {
   margin-bottom: 8px;
 }
+
+/* Pip's Bakery: drag boxes from the stack to the counter. */
+.bake-box {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.bake-box-dragging {
+  opacity: 0.25;
+}
+.bake-counter {
+  transition: box-shadow 0.2s, background 0.2s;
+}
+.bake-counter-ready {
+  box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.7);
+}
+.bake-counter-over {
+  box-shadow: inset 0 0 0 5px #fff, inset 0 0 30px rgba(255, 255, 255, 0.6);
+  background: repeating-linear-gradient(90deg, #e5ac72 0 46px, #dda068 46px 92px);
+}
+.bake-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 18px;
+}
+.bake-empty-hand {
+  font-size: 30px;
+  animation: bake-point 1.2s ease-in-out infinite;
+}
+@keyframes bake-point {
+  50% {
+    transform: translateY(8px);
+  }
+}
+.bake-stack-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-radius: 20px;
+  background: #fff6ea;
+  border: 3px dashed transparent;
+  transition: border-color 0.2s, background 0.2s;
+}
+.bake-stack-takeback {
+  border-color: #f59e0b;
+  background: #fff1d6;
+}
+.bake-stack {
+  position: relative;
+  flex: none;
+  width: 92px;
+  height: 84px;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.bake-stack:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.bake-stack-box {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--k) * 9px);
+  display: grid;
+  place-items: center;
+  width: 74px;
+  height: 52px;
+  margin-left: -37px;
+  border-radius: 8px;
+  background: linear-gradient(#ffd1e1, #f7a8c4);
+  box-shadow: 0 3px 0 #d9799e;
+  transform: rotate(calc((var(--k) - 1) * 3deg));
+}
+.bake-stack-box b {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  font: 700 13px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #9d2f5a;
+}
+.bake-stack-lid {
+  position: absolute;
+  top: -5px;
+  left: -3px;
+  right: -3px;
+  height: 10px;
+  border-radius: 6px 6px 2px 2px;
+  background: #e07a9e;
+}
+.bake-stack:not(:disabled) .bake-stack-box:last-child {
+  animation: bake-stack-wiggle 2.4s ease-in-out infinite;
+}
+@keyframes bake-stack-wiggle {
+  0%,
+  80%,
+  100% {
+    transform: rotate(3deg);
+  }
+  85% {
+    transform: rotate(-4deg) translateY(-4px);
+  }
+  90% {
+    transform: rotate(6deg) translateY(-4px);
+  }
+}
+.bake-stack-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #7a4a24;
+}
+.bake-stack-text strong {
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.bake-stack-text small {
+  font: 600 13px 'IBM Plex Sans', sans-serif;
+  color: #b0603a;
+}
+/* The box under your finger. */
+.bake-ghost {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  transform: translate(-50%, -60%) rotate(-6deg) scale(1.08);
+  filter: drop-shadow(0 12px 14px rgba(90, 50, 20, 0.35));
+  transition: opacity 0.15s;
+}
+.bake-ghost .bake-box {
+  animation: none;
+}
+.bake-ghost-away {
+  opacity: 0.75;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bake-empty-hand,
+  .bake-stack-box {
+    animation: none !important;
+  }
+}
+
+/* ---- Bar Model Builder: build the model, then solve it ---- */
+.bm-story {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 3px 0 #e2e8f0;
+  text-align: left;
+  font: 600 17px/1.4 'IBM Plex Sans', sans-serif;
+  color: #173a66;
+  cursor: pointer;
+}
+.bm-story svg {
+  flex: none;
+}
+.bm-q {
+  font-weight: 700;
+  color: #2a54c4;
+}
+.bm-board {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 12px 16px;
+  border-radius: 22px;
+  background: linear-gradient(#f4f8ff, #e8f0fd);
+}
+.bm-row {
+  display: flex;
+  width: 100%;
+  min-height: 74px;
+}
+.bm-row-label {
+  min-height: 0;
+}
+.bm-who {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 700 15px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #173a66;
+  white-space: nowrap;
+}
+.bm-seg {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 4px;
+  border-radius: 14px;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  animation: bm-grow 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-origin: left center;
+}
+.bm-seg-a {
+  background: linear-gradient(#7ab8ff, #4e8ff7);
+}
+.bm-seg-b {
+  background: linear-gradient(#ffc977, #ffab3d);
+  animation-delay: 0.15s;
+}
+.bm-row .bm-seg + .bm-seg {
+  margin-left: 3px;
+}
+.bm-seg .bm-who {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+@keyframes bm-grow {
+  from {
+    transform: scaleX(0.1);
+    opacity: 0;
+  }
+}
+.bm-brace {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-top: 0;
+}
+.bm-brace::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: 0;
+  height: 12px;
+  border: 3px solid #173a66;
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+}
+.bm-brace-label {
+  font: 700 16px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #173a66;
+}
+.bm-gap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  margin-left: 3px;
+  border: 3px dashed #e5484d;
+  border-radius: 14px;
+  background: rgba(229, 72, 77, 0.06);
+  animation: bm-grow 0.6s 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.bm-gap-label {
+  font: 700 14px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #e5484d;
+}
+/* The places numbers go. */
+.bm-spot {
+  display: grid;
+  place-items: center;
+  min-width: 52px;
+  height: 36px;
+  padding: 0 8px;
+  border: 3px dashed rgba(23, 58, 102, 0.45);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.75);
+  font: 700 22px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #173a66;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s, border-color 0.15s;
+}
+.bm-spot-lit {
+  border-color: #173a66;
+  animation: bm-lit 1s ease-in-out infinite;
+}
+@keyframes bm-lit {
+  50% {
+    background: #fff;
+    transform: scale(1.06);
+  }
+}
+.bm-spot-over {
+  border-style: solid;
+  border-color: #ffd23f;
+  background: #fff8d6;
+  transform: scale(1.15);
+}
+.bm-spot-full {
+  border: none;
+  background: #fff;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.12);
+}
+.bm-spot-full b {
+  animation: pl-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.bm-fill {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1px;
+  max-width: 100%;
+}
+.bm-fill span {
+  animation: pl-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.bm-board-solved {
+  animation: padlock-hop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+/* The chips to drag. */
+.bm-chips,
+.bm-solve {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+.bm-chips-label {
+  width: 100%;
+  text-align: center;
+  font: 700 16px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #475569;
+}
+.bm-chip {
+  display: grid;
+  place-items: center;
+  min-width: 72px;
+  height: 56px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(#fff, #eef3fb);
+  box-shadow: 0 4px 0 #c7d2e3;
+  font: 700 28px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #173a66;
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  animation: padlock-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.bm-chip-q {
+  background: linear-gradient(#ffe57a, #ffcf2e);
+  box-shadow: 0 4px 0 #d9a800;
+  color: #5b3416;
+}
+.bm-chip-chosen {
+  transform: translateY(-6px);
+  box-shadow: 0 0 0 4px #3b6fef, 0 8px 0 #c7d2e3;
+}
+.bm-chip-dragging {
+  opacity: 0.25;
+}
+.bm-chip-used {
+  min-width: 72px;
+  height: 56px;
+  border: 3px dashed #e2e8f0;
+  border-radius: 16px;
+  background: none;
+  box-shadow: none;
+  animation: none;
+}
+.bm-chip-ghost {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  transform: translate(-50%, -70%) rotate(-5deg) scale(1.1);
+  box-shadow: 0 12px 20px rgba(23, 58, 102, 0.3);
+  animation: none;
+}
+.bm-shake {
+  animation: padlock-rattle 0.45s ease-in-out;
+}
+.bm-answer {
+  min-width: 84px;
+  height: 64px;
+  border: none;
+  border-radius: 50%;
+  aspect-ratio: 1;
+  background: radial-gradient(circle at 35% 30%, #a8d4ff, #4e8ff7);
+  box-shadow: 0 5px 0 #2a63c9;
+  color: #fff;
+  font: 700 26px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  cursor: pointer;
+  animation: padlock-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.bm-answer:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.bm-answer:nth-child(3) {
+  animation-delay: 0.16s;
+}
+.bm-answer-right {
+  background: radial-gradient(circle at 35% 30%, #b8f2c8, #2fae6b);
+  box-shadow: 0 5px 0 #1f8a51;
+  transform: scale(1.12);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bm-seg,
+  .bm-gap,
+  .bm-chip,
+  .bm-answer,
+  .bm-spot-lit,
+  .bm-fill span,
+  .bm-board-solved {
+    animation: none;
+  }
+}
+.bm-answers {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+.bm-answer {
+  width: 78px;
+  min-width: 0;
+  height: 78px;
+}
