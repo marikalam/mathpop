@@ -9,6 +9,7 @@ import { CAKE_SIZE, Finale, PartyCake, SHOP_DECOR, ShopDecor, addReward, rewardC
 import { TimerBar, rand, shuffle, useCountdown } from './gameKit.jsx';
 import { BarModel, BondPop, EqualDiff, LogicLock, MakeTen, PatternStreak, PizzaShop, SumGridRush, TimesTiles } from './GamesSG.jsx';
 import { PatternShape } from './TopicVisual.jsx';
+import NumberSnake from './NumberSnake.jsx';
 
 // Games: quick, replayable games with a best score to beat, like Mad
 // Minute. Each one follows the player's grade.
@@ -33,6 +34,7 @@ export const GAMES = [
     // Played in Japanese when the player's language is 日本語.
     ja: { title: 'ピップの ケーキやさん', sub: 'カップケーキを はこに つめよう', how: 'はこに つめて、ちゅうもんを とどけよう！' },
   },
+  { id: 'snake', title: 'Number Snake', sub: 'Eat the right answer', how: 'Steer your snake to eat the answer!', seconds: 60, color: ['#2fae6b', '#1f8a51'] },
   { id: 'shapes', title: 'Speed Shapes', sub: 'Find the shape, fast', how: 'Listen to Pip, and tap the right shape, fast!', seconds: 45, color: ['#e0577f', '#c43c66'] },
   // Singapore math and Beast Academy games (GamesSG.jsx), for the grades
   // that learn them.
@@ -687,6 +689,7 @@ const PLAY = {
   bubbles: Bubbles,
   make10: Make10,
   bakery: Bakery,
+  snake: (props) => <NumberSnake {...props} makeRound={bubbleRound} />,
   shapes: Shapes,
   barModel: BarModel,
   bondPop: BondPop,
@@ -702,6 +705,7 @@ const SCORE_WORD = {
   bubbles: 'popped',
   make10: 'pairs',
   bakery: 'coins',
+  snake: 'answers',
   shapes: 'shapes found',
   barModel: 'stars',
   bondPop: 'bonds',
@@ -714,7 +718,7 @@ const SCORE_WORD = {
   logicLock: 'stars',
 };
 // The games that end with Time's up (the others end their own way).
-const TIMED = ['bubbles', 'make10', 'shapes', 'bondPop', 'makeTen', 'sumGridRush', 'timesTiles'];
+const TIMED = ['bubbles', 'snake', 'make10', 'shapes', 'bondPop', 'makeTen', 'sumGridRush', 'timesTiles'];
 
 // One game: how to play (said out loud), 3-2-1, play, and the result.
 export function Game({ game, playerId, grade, onDone, stickerSlot, onExit, lang }) {
@@ -826,6 +830,17 @@ export function GameArt({ id }) {
     );
   }
   if (id === 'bakery') return <Thing id="cupcake" size={48} />;
+  if (id === 'snake') {
+    return (
+      <svg viewBox="0 0 50 50" width="48" height="48">
+        <path d="M8 40c6-10 14 2 20-8s-2-16 8-20" fill="none" stroke="#fff" strokeWidth="9" strokeLinecap="round" />
+        <circle cx="38" cy="12" r="7" fill="#fff" />
+        <circle cx="40" cy="10" r="2" fill="#1f8a51" />
+        <circle cx="12" cy="20" r="6" fill="#ffd23f" />
+        <text x="12" y="23.5" textAnchor="middle" fontSize="9" fontWeight="700" fill="#7a4a00">7</text>
+      </svg>
+    );
+  }
   if (id === 'shapes') return <ShapeIcon shape="star" color="#ffd23f" size={50} />;
   if (id === 'patternStreak') return <PatternShape id="triangle:90:0" color="#fff" size={44} />;
   if (id === 'pizza') {
