@@ -9127,3 +9127,154 @@ body {
     animation: none;
   }
 }
+
+/* MathPop market (StockTicker.jsx): the stats as stock tickers. */
+.ticker-card {
+  --up: #16a34a;
+  --down: #dc2626;
+  --flat: #64748b;
+}
+.ticker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ticker-head .stats-card-title {
+  margin: 0;
+}
+.ticker-periods {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: #eef1f6;
+}
+.ticker-period {
+  border: none;
+  background: none;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font: 700 13px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #64748b;
+  cursor: pointer;
+}
+.ticker-period-on {
+  background: #173a66;
+  color: #fff;
+}
+.ticker-up {
+  color: var(--up);
+}
+.ticker-down {
+  color: var(--down);
+}
+.ticker-flat {
+  color: var(--flat);
+}
+.ticker-tape {
+  margin: 10px -16px 4px;
+  padding: 7px 0;
+  overflow: hidden;
+  background: #0f1d33;
+  color: #e6edf7;
+  font: 600 13px 'IBM Plex Mono', ui-monospace, monospace;
+  white-space: nowrap;
+}
+.ticker-tape .ticker-up {
+  color: #4ade80;
+}
+.ticker-tape .ticker-down {
+  color: #f87171;
+}
+.ticker-tape-run {
+  display: inline-flex;
+  animation: ticker-run 22s linear infinite;
+}
+.ticker-tape-set {
+  display: inline-flex;
+}
+.ticker-tape-item {
+  padding: 0 18px;
+}
+.ticker-tape-item b {
+  color: #ffd23f;
+}
+@keyframes ticker-run {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.ticker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ticker-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eef1f6;
+}
+.ticker-row:last-child {
+  border-bottom: none;
+}
+.ticker-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ticker-name b {
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #173a66;
+  letter-spacing: 0.5px;
+}
+.ticker-name small {
+  color: #64748b;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ticker-spark {
+  display: block;
+}
+.ticker-base {
+  stroke: #94a3b8;
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+.ticker-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  min-width: 78px;
+}
+.ticker-value b {
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #173a66;
+  font-variant-numeric: tabular-nums;
+}
+.ticker-pill {
+  padding: 2px 8px;
+  border-radius: 7px;
+  color: #fff;
+  font: 700 12px 'IBM Plex Mono', ui-monospace, monospace;
+  white-space: nowrap;
+}
+.ticker-pill-up {
+  background: var(--up);
+}
+.ticker-pill-down {
+  background: var(--down);
+}
+.ticker-pill-flat {
+  background: var(--flat);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-tape-run {
+    animation: none;
+  }
+}
