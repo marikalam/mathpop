@@ -8565,3 +8565,128 @@ body {
   font: 500 13px/1.3 'IBM Plex Sans', sans-serif;
   color: #5b6077;
 }
+
+/* Sum Grid Rush: colored columns, a helper line, a 1-2-3 number pad. */
+.sgk-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.sgk-col {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px 6px 10px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--sgk) 14%, white);
+  border: 3px solid transparent;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.sgk-col-on {
+  border-color: var(--sgk);
+  transform: translateY(-3px);
+}
+.sgk-ten {
+  align-self: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--sgk);
+  color: #fff;
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.sgk-ten-done {
+  background: #22c55e;
+}
+.sgk-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 14px;
+  background: #fff;
+  color: #173a66;
+  font: 700 clamp(26px, 8vw, 36px) 'Fredoka', ui-rounded, system-ui, sans-serif;
+  box-shadow: 0 3px 0 rgba(23, 58, 102, 0.12);
+}
+.sgk-blank {
+  border: 3px dashed var(--sgk);
+  color: var(--sgk);
+  background: #fff;
+  cursor: pointer;
+}
+.sgk-sel {
+  border-style: solid;
+  background: #fff7d1;
+  animation: sgk-glow 1.2s ease-in-out infinite;
+}
+@keyframes sgk-glow {
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--sgk) 35%, transparent);
+  }
+}
+.sgk-done {
+  border: none;
+  background: #22c55e;
+  color: #fff;
+}
+.sgk-pop {
+  animation: sgk-pop 0.35s ease-out;
+}
+@keyframes sgk-pop {
+  50% {
+    transform: scale(1.18);
+  }
+}
+.sgk-rows {
+  margin: -2px 0 0;
+  text-align: center;
+  font: 600 13px 'IBM Plex Sans', sans-serif;
+  color: #8a93a8;
+}
+.sgk-help {
+  align-self: center;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 24px;
+  background: var(--sgk);
+  color: #fff;
+  font: 700 34px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+.sgk-help b {
+  display: inline-block;
+  min-width: 44px;
+  padding: 0 6px;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--sgk);
+}
+.sgk-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.sgk-key {
+  border: none;
+  border-radius: 18px;
+  padding: 12px 0;
+  background: #fff;
+  color: #173a66;
+  font: 700 30px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  box-shadow: 0 4px 0 #d8deea;
+  cursor: pointer;
+}
+.sgk-key:active {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+.sgk-key-wide {
+  grid-column: span 2;
+}
+.sgk-key-bad {
+  background: #ffe1e1;
+  color: #e5484d;
+}

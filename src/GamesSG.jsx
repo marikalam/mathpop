@@ -322,6 +322,9 @@ function gridRound() {
   return { rows, blanks, id: Math.random() };
 }
 
+// Each column has its own color, so "these two make 10" is easy to see.
+const SG_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#a855f7'];
+
 export function SumGridRush({ onEnd }) {
   const seconds = 90;
   const left = useCountdown(seconds, true);
@@ -329,59 +332,99 @@ export function SumGridRush({ onEnd }) {
   const [filled, setFilled] = useState({});
   const [sel, setSel] = useState(0);
   const [score, setScore] = useState(0);
-  const [bad, setBad] = useState(false);
+  const [bad, setBad] = useState(null);
+  const [pop, setPop] = useState(null);
   useEndAtZero(left, score, onEnd);
-  useEffect(() => {
-    speak('Each column makes 10. Each row makes 20. Fill the empty boxes!');
-  }, []);
   const key = (r, c) => `${r}-${c}`;
+  const [sr, sc] = g.blanks[sel] || [0, 0];
+  const partner = g.rows[1 - sr][sc];
+  useEffect(() => {
+    speak(`The two numbers in each column make 10. ${partner} and what make 10?`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [g]);
+  function pickBox(i) {
+    setSel(i);
+    const [r, c] = g.blanks[i];
+    speak(`${g.rows[1 - r][c]} and what make 10?`);
+  }
   function put(v) {
     if (left === 0) return;
-    const [r, c] = g.blanks[sel];
-    if (g.rows[r][c] === v) {
+    if (g.rows[sr][sc] === v) {
       playCorrectChime();
-      const next = { ...filled, [key(r, c)]: v };
+      const next = { ...filled, [key(sr, sc)]: v };
       setFilled(next);
+      setPop(key(sr, sc));
       const open = g.blanks.findIndex(([rr, cc]) => next[key(rr, cc)] === undefined);
       if (open === -1) {
         setScore((s) => s + 1);
+        speak('You did it!');
         setTimeout(() => {
           setG(gridRound());
           setFilled({});
           setSel(0);
-        }, 350);
-      } else setSel(open);
+          setPop(null);
+        }, 700);
+      } else {
+        setSel(open);
+        const [r, c] = g.blanks[open];
+        speak(`${g.rows[1 - r][c]} and what make 10?`);
+      }
     } else {
       playIncorrectBuzz();
-      setBad(true);
-      setTimeout(() => setBad(false), 400);
+      setBad(v);
+      speak(`${partner} and ${v} make ${partner + v}. We need 10!`);
+      setTimeout(() => setBad(null), 500);
     }
   }
+  // A column the child filled in (columns with no empty box get no check).
+  const colDone = (c) => g.blanks.some(([, cc]) => cc === c) && g.blanks.every(([r, cc]) => cc !== c || filled[key(r, cc)] !== undefined);
   return (
     <div className="game game-sumgrid">
       <TimerBar left={left} seconds={seconds} score={score} label="grids" />
-      <div className={`sg-grid${bad ? ' make10-bad' : ''}`}>
-        <span />
+      <div className="sgk-board">
         {[0, 1, 2, 3].map((c) => (
-          <span key={c} className="sg-head">10</span>
+          <div key={c} className={`sgk-col${sc === c ? ' sgk-col-on' : ''}`} style={{ '--sgk': SG_COLORS[c] }}>
+            <span className={`sgk-ten${colDone(c) ? ' sgk-ten-done' : ''}`}>{colDone(c) ? '✓ 10' : '10'}</span>
+            {[0, 1].map((r) => {
+              const bi = g.blanks.findIndex(([rr, cc]) => rr === r && cc === c);
+              if (bi === -1) {
+                return (
+                  <span key={r} className="sgk-cell">
+                    {g.rows[r][c]}
+                  </span>
+                );
+              }
+              const v = filled[key(r, c)];
+              return (
+                <button
+                  key={r}
+                  type="button"
+                  className={`sgk-cell sgk-blank${sel === bi && v === undefined ? ' sgk-sel' : ''}${v !== undefined ? ' sgk-done' : ''}${pop === key(r, c) ? ' sgk-pop' : ''}`}
+                  onClick={() => v === undefined && pickBox(bi)}
+                  aria-label={v === undefined ? 'Empty box' : String(v)}
+                >
+                  {v ?? '?'}
+                </button>
+              );
+            })}
+          </div>
         ))}
-        {[0, 1].map((r) => [
-          <span key={`h${r}`} className="sg-head sg-row">20</span>,
-          ...[0, 1, 2, 3].map((c) => {
-            const bi = g.blanks.findIndex(([rr, cc]) => rr === r && cc === c);
-            if (bi === -1) return <span key={key(r, c)} className="sg-cell">{g.rows[r][c]}</span>;
-            const v = filled[key(r, c)];
-            return (
-              <button key={key(r, c)} type="button" className={`sg-cell sg-blank${sel === bi && v === undefined ? ' sg-sel' : ''}`} onClick={() => v === undefined && setSel(bi)}>
-                {v ?? '?'}
-              </button>
-            );
-          }),
-        ])}
       </div>
-      <div className="sg-pad">
-        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((v) => (
-          <button key={v} type="button" className="mm-key" onClick={() => put(v)}>
+      <p className="sgk-rows">Each row adds up to 20 too!</p>
+      <button type="button" className="sgk-help" style={{ '--sgk': SG_COLORS[sc] }} onClick={() => speak(`${partner} and what make 10?`)}>
+        {sr === 0 ? (
+          <>
+            <b>?</b> + {partner} = 10
+          </>
+        ) : (
+          <>
+            {partner} + <b>?</b> = 10
+          </>
+        )}
+      </button>
+      <div className="sgk-pad">
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 10].map((v) => (
+          <button key={v} type="button" className={`sgk-key${v === 10 ? ' sgk-key-wide' : ''}${bad === v ? ' make10-bad sgk-key-bad' : ''}`} onClick={() => put(v)}>
             {v}
           </button>
         ))}
