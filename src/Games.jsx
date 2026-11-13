@@ -10,6 +10,7 @@ import { TimerBar, rand, shuffle, useCountdown } from './gameKit.jsx';
 import { BarModel, BondPop, EqualDiff, LogicLock, MakeTen, PatternStreak, PizzaShop, SumGridRush, TimesTiles } from './GamesSG.jsx';
 import { PatternShape } from './TopicVisual.jsx';
 import NumberSnake from './NumberSnake.jsx';
+import { Coin, SetClock, ToyShop } from './LifeGames.jsx';
 
 // Games: quick, replayable games with a best score to beat, like Mad
 // Minute. Each one follows the player's grade.
@@ -35,6 +36,8 @@ export const GAMES = [
     ja: { title: 'ピップの ケーキやさん', sub: 'カップケーキを はこに つめよう', how: 'はこに つめて、ちゅうもんを とどけよう！' },
   },
   { id: 'snake', title: 'Number Snake', sub: 'Eat the right answer', how: 'Steer your snake to eat the answer!', seconds: 60, color: ['#2fae6b', '#1f8a51'] },
+  { id: 'toyShop', title: "Pip's Toy Shop", sub: 'Pay with coins', how: 'Pay for each toy with the right coins!', seconds: 0, color: ['#0ea5e9', '#0284c7'] },
+  { id: 'clock', title: 'Set the Clock', sub: 'Turn the hands to the time', how: 'Set the clock to the right time!', seconds: 0, color: ['#6366f1', '#4f46e5'] },
   { id: 'shapes', title: 'Speed Shapes', sub: 'Find the shape, fast', how: 'Listen to Pip, and tap the right shape, fast!', seconds: 45, color: ['#e0577f', '#c43c66'] },
   // Singapore math and Beast Academy games (GamesSG.jsx), for the grades
   // that learn them.
@@ -690,6 +693,8 @@ const PLAY = {
   make10: Make10,
   bakery: Bakery,
   snake: (props) => <NumberSnake {...props} makeRound={bubbleRound} />,
+  toyShop: ToyShop,
+  clock: SetClock,
   shapes: Shapes,
   barModel: BarModel,
   bondPop: BondPop,
@@ -706,6 +711,8 @@ const SCORE_WORD = {
   make10: 'pairs',
   bakery: 'coins',
   snake: 'answers',
+  toyShop: 'stars',
+  clock: 'stars',
   shapes: 'shapes found',
   barModel: 'stars',
   bondPop: 'bonds',
@@ -830,6 +837,23 @@ export function GameArt({ id }) {
     );
   }
   if (id === 'bakery') return <Thing id="cupcake" size={48} />;
+  if (id === 'toyShop') {
+    return (
+      <span className="games-art-coins">
+        <Coin value={25} size={40} />
+        <Coin value={10} size={30} />
+      </span>
+    );
+  }
+  if (id === 'clock') {
+    return (
+      <svg viewBox="0 0 50 50" width="46" height="46">
+        <circle cx="25" cy="25" r="21" fill="#fff" stroke="#ffd23f" strokeWidth="4" />
+        <path d="M25 25V12M25 25l8 5" stroke="#173a66" strokeWidth="3.5" strokeLinecap="round" />
+        <circle cx="25" cy="25" r="2.5" fill="#173a66" />
+      </svg>
+    );
+  }
   if (id === 'snake') {
     return (
       <svg viewBox="0 0 50 50" width="48" height="48">
