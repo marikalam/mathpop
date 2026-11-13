@@ -56,6 +56,7 @@ import {
 import { listenForAppLinks } from './appLink.js';
 import { statAppOpened, statRoundDone } from './stats.js';
 import StatsScreen from './StatsScreen.jsx';
+import { StockChart } from './StockTicker.jsx';
 import PinchZoom from './PinchZoom.jsx';
 import { Printer } from '@capgo/capacitor-printer';
 import WeekCard from './WeekCard.jsx';
@@ -2296,6 +2297,7 @@ export default function App() {
             <p className="screen-sub">Set each player's grade and how they answer. They play at that grade, following Singapore math.</p>
             <SyncStatus user={profileOwner === 'account' ? cloudUser : null} onOpenAccount={openAccount} />
             {/* Only for the accounts that can see MathPop's stats (the owner). */}
+            {statsViewer && <StockChart onOpenStats={() => setView('stats')} />}
             {statsViewer && <MoneyCard app="mathpop" />}
             <div className="settings-list">
               {draftProfiles.map((p) => (

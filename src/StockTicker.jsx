@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { loadSignups, loadStats, loadStoreStats } from './cloud.js';
 
 // The top of MathPop stats, read like a stock app: each number is a
@@ -170,4 +170,185 @@ export default function StockTicker() {
   }, []);
   const days = PERIODS.find((x) => x.id === period).days;
   return <TickerBoard rows={data ? buildTickers(data, days) : []} period={period} onPeriod={setPeriod} loading={!data} />;
+}
+
+// ---- The big stock chart (Settings, for the owner) ----
+// One number at a time, like a stock: pick what to watch and how far
+// back. The big number is the total (or, for kids playing, the daily
+// average) over the range, with ▲/▼ against the range before. The line
+// is green when it's up, red when it's down; the dotted line is the range
+// before's level. Drag along the chart to read any day. Over 3 and 6
+// months the line is a 7-day average, so it isn't too jumpy.
+const METRICS = [
+  { id: 'devices', label: 'Kids playing', avg: true },
+  { id: 'rounds', label: 'Rounds' },
+  { id: 'downloads', label: 'Downloads' },
+  { id: 'signups', label: 'Sign-ups' },
+  { id: 'newInstalls', label: 'New devices' },
+];
+const RANGES = [
+  { id: '1W', days: 7 },
+  { id: '1M', days: 30 },
+  { id: '3M', days: 91, smooth: true },
+  { id: '6M', days: 182, smooth: true },
+];
+const longDay = (day) => new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+function byDayFor(data, metric) {
+  if (metric === 'downloads') return { by: Object.fromEntries((data.store?.daily || []).map((d) => [d.day, d.downloads])), last: data.store?.through };
+  if (metric === 'signups') {
+    const by = {};
+    for (const a of data.signups?.accounts || []) {
+      const d = iso(new Date(a.at));
+      by[d] = (by[d] || 0) + 1;
+    }
+    return { by, last: null };
+  }
+  return { by: Object.fromEntries((data.stats?.daily || []).map((d) => [d.day, d[metric]])), last: null };
+}
+
+export function StockChart({ onOpenStats }) {
+  const [data, setData] = useState(null);
+  const [metric, setMetric] = useState('devices');
+  const [range, setRange] = useState('1M');
+  const [hover, setHover] = useState(null);
+  const svg = useRef(null);
+  useEffect(() => {
+    let live = true;
+    // 6 months and the 6 months before.
+    Promise.all([loadStats(365), loadStoreStats(365), loadSignups(365)]).then(([stats, store, signups]) => live && setData({ stats, store, signups }));
+    return () => {
+      live = false;
+    };
+  }, []);
+  useEffect(() => setHover(null), [metric, range]);
+
+  const R = RANGES.find((x) => x.id === range);
+  const M = METRICS.find((x) => x.id === metric);
+  if (!data) {
+    return (
+      <section className="stats-card stock-card">
+        <p className="stats-empty">Loading MathPop’s chart…</p>
+      </section>
+    );
+  }
+  if (!data.stats && !data.store && !data.signups) return null;
+
+  const today = iso(new Date());
+  const { by, last } = byDayFor(data, metric);
+  const end = last || addDays(today, -1);
+  const n = R.days;
+  const vals = series(by, end, n); // the range before, then this range
+  const days = Array.from({ length: n }, (_, i) => addDays(end, i - n + 1));
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  const cur = vals.slice(n);
+  const prev = vals.slice(0, n);
+  const value = M.avg ? sum(cur) / n : sum(cur);
+  const before = M.avg ? sum(prev) / n : sum(prev);
+  const diff = value - before;
+  const pct = before ? (diff / before) * 100 : value ? null : 0;
+  const dir = Math.abs(diff) < 1e-9 ? 'flat' : diff > 0 ? 'up' : 'down';
+  // The line: daily, or a 7-day average over the longer ranges.
+  const line = R.smooth ? cur.map((_, i) => sum(vals.slice(n + i - 6, n + i + 1)) / 7) : cur;
+  const base = sum(prev) / n;
+
+  const W = 340;
+  const H = 170;
+  const top = 12;
+  const bot = 22;
+  const max = Math.max(1, base, ...line) * 1.1;
+  const x = (i) => (n === 1 ? W / 2 : (i / (n - 1)) * W);
+  const y = (v) => top + (1 - v / max) * (H - top - bot);
+  const pts = line.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const fmtV = (v) => (M.avg || R.smooth ? (Math.round(v * 10) / 10).toLocaleString() : Math.round(v).toLocaleString());
+
+  function pickAt(e) {
+    const r = svg.current.getBoundingClientRect();
+    const i = Math.round(((e.clientX - r.left) / r.width) * (n - 1));
+    setHover(Math.max(0, Math.min(n - 1, i)));
+  }
+  const h = hover;
+  return (
+    <section className={`stats-card stock-card stock-${dir}`}>
+      <div className="stock-top">
+        <span className="stock-name">MathPop · {M.label}</span>
+        {onOpenStats && (
+          <button type="button" className="stock-more" onClick={onOpenStats}>
+            All stats →
+          </button>
+        )}
+      </div>
+      <div className="stock-price">
+        {h === null ? (
+          <>
+            <strong key={`${metric}-${range}`}>{fmtV(value)}</strong>
+            <span className={`ticker-pill ticker-pill-${dir}`}>{change({ dir, pct })}</span>
+            <small>
+              {M.avg ? 'a day, ' : ''}last {R.id === '1W' ? 'week' : R.id === '1M' ? 'month' : R.id === '3M' ? '3 months' : '6 months'} · was {fmtV(before)}
+            </small>
+          </>
+        ) : (
+          <>
+            <strong>{fmtV(line[h])}</strong>
+            <small>
+              {longDay(days[h])}
+              {R.smooth ? ' · 7-day average' : ''}
+            </small>
+          </>
+        )}
+      </div>
+      <svg
+        ref={svg}
+        viewBox={`0 0 ${W} ${H}`}
+        className="stock-svg"
+        onPointerDown={pickAt}
+        onPointerMove={(e) => (e.buttons || e.pointerType === 'mouse') && pickAt(e)}
+        onPointerLeave={() => setHover(null)}
+        onPointerUp={(e) => e.pointerType !== 'mouse' && setHover(null)}
+        role="img"
+        aria-label={`${M.label}: ${fmtV(value)}, ${change({ dir, pct })}`}
+      >
+        <defs>
+          <linearGradient id="stock-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="currentColor" stopOpacity="0.3" />
+            <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {[0.25, 0.5, 0.75].map((f) => (
+          <line key={f} x1="0" x2={W} y1={top + f * (H - top - bot)} y2={top + f * (H - top - bot)} className="stock-grid" />
+        ))}
+        <line x1="0" x2={W} y1={y(base)} y2={y(base)} className="stock-base" />
+        <polygon key={`f-${metric}-${range}`} className="stock-area" points={`0,${H - bot} ${pts} ${W},${H - bot}`} fill="url(#stock-fill)" />
+        <polyline key={`l-${metric}-${range}`} className="stock-line" points={pts} pathLength="1" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round" />
+        {h === null ? (
+          <circle className="stock-dot" cx={x(n - 1)} cy={y(line[n - 1])} r="4.5" fill="currentColor" />
+        ) : (
+          <>
+            <line x1={x(h)} x2={x(h)} y1={top} y2={H - bot} className="stock-cross" />
+            <circle cx={x(h)} cy={y(line[h])} r="5" fill="#fff" stroke="currentColor" strokeWidth="3" />
+          </>
+        )}
+        <text x="2" y={H - 6} className="stock-axis">
+          {longDay(days[0])}
+        </text>
+        <text x={W - 2} y={H - 6} textAnchor="end" className="stock-axis">
+          {metric === 'downloads' && last ? longDay(end) : 'Yesterday'}
+        </text>
+      </svg>
+      <div className="stock-ranges" role="radiogroup" aria-label="How far back">
+        {RANGES.map((x2) => (
+          <button key={x2.id} type="button" role="radio" aria-checked={x2.id === range} className={`stock-range${x2.id === range ? ' stock-range-on' : ''}`} onClick={() => setRange(x2.id)}>
+            {x2.id}
+          </button>
+        ))}
+      </div>
+      <div className="stock-metrics" role="radiogroup" aria-label="What to watch">
+        {METRICS.map((m) => (
+          <button key={m.id} type="button" role="radio" aria-checked={m.id === metric} className={`stock-metric${m.id === metric ? ' stock-metric-on' : ''}`} onClick={() => setMetric(m.id)}>
+            {m.label}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
 }
