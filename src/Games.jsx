@@ -37,7 +37,7 @@ export const GAMES = [
     // Played in Japanese when the player's language is 日本語.
     ja: { title: 'ピップの ケーキやさん', sub: 'カップケーキを はこに つめよう', how: 'はこに つめて、ちゅうもんを とどけよう！' },
   },
-  { id: 'snake', title: 'Number Snake', sub: 'Eat the right answer', how: 'Steer your snake to eat the answer!', seconds: 60, color: ['#2fae6b', '#1f8a51'] },
+  { id: 'snake', title: 'Number Snake', sub: 'Eat the right answer', how: 'Tap the fruit with the answer, and your snake goes to eat it!', seconds: 60, color: ['#2fae6b', '#1f8a51'] },
   { id: 'goFish', title: 'Go Fish!', sub: 'Find the matching cards', how: 'Find the matches! Ask Pip for a card, or go fish!', seconds: 0, color: ['#06b6d4', '#0e7490'] },
   { id: 'toyShop', title: "Pip's Toy Shop", sub: 'Pay with coins', how: 'Pay for each toy with the right coins!', seconds: 0, color: ['#0ea5e9', '#0284c7'] },
   { id: 'clock', title: 'Set the Clock', sub: 'Turn the hands to the time', how: 'Set the clock to the right time!', seconds: 0, color: ['#6366f1', '#4f46e5'] },
