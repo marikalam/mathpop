@@ -465,6 +465,18 @@ export async function verifyPlusPurchase(jws) {
 // Downloads and money progress for the owner (MoneyCard.jsx): both apps'
 // downloads, free weeks and paying families (supabase/money_progress.sql
 // in MathPop's repo). null if not allowed or offline.
+// Apple's sales reports for both apps (supabase apple_sales_summary, run
+// for PitchPop's stats too): all-time downloads per app. Null if not
+// allowed or offline.
+export async function loadAppleSales() {
+  try {
+    const { data, error } = await supabase.rpc('apple_sales_summary');
+    return error ? null : data;
+  } catch {
+    return null;
+  }
+}
+
 export async function loadMoneyProgress() {
   try {
     const { data, error } = await supabase.rpc('money_progress');
