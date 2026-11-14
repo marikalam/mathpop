@@ -11968,3 +11968,9 @@ body {
   white-space: normal;
   max-width: 88%;
 }
+/* 12 forms: smaller icons so they fit a phone. */
+.snake-form {
+  width: 28px;
+  height: 28px;
+  font-size: 15px;
+}
