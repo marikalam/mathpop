@@ -238,7 +238,7 @@ function TotalsCard() {
           <span className="totals-sub">families with MathPop Plus</span>
         </div>
       </div>
-      <p className="stats-note">Apple’s download numbers run a day or two behind. A user is a phone, tablet or computer that opened MathPop.</p>
+      <p className="stats-note">Apple’s download numbers run a day or two behind. A user is a phone, tablet or computer that played MathPop (from Nov 14, only ones that finished a round count).</p>
     </section>
   );
 }
