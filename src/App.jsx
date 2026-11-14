@@ -1796,6 +1796,51 @@ export default function App() {
               </div>
             </section>
 
+            {/* Games first, right under the greeting: Mad Minute and the games
+                in Games.jsx, all of them showing, three across. */}
+            <p className="home-topics-label">Games</p>
+            <div className="home-games">
+              {gradeInfo(level).id !== 'p' && (
+                <button
+                  className="home-game"
+                  style={{ '--card-from': '#ef5b5b' }}
+                  onClick={() => {
+                    unlockAudio();
+                    setMadKey((k) => k + 1);
+                    setView('madminute');
+                  }}
+                >
+                  <span className="home-game-art" aria-hidden="true">
+                    <SectionIcon id="madminute" />
+                  </span>
+                  <span className="home-game-title">Mad Minute</span>
+                  {madMinuteBest(currentProfile.id, gradeInfo(level).id) > 0 && (
+                    <span className="home-game-best">Best {madMinuteBest(currentProfile.id, gradeInfo(level).id)}</span>
+                  )}
+                </button>
+              )}
+              {gamesFor(gradeInfo(level).id).map((g) => (
+                <button
+                  key={g.id}
+                  className="home-game"
+                  style={{ '--card-from': g.color[0] }}
+                  onClick={() => {
+                    unlockAudio();
+                    setGameId(g.id);
+                    setView('game');
+                  }}
+                >
+                  <span className="home-game-art" aria-hidden="true">
+                    <GameArt id={g.id} />
+                  </span>
+                  <span className="home-game-title">{gameTitle(g.id, gradeInfo(level).id, langFor(currentProfile.id))}</span>
+                  {gameBest(currentProfile.id, gradeInfo(level).id, g.id) > 0 && (
+                    <span className="home-game-best">Best {gameBest(currentProfile.id, gradeInfo(level).id, g.id)}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+
             {/* Today's practice: today's "Just for me" rounds (myPath.js),
                 each made from this player's history. */}
             {(() => {
@@ -1914,50 +1959,6 @@ export default function App() {
               );
             })()}
 
-            {/* Games, right on the home page: Mad Minute and the games in
-                Games.jsx, all of them showing, three across. */}
-            <p className="home-topics-label">Games</p>
-            <div className="home-games">
-              {gradeInfo(level).id !== 'p' && (
-                <button
-                  className="home-game"
-                  style={{ '--card-from': '#ef5b5b' }}
-                  onClick={() => {
-                    unlockAudio();
-                    setMadKey((k) => k + 1);
-                    setView('madminute');
-                  }}
-                >
-                  <span className="home-game-art" aria-hidden="true">
-                    <SectionIcon id="madminute" />
-                  </span>
-                  <span className="home-game-title">Mad Minute</span>
-                  {madMinuteBest(currentProfile.id, gradeInfo(level).id) > 0 && (
-                    <span className="home-game-best">Best {madMinuteBest(currentProfile.id, gradeInfo(level).id)}</span>
-                  )}
-                </button>
-              )}
-              {gamesFor(gradeInfo(level).id).map((g) => (
-                <button
-                  key={g.id}
-                  className="home-game"
-                  style={{ '--card-from': g.color[0] }}
-                  onClick={() => {
-                    unlockAudio();
-                    setGameId(g.id);
-                    setView('game');
-                  }}
-                >
-                  <span className="home-game-art" aria-hidden="true">
-                    <GameArt id={g.id} />
-                  </span>
-                  <span className="home-game-title">{gameTitle(g.id, gradeInfo(level).id, langFor(currentProfile.id))}</span>
-                  {gameBest(currentProfile.id, gradeInfo(level).id, g.id) > 0 && (
-                    <span className="home-game-best">Best {gameBest(currentProfile.id, gradeInfo(level).id, g.id)}</span>
-                  )}
-                </button>
-              ))}
-            </div>
 
             {!IS_NATIVE && (
               <a className="all-apps-link" href="https://marikalam.github.io/apps/">

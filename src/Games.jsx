@@ -12,6 +12,16 @@ import { PatternShape } from './TopicVisual.jsx';
 import NumberSnake from './NumberSnake.jsx';
 import { Coin, SetClock, ToyShop } from './LifeGames.jsx';
 import GoFish from './GoFish.jsx';
+import SnipDrop from './arcade/SnipDrop.jsx';
+import PipHop from './arcade/PipHop.jsx';
+import NumberRun from './arcade/NumberRun.jsx';
+import GardenGuard from './arcade/GardenGuard.jsx';
+import PopDefense from './arcade/PopDefense.jsx';
+import SweetTens from './arcade/SweetTens.jsx';
+import NumberKeys from './arcade/NumberKeys.jsx';
+import PipLaunch from './arcade/PipLaunch.jsx';
+import ShapeDash from './arcade/ShapeDash.jsx';
+import FruitSlice from './arcade/FruitSlice.jsx';
 import { useDragDrop } from './dragDrop.js';
 
 // Games: quick, replayable games with a best score to beat, like Mad
@@ -38,6 +48,17 @@ export const GAMES = [
     ja: { title: 'ピップの ケーキやさん', sub: 'カップケーキを はこに つめよう', how: 'はこに つめて、ちゅうもんを とどけよう！' },
   },
   { id: 'snake', title: 'Number Snake', sub: 'Eat the right answer', how: 'Tap the fruit with the answer, and your snake goes to eat it! Watch your hearts.', seconds: 0, color: ['#2fae6b', '#1f8a51'] },
+  // Arcade games (src/arcade): fun to play, with the math built in.
+  { id: 'snipDrop', title: 'Snip & Drop', sub: 'Snip the rope, drop the sweet', how: 'Tap to snip the rope when the sweet is over the right basket!', seconds: 0, color: ['#f472b6', '#db2777'] },
+  { id: 'pipHop', title: 'Pip Hop', sub: 'Skip count up the clouds', how: 'Hop up the clouds in counting order!', seconds: 0, color: ['#38bdf8', '#0284c7'] },
+  { id: 'numberRun', title: 'Number Run', sub: 'Run through the right gate', how: 'Swipe into the gate with the answer!', seconds: 0, color: ['#f59e0b', '#d97706'] },
+  { id: 'gardenGuard', title: 'Garden Guard', sub: 'Stop the snails with answers', how: 'Tap the answer to stop each snail before it reaches the flowers!', seconds: 0, color: ['#22c55e', '#15803d'] },
+  { id: 'popDefense', title: 'Pop Defense', sub: 'Pop the balloons that fit', how: 'Tap the balloons that fit the rule!', seconds: 0, color: ['#ef4444', '#b91c1c'] },
+  { id: 'sweetTens', title: 'Sweet Tens', sub: 'Line up candies that make 10', how: 'Swap candies to line up three that make ten!', seconds: 0, color: ['#ec4899', '#be185d'] },
+  { id: 'numberKeys', title: 'Number Keys', sub: 'Tap tiles in counting order', how: 'Tap the tiles in counting order, and play a song!', seconds: 0, color: ['#6366f1', '#4338ca'] },
+  { id: 'pipLaunch', title: 'Pip Launch', sub: 'Fly Pip onto the number line', how: 'Pull Pip back and launch onto the number!', seconds: 0, color: ['#0ea5e9', '#0369a1'] },
+  { id: 'shapeDash', title: 'Shape Dash', sub: 'Jump through the right shape', how: 'Tap to jump! Go through the right shape door!', seconds: 0, color: ['#8b5cf6', '#6d28d9'] },
+  { id: 'fruitSlice', title: 'Fruit Slice', sub: 'Slice the right answer', how: 'Swipe through the fruit with the answer!', seconds: 0, color: ['#84cc16', '#4d7c0f'] },
   { id: 'goFish', title: 'Go Fish!', sub: 'Flip two, find a match', how: 'Turn over two cards at a time, and find all the matching pairs!', seconds: 0, color: ['#06b6d4', '#0e7490'] },
   { id: 'toyShop', title: "Pip's Toy Shop", sub: 'Pay with coins', how: 'Pay for each toy with the right coins!', seconds: 0, color: ['#0ea5e9', '#0284c7'] },
   { id: 'clock', title: 'Set the Clock', sub: 'Turn the hands to the time', how: 'Set the clock to the right time!', seconds: 0, color: ['#6366f1', '#4f46e5'] },
@@ -751,6 +772,16 @@ const PLAY = {
   bakery: Bakery,
   snake: (props) => <NumberSnake {...props} makeRound={bubbleRound} />,
   goFish: GoFish,
+  snipDrop: SnipDrop,
+  pipHop: PipHop,
+  numberRun: NumberRun,
+  gardenGuard: GardenGuard,
+  popDefense: PopDefense,
+  sweetTens: SweetTens,
+  numberKeys: NumberKeys,
+  pipLaunch: PipLaunch,
+  shapeDash: ShapeDash,
+  fruitSlice: FruitSlice,
   toyShop: ToyShop,
   clock: SetClock,
   shapes: Shapes,
@@ -770,6 +801,16 @@ const SCORE_WORD = {
   bakery: 'coins',
   snake: 'answers',
   goFish: 'pairs',
+  snipDrop: 'points',
+  pipHop: 'points',
+  numberRun: 'points',
+  gardenGuard: 'points',
+  popDefense: 'points',
+  sweetTens: 'points',
+  numberKeys: 'points',
+  pipLaunch: 'points',
+  shapeDash: 'points',
+  fruitSlice: 'points',
   toyShop: 'stars',
   clock: 'stars',
   shapes: 'shapes found',
@@ -898,6 +939,8 @@ export function GameArt({ id }) {
     );
   }
   if (id === 'bakery') return <Thing id="cupcake" size={48} />;
+  const ARCADE_ART = { snipDrop: '🍬', pipHop: '☁️', numberRun: '🏃', gardenGuard: '🐌', popDefense: '🎈', sweetTens: '🍭', numberKeys: '🎹', pipLaunch: '🎯', shapeDash: '🔷', fruitSlice: '🍉' };
+  if (ARCADE_ART[id]) return <span className="games-art-emoji">{ARCADE_ART[id]}</span>;
   if (id === 'goFish') {
     return (
       <span className="games-art-gofish">
