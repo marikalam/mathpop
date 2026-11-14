@@ -56,6 +56,12 @@ No ads and no tracking.
 FREE TO TRY, THEN MATHPOP PLUS
 Every game is free for the first 7 days, with no account and no payment details. After that, kids get one free round a day, or a grown-up can unlock all of MathPop with MathPop Plus (monthly or yearly): unlimited rounds in every grade, the full progress report and assigned practice, for every child in the family, in MathPop and PitchPop. Families who used MathPop before Plus keep it free. Without an account, everything MathPop remembers stays on your device.
 
+MATHPOP PLUS SUBSCRIPTION
+MathPop Plus Monthly (1 month) and MathPop Plus Yearly (1 year) are auto-renewing subscriptions. Payment is charged to your Apple Account when you confirm the purchase. A subscription renews automatically unless it is turned off at least 24 hours before the end of the current period, and your account is charged for the renewal within 24 hours before the end of the period. You can manage or cancel it any time in your Apple Account settings.
+
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Privacy Policy: https://marikalam.github.io/apps/mathpop/privacy.html
+
 ## Keywords (100, comma-separated)
 addition,subtraction,multiplication,times tables,kindergarten,preschool,homeschool,fractions
 

@@ -1,25 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { Thing } from './Drawings.jsx';
-import Pip from './Pip.jsx';
 import { Finale } from './Rewards.jsx';
 import { shuffle } from './gameKit.jsx';
-import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
+import { playCorrectChime, playStickerPick, playStickerStick, speak } from './sound.js';
 
-// Go Fish with Pip. On your turn, tap a card to ask Pip for its match;
-// if Pip doesn't have it, Pip says "Go fish!" and you tap the pond to
-// catch a card. On Pip's turn, Pip shows a card and you find its match in
-// your hand (or tap Go fish if you don't have one). Matches make pairs;
-// when every fish is caught, there's a party.
+// Go Fish (a memory match): the cards are face down; flip two at a time to
+// find the matching pairs. It counts the pairs found, and the tries.
 // What matches, by grade:
-//   Pre-K  the same number of pictures, 1 to 5 (two pairs of each)
-//   K      dots and the number (●●● and 3), 1 to 10
-//   1st    numbers that make 10 (3 and 7)
-//   2nd    numbers that make 20 (6 and 14)
-//   3rd/4th a times fact and its answer (3 × 4 and 12)
-// Help: a wrong card says what to look for, then the right card glows.
+//   Pre-K  the same picture and number (2 ducks and 2 ducks), 6 pairs
+//   K      dots and the number (●●● and 3), 6 pairs
+//   1st    numbers that make 10 (3 and 7), 8 pairs
+//   2nd    numbers that make 20 (6 and 14), 8 pairs
+//   3rd/4th a times fact and its answer (3 × 4 and 12), 8 pairs
 
 const COLORS = ['#ff6b9a', '#3b8cf0', '#ffb000', '#2fae6b', '#9b6bf2', '#ff8a3d', '#14b8a6', '#e5484d', '#6366f1', '#84cc16'];
-const PICS = ['fish', 'duck', 'strawberry', 'star', 'ladybug'];
+const PICS = ['fish', 'duck', 'strawberry', 'star', 'ladybug', 'balloon'];
 
 let cardId = 0;
 const card = (key, face) => ({ id: ++cardId, key, face });
@@ -28,7 +23,7 @@ const card = (key, face) => ({ id: ++cardId, key, face });
 function makeDeck(grade) {
   const cards = [];
   if (grade === 'p') {
-    for (let v = 1; v <= 5; v++) for (let k = 0; k < 4; k++) cards.push(card(v, { kind: 'pics', v, pic: PICS[v - 1] }));
+    for (let v = 1; v <= 6; v++) for (let k = 0; k < 2; k++) cards.push(card(v, { kind: 'pics', v, pic: PICS[v - 1] }));
   } else if (grade === 'k') {
     for (let v = 1; v <= 10; v++) cards.push(card(v, { kind: 'dots', v }), card(v, { kind: 'num', v }));
   } else if (grade === '1') {
@@ -52,28 +47,8 @@ function makeDeck(grade) {
 }
 
 // How a card is said, and how to ask for its match.
-const said = (c) => (c.face.kind === 'fact' ? `${c.face.a} times ${c.face.b}` : `${c.face.v}`);
-function askFor(c, grade, who) {
-  const f = c.face;
-  if (grade === 'p' || grade === 'k') return who === 'me' ? `Pip, do you have a ${f.v}?` : `Do you have a ${f.v}?`;
-  if (grade === '1' || grade === '2') {
-    const t = grade === '1' ? 10 : 20;
-    return who === 'me' ? `Pip, do you have the number that makes ${t} with ${f.v}?` : `I have ${f.v}. Do you have the number that makes ${t} with it?`;
-  }
-  if (f.kind === 'fact') return who === 'me' ? `Pip, do you have the answer to ${f.a} times ${f.b}?` : `Do you have the answer to ${f.a} times ${f.b}?`;
-  return who === 'me' ? `Pip, do you have a fact that makes ${f.v}?` : `Do you have a times fact that makes ${f.v}?`;
-}
-// What to look for, for the hint on Pip's turn.
-function lookFor(c, grade) {
-  const f = c.face;
-  if (grade === 'p') return `Look for ${f.v} ${f.v === 1 ? f.pic : `${f.pic}s`}.`.replace('strawberrys', 'strawberries').replace('fishs', 'fish');
-  if (grade === 'k') return `Look for ${f.v}. Count the dots!`;
-  if (grade === '1') return `${f.v} and what make 10? Count up from ${f.v}.`;
-  if (grade === '2') return `${f.v} and what make 20? Count up from ${f.v}.`;
-  return f.kind === 'fact' ? `What is ${f.a} times ${f.b}?` : `Which fact makes ${f.v}?`;
-}
 
-function CardFace({ c, small = false }) {
+function CardFace({ c, small = false, big = false }) {
   const f = c.face;
   // Matching cards share a color, so pairs look like pairs.
   const style = { '--card': COLORS[(f.kind === 'pics' ? f.v - 1 : c.key) % COLORS.length] };
@@ -82,7 +57,7 @@ function CardFace({ c, small = false }) {
     body = (
       <span className={`gf-pics gf-pics-${f.v}`}>
         {Array.from({ length: f.v }, (_, i) => (
-          <Thing key={i} id={f.pic} size={small ? 14 : f.v > 3 ? 22 : 28} />
+          <Thing key={i} id={f.pic} size={small ? 14 : big ? (f.v > 4 ? 28 : f.v > 2 ? 34 : 44) : f.v > 3 ? 22 : 28} />
         ))}
       </span>
     );
@@ -122,327 +97,175 @@ function CardFace({ c, small = false }) {
   );
 }
 
-const findMatch = (hand, c) => hand.find((x) => x.id !== c.id && x.key === c.key);
-// Lay down any pairs already in a hand.
-function takePairs(hand) {
-  const left = [];
-  const pairs = [];
-  for (const c of hand) {
-    const i = left.findIndex((x) => x.key === c.key);
-    if (i >= 0) pairs.push([left.splice(i, 1)[0], c]);
-    else left.push(c);
+// What a card shows, said out loud.
+function sayCard(c) {
+  const f = c.face;
+  if (f.kind === 'pics') return f.v === 1 ? `1 ${f.pic}` : `${f.v} ${f.pic === 'fish' ? 'fish' : f.pic === 'strawberry' ? 'strawberries' : `${f.pic}s`}`;
+  if (f.kind === 'dots') return `${f.v} ${f.v === 1 ? 'dot' : 'dots'}`;
+  if (f.kind === 'fact') return `${f.a} times ${f.b}`;
+  return `${f.v}`;
+}
+// Why two cards match, for the happy line.
+function whyMatch(a, b, grade) {
+  if (grade === '1') return `${a.face.v} and ${b.face.v} make 10!`;
+  if (grade === '2') return `${a.face.v} and ${b.face.v} make 20!`;
+  if (a.face.kind === 'fact' || b.face.kind === 'fact') {
+    const f = a.face.kind === 'fact' ? a.face : b.face;
+    return `${f.a} times ${f.b} is ${f.a * f.b}!`;
   }
-  return { hand: left, pairs };
+  return `${sayCard(a)}!`;
 }
 
-export default function GoFish({ grade, onEnd }) {
-  const start = useRef(null);
-  if (!start.current) {
-    const d = makeDeck(grade);
-    const me = takePairs(d.slice(0, 5));
-    const pip = takePairs(d.slice(5, 10));
-    start.current = { deck: d.slice(10), me, pip, size: d.length };
+// The board: pairs of cards (same `key`) from the grade's deck, shuffled.
+function makeBoard(grade, pairs) {
+  const byKey = {};
+  for (const c of makeDeck(grade)) (byKey[c.key] = byKey[c.key] || []).push(c);
+  const list = [];
+  for (const k of shuffle(Object.keys(byKey))) {
+    const cs = byKey[k];
+    for (let i = 0; i + 1 < cs.length && list.length < pairs * 2; i += 2) list.push(cs[i], cs[i + 1]);
+    if (list.length >= pairs * 2) break;
   }
-  const deckSize = start.current.size;
-  const [deck, setDeck] = useState(start.current.deck);
-  const [hand, setHand] = useState(start.current.me.hand);
-  const [pipHand, setPipHand] = useState(start.current.pip.hand);
-  const [myPairs, setMyPairs] = useState(start.current.me.pairs);
-  const [pipPairs, setPipPairs] = useState(start.current.pip.pairs);
-  // 'you': tap a card to ask · 'fish': tap the pond · 'pip': find Pip's card · 'busy' · 'done'
-  const [phase, setPhase] = useState('you');
-  const [ask, setAsk] = useState(null);
-  const [note, setNote] = useState('Your turn! Tap a card to ask Pip.');
-  const [misses, setMisses] = useState(0);
-  const [newId, setNewId] = useState(null);
-  const [pairFlash, setPairFlash] = useState(null);
-  const [splash, setSplash] = useState(0);
+  return shuffle(list);
+}
+
+// Memory match: all the cards face down; flip two at a time to find the
+// matching pairs. It counts the pairs found (and the tries). A match jumps
+// and sparkles; two that don't match turn back over. After 3 misses in a
+// row, the partner of the card you just turned glows for a moment.
+export default function GoFish({ grade, onEnd }) {
+  const nPairs = grade === 'p' || grade === 'k' ? 6 : 8;
+  const [cards] = useState(() => makeBoard(grade, nPairs));
+  const [up, setUp] = useState([]);
+  const [found, setFound] = useState([]);
+  const [tries, setTries] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [missRun, setMissRun] = useState(0);
+  const [glow, setGlow] = useState(null);
+  const [justFound, setJustFound] = useState([]);
+  const [note, setNote] = useState('Tap a card to turn it over!');
   const [party, setParty] = useState(false);
   const timers = useRef([]);
   const later = (fn, ms) => timers.current.push(setTimeout(fn, ms));
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
-  // The latest hands, for the turns that run on timers.
-  const S = useRef({});
-  S.current = { deck, hand, pipHand, myPairs, pipPairs };
-
   useEffect(() => {
-    speak("Let's play Go Fish! Your turn. Tap a card to ask Pip for its match.");
+    speak('Turn over two cards. Can you find a match?');
   }, []);
+  const pairsFound = found.length / 2;
 
-  const total = deckSize / 2;
-  function over(mp = S.current.myPairs, pp = S.current.pipPairs) {
-    if (mp.length + pp.length < total) return false;
-    setPhase('done');
-    later(() => {
-      playStickerStick();
-      setParty(true);
-      speak(`All the fish are caught! You made ${mp.length} ${mp.length === 1 ? 'pair' : 'pairs'}! Great game!`);
-    }, 900);
-    return true;
-  }
-  function showPair(a, b, mine) {
-    setPairFlash({ a, b, mine, n: Math.random() });
-    later(() => setPairFlash(null), 1300);
-  }
-
-  // ---- Your turn ----
-  function myTurn() {
-    let { hand: h, deck: d } = S.current;
-    if (!h.length) {
-      if (d.length) {
-        // An empty hand takes a card from the pond.
-        h = [d[0]];
-        d = d.slice(1);
-        setHand(h);
-        setDeck(d);
-        setNewId(h[0].id);
-      } else {
-        pipTurn();
-        return;
-      }
-    }
-    setPhase('you');
-    setNote('Your turn! Tap a card to ask Pip.');
-    speak('Your turn!');
-  }
-  function iAsk(c) {
-    if (phase !== 'you') return;
+  function flip(c) {
+    if (busy || party || up.includes(c.id) || found.includes(c.id)) return;
     playStickerPick();
-    setPhase('busy');
-    setAsk(c);
-    speak(askFor(c, grade, 'me'));
-    setNote(askFor(c, grade, 'me'));
-    later(() => {
-      const { pipHand: ph, hand: h, myPairs: mp } = S.current;
-      const m = findMatch(ph, c);
-      if (m) {
-        playCorrectChime();
-        const nmp = [...mp, [c, m]];
-        setPipHand(ph.filter((x) => x.id !== m.id));
-        setHand(h.filter((x) => x.id !== c.id));
-        setMyPairs(nmp);
-        showPair(c, m, true);
-        setAsk(null);
-        setNote('Pip had it! You made a pair!');
-        speak('Yes! Here you go. You made a pair!');
-        later(() => over(nmp) || myTurn(), 1500);
-      } else {
-        setAsk(null);
-        setNote('Pip says: Go fish! Tap the pond.');
-        speak('Nope! Go fish!');
-        setPhase('fish');
+    if (up.length === 0) {
+      setUp([c.id]);
+      setNote(`${sayCard(c)}. Now find its match!`);
+      speak(sayCard(c));
+      // After a few misses, the partner glows for a moment.
+      if (missRun >= 3) {
+        const partner = cards.find((x) => x.id !== c.id && x.key === c.key && !found.includes(x.id));
+        if (partner) {
+          setGlow(partner.id);
+          later(() => setGlow(null), 1800);
+        }
       }
-    }, 1600);
-  }
-  function goFish() {
-    if (phase !== 'fish') return;
-    const { deck: d, hand: h, myPairs: mp } = S.current;
-    if (!d.length) {
-      pipTurn();
       return;
     }
-    playStickerPick();
-    setSplash((x) => x + 1);
-    const c = d[0];
-    setDeck(d.slice(1));
-    setPhase('busy');
-    later(() => {
-      setNewId(c.id);
-      const m = findMatch(h, c);
-      if (m) {
+    const first = cards.find((x) => x.id === up[0]);
+    setUp([up[0], c.id]);
+    setTries((t) => t + 1);
+    setBusy(true);
+    if (first.key === c.key) {
+      const n = pairsFound + 1;
+      later(() => {
         playCorrectChime();
-        const nmp = [...mp, [m, c]];
-        setHand(h.filter((x) => x.id !== m.id));
-        setMyPairs(nmp);
-        showPair(m, c, true);
-        setNote(`You caught a ${said(c)}! It's a match!`);
-        speak(`You caught a ${said(c)}! It's a match! Go again!`);
-        later(() => over(nmp) || myTurn(), 1600);
-      } else {
-        setHand([...h, c]);
-        setNote(`You caught a ${said(c)}. Pip's turn!`);
-        speak(`You caught a ${said(c)}.`);
-        later(pipTurn, 1500);
-      }
-    }, 700);
-  }
-
-  // ---- Pip's turn ----
-  function pipTurn() {
-    let { pipHand: ph, deck: d } = S.current;
-    if (!ph.length) {
-      if (d.length) {
-        ph = [d[0]];
-        setPipHand(ph);
-        setDeck(d.slice(1));
-      } else {
-        if (!over()) myTurn();
-        return;
-      }
-    }
-    const c = ph[Math.floor(Math.random() * ph.length)];
-    setAsk(c);
-    setMisses(0);
-    setPhase('pip');
-    setNote("Pip's turn! Find the match, or tap Go fish.");
-    speak(askFor(c, grade, 'pip'));
-  }
-  function iGive(c) {
-    if (phase !== 'pip') return;
-    if (c.key === ask.key) {
-      playCorrectChime();
-      const { pipHand: ph, hand: h, pipPairs: pp } = S.current;
-      const npp = [...pp, [ask, c]];
-      setHand(h.filter((x) => x.id !== c.id));
-      setPipHand(ph.filter((x) => x.id !== ask.id));
-      setPipPairs(npp);
-      showPair(ask, c, false);
-      setAsk(null);
-      setPhase('busy');
-      setNote('You found it! Thank you!');
-      speak('You found it! Thank you! My turn again.');
-      later(() => over(undefined, npp) || pipTurn(), 1700);
+        setFound((f) => [...f, first.id, c.id]);
+        setJustFound([first.id, c.id]);
+        setUp([]);
+        setBusy(false);
+        setMissRun(0);
+        setGlow(null);
+        setNote(`A match! ${whyMatch(first, c, grade)}`);
+        speak(`A match! ${whyMatch(first, c, grade)} That's ${n} ${n === 1 ? 'pair' : 'pairs'}!`);
+        if (n >= nPairs) {
+          later(() => {
+            playStickerStick();
+            setParty(true);
+            speak(`You found all ${nPairs} pairs! Great job!`);
+          }, 1400);
+        }
+      }, 650);
     } else {
-      playIncorrectBuzz();
-      const m = misses + 1;
-      setMisses(m);
-      const line = m >= 2 ? `Try the glowing card! ${lookFor(ask, grade)}` : `Not that one. ${lookFor(ask, grade)}`;
-      setNote(line);
-      speak(line);
+      speak(sayCard(c));
+      later(() => {
+        setNote('Not the same. They turn back over. Try again!');
+        setUp([]);
+        setBusy(false);
+        setMissRun((m) => m + 1);
+      }, 1500);
     }
-  }
-  function tellGoFish() {
-    if (phase !== 'pip') return;
-    if (findMatch(S.current.hand, ask)) {
-      playIncorrectBuzz();
-      const m = misses + 1;
-      setMisses(m);
-      const line = m >= 2 ? 'You have one! Tap the glowing card.' : `Look again! You have one. ${lookFor(ask, grade)}`;
-      setNote(line);
-      speak(line);
-      return;
-    }
-    playStickerPick();
-    setPhase('busy');
-    setNote('Pip goes fishing…');
-    speak('Oh no! I have to go fish!');
-    const want = ask;
-    setAsk(null);
-    later(() => {
-      const { deck: d, pipHand: ph, pipPairs: pp } = S.current;
-      if (!d.length) {
-        myTurn();
-        return;
-      }
-      setSplash((x) => x + 1);
-      const c = d[0];
-      setDeck(d.slice(1));
-      const m = findMatch(ph, c);
-      if (m) {
-        const npp = [...pp, [m, c]];
-        setPipHand(ph.filter((x) => x.id !== m.id));
-        setPipPairs(npp);
-        showPair(m, c, false);
-        setNote(c.key === want.key ? 'Pip caught the one Pip wanted!' : 'Pip caught a match!');
-        speak('I caught a match!');
-        later(() => over(undefined, npp) || myTurn(), 1600);
-      } else {
-        setPipHand([...ph, c]);
-        later(myTurn, 900);
-      }
-    }, 1200);
   }
 
-  const glowId = phase === 'pip' && misses >= 2 && ask ? findMatch(hand, ask)?.id : null;
-  const glowFish = phase === 'pip' && misses >= 2 && ask && !findMatch(hand, ask);
+  const cols = nPairs === 6 ? 3 : 4;
   return (
-    <div className="game game-gofish">
-      <div className="mm-top">
-        <span className="mm-time">You: {myPairs.length} {myPairs.length === 1 ? 'pair' : 'pairs'}</span>
-        <span className="mm-right">Pip: {pipPairs.length}</span>
-      </div>
-
-      {/* Pip and Pip's cards (face down). */}
-      <div className="gf-pip">
-        <span className={`gf-pip-face${phase === 'pip' ? ' gf-pip-asking' : ''}`}>
-          <Pip size={64} mood={phase === 'pip' || pairFlash ? 'cheer' : 'wave'} />
+    <div className="game game-memory">
+      <div className="mem-count" aria-live="polite">
+        <span className="mem-count-big" key={pairsFound}>
+          {pairsFound}
         </span>
-        <span className="gf-pip-hand">
-          {pipHand.map((c, i) => (
-            <span key={c.id} className={`gf-back${ask && phase === 'pip' && c.id === ask.id ? ' gf-back-up' : ''}`} style={{ '--i': i, '--n': pipHand.length }}>
-              {ask && phase === 'pip' && c.id === ask.id ? <CardFace c={c} /> : <span className="gf-back-fish" />}
+        <span className="mem-count-text">
+          <strong>
+            {pairsFound === 1 ? 'pair' : 'pairs'} found
+          </strong>
+          <small>
+            of {nPairs} · {tries} {tries === 1 ? 'try' : 'tries'}
+          </small>
+        </span>
+        <span className="mem-fishes" aria-hidden="true">
+          {Array.from({ length: nPairs }, (_, i) => (
+            <span key={i} className={i < pairsFound ? 'mem-fish-on' : ''}>
+              <Thing id="fish" size={20} />
             </span>
           ))}
         </span>
       </div>
-
-      {/* The pond: one fish per card left. */}
-      <button type="button" className={`gf-pond${phase === 'fish' ? ' gf-pond-on' : ''}`} onClick={goFish} disabled={phase !== 'fish'} aria-label={`The pond, ${deck.length} cards`}>
-        {Array.from({ length: Math.min(deck.length, 7) }, (_, i) => (
-          <span key={i} className="gf-swim" style={{ '--i': i, top: `${18 + ((i * 37) % 55)}%`, animationDelay: `${-i * 1.3}s` }}>
-            <Thing id="fish" size={26} />
-          </span>
-        ))}
-        {splash > 0 && <span key={splash} className="gf-splash" aria-hidden="true" />}
-        <span className="gf-pond-label">{phase === 'fish' ? 'Tap to fish!' : `${deck.length} left`}</span>
-      </button>
-
-      {pairFlash && (
-        <div key={pairFlash.n} className={`gf-pairflash${pairFlash.mine ? '' : ' gf-pairflash-pip'}`} aria-hidden="true">
-          <CardFace c={pairFlash.a} />
-          <CardFace c={pairFlash.b} />
-        </div>
-      )}
-
-      <p className={`bakery-note gf-note${misses >= 1 && phase === 'pip' ? ' bakery-note-pip' : ''}`}>{note}</p>
-
-      {/* Your hand. */}
-      <div className={`gf-hand${phase === 'you' ? ' gf-hand-ask' : ''}`}>
-        {hand.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            className={`gf-hand-card${c.id === newId ? ' gf-new' : ''}${c.id === glowId ? ' toy-glow' : ''}`}
-            onClick={() => (phase === 'you' ? iAsk(c) : iGive(c))}
-            disabled={phase !== 'you' && phase !== 'pip'}
-            aria-label={said(c)}
-          >
-            <CardFace c={c} />
-          </button>
-        ))}
-      </div>
-      {phase === 'pip' && (
-        <button type="button" className={`bake-serve gf-gofish-btn${glowFish ? ' bake-serve-pulse' : ''}`} onClick={tellGoFish}>
-          🎣 Go fish!
-        </button>
-      )}
-
-      {/* Your pairs. */}
-      {myPairs.length > 0 && (
-        <div className="gf-pairs" aria-label="Your pairs">
-          {myPairs.map(([a, b]) => (
-            <span key={a.id} className="gf-pair">
-              <CardFace c={a} small />
-              <CardFace c={b} small />
-            </span>
-          ))}
-        </div>
-      )}
-
-      {party && (
-        <Finale
-          title="All the fish are caught!"
-          line={`You made ${myPairs.length} ${myPairs.length === 1 ? 'pair' : 'pairs'}${pipPairs.length ? `, Pip made ${pipPairs.length}` : ''}!`}
-          button="Yay! →"
-          onDone={() => onEnd(myPairs.length)}
-        >
-          <span className="gf-party">
-            {myPairs.map(([a, b], i) => (
-              <span key={a.id} className="finale-guest gf-pair" style={{ animationDelay: `${i * 0.1}s` }}>
-                <CardFace c={a} small />
-                <CardFace c={b} small />
+      <div className={`mem-grid mem-grid-${cols}`}>
+        {cards.map((c, i) => {
+          const isUp = up.includes(c.id) || found.includes(c.id);
+          return (
+            <button
+              key={c.id}
+              type="button"
+              className={`mem-card${isUp ? ' mem-up' : ''}${found.includes(c.id) ? ' mem-found' : ''}${justFound.includes(c.id) ? ' mem-just' : ''}${glow === c.id ? ' mem-glow' : ''}`}
+              style={{ animationDelay: `${i * 0.04}s` }}
+              onClick={() => flip(c)}
+              aria-label={isUp ? sayCard(c) : 'A card, face down'}
+            >
+              <span className="mem-inner">
+                <span className="mem-back" aria-hidden="true">
+                  <Thing id="fish" size={cols === 3 ? 40 : 30} />
+                </span>
+                <span className="mem-front">
+                  <CardFace c={c} big={cols === 3} />
+                </span>
               </span>
-            ))}
+            </button>
+          );
+        })}
+      </div>
+      <p className="bakery-note mem-note">{note}</p>
+      {party && (
+        <Finale title={`You found all ${nPairs} pairs!`} line={`In ${tries} tries. Great memory!`} button="Yay! →" onDone={() => onEnd(nPairs)}>
+          <span className="gf-party">
+                {Array.from({ length: nPairs }, (_, i) => {
+              const a = cards.find((x) => found[i * 2] === x.id);
+              const b = cards.find((x) => found[i * 2 + 1] === x.id);
+              return a && b ? (
+                <span key={i} className="finale-guest gf-pair" style={{ animationDelay: `${i * 0.1}s` }}>
+                  <CardFace c={a} small />
+                  <CardFace c={b} small />
+                </span>
+              ) : null;
+            })}
           </span>
         </Finale>
       )}

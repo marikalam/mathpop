@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
-import { TimerBar, rand, shuffle, useCountdown } from './gameKit.jsx';
+import { rand, shuffle } from './gameKit.jsx';
 
 // Number Snake: steer a friendly snake around a garden (drag a finger, or
 // tap where it should go; arrow keys work too) and eat the fruit with the
@@ -10,7 +10,10 @@ import { TimerBar, rand, shuffle, useCountdown } from './gameKit.jsx';
 // doesn't shrink), leaving fewer to choose from. The answer glows after a
 // miss or 10 seconds, and after two misses an arrow points at it. Sparkle
 // dots are snacks. Every few answers the snake levels up: rainbow, then a
-// sparkle trail, then a gold crown. Drawn on a canvas.
+// sparkle trail, then a gold crown. No clock: you have hearts (5 for Pre-K
+// and K, 3 after), a wrong fruit costs one, every 5 answers wins one back,
+// and the snake speeds up a little as you go; out of hearts, it's over.
+// Drawn on a canvas.
 // `makeRound(grade)` gives { text, say, answer, others } (Pop the Bubbles').
 
 // Slower for the youngest; it turns fast, so it follows the finger closely.
@@ -38,10 +41,13 @@ const LEVELS = [
 const levelFor = (score) => LEVELS.filter((l) => score >= l.at).length;
 
 export default function NumberSnake({ grade, onEnd, makeRound }) {
-  // A little longer for the youngest.
-  const seconds = grade === 'p' || grade === 'k' ? 90 : 60;
+  // Hearts instead of a clock (more for the youngest).
+  const maxHearts = grade === 'p' || grade === 'k' ? 5 : 3;
+  const [hearts, setHearts] = useState(maxHearts);
+  const heartsRef = useRef(maxHearts);
+  const [lost, setLost] = useState(-1);
+  const [over, setOver] = useState(false);
   const SPEED = SPEEDS[grade] || 104;
-  const left = useCountdown(seconds, true);
   const [round, setRound] = useState(() => kidRound(makeRound(grade), grade));
   const [score, setScore] = useState(0);
   const [banner, setBanner] = useState(null);
@@ -61,13 +67,13 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
   useEffect(() => {
     if (round.say) speak(round.say);
   }, [round]);
+  // Out of hearts: a moment to see it, then the results.
   useEffect(() => {
-    if (left === 0) {
-      if (g.current) g.current.over = true;
-      onEnd(scoreRef.current);
-    }
+    if (!over) return undefined;
+    const id = setTimeout(() => onEnd(scoreRef.current), 2200);
+    return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [left]);
+  }, [over]);
 
   // Set up the field and run the loop.
   useEffect(() => {
@@ -233,8 +239,10 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
         h.a += Math.max(-TURN * dt, Math.min(TURN * dt, d));
       } else if (state.keys.left) h.a -= TURN * dt;
       else if (state.keys.right) h.a += TURN * dt;
-      h.x += Math.cos(h.a) * SPEED * dt;
-      h.y += Math.sin(h.a) * SPEED * dt;
+      // A little faster with each answer (up to half as fast again).
+      const v = SPEED * (1 + Math.min(0.5, scoreRef.current * 0.03));
+      h.x += Math.cos(h.a) * v * dt;
+      h.y += Math.sin(h.a) * v * dt;
       // Soft walls: bounce off the edge.
       const m = 14;
       if (h.x < m || h.x > state.W - m) {
@@ -257,6 +265,8 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
         }
         prev = s;
       }
+      // It grows up to a point (so a long game doesn't fill the garden).
+      if (state.grow >= 1 && state.body.length >= 46) state.grow = 0;
       if (state.grow >= 1) {
         const tail = state.body[state.body.length - 1];
         state.body.push({ ...tail });
@@ -292,6 +302,11 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
           scoreRef.current += 1;
           const s = scoreRef.current;
           setScore(s);
+          if (s % 5 === 0 && heartsRef.current < maxHearts) {
+            heartsRef.current += 1;
+            setHearts(heartsRef.current);
+            state.floats.push({ x: h.x, y: h.y - 30, text: '+❤', life: 1.2 });
+          }
           const lv = LEVELS.find((l) => l.at === s);
           if (lv) {
             playStickerStick();
@@ -312,7 +327,17 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
           state.balls.splice(i, 1);
           state.shake = 0.2;
           state.misses += 1;
-          if (state.misses === 1) speak(`Oops, that's ${b.v}! Look for the glowing one!`);
+          heartsRef.current -= 1;
+          setHearts(heartsRef.current);
+          setLost(heartsRef.current);
+          if (heartsRef.current <= 0) {
+            state.over = true;
+            state.shake = 0.5;
+            setOver(true);
+            speak(`Oh no, no more hearts! You got ${scoreRef.current} ${scoreRef.current === 1 ? 'answer' : 'answers'}!`);
+            break;
+          }
+          if (state.misses === 1) speak(`Oops, that's ${b.v}! You lost a heart. Look for the glowing one!`);
           else if (state.misses === 2) speak('Follow the arrow!');
         }
         break;
@@ -638,13 +663,25 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
 
   return (
     <div className="game game-snake">
-      <TimerBar left={left} seconds={seconds} score={score} label="answers" />
+      <div className="mm-top snake-top">
+        <span className="snake-hearts" aria-label={`${hearts} ${hearts === 1 ? 'heart' : 'hearts'} left`}>
+          {Array.from({ length: maxHearts }, (_, i) => (
+            <span key={i} className={`snake-heart${i < hearts ? '' : ' snake-heart-gone'}${i === lost ? ' snake-heart-lost' : ''}`}>
+              ❤
+            </span>
+          ))}
+        </span>
+        <span className="mm-right">
+          {score} {score === 1 ? 'answer' : 'answers'}
+        </span>
+      </div>
       <div className="game-question" key={round.text + score}>
         {round.text}
       </div>
       <div className="snake-field" ref={wrapRef}>
         <canvas ref={canvasRef} className="snake-canvas" aria-label={`Number Snake. ${round.text}`} />
-        {banner && <div className="snake-banner">{banner}</div>}
+        {banner && !over && <div className="snake-banner">{banner}</div>}
+        {over && <div className="snake-banner snake-over">Out of hearts!</div>}
         {score === 0 && <div className="snake-tip">Touch where the snake should go!</div>}
       </div>
       <div className="snake-levels" aria-hidden="true">
