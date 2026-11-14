@@ -17,7 +17,7 @@ import { rand, shuffle } from './gameKit.jsx';
 // `makeRound(grade)` gives { text, say, answer, others } (Pop the Bubbles').
 
 // Slower for the youngest; it turns fast, so it follows the finger closely.
-const SPEEDS = { p: 72, k: 80, 1: 90, 2: 98 };
+const SPEEDS = { p: 76, k: 85, 1: 96, 2: 104 };
 const TURN = 7.5; // radians a second
 const GAP = 9; // px between body pieces
 const BALL_R = 27;
@@ -33,53 +33,50 @@ const FRUITS = [
   ['#f472b6', '#db2777', '#22c55e'],
   ['#facc15', '#ca8a04', '#16a34a'],
 ];
-// The snake changes as you score: eight forms in one game.
+// The snake changes as you score. First it shines in gem and metal
+// colors (emerald, ruby, sapphire, gold, silver); at 22 answers it hatches
+// into a dragon (wings, horns and back spikes), one for each element, up
+// to the LEGEND dragon.
 const FORMS = [
   { at: 0, id: 'plain' },
-  { at: 3, id: 'rainbow', name: 'Rainbow snake!', icon: '🌈' },
-  { at: 6, id: 'sparkle', name: 'Sparkle snake!', icon: '✨' },
-  { at: 10, id: 'king', name: 'King snake!', icon: '👑' },
-  { at: 14, id: 'fire', name: 'Fire snake!', icon: '🔥' },
-  { at: 18, id: 'galaxy', name: 'Galaxy snake!', icon: '🌌' },
-  { at: 22, id: 'robot', name: 'Robot snake!', icon: '🤖' },
-  { at: 27, id: 'dragon', name: 'Dragon snake!', icon: '🐉' },
-  { at: 33, id: 'unicorn', name: 'Unicorn snake!', icon: '🦄' },
-  { at: 38, id: 'ice', name: 'Ice snake!', icon: '❄️' },
-  { at: 44, id: 'candy', name: 'Candy snake!', icon: '🍬' },
-  { at: 50, id: 'ocean', name: 'Ocean snake!', icon: '🌊' },
-  { at: 60, id: 'legend', name: 'LEGEND snake!', icon: '🌟' },
+  { at: 3, id: 'emerald', name: 'Emerald snake!', icon: '💚' },
+  { at: 6, id: 'ruby', name: 'Ruby snake!', icon: '❤️' },
+  { at: 10, id: 'sapphire', name: 'Sapphire snake!', icon: '💙' },
+  { at: 14, id: 'gold', name: 'Gold snake!', icon: '👑' },
+  { at: 18, id: 'silver', name: 'Silver snake!', icon: '🪙' },
+  { at: 22, id: 'fire', name: 'It hatched! Fire dragon!', icon: '🔥' },
+  { at: 27, id: 'water', name: 'Water dragon!', icon: '🌊' },
+  { at: 32, id: 'ice', name: 'Ice dragon!', icon: '❄️' },
+  { at: 37, id: 'lightning', name: 'Lightning dragon!', icon: '⚡' },
+  { at: 42, id: 'moon', name: 'Moon dragon!', icon: '🌙' },
+  { at: 48, id: 'sun', name: 'Sun dragon!', icon: '☀️' },
+  { at: 54, id: 'rainbow', name: 'Rainbow dragon!', icon: '🌈' },
+  { at: 60, id: 'legend', name: 'LEGEND dragon!', icon: '🌟' },
 ];
 const formFor = (score) => [...FORMS].reverse().find((f) => score >= f.at).id;
-// Each form's body color (piece i), and its outline.
+const gem = (a, b, i) => (i % 2 ? a : b);
+// Each form's look: body(i, t) gives a piece's color and the outline;
+// trail is what sparkles off the tail; marks are drawn on the body;
+// dragons have wings [fill, edge], spikes and horns.
+const LOOKS = {
+  plain: { body: () => ['#3fbf6f', '#23874a'], marks: 'spots' },
+  emerald: { body: (i) => [gem('#34d399', '#10b981', i), '#065f46'], marks: 'facets', trail: ['#6ee7b7', '#fff', '#10b981'] },
+  ruby: { body: (i) => [gem('#f43f5e', '#e11d48', i), '#881337'], marks: 'facets', trail: ['#fda4af', '#fff', '#e11d48'] },
+  sapphire: { body: (i) => [gem('#3b82f6', '#2563eb', i), '#1e3a8a'], marks: 'facets', trail: ['#93c5fd', '#fff', '#2563eb'] },
+  gold: { body: (i) => [gem('#ffd23f', '#fbbf24', i), '#b45309'], marks: 'shine', trail: ['#ffd23f', '#fff7cc'], crown: true },
+  silver: { body: (i) => [gem('#e2e8f0', '#cbd5e1', i), '#64748b'], marks: 'shine', trail: ['#fff', '#e2e8f0', '#94a3b8'] },
+  fire: { body: (i, t) => [`hsl(${10 + ((i * 4 + t * 90) % 35)}, 96%, ${52 + (i % 2) * 6}%)`, '#9a3412'], marks: 'embers', trail: ['#fde047', '#fb923c', '#ef4444'], flame: true, wings: ['rgba(254,202,202,0.9)', '#b91c1c'], spikes: '#fde047', horns: '#fde047' },
+  water: { body: (i, t) => [`hsl(${190 + Math.sin(i * 0.5 + t * 3) * 15}, 85%, ${48 + (i % 2) * 8}%)`, '#0e7490'], marks: 'bubbles', trail: ['#a5f3fc', '#fff', '#67e8f9'], wings: ['rgba(165,243,252,0.85)', '#0e7490'], spikes: '#a5f3fc', horns: '#e0f2fe' },
+  ice: { body: (i) => [gem('#e0f2fe', '#bae6fd', i), '#38bdf8'], marks: 'flakes', trail: ['#fff', '#bae6fd', '#e0f2fe'], wings: ['rgba(240,249,255,0.9)', '#38bdf8'], spikes: '#fff', horns: '#fff' },
+  lightning: { body: (i) => [gem('#6d28d9', '#5b21b6', i), '#2e1065'], marks: 'bolts', trail: ['#fde047', '#fff', '#facc15'], wings: ['rgba(196,181,253,0.85)', '#facc15'], spikes: '#facc15', horns: '#facc15' },
+  moon: { body: (i) => [gem('#312e81', '#1e1b4b', i), '#a78bfa'], marks: 'stars', trail: ['#fff', '#c4b5fd', '#e2e8f0'], wings: ['rgba(226,232,240,0.85)', '#94a3b8'], spikes: '#e2e8f0', horns: '#e2e8f0' },
+  sun: { body: (i, t) => [`hsl(${35 + Math.sin(i * 0.6 + t * 4) * 10}, 100%, ${55 + (i % 2) * 6}%)`, '#c2410c'], marks: 'shine', trail: ['#fde047', '#fff7cc', '#fb923c'], wings: ['rgba(253,224,71,0.85)', '#ea580c'], spikes: '#fff7cc', horns: '#fff7cc', glow: () => '#fde047' },
+  rainbow: { body: (i, t) => [`hsl(${(i * 22 - t * 120) % 360}, 85%, 62%)`, 'rgba(60,40,90,0.45)'], marks: 'shine', trail: COLORS, wings: ['rgba(255,255,255,0.8)', '#a78bfa'], spikes: '#fff', horns: '#fde68a' },
+  legend: { body: (i, t) => [`hsl(${(i * 25 - t * 160) % 360}, 90%, ${i % 2 ? 62 : 45}%)`, '#ffd23f'], marks: 'stars', trail: ['#ffd23f', '#fff', '#f472b6', '#a78bfa', '#38bdf8'], wings: ['rgba(253,224,71,0.8)', '#d97706'], spikes: '#facc15', horns: '#facc15', crown: true, glow: (t) => `hsl(${(t * 160) % 360}, 90%, 60%)` },
+};
+const look = (form) => LOOKS[form] || LOOKS.plain;
 function bodyColor(form, i, t) {
-  switch (form) {
-    case 'rainbow':
-      return [`hsl(${(i * 22 - t * 120) % 360}, 85%, 62%)`, 'rgba(60,40,90,0.45)'];
-    case 'sparkle':
-      return [`hsl(${(i * 18 - t * 60) % 360}, 75%, 80%)`, '#c084fc'];
-    case 'king':
-      return [i % 2 ? '#ffd23f' : '#ffc72c', '#c98a00'];
-    case 'fire':
-      return [`hsl(${10 + ((i * 4 + t * 90) % 35)}, 96%, ${52 + (i % 2) * 6}%)`, '#9a3412'];
-    case 'galaxy':
-      return [i % 2 ? '#312e81' : '#1e1b4b', '#a78bfa'];
-    case 'robot':
-      return [i % 2 ? '#cbd5e1' : '#94a3b8', '#475569'];
-    case 'dragon':
-      return [i % 2 ? '#22c55e' : '#16a34a', '#14532d'];
-    case 'unicorn':
-      return [['#fbcfe8', '#e9d5ff', '#bae6fd', '#fef9c3'][i % 4], '#f472b6'];
-    case 'ice':
-      return [i % 2 ? '#e0f2fe' : '#bae6fd', '#38bdf8'];
-    case 'candy':
-      return [i % 2 ? '#fff' : ['#ef4444', '#ec4899', '#22c55e'][Math.floor(i / 2) % 3], '#be123c'];
-    case 'ocean':
-      return [`hsl(${190 + Math.sin(i * 0.5 + t * 3) * 15}, 85%, ${48 + (i % 2) * 8}%)`, '#0e7490'];
-    case 'legend':
-      return [`hsl(${(i * 25 - t * 160) % 360}, 90%, ${i % 2 ? 62 : 45}%)`, '#ffd23f'];
-    default:
-      return ['#3fbf6f', '#23874a'];
-  }
+  return look(form).body(i, t);
 }
 
 // ---- Getting a little harder as each player gets better ----
@@ -130,7 +127,7 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
   const heartsRef = useRef(maxHearts);
   const [lost, setLost] = useState(-1);
   const [over, setOver] = useState(false);
-  const SPEED = (SPEEDS[grade] || 104) * (1 + L * 0.05);
+  const SPEED = (SPEEDS[grade] || 110) * (1 + L * 0.05);
   const [round, setRound] = useState(() => kidRound(makeRound(grade), grade));
   const [score, setScore] = useState(0);
   const [banner, setBanner] = useState(null);
@@ -312,7 +309,7 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
       let want = null;
       const r0 = roundRef.current;
       const ans = state.balls.find((b) => b.v === r0.answer);
-      if (ans && Math.hypot(ans.x - h.x, ans.y - h.y) < Math.max(30, 80 - L * 5)) {
+      if (ans && Math.hypot(ans.x - h.x, ans.y - h.y) < Math.max(26, 70 - L * 5)) {
         // Close to the right fruit: pulled in.
         want = Math.atan2(ans.y - h.y, ans.x - h.x);
       } else if (state.target) {
@@ -449,10 +446,11 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
       state.tongue = state.tongue > 0 ? state.tongue - dt : Math.random() < dt / 2.5 ? 0.35 : 0;
       // Trails: sparkles, flames, stardust.
       const form = formFor(scoreRef.current);
-      const trail = { sparkle: COLORS, fire: ['#fde047', '#fb923c', '#ef4444'], galaxy: ['#fff', '#c4b5fd', '#93c5fd'], unicorn: ['#f9a8d4', '#c4b5fd', '#fde68a', '#a5f3fc'], king: ['#ffd23f'], ice: ['#fff', '#bae6fd', '#e0f2fe'], candy: ['#ef4444', '#ec4899', '#22c55e', '#fde047'], ocean: ['#a5f3fc', '#fff', '#67e8f9'], legend: ['#ffd23f', '#fff', '#f472b6', '#a78bfa', '#38bdf8'] }[form];
-      if (trail && Math.random() < (form === 'fire' ? 0.9 : 0.5)) {
+      const lk = look(form);
+      const trail = lk.trail;
+      if (trail && Math.random() < (lk.flame ? 0.9 : 0.5)) {
         const tail = state.body[state.body.length - 1];
-        state.parts.push({ x: tail.x, y: tail.y, vx: (Math.random() - 0.5) * 30, vy: (Math.random() - 0.5) * 30 - (form === 'fire' ? 40 : 0), life: 0.8, c: trail[rand(0, trail.length - 1)], r: form === 'fire' ? 4 : 2.5 });
+        state.parts.push({ x: tail.x, y: tail.y, vx: (Math.random() - 0.5) * 30, vy: (Math.random() - 0.5) * 30 - (lk.flame ? 40 : 0), life: 0.8, c: trail[rand(0, trail.length - 1)], r: lk.flame ? 4 : 2.5 });
       }
     }
 
@@ -515,7 +513,7 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
         const age = state.t - b.born;
         const s = age < 0.35 ? Math.max(0.01, easeBack(Math.max(0, age) / 0.35)) : 1;
         const y = b.y + Math.sin(state.t * 2 + b.bob) * 3;
-        const glow = (state.misses >= 1 || (L < 8 && state.t - state.roundAt > 10 + L * 1.5)) && b === answerBall;
+        const glow = (state.misses >= 1 || (L < 8 && state.t - state.roundAt > 12 + L * 1.5)) && b === answerBall;
         if (glow) {
           const p = (Math.sin(state.t * 6) + 1) / 2;
           ctx.strokeStyle = `rgba(255, 210, 63, ${0.5 + 0.5 * p})`;
@@ -599,9 +597,10 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
         const b2 = state.body[Math.min(n - 1, i + 1)];
         return Math.atan2(a2.y - b2.y, a2.x - b2.x);
       };
-      // Dragon: spikes along the back and little wings (behind the body).
-      if (form === 'dragon' || form === 'ice' || form === 'legend') {
-        ctx.fillStyle = form === 'ice' ? '#e0f2fe' : '#facc15';
+      const lk = look(form);
+      // Dragons: spikes along the back and wings (behind the body).
+      if (lk.spikes) {
+        ctx.fillStyle = lk.spikes;
         for (let i = 2; i < n - 2; i += 2) {
           const sp = state.body[i];
           const d = dirAt(i) - Math.PI / 2;
@@ -612,30 +611,39 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
           ctx.lineTo(sp.x + Math.cos(d) * rr * 0.6 - Math.cos(d + Math.PI / 2) * 5, sp.y + Math.sin(d) * rr * 0.6 - Math.sin(d + Math.PI / 2) * 5);
           ctx.fill();
         }
-        if (n > 4 && form !== 'ice') {
-          const w = state.body[3];
-          const d = dirAt(3);
-          const flap = Math.sin(state.t * 8) * 0.35;
-          for (const side of [-1, 1]) {
-            ctx.save();
-            ctx.translate(w.x, w.y);
-            ctx.rotate(d + side * (Math.PI / 2 + flap));
-            ctx.fillStyle = form === 'legend' ? 'rgba(253, 224, 71, 0.8)' : 'rgba(134, 239, 172, 0.85)';
-            ctx.strokeStyle = form === 'legend' ? '#d97706' : '#14532d';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.quadraticCurveTo(26, -14, 34, 6);
-            ctx.quadraticCurveTo(20, 2, 14, 12);
-            ctx.quadraticCurveTo(8, 4, 0, 0);
-            ctx.fill();
-            ctx.stroke();
-            ctx.restore();
-          }
+      }
+      if (lk.wings && n > 4) {
+        const w = state.body[3];
+        const d = dirAt(3);
+        const flap = Math.sin(state.t * 8) * 0.35;
+        for (const side of [-1, 1]) {
+          ctx.save();
+          ctx.translate(w.x, w.y);
+          ctx.rotate(d + side * (Math.PI / 2 + flap));
+          ctx.scale(1, side);
+          ctx.fillStyle = lk.wings[0];
+          ctx.strokeStyle = lk.wings[1];
+          ctx.lineWidth = 2;
+          // A bat-style wing: three points along the edge.
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.quadraticCurveTo(22, -20, 40, -4);
+          ctx.quadraticCurveTo(32, 2, 30, 10);
+          ctx.quadraticCurveTo(22, 6, 18, 14);
+          ctx.quadraticCurveTo(10, 6, 0, 0);
+          ctx.fill();
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(4, 0);
+          ctx.lineTo(30, 10);
+          ctx.moveTo(4, 0);
+          ctx.lineTo(18, 14);
+          ctx.stroke();
+          ctx.restore();
         }
       }
-      if (form === 'legend') {
-        ctx.shadowColor = `hsl(${(state.t * 160) % 360}, 90%, 60%)`;
+      if (lk.glow) {
+        ctx.shadowColor = lk.glow(state.t);
         ctx.shadowBlur = 18;
       }
       // An outline first (all of it), then the body on top, so it reads as one snake.
@@ -657,41 +665,41 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
         const sp = state.body[i];
         const rr = rad(i);
         // Belly shine, then each form's own markings.
-        ctx.fillStyle = form === 'galaxy' ? 'rgba(167,139,250,0.25)' : 'rgba(255,255,255,0.28)';
+        ctx.fillStyle = form === 'moon' ? 'rgba(167,139,250,0.25)' : 'rgba(255,255,255,0.28)';
         ctx.beginPath();
         ctx.arc(sp.x - rr * 0.25, sp.y - rr * 0.3, rr * 0.38, 0, Math.PI * 2);
         ctx.fill();
-        if (form === 'plain' && i % 3 === 1) {
+        const mk = lk.marks;
+        if (mk === 'spots' && i % 3 === 1) {
           ctx.fillStyle = '#ffd23f';
           ctx.beginPath();
           ctx.arc(sp.x + rr * 0.15, sp.y + rr * 0.2, rr * 0.28, 0, Math.PI * 2);
           ctx.fill();
-        } else if (form === 'galaxy' && i % 2 === 0) {
-          // Twinkling stars in the night-sky body.
+        } else if (mk === 'facets' && i % 2 === 0) {
+          // A cut gem: a little diamond that glints.
+          ctx.fillStyle = `rgba(255,255,255,${0.35 + 0.35 * Math.sin(state.t * 4 + i)})`;
+          ctx.beginPath();
+          ctx.moveTo(sp.x, sp.y - rr * 0.5);
+          ctx.lineTo(sp.x + rr * 0.35, sp.y);
+          ctx.lineTo(sp.x, sp.y + rr * 0.5);
+          ctx.lineTo(sp.x - rr * 0.35, sp.y);
+          ctx.closePath();
+          ctx.fill();
+        } else if (mk === 'shine') {
+          // A shine that runs down the body, like polished metal.
+          const k = Math.max(0, 1 - Math.abs(((state.t * 14) % (n + 10)) - i) / 3);
+          if (k > 0) {
+            ctx.fillStyle = `rgba(255,255,255,${0.75 * k})`;
+            ctx.beginPath();
+            ctx.arc(sp.x, sp.y, rr * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        } else if (mk === 'stars' && i % 2 === 0) {
           ctx.fillStyle = `rgba(255,255,255,${0.5 + 0.5 * Math.sin(state.t * 5 + i * 1.7)})`;
           ctx.beginPath();
           ctx.arc(sp.x + Math.cos(i * 2.3) * rr * 0.4, sp.y + Math.sin(i * 2.3) * rr * 0.4, 1.8, 0, Math.PI * 2);
           ctx.fill();
-        } else if (form === 'robot') {
-          // Joints and bolts.
-          ctx.strokeStyle = '#475569';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.arc(sp.x, sp.y, rr * 0.6, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.fillStyle = i % 4 === 0 ? '#22d3ee' : '#64748b';
-          ctx.beginPath();
-          ctx.arc(sp.x, sp.y, 2.2, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (form === 'dragon' && i % 2 === 1) {
-          // Scales.
-          ctx.strokeStyle = 'rgba(20,83,45,0.5)';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.arc(sp.x, sp.y + rr * 0.2, rr * 0.5, Math.PI * 1.1, Math.PI * 1.9);
-          ctx.stroke();
-        } else if (form === 'ice' && i % 3 === 0) {
-          // Little snowflakes.
+        } else if (mk === 'flakes' && i % 3 === 0) {
           ctx.strokeStyle = '#fff';
           ctx.lineWidth = 1.5;
           for (let k = 0; k < 3; k++) {
@@ -701,19 +709,23 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
             ctx.lineTo(sp.x + Math.cos(a3) * rr * 0.45, sp.y + Math.sin(a3) * rr * 0.45);
             ctx.stroke();
           }
-        } else if (form === 'ocean' && i % 3 === 1) {
-          // Bubbles.
+        } else if (mk === 'bubbles' && i % 3 === 1) {
           ctx.strokeStyle = 'rgba(255,255,255,0.8)';
           ctx.lineWidth = 1.5;
           ctx.beginPath();
           ctx.arc(sp.x + 2, sp.y - 2 + Math.sin(state.t * 4 + i) * 2, rr * 0.25, 0, Math.PI * 2);
           ctx.stroke();
-        } else if (form === 'legend' && i % 2 === 0) {
-          ctx.fillStyle = `rgba(255,255,255,${0.5 + 0.5 * Math.sin(state.t * 6 + i)})`;
+        } else if (mk === 'bolts' && i % 3 === 0) {
+          // A little lightning bolt that flickers.
+          ctx.strokeStyle = Math.sin(state.t * 9 + i) > -0.3 ? '#fde047' : 'rgba(253,224,71,0.3)';
+          ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.arc(sp.x, sp.y, 2, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (form === 'fire' && i % 3 === 0) {
+          ctx.moveTo(sp.x - rr * 0.2, sp.y - rr * 0.55);
+          ctx.lineTo(sp.x + rr * 0.15, sp.y - rr * 0.05);
+          ctx.lineTo(sp.x - rr * 0.15, sp.y + rr * 0.05);
+          ctx.lineTo(sp.x + rr * 0.2, sp.y + rr * 0.55);
+          ctx.stroke();
+        } else if (mk === 'embers' && i % 3 === 0) {
           ctx.fillStyle = 'rgba(253, 224, 71, 0.8)';
           ctx.beginPath();
           ctx.arc(sp.x, sp.y, rr * 0.35, 0, Math.PI * 2);
@@ -767,9 +779,10 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
         ctx.stroke();
       }
       const [hc, ho] = bodyColor(form, 0, state.t);
-      // Horns (dragon) and flame hair (fire) behind the head.
-      if (form === 'dragon') {
-        ctx.fillStyle = '#facc15';
+      const lk = look(form);
+      // Horns (dragons) and flame hair (fire) behind the head.
+      if (lk.horns) {
+        ctx.fillStyle = lk.horns;
         for (const side of [-1, 1]) {
           ctx.beginPath();
           ctx.moveTo(-6, side * 12);
@@ -778,7 +791,7 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
           ctx.fill();
         }
       }
-      if (form === 'fire') {
+      if (lk.flame) {
         for (let k = 0; k < 5; k++) {
           ctx.fillStyle = ['#fde047', '#fb923c', '#ef4444'][k % 3];
           const fl = 10 + Math.sin(state.t * 14 + k) * 4;
@@ -812,14 +825,6 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
       ctx.arc(4, 11, 3.5, 0, Math.PI * 2);
       ctx.fill();
       for (const side of [-1, 1]) {
-        if (form === 'robot') {
-          // LED eyes.
-          ctx.fillStyle = '#0f172a';
-          ctx.fillRect(3, side * 7.5 - 5, 9, 10);
-          ctx.fillStyle = state.blink > 0 ? '#0f172a' : '#22d3ee';
-          ctx.fillRect(5, side * 7.5 - 3, 5, 6);
-          continue;
-        }
         if (state.blink > 0) {
           ctx.strokeStyle = '#173a66';
           ctx.lineWidth = 2.2;
@@ -849,43 +854,7 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
         ctx.arc(11, 0, 4, -Math.PI / 2.6, Math.PI / 2.6);
         ctx.stroke();
       }
-      if (form === 'robot') {
-        // An antenna with a blinking light.
-        ctx.strokeStyle = '#475569';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(-4, 0);
-        ctx.lineTo(-18, 0);
-        ctx.stroke();
-        ctx.fillStyle = Math.sin(state.t * 6) > 0 ? '#ef4444' : '#fca5a5';
-        ctx.beginPath();
-        ctx.arc(-20, 0, 3.5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      if (form === 'unicorn') {
-        // A golden horn, pointing forward and up.
-        ctx.save();
-        ctx.rotate(-h.a);
-        ctx.translate(Math.cos(h.a) * 6, Math.sin(h.a) * 6 - 14);
-        ctx.fillStyle = '#fde68a';
-        ctx.strokeStyle = '#d97706';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(-5, 0);
-        ctx.lineTo(0, -20);
-        ctx.lineTo(5, 0);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(-3.5, -5);
-        ctx.lineTo(3, -7);
-        ctx.moveTo(-2.5, -11);
-        ctx.lineTo(2, -13);
-        ctx.stroke();
-        ctx.restore();
-      }
-      if (form === 'king' || form === 'legend') {
+      if (lk.crown) {
         // The crown sits on top of the head.
         ctx.rotate(-h.a);
         ctx.translate(0, -20);
