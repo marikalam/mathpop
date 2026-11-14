@@ -29,7 +29,7 @@ const useEndAtZero = (left, score, onEnd) =>
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [left]);
 
-const big = (grade) => (grade === 'k' || grade === '1' ? 20 : grade === '2' ? 100 : 1000);
+const big = (grade) => ({ p: 6, k: 10, 1: 20, 2: 100 })[grade] || 1000;
 
 // ---------------------------------------------------------------- Bar Model
 // Build the bar model from the story, then solve it. The bars are labeled
@@ -54,9 +54,11 @@ function barProblem(grade) {
   const [p, q] = storyNames(2);
   const [fp, fq] = shuffle(BAR_FACES);
   const it = pick(BAR_ITEMS);
-  const kind = pick(['total', 'part', 'more', 'compareTotal']);
-  let a = rand(Math.ceil(top * 0.2), Math.floor(top * 0.55));
-  let b = rand(Math.ceil(top * 0.1), Math.floor(top * 0.4));
+  const kind = grade === 'p' ? 'total' : grade === 'k' ? pick(['total', 'part']) : pick(['total', 'part', 'more', 'compareTotal']);
+  let a = rand(Math.max(1, Math.ceil(top * 0.2)), Math.max(2, Math.floor(top * 0.55)));
+  let b = rand(Math.max(1, Math.ceil(top * 0.1)), Math.max(1, Math.floor(top * 0.4)));
+  // (At least 2, so the story never says "1 cookies".)
+  b = Math.max(2, b);
   if (a === b) a += 1;
   const P = { name: p, face: fp };
   const Q = { name: q, face: fq };
@@ -357,19 +359,38 @@ export function BarModel({ grade, onEnd }) {
 function bondRound(grade) {
   let whole;
   let part;
-  if (grade === 'k') {
+  if (grade === 'p') {
+    whole = rand(2, 5);
+    part = rand(1, whole - 1);
+  } else if (grade === 'k') {
     whole = rand(3, 10);
     part = rand(0, whole);
   } else if (grade === '1') {
     whole = rand(8, 20);
     part = rand(1, whole - 1);
-  } else {
+  } else if (grade === '2') {
     whole = rand(2, 10) * 10;
     part = rand(1, whole / 10 - 1) * 10 + (Math.random() < 0.5 ? 0 : 5);
     if (part >= whole) part = whole - 5;
+  } else if (grade === '3') {
+    // Bonds to 100 and 1,000 (Primary 3).
+    whole = pick([100, 100, 200, 500, 1000]);
+    part = whole === 100 ? rand(11, 89) : rand(1, whole / 10 - 1) * 10;
+  } else {
+    // Bonds to 1 with tenths, and to 1,000 (Primary 4).
+    if (Math.random() < 0.5) {
+      const t = rand(1, 9);
+      const fmt = (x) => Number((x / 10).toFixed(1));
+      const answer = fmt(10 - t);
+      const near = [...new Set([fmt(9 - t), fmt(11 - t), fmt(10 - t) * 10, fmt(t)].filter((x) => x > 0 && x !== answer))];
+      return { whole: 1, part: fmt(t), answer, opts: shuffle([answer, ...near.slice(0, 3)]), id: Math.random() };
+    }
+    whole = 1000;
+    part = rand(101, 899);
   }
   const answer = whole - part;
-  const near = shuffle([answer + 1, answer - 1, answer + 2, answer + 10, answer - 10, whole, part].filter((x) => x >= 0 && x !== answer));
+  const step = whole >= 100 ? 10 : 1;
+  const near = shuffle([answer + 1, answer - 1, answer + 2, answer + step, answer - step, whole, part].filter((x) => x >= 0 && x !== answer));
   return { whole, part, answer, opts: shuffle([answer, ...[...new Set(near)].slice(0, 3)]), id: Math.random() };
 }
 
@@ -421,40 +442,66 @@ export function BondPop({ grade, onEnd }) {
 }
 
 // --------------------------------------------------------- Make a Ten Race
-function tenRound() {
-  const a = rand(6, 9);
-  const b = rand(10 - a + 1, 9);
-  return { a, b, fill: 10 - a, rest: b - (10 - a), id: Math.random() };
+// Pre-K: what makes 5; K: what makes 10 (just the first step). 1st: make a
+// ten (8 + 5 = 10 + 3); 2nd: make the next ten (47 + 8 = 50 + 5); 3rd:
+// make the next hundred (196 + 35 = 200 + 31); 4th: the next thousand.
+function tenRound(grade) {
+  if (grade === 'p' || grade === 'k') {
+    const T = grade === 'p' ? 5 : 10;
+    const a = rand(1, T - 1);
+    return { a, b: 0, T, fill: T - a, rest: 0, one: true, id: Math.random() };
+  }
+  let a;
+  let T;
+  let bHi = 9;
+  if (grade === '2') {
+    a = rand(1, 8) * 10 + rand(6, 9);
+    T = Math.ceil(a / 10) * 10;
+  } else if (grade === '3') {
+    a = rand(1, 8) * 100 + rand(91, 98);
+    T = Math.ceil(a / 100) * 100;
+    bHi = 60;
+  } else if (grade === '4') {
+    a = rand(1, 8) * 1000 + rand(991, 998);
+    T = Math.ceil(a / 1000) * 1000;
+    bHi = 60;
+  } else {
+    a = rand(6, 9);
+    T = 10;
+  }
+  const fill = T - a;
+  const b = rand(fill + 1, Math.max(fill + 1, bHi));
+  return { a, b, T, fill, rest: b - fill, id: Math.random() };
 }
 const opts4 = (answer, lo = 0) => shuffle([answer, ...shuffle([answer + 1, answer - 1, answer + 2, answer - 2, answer + 3].filter((x) => x >= lo && x !== answer)).slice(0, 3)]);
 
-export function MakeTen({ onEnd }) {
+export function MakeTen({ grade, onEnd }) {
   const seconds = 60;
   const left = useCountdown(seconds, true);
-  const [r, setR] = useState(tenRound);
+  const [r, setR] = useState(() => tenRound(grade));
   const [step, setStep] = useState(0); // 0: fill to 10, 1: the rest, 2: the answer
   const [score, setScore] = useState(0);
   const [bad, setBad] = useState(null);
   useEndAtZero(left, score, onEnd);
   const ask = useMemo(
     () => [
-      { q: `${r.a} needs ? to make 10`, ans: r.fill, opts: opts4(r.fill, 1) },
+      { q: `${r.a} needs ? to make ${r.T}`, ans: r.fill, opts: opts4(r.fill, 1) },
       { q: `${r.b} is ${r.fill} and ?`, ans: r.rest, opts: opts4(r.rest, 0) },
-      { q: `10 + ${r.rest} = ?`, ans: 10 + r.rest, opts: opts4(10 + r.rest, 10) },
+      { q: `${r.T} + ${r.rest} = ?`, ans: r.T + r.rest, opts: opts4(r.T + r.rest, r.T) },
     ],
     [r],
   );
   useEffect(() => {
-    speak(`${r.a} plus ${r.b}. Make a ten first!`);
+    speak(r.one ? `${r.a} and what make ${r.T}?` : `${r.a} plus ${r.b}. Make ${r.T} first!`);
   }, [r]);
   function tap(v) {
     if (left === 0) return;
     if (v === ask[step].ans) {
       playCorrectChime();
-      if (step === 2) {
+      if (step === 2 || r.one) {
         setScore((s) => s + 1);
         setStep(0);
-        setR(tenRound());
+        setR(tenRound(grade));
       } else setStep(step + 1);
     } else {
       playIncorrectBuzz();
@@ -466,20 +513,28 @@ export function MakeTen({ onEnd }) {
   return (
     <div className="game game-maketen">
       <TimerBar left={left} seconds={seconds} score={score} label="done" />
-      <div className="game-question">
-        {r.a} + {r.b} = ?
-      </div>
-      <div className="maketen-steps">
-        <span className={step > 0 ? 'mt-done' : 'mt-now'}>
-          {r.a} + <b>{step > 0 ? r.fill : '?'}</b> = 10
-        </span>
-        <span className={step > 1 ? 'mt-done' : step === 1 ? 'mt-now' : ''}>
-          {r.b} = {r.fill} + <b>{step > 1 ? r.rest : '?'}</b>
-        </span>
-        <span className={step === 2 ? 'mt-now' : ''}>
-          10 + {step > 1 ? r.rest : '?'} = <b>?</b>
-        </span>
-      </div>
+      {r.one ? (
+        <div className="game-question">
+          {r.a} + ? = {r.T}
+        </div>
+      ) : (
+        <>
+          <div className="game-question">
+            {r.a} + {r.b} = ?
+          </div>
+          <div className="maketen-steps">
+            <span className={step > 0 ? 'mt-done' : 'mt-now'}>
+              {r.a} + <b>{step > 0 ? r.fill : '?'}</b> = {r.T}
+            </span>
+            <span className={step > 1 ? 'mt-done' : step === 1 ? 'mt-now' : ''}>
+              {r.b} = {r.fill} + <b>{step > 1 ? r.rest : '?'}</b>
+            </span>
+            <span className={step === 2 ? 'mt-now' : ''}>
+              {r.T} + {step > 1 ? r.rest : '?'} = <b>?</b>
+            </span>
+          </div>
+        </>
+      )}
       <p className="game-ask">{cur.q}</p>
       <div className="shapes-grid">
         {cur.opts.map((v) => (
@@ -493,17 +548,24 @@ export function MakeTen({ onEnd }) {
 }
 
 // ----------------------------------------------------------- Sum Grid Rush
-function gridRound() {
+// Each column makes C and each row makes 2C: Pre-K 5, K and 1st 10, 2nd
+// 100 (in tens), 3rd 1,000 (in hundreds), 4th 1 (in tenths). The grid is
+// worked in steps of `unit` (n = 10 steps for 10, 5 for 5).
+const GRID = { p: { n: 5, unit: 1 }, k: { n: 10, unit: 1 }, 1: { n: 10, unit: 1 }, 2: { n: 10, unit: 10 }, 3: { n: 10, unit: 100 }, 4: { n: 10, unit: 0.1 } };
+const gridOf = (grade) => GRID[grade] || GRID[1];
+const gridNum = (grade, k) => Number((k * gridOf(grade).unit).toFixed(1));
+function gridRound(grade) {
+  const { n } = gridOf(grade);
   let top;
   for (;;) {
-    top = [rand(0, 10), rand(0, 10), rand(0, 10)];
-    const last = 20 - top[0] - top[1] - top[2];
-    if (last >= 0 && last <= 10) {
+    top = [rand(0, n), rand(0, n), rand(0, n)];
+    const last = 2 * n - top[0] - top[1] - top[2];
+    if (last >= 0 && last <= n) {
       top.push(last);
       break;
     }
   }
-  const rows = [top, top.map((x) => 10 - x)];
+  const rows = [top, top.map((x) => n - x)];
   const cols = shuffle([0, 1, 2, 3]).slice(0, 3);
   const blanks = cols.map((c) => [rand(0, 1), c]);
   return { rows, blanks, id: Math.random() };
@@ -512,10 +574,14 @@ function gridRound() {
 // Each column has its own color, so "these two make 10" is easy to see.
 const SG_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#a855f7'];
 
-export function SumGridRush({ onEnd }) {
+export function SumGridRush({ grade, onEnd }) {
   const seconds = 90;
   const left = useCountdown(seconds, true);
-  const [g, setG] = useState(gridRound);
+  const [g, setG] = useState(() => gridRound(grade));
+  const { n: gn } = gridOf(grade);
+  // The grid keeps steps (0 to gn); shown and said as numbers.
+  const num = (k) => gridNum(grade, k);
+  const C = num(gn);
   const [filled, setFilled] = useState({});
   const [sel, setSel] = useState(0);
   const [score, setScore] = useState(0);
@@ -526,13 +592,13 @@ export function SumGridRush({ onEnd }) {
   const [sr, sc] = g.blanks[sel] || [0, 0];
   const partner = g.rows[1 - sr][sc];
   useEffect(() => {
-    speak(`The two numbers in each column make 10. ${partner} and what make 10?`);
+    speak(`The two numbers in each column make ${C}. ${num(partner)} and what make ${C}?`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [g]);
   function pickBox(i) {
     setSel(i);
     const [r, c] = g.blanks[i];
-    speak(`${g.rows[1 - r][c]} and what make 10?`);
+    speak(`${num(g.rows[1 - r][c])} and what make ${C}?`);
   }
   function put(v) {
     if (left === 0) return;
@@ -546,7 +612,7 @@ export function SumGridRush({ onEnd }) {
         setScore((s) => s + 1);
         speak('You did it!');
         setTimeout(() => {
-          setG(gridRound());
+          setG(gridRound(grade));
           setFilled({});
           setSel(0);
           setPop(null);
@@ -554,12 +620,12 @@ export function SumGridRush({ onEnd }) {
       } else {
         setSel(open);
         const [r, c] = g.blanks[open];
-        speak(`${g.rows[1 - r][c]} and what make 10?`);
+        speak(`${num(g.rows[1 - r][c])} and what make ${C}?`);
       }
     } else {
       playIncorrectBuzz();
       setBad(v);
-      speak(`${partner} and ${v} make ${partner + v}. We need 10!`);
+      speak(`${num(partner)} and ${num(v)} make ${num(partner + v)}. We need ${C}!`);
       setTimeout(() => setBad(null), 500);
     }
   }
@@ -571,13 +637,13 @@ export function SumGridRush({ onEnd }) {
       <div className="sgk-board">
         {[0, 1, 2, 3].map((c) => (
           <div key={c} className={`sgk-col${sc === c ? ' sgk-col-on' : ''}`} style={{ '--sgk': SG_COLORS[c] }}>
-            <span className={`sgk-ten${colDone(c) ? ' sgk-ten-done' : ''}`}>{colDone(c) ? '✓ 10' : '10'}</span>
+            <span className={`sgk-ten${colDone(c) ? ' sgk-ten-done' : ''}`}>{colDone(c) ? `✓ ${C}` : C}</span>
             {[0, 1].map((r) => {
               const bi = g.blanks.findIndex(([rr, cc]) => rr === r && cc === c);
               if (bi === -1) {
                 return (
                   <span key={r} className="sgk-cell">
-                    {g.rows[r][c]}
+                    {num(g.rows[r][c])}
                   </span>
                 );
               }
@@ -588,31 +654,31 @@ export function SumGridRush({ onEnd }) {
                   type="button"
                   className={`sgk-cell sgk-blank${sel === bi && v === undefined ? ' sgk-sel' : ''}${v !== undefined ? ' sgk-done' : ''}${pop === key(r, c) ? ' sgk-pop' : ''}`}
                   onClick={() => v === undefined && pickBox(bi)}
-                  aria-label={v === undefined ? 'Empty box' : String(v)}
+                  aria-label={v === undefined ? 'Empty box' : String(num(v))}
                 >
-                  {v ?? '?'}
+                  {v === undefined ? '?' : num(v)}
                 </button>
               );
             })}
           </div>
         ))}
       </div>
-      <p className="sgk-rows">Each row adds up to 20 too!</p>
-      <button type="button" className="sgk-help" style={{ '--sgk': SG_COLORS[sc] }} onClick={() => speak(`${partner} and what make 10?`)}>
+      <p className="sgk-rows">Each row adds up to {num(2 * gn)} too!</p>
+      <button type="button" className="sgk-help" style={{ '--sgk': SG_COLORS[sc] }} onClick={() => speak(`${num(partner)} and what make ${C}?`)}>
         {sr === 0 ? (
           <>
-            <b>?</b> + {partner} = 10
+            <b>?</b> + {num(partner)} = {C}
           </>
         ) : (
           <>
-            {partner} + <b>?</b> = 10
+            {num(partner)} + <b>?</b> = {C}
           </>
         )}
       </button>
       <div className="sgk-pad">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 10].map((v) => (
-          <button key={v} type="button" className={`sgk-key${v === 10 ? ' sgk-key-wide' : ''}${bad === v ? ' make10-bad sgk-key-bad' : ''}`} onClick={() => put(v)}>
-            {v}
+        {[...Array.from({ length: gn - 1 }, (_, i) => i + 1), 0, gn].map((v) => (
+          <button key={v} type="button" className={`sgk-key${v === gn ? ' sgk-key-wide' : ''}${bad === v ? ' make10-bad sgk-key-bad' : ''}`} onClick={() => put(v)}>
+            {num(v)}
           </button>
         ))}
       </div>
@@ -621,11 +687,14 @@ export function SumGridRush({ onEnd }) {
 }
 
 // ------------------------------------------------------ Shape Pattern Streak
-export function PatternStreak({ onEnd }) {
+export function PatternStreak({ grade, onEnd }) {
+  // Older grades start at the harder patterns (the streak still counts from 0).
+  const head = grade === '3' || grade === '4' ? 4 : 0;
   const [streak, setStreak] = useState(0);
-  const [lives, setLives] = useState(2);
-  const tier = streak < 4 ? 'easy' : streak < 9 ? 'medium' : 'hard';
-  const [pr, setPr] = useState(() => TOPIC_BUILDERS.shapePattern('easy'));
+  const [lives, setLives] = useState(grade === 'p' || grade === 'k' ? 3 : 2);
+  const lvl = (s) => (s + head < 4 ? 'easy' : s + head < 9 ? 'medium' : 'hard');
+  const tier = lvl(streak);
+  const [pr, setPr] = useState(() => TOPIC_BUILDERS.shapePattern(lvl(0)));
   const [bad, setBad] = useState(null);
   useEffect(() => {
     speak('What comes next?');
@@ -635,7 +704,7 @@ export function PatternStreak({ onEnd }) {
       playCorrectChime();
       const s = streak + 1;
       setStreak(s);
-      setPr(TOPIC_BUILDERS.shapePattern(s < 4 ? 'easy' : s < 9 ? 'medium' : 'hard'));
+      setPr(TOPIC_BUILDERS.shapePattern(lvl(s)));
     } else {
       playIncorrectBuzz();
       setBad(c);
@@ -643,7 +712,7 @@ export function PatternStreak({ onEnd }) {
       if (lives <= 1) setTimeout(() => onEnd(streak), 500);
       else {
         setLives(lives - 1);
-        speak('Oops! One heart left.');
+        speak(lives - 1 === 1 ? 'Oops! One heart left.' : 'Oops! Try again.');
       }
     }
   }
@@ -670,6 +739,13 @@ export function PatternStreak({ onEnd }) {
 
 // -------------------------------------------------------- Equal Differences
 function diffRound(grade) {
+  // Pre-K and K: slide both down until the second number is 0
+  // (7 − 3 = 6 − 2 = 5 − 1 = 4 − 0).
+  if (grade === 'p' || grade === 'k') {
+    const b = rand(1, grade === 'p' ? 2 : 4);
+    const a = rand(b + 1, grade === 'p' ? 5 : 10);
+    return { a, b, best: b, small: true, id: Math.random() };
+  }
   const unit = grade === '3' || grade === '4' ? 10 : 1;
   const hi = grade === '1' ? 60 : grade === '2' ? 99 : 999;
   let a;
@@ -692,7 +768,7 @@ export function EqualDiff({ grade, onEnd }) {
   const [score, setScore] = useState(0);
   const [note, setNote] = useState(null);
   useEffect(() => {
-    speak(`${r.a} minus ${r.b}. Slide both numbers until the second one is a ten. Then subtract!`);
+    speak(r.small ? `${r.a} take away ${r.b}. Slide both numbers down until the second one is zero. Then say the answer!` : `${r.a} minus ${r.b}. Slide both numbers until the second one is a ten. Then subtract!`);
   }, [r]);
   const a = r.a + shift;
   const b = r.b + shift;
@@ -743,7 +819,7 @@ export function EqualDiff({ grade, onEnd }) {
           +1 both
         </button>
       </div>
-      <p className="game-ask">{round ? 'Easy now! What is the answer?' : `Make ${b} a ten number (fewest moves = 3 stars)`}</p>
+      <p className="game-ask">{round ? 'Easy now! What is the answer?' : r.small ? `Slide ${b} down to 0 (−1 both)` : `Make ${b} a ten number (fewest moves = 3 stars)`}</p>
       <NumPad value={typed} onChange={setTyped} onSubmit={solve} />
       {note && <p className="bakery-note">{note}</p>}
     </div>
@@ -751,20 +827,45 @@ export function EqualDiff({ grade, onEnd }) {
 }
 
 // -------------------------------------------------------- Times Table Tiles
+// The facts by grade: Pre-K dots and their number (1 to 5), K adding
+// within 10, 1st adding and taking away within 20, 2nd the 2, 3, 4, 5 and
+// 10 times tables, 3rd and 4th the times tables to 9 × 9.
+function oneFact(grade) {
+  if (grade === 'p') {
+    const v = rand(1, 5);
+    return { label: '●'.repeat(v), v };
+  }
+  if (grade === 'k') {
+    const v = rand(2, 10);
+    const a = rand(1, v - 1);
+    return { label: `${a} + ${v - a}`, v };
+  }
+  if (grade === '1') {
+    const v = rand(3, 18);
+    if (Math.random() < 0.5) {
+      const a = rand(1, v - 1);
+      return { label: `${a} + ${v - a}`, v };
+    }
+    const b = rand(1, 20 - v);
+    return { label: `${v + b} − ${b}`, v };
+  }
+  const t = pick(grade === '2' ? [2, 3, 4, 5, 10] : [2, 3, 4, 5, 6, 7, 8, 9]);
+  const x = rand(2, grade === '2' ? 10 : 9);
+  return { label: `${t} × ${x}`, v: t * x };
+}
 function timesBoard(grade) {
-  const tables = grade === '2' ? [2, 3, 4, 5, 10] : [2, 3, 4, 5, 6, 7, 8, 9];
   const facts = [];
   const used = new Set();
-  while (facts.length < 6) {
-    const t = pick(tables);
-    const x = rand(2, grade === '2' ? 10 : 9);
-    if (used.has(t * x)) continue;
-    used.add(t * x);
-    facts.push([t, x]);
+  const count = grade === 'p' || grade === 'k' ? 4 : 6;
+  while (facts.length < count) {
+    const f = oneFact(grade);
+    if (used.has(f.v)) continue;
+    used.add(f.v);
+    facts.push(f);
   }
-  const tiles = facts.flatMap(([t, x], i) => [
-    { id: `f${i}`, label: `${t} × ${x}`, v: t * x, fact: true },
-    { id: `a${i}`, label: String(t * x), v: t * x, fact: false },
+  const tiles = facts.flatMap((f, i) => [
+    { id: `f${i}`, label: f.label, v: f.v, fact: true },
+    { id: `a${i}`, label: String(f.v), v: f.v, fact: false },
   ]);
   return shuffle(tiles).map((t) => ({ ...t, gone: false }));
 }
@@ -778,8 +879,8 @@ export function TimesTiles({ grade, onEnd }) {
   const [score, setScore] = useState(0);
   useEndAtZero(left, score, onEnd);
   useEffect(() => {
-    speak('Match each times fact to its answer!');
-  }, []);
+    speak(grade === 'p' ? 'Match the dots to their number!' : grade === 'k' || grade === '1' ? 'Match each fact to its answer!' : 'Match each times fact to its answer!');
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   function tap(t) {
     if (left === 0 || t.gone) return;
     if (!picked) {
@@ -825,9 +926,11 @@ export function TimesTiles({ grade, onEnd }) {
 }
 
 // ----------------------------------------------------- Fraction Pizza Shop
-const CUTS = { 2: [2, 3, 4], 3: [2, 3, 4, 6, 8], 4: [2, 3, 4, 5, 6, 8] };
+// Pre-K halves, K and 1st halves and fourths, 2nd thirds too, 3rd and 4th
+// eighths and more (and equal fractions count: 2/4 is 1/2).
+const CUTS = { p: [2, 4], k: [2, 3, 4], 1: [2, 3, 4], 2: [2, 3, 4], 3: [2, 3, 4, 6, 8], 4: [2, 3, 4, 5, 6, 8] };
 function pizzaOrder(grade) {
-  const dens = grade === '2' ? [2, 3, 4] : grade === '3' ? [2, 3, 4, 6, 8] : [3, 4, 5, 6, 8];
+  const dens = grade === 'p' ? [2] : grade === 'k' || grade === '1' ? [2, 4] : grade === '2' ? [2, 3, 4] : grade === '3' ? [2, 3, 4, 6, 8] : [3, 4, 5, 6, 8];
   const d = pick(dens);
   const nn = rand(1, d - 1);
   return { n: nn, d, who: pick(['Bunny', 'Bear', 'Fox', 'Panda', 'Frog']) };
@@ -919,7 +1022,7 @@ export function PizzaShop({ grade, onEnd }) {
       </button>
       <p className="game-ask">{slices ? `Tap the slices (${on.length} of ${slices})` : 'Cut the pizza into slices:'}</p>
       <div className="pizza-cuts">
-        {CUTS[grade === '2' ? 2 : grade === '3' ? 3 : 4].map((k) => (
+        {(CUTS[grade] || CUTS[4]).map((k) => (
           <button key={k} type="button" className={`bakery-btn${slices === k ? ' bakery-add' : ''}`} onClick={() => cut(k)}>
             {k}
           </button>

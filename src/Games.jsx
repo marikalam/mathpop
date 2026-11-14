@@ -63,16 +63,16 @@ export const GAMES = [
   { id: 'toyShop', title: "Pip's Toy Shop", sub: 'Pay with coins', how: 'Pay for each toy with the right coins!', seconds: 0, color: ['#0ea5e9', '#0284c7'] },
   { id: 'clock', title: 'Set the Clock', sub: 'Turn the hands to the time', how: 'Set the clock to the right time!', seconds: 0, color: ['#6366f1', '#4f46e5'] },
   { id: 'shapes', title: 'Speed Shapes', sub: 'Find the shape, fast', how: 'Listen to Pip, and tap the right shape, fast!', seconds: 45, color: ['#e0577f', '#c43c66'] },
-  // Singapore math and Beast Academy games (GamesSG.jsx), for the grades
-  // that learn them.
-  { id: 'bondPop', title: 'Number Bond Pop', sub: 'Find the missing part', how: 'Find the missing part of the number bond!', color: ['#ffb000', '#e08a00'], grades: ['k', '1', '2'] },
-  { id: 'makeTen', title: 'Make a Ten Race', sub: '8 + 5 = 10 + 3', how: 'Make a ten first, then add the rest!', color: ['#14b8a6', '#0f9384'], grades: ['1', '2'] },
-  { id: 'barModel', title: 'Bar Model Builder', sub: 'Pick the model, then solve', how: 'Read the story, pick the bar model, then solve it!', color: ['#3b6fef', '#2a54c4'], grades: ['k', '1', '2', '3', '4'] },
-  { id: 'sumGridRush', title: 'Sum Grid Rush', sub: 'Columns 10, rows 20', how: 'Fill the sum grids: columns make 10, rows make 20!', color: ['#8e4fd6', '#6f35b8'], grades: ['1', '2', '3'] },
-  { id: 'patternStreak', title: 'Pattern Streak', sub: 'What comes next?', how: 'What comes next? See how many you get in a row!', color: ['#e5484d', '#c23237'], grades: ['k', '1', '2', '3', '4'] },
-  { id: 'equalDiff', title: 'Equal Differences', sub: 'Slide, then subtract', how: 'Slide both numbers to make it easy, then subtract!', color: ['#2fae6b', '#238a54'], grades: ['1', '2', '3', '4'] },
-  { id: 'timesTiles', title: 'Times Table Tiles', sub: 'Match facts to answers', how: 'Match each times fact to its answer!', color: ['#a065e6', '#7c3fc4'], grades: ['2', '3', '4'] },
-  { id: 'pizza', title: 'Fraction Pizza Shop', sub: 'Cut and serve fractions', how: 'Cut the pizza, then serve the right fraction!', color: ['#f0954f', '#e0793a'], grades: ['2', '3', '4'] },
+  // Singapore math and Beast Academy games (GamesSG.jsx), for every grade
+  // (each one's numbers fit the grade).
+  { id: 'bondPop', title: 'Number Bond Pop', sub: 'Find the missing part', how: 'Find the missing part of the number bond!', color: ['#ffb000', '#e08a00'] },
+  { id: 'makeTen', title: 'Make a Ten Race', sub: '8 + 5 = 10 + 3', how: 'Make a ten first, then add the rest!', color: ['#14b8a6', '#0f9384'] },
+  { id: 'barModel', title: 'Bar Model Builder', sub: 'Build the model, then solve', how: 'Read the story, build the bar model, then solve it!', color: ['#3b6fef', '#2a54c4'] },
+  { id: 'sumGridRush', title: 'Sum Grid Rush', sub: 'Fill in the sum grids', how: 'Fill the sum grids: every column makes the same number!', color: ['#8e4fd6', '#6f35b8'] },
+  { id: 'patternStreak', title: 'Pattern Streak', sub: 'What comes next?', how: 'What comes next? See how many you get in a row!', color: ['#e5484d', '#c23237'] },
+  { id: 'equalDiff', title: 'Equal Differences', sub: 'Slide, then subtract', how: 'Slide both numbers to make it easy, then subtract!', color: ['#2fae6b', '#238a54'] },
+  { id: 'timesTiles', title: 'Fact Tiles', sub: 'Match facts to answers', how: 'Match each fact to its answer!', color: ['#a065e6', '#7c3fc4'] },
+  { id: 'pizza', title: 'Fraction Pizza Shop', sub: 'Cut and serve fractions', how: 'Cut the pizza, then serve the right fraction!', color: ['#f0954f', '#e0793a'] },
   { id: 'logicLock', title: 'Logic Lock', sub: 'Crack the code', how: 'Use the clues to crack the code!', color: ['#475569', '#334155'] },
 ];
 
