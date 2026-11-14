@@ -183,7 +183,7 @@ function sortedRows(obj, names = {}) {
 // The one number to watch, at the top: how many kids play MathPop each
 // day (devices that opened it): today so far, compared with yesterday,
 // and the last DAYS days as bars (tap one for its number). Below it, this
-// week's path: new downloads -> family sign-ups -> paying families.
+// week's path: new players (devices opening MathPop for the first time) -> family sign-ups -> paying families.
 const DAYS = 30;
 
 // The few numbers that matter, since the start, in plain words:
@@ -243,6 +243,23 @@ function TotalsCard() {
   );
 }
 
+// The days as this phone sees them. Each event is saved under the day on
+// the device that sent it, but the server lists days up to its own date
+// (UTC), which is already tomorrow in the evening in the Americas: so the
+// list is cut at this phone's today, and today is always this phone's
+// today (with zeros if nothing came in yet).
+const localDay = (offset = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+export function untilToday(list) {
+  const today = localDay();
+  const out = (list || []).filter((d) => d.day <= today);
+  if (!out.length || out[out.length - 1].day !== today) out.push({ day: today, devices: 0, rounds: 0, newInstalls: 0 });
+  return out;
+}
+
 function ProgressCard() {
   const [stats, setStats] = useState(undefined);
   const [signups, setSignups] = useState(undefined);
@@ -264,11 +281,11 @@ function ProgressCard() {
         <p className="stats-empty">Loading…</p>
       </section>
     );
-  const daily = (stats.daily || []).slice(-DAYS);
+  const daily = untilToday(stats.daily).slice(-DAYS);
   if (!daily.length) return null;
   const today = daily[daily.length - 1];
-  const yesterday = daily[daily.length - 2];
-  const weekAgo = daily[daily.length - 8];
+  const yesterday = daily.find((d) => d.day === localDay(-1));
+  const weekAgo = daily.find((d) => d.day === localDay(-7));
   const max = Math.max(1, ...daily.map((d) => d.devices));
   const shown = daily[pick ?? daily.length - 1];
   const week = daily.slice(-7);
@@ -313,7 +330,7 @@ function ProgressCard() {
       <div className="progress-funnel">
         <span className="progress-funnel-title">Last 7 days</span>
         <span className="progress-step">
-          <strong>{weekInstalls}</strong> new downloads
+          <strong>{weekInstalls}</strong> new players
         </span>
         <span className="progress-arrow">→</span>
         <span className="progress-step">
@@ -349,7 +366,7 @@ export default function StatsScreen({ topicName, gradeName }) {
   }, [days]);
 
   const t = stats?.totals;
-  const daily = stats?.daily || [];
+  const daily = stats ? untilToday(stats.daily) : [];
   const maxDevices = Math.max(1, ...daily.map((d) => d.devices));
   const shown = hover ?? daily.length - 1;
 
