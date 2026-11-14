@@ -39,8 +39,18 @@ function write(key, value) {
   }
 }
 
+// No stats from test copies: a local development server, or a browser
+// driven by a test (automated browsers say so in navigator.webdriver).
+// Otherwise every test run counts as a new player.
+const IS_TEST =
+  import.meta.env.DEV ||
+  (typeof navigator !== 'undefined' && navigator.webdriver) ||
+  // (The iPhone app's own page is capacitor://localhost: that one counts.)
+  (!Capacitor.isNativePlatform() && typeof location !== 'undefined' && ['localhost', '127.0.0.1'].includes(location.hostname));
+
 let sending = false;
 async function send(event) {
+  if (IS_TEST) return;
   let queue = [];
   try {
     queue = JSON.parse(read(QUEUE_KEY) || '[]');
