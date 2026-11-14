@@ -40,6 +40,12 @@ MathPop（マスポップ）は、幼児から 小学4年生までの 算数を 
 広告なし・トラッキングなし。子どもが あそぶ ものは すべて 無料です（おとな向けの MathPop Plus は 任意の サブスクリプション）。アカウントなしで すぐ あそべます。家族アカウント（任意）で 複数の 端末に 同期できます。
 ※ 小学生向けの ゲームは 英語です。
 
+MathPop Plus（サブスクリプション）
+MathPop Plus 月額（1か月）と MathPop Plus 年額（1年）は、自動更新の サブスクリプションです。お支払いは 購入の確認時に Apple アカウントに 請求されます。現在の期間が 終わる 24時間前までに 自動更新を オフにしないかぎり 自動で 更新され、期間が 終わる前の 24時間以内に 更新分が 請求されます。Apple アカウントの 設定から いつでも 管理・解約できます。
+
+利用規約（EULA）: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+プライバシーポリシー: https://marikalam.github.io/apps/mathpop/privacy.html
+
 ## Keywords (100, comma-separated)
 さんすう,算数,計算,たしざん,ひきざん,かけざん,九九,幼児,年中,年長,小学生,知育,数字,かず,シール,英語,ドリル
 
