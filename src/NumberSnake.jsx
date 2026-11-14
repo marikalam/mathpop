@@ -33,21 +33,92 @@ const FRUITS = [
   ['#f472b6', '#db2777', '#22c55e'],
   ['#facc15', '#ca8a04', '#16a34a'],
 ];
-const LEVELS = [
-  { at: 4, name: 'Rainbow snake!' },
-  { at: 8, name: 'Sparkle snake!' },
-  { at: 12, name: 'King snake! 👑' },
+// The snake changes as you score: eight forms in one game.
+const FORMS = [
+  { at: 0, id: 'plain' },
+  { at: 3, id: 'rainbow', name: 'Rainbow snake!', icon: '🌈' },
+  { at: 6, id: 'sparkle', name: 'Sparkle snake!', icon: '✨' },
+  { at: 10, id: 'king', name: 'King snake!', icon: '👑' },
+  { at: 14, id: 'fire', name: 'Fire snake!', icon: '🔥' },
+  { at: 18, id: 'galaxy', name: 'Galaxy snake!', icon: '🌌' },
+  { at: 22, id: 'robot', name: 'Robot snake!', icon: '🤖' },
+  { at: 27, id: 'dragon', name: 'Dragon snake!', icon: '🐉' },
+  { at: 33, id: 'unicorn', name: 'Unicorn snake!', icon: '🦄' },
 ];
-const levelFor = (score) => LEVELS.filter((l) => score >= l.at).length;
+const formFor = (score) => [...FORMS].reverse().find((f) => score >= f.at).id;
+// Each form's body color (piece i), and its outline.
+function bodyColor(form, i, t) {
+  switch (form) {
+    case 'rainbow':
+      return [`hsl(${(i * 22 - t * 120) % 360}, 85%, 62%)`, 'rgba(60,40,90,0.45)'];
+    case 'sparkle':
+      return [`hsl(${(i * 18 - t * 60) % 360}, 75%, 80%)`, '#c084fc'];
+    case 'king':
+      return [i % 2 ? '#ffd23f' : '#ffc72c', '#c98a00'];
+    case 'fire':
+      return [`hsl(${10 + ((i * 4 + t * 90) % 35)}, 96%, ${52 + (i % 2) * 6}%)`, '#9a3412'];
+    case 'galaxy':
+      return [i % 2 ? '#312e81' : '#1e1b4b', '#a78bfa'];
+    case 'robot':
+      return [i % 2 ? '#cbd5e1' : '#94a3b8', '#475569'];
+    case 'dragon':
+      return [i % 2 ? '#22c55e' : '#16a34a', '#14532d'];
+    case 'unicorn':
+      return [['#fbcfe8', '#e9d5ff', '#bae6fd', '#fef9c3'][i % 4], '#f472b6'];
+    default:
+      return ['#3fbf6f', '#23874a'];
+  }
+}
 
-export default function NumberSnake({ grade, onEnd, makeRound }) {
+// ---- Getting a little harder as each player gets better ----
+// Each player has a skill level (0 to 10) at each grade, kept on this
+// phone. A game with enough answers moves it up one; a short one moves it
+// down one. A higher level: a little faster, a fruit more to choose from
+// now and then, a weaker pull toward the right fruit, and a later glow.
+const SKILL_KEY = 'mathpop-snake-skill-v1';
+function readSkills() {
+  try {
+    return JSON.parse(localStorage.getItem(SKILL_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+export function snakeSkill(playerId, grade) {
+  return readSkills()[`${playerId}:${grade}`] || { lvl: 0, games: [] };
+}
+const goalFor = (lvl) => 6 + lvl * 2;
+function recordGame(playerId, grade, score, misses) {
+  const all = readSkills();
+  const k = `${playerId}:${grade}`;
+  const sk = all[k] || { lvl: 0, games: [] };
+  const goal = goalFor(sk.lvl);
+  let change = 0;
+  if (score >= goal && sk.lvl < 10) change = 1;
+  else if (score < Math.max(3, Math.round(goal * 0.4)) && sk.lvl > 0) change = -1;
+  const next = { lvl: sk.lvl + change, games: [...sk.games, { score, misses, at: Date.now() }].slice(-10) };
+  all[k] = next;
+  try {
+    localStorage.setItem(SKILL_KEY, JSON.stringify(all));
+  } catch {
+    /* private mode */
+  }
+  return { change, lvl: next.lvl };
+}
+
+export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest' }) {
+  // This player's level here, from their past games (it stays the same
+  // for the whole game).
+  const [skill] = useState(() => snakeSkill(playerId, grade));
+  const L = skill.lvl;
+  const missesRef = useRef(0);
+  const [result, setResult] = useState(null);
   // Hearts instead of a clock (more for the youngest).
   const maxHearts = grade === 'p' || grade === 'k' ? 5 : 3;
   const [hearts, setHearts] = useState(maxHearts);
   const heartsRef = useRef(maxHearts);
   const [lost, setLost] = useState(-1);
   const [over, setOver] = useState(false);
-  const SPEED = SPEEDS[grade] || 104;
+  const SPEED = (SPEEDS[grade] || 104) * (1 + L * 0.05);
   const [round, setRound] = useState(() => kidRound(makeRound(grade), grade));
   const [score, setScore] = useState(0);
   const [banner, setBanner] = useState(null);
@@ -70,7 +141,11 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
   // Out of hearts: a moment to see it, then the results.
   useEffect(() => {
     if (!over) return undefined;
-    const id = setTimeout(() => onEnd(scoreRef.current), 2200);
+    // Remember how it went, to set the next game's level.
+    const r = recordGame(playerId, grade, scoreRef.current, missesRef.current);
+    setResult(r);
+    if (r.change > 0) speak('Great game! Next time will be a little harder!');
+    const id = setTimeout(() => onEnd(scoreRef.current), r.change ? 3000 : 2200);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [over]);
@@ -104,7 +179,7 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
     };
     g.current = state;
     // For automated play tests in development only.
-    if (import.meta.env.DEV) window.__snake = { state, round: () => roundRef.current };
+    if (import.meta.env.DEV) window.__snake = { state, round: () => roundRef.current, score: scoreRef };
 
     function size() {
       const r = wrapRef.current.getBoundingClientRect();
@@ -202,7 +277,7 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
       state.misses = 0;
       state.roundAt = state.t;
       const fruits = shuffle(FRUITS);
-      shuffle([r.answer, ...r.others.slice(0, (CHOICES[grade] || 5) - 1)]).forEach((v, i) => {
+      shuffle([r.answer, ...r.others.slice(0, Math.min(5, (CHOICES[grade] || 5) + Math.floor(L / 3)) - 1)]).forEach((v, i) => {
         const p = freeSpot(BALL_R);
         state.balls.push({ ...p, v, f: fruits[i % fruits.length], c: fruits[i % fruits.length][0], born: state.t, bob: Math.random() * 6 });
       });
@@ -225,7 +300,7 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
       let want = null;
       const r0 = roundRef.current;
       const ans = state.balls.find((b) => b.v === r0.answer);
-      if (ans && Math.hypot(ans.x - h.x, ans.y - h.y) < 80) {
+      if (ans && Math.hypot(ans.x - h.x, ans.y - h.y) < Math.max(30, 80 - L * 5)) {
         // Close to the right fruit: pulled in.
         want = Math.atan2(ans.y - h.y, ans.x - h.x);
       } else if (state.target) {
@@ -307,11 +382,11 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
             setHearts(heartsRef.current);
             state.floats.push({ x: h.x, y: h.y - 30, text: '+❤', life: 1.2 });
           }
-          const lv = LEVELS.find((l) => l.at === s);
+          const lv = FORMS.find((f) => f.at === s && f.name);
           if (lv) {
             playStickerStick();
-            setBanner(lv.name);
-            speak(lv.name.replace(' 👑', ''));
+            setBanner(`${lv.icon} ${lv.name}`);
+            speak(lv.name);
             setTimeout(() => setBanner(null), 1800);
             burst(h.x, h.y, '#ffd23f', 40, 260);
           }
@@ -327,6 +402,7 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
           state.balls.splice(i, 1);
           state.shake = 0.2;
           state.misses += 1;
+          missesRef.current += 1;
           heartsRef.current -= 1;
           setHearts(heartsRef.current);
           setLost(heartsRef.current);
@@ -359,10 +435,12 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
       state.shake = Math.max(0, state.shake - dt);
       state.blink = state.blink > 0 ? state.blink - dt : Math.random() < dt / 3 ? 0.14 : 0;
       state.tongue = state.tongue > 0 ? state.tongue - dt : Math.random() < dt / 2.5 ? 0.35 : 0;
-      // A sparkle trail once the snake is a Sparkle snake.
-      if (levelFor(scoreRef.current) >= 2 && Math.random() < 0.5) {
+      // Trails: sparkles, flames, stardust.
+      const form = formFor(scoreRef.current);
+      const trail = { sparkle: COLORS, fire: ['#fde047', '#fb923c', '#ef4444'], galaxy: ['#fff', '#c4b5fd', '#93c5fd'], unicorn: ['#f9a8d4', '#c4b5fd', '#fde68a', '#a5f3fc'], king: ['#ffd23f'] }[form];
+      if (trail && Math.random() < (form === 'fire' ? 0.9 : 0.5)) {
         const tail = state.body[state.body.length - 1];
-        state.parts.push({ x: tail.x, y: tail.y, vx: (Math.random() - 0.5) * 30, vy: (Math.random() - 0.5) * 30, life: 0.8, c: COLORS[rand(0, COLORS.length - 1)], r: 2.5 });
+        state.parts.push({ x: tail.x, y: tail.y, vx: (Math.random() - 0.5) * 30, vy: (Math.random() - 0.5) * 30 - (form === 'fire' ? 40 : 0), life: 0.8, c: trail[rand(0, trail.length - 1)], r: form === 'fire' ? 4 : 2.5 });
       }
     }
 
@@ -425,7 +503,7 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
         const age = state.t - b.born;
         const s = age < 0.35 ? Math.max(0.01, easeBack(Math.max(0, age) / 0.35)) : 1;
         const y = b.y + Math.sin(state.t * 2 + b.bob) * 3;
-        const glow = (state.misses >= 1 || state.t - state.roundAt > 10) && b === answerBall;
+        const glow = (state.misses >= 1 || (L < 8 && state.t - state.roundAt > 10 + L * 1.5)) && b === answerBall;
         if (glow) {
           const p = (Math.sin(state.t * 6) + 1) / 2;
           ctx.strokeStyle = `rgba(255, 210, 63, ${0.5 + 0.5 * p})`;
@@ -501,41 +579,108 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
       }
 
       // The snake, tail first.
-      const lv = levelFor(scoreRef.current);
+      const form = formFor(scoreRef.current);
       const n = state.body.length;
       const rad = (i) => Math.max(5, 14 - Math.max(0, i - (n - 8)) * 1.1);
-      const col = (i) => (lv >= 3 ? '#ffc72c' : lv >= 1 ? `hsl(${(i * 22 - state.t * 120) % 360}, 85%, 62%)` : '#3fbf6f');
+      const dirAt = (i) => {
+        const a2 = state.body[Math.max(0, i - 1)];
+        const b2 = state.body[Math.min(n - 1, i + 1)];
+        return Math.atan2(a2.y - b2.y, a2.x - b2.x);
+      };
+      // Dragon: spikes along the back and little wings (behind the body).
+      if (form === 'dragon') {
+        ctx.fillStyle = '#facc15';
+        for (let i = 2; i < n - 2; i += 2) {
+          const sp = state.body[i];
+          const d = dirAt(i) - Math.PI / 2;
+          const rr = rad(i);
+          ctx.beginPath();
+          ctx.moveTo(sp.x + Math.cos(d) * rr * 0.6 + Math.cos(d + Math.PI / 2) * 5, sp.y + Math.sin(d) * rr * 0.6 + Math.sin(d + Math.PI / 2) * 5);
+          ctx.lineTo(sp.x + Math.cos(d) * (rr + 9), sp.y + Math.sin(d) * (rr + 9));
+          ctx.lineTo(sp.x + Math.cos(d) * rr * 0.6 - Math.cos(d + Math.PI / 2) * 5, sp.y + Math.sin(d) * rr * 0.6 - Math.sin(d + Math.PI / 2) * 5);
+          ctx.fill();
+        }
+        if (n > 4) {
+          const w = state.body[3];
+          const d = dirAt(3);
+          const flap = Math.sin(state.t * 8) * 0.35;
+          for (const side of [-1, 1]) {
+            ctx.save();
+            ctx.translate(w.x, w.y);
+            ctx.rotate(d + side * (Math.PI / 2 + flap));
+            ctx.fillStyle = 'rgba(134, 239, 172, 0.85)';
+            ctx.strokeStyle = '#14532d';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.quadraticCurveTo(26, -14, 34, 6);
+            ctx.quadraticCurveTo(20, 2, 14, 12);
+            ctx.quadraticCurveTo(8, 4, 0, 0);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+      }
       // An outline first (all of it), then the body on top, so it reads as one snake.
-      ctx.fillStyle = lv >= 3 ? '#c98a00' : lv >= 1 ? 'rgba(60,40,90,0.45)' : '#23874a';
       for (let i = n - 1; i >= 0; i--) {
+        ctx.fillStyle = bodyColor(form, i, state.t)[1];
         ctx.beginPath();
         ctx.arc(state.body[i].x, state.body[i].y, rad(i) + 2.2, 0, Math.PI * 2);
         ctx.fill();
       }
       for (let i = n - 1; i >= 0; i--) {
-        const s = state.body[i];
-        const rr = rad(i);
-        ctx.fillStyle = col(i);
+        const sp = state.body[i];
+        ctx.fillStyle = bodyColor(form, i, state.t)[0];
         ctx.beginPath();
-        ctx.arc(s.x, s.y, rr, 0, Math.PI * 2);
+        ctx.arc(sp.x, sp.y, rad(i), 0, Math.PI * 2);
         ctx.fill();
       }
       for (let i = n - 1; i >= 0; i--) {
-        const s = state.body[i];
+        const sp = state.body[i];
         const rr = rad(i);
-        // Belly shine, and spots every few pieces.
-        ctx.fillStyle = 'rgba(255,255,255,0.28)';
+        // Belly shine, then each form's own markings.
+        ctx.fillStyle = form === 'galaxy' ? 'rgba(167,139,250,0.25)' : 'rgba(255,255,255,0.28)';
         ctx.beginPath();
-        ctx.arc(s.x - rr * 0.25, s.y - rr * 0.3, rr * 0.38, 0, Math.PI * 2);
+        ctx.arc(sp.x - rr * 0.25, sp.y - rr * 0.3, rr * 0.38, 0, Math.PI * 2);
         ctx.fill();
-        if (i % 3 === 1 && lv < 1) {
+        if (form === 'plain' && i % 3 === 1) {
           ctx.fillStyle = '#ffd23f';
           ctx.beginPath();
-          ctx.arc(s.x + rr * 0.15, s.y + rr * 0.2, rr * 0.28, 0, Math.PI * 2);
+          ctx.arc(sp.x + rr * 0.15, sp.y + rr * 0.2, rr * 0.28, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (form === 'galaxy' && i % 2 === 0) {
+          // Twinkling stars in the night-sky body.
+          ctx.fillStyle = `rgba(255,255,255,${0.5 + 0.5 * Math.sin(state.t * 5 + i * 1.7)})`;
+          ctx.beginPath();
+          ctx.arc(sp.x + Math.cos(i * 2.3) * rr * 0.4, sp.y + Math.sin(i * 2.3) * rr * 0.4, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (form === 'robot') {
+          // Joints and bolts.
+          ctx.strokeStyle = '#475569';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(sp.x, sp.y, rr * 0.6, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = i % 4 === 0 ? '#22d3ee' : '#64748b';
+          ctx.beginPath();
+          ctx.arc(sp.x, sp.y, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (form === 'dragon' && i % 2 === 1) {
+          // Scales.
+          ctx.strokeStyle = 'rgba(20,83,45,0.5)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(sp.x, sp.y + rr * 0.2, rr * 0.5, Math.PI * 1.1, Math.PI * 1.9);
+          ctx.stroke();
+        } else if (form === 'fire' && i % 3 === 0) {
+          ctx.fillStyle = 'rgba(253, 224, 71, 0.8)';
+          ctx.beginPath();
+          ctx.arc(sp.x, sp.y, rr * 0.35, 0, Math.PI * 2);
           ctx.fill();
         }
       }
-      drawHead(lv);
+      drawHead(form);
 
       // Sparkles and floating numbers.
       for (const p of state.parts) {
@@ -560,7 +705,7 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
       ctx.restore();
     }
 
-    function drawHead(lv) {
+    function drawHead(form) {
       const h = state.head;
       ctx.save();
       ctx.translate(h.x, h.y);
@@ -581,11 +726,34 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
         ctx.lineTo(16 + L + 5, 4);
         ctx.stroke();
       }
-      ctx.fillStyle = lv >= 3 ? '#c98a00' : lv >= 1 ? 'rgba(60,40,90,0.45)' : '#23874a';
+      const [hc, ho] = bodyColor(form, 0, state.t);
+      // Horns (dragon) and flame hair (fire) behind the head.
+      if (form === 'dragon') {
+        ctx.fillStyle = '#facc15';
+        for (const side of [-1, 1]) {
+          ctx.beginPath();
+          ctx.moveTo(-6, side * 12);
+          ctx.lineTo(-22, side * 22);
+          ctx.lineTo(-2, side * 6);
+          ctx.fill();
+        }
+      }
+      if (form === 'fire') {
+        for (let k = 0; k < 5; k++) {
+          ctx.fillStyle = ['#fde047', '#fb923c', '#ef4444'][k % 3];
+          const fl = 10 + Math.sin(state.t * 14 + k) * 4;
+          ctx.beginPath();
+          ctx.moveTo(-8, -12 + k * 6);
+          ctx.lineTo(-8 - fl, -10 + k * 6);
+          ctx.lineTo(-4, -8 + k * 6);
+          ctx.fill();
+        }
+      }
+      ctx.fillStyle = ho;
       ctx.beginPath();
       ctx.ellipse(0, 0, 20, 18.5, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = lv >= 3 ? '#ffc72c' : lv >= 1 ? `hsl(${(-state.t * 120) % 360}, 85%, 60%)` : '#3fbf6f';
+      ctx.fillStyle = hc;
       ctx.beginPath();
       ctx.ellipse(0, 0, 18, 16.5, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -604,6 +772,14 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
       ctx.arc(4, 11, 3.5, 0, Math.PI * 2);
       ctx.fill();
       for (const side of [-1, 1]) {
+        if (form === 'robot') {
+          // LED eyes.
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(3, side * 7.5 - 5, 9, 10);
+          ctx.fillStyle = state.blink > 0 ? '#0f172a' : '#22d3ee';
+          ctx.fillRect(5, side * 7.5 - 3, 5, 6);
+          continue;
+        }
         if (state.blink > 0) {
           ctx.strokeStyle = '#173a66';
           ctx.lineWidth = 2.2;
@@ -633,7 +809,43 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
         ctx.arc(11, 0, 4, -Math.PI / 2.6, Math.PI / 2.6);
         ctx.stroke();
       }
-      if (lv >= 3) {
+      if (form === 'robot') {
+        // An antenna with a blinking light.
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-4, 0);
+        ctx.lineTo(-18, 0);
+        ctx.stroke();
+        ctx.fillStyle = Math.sin(state.t * 6) > 0 ? '#ef4444' : '#fca5a5';
+        ctx.beginPath();
+        ctx.arc(-20, 0, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (form === 'unicorn') {
+        // A golden horn, pointing forward and up.
+        ctx.save();
+        ctx.rotate(-h.a);
+        ctx.translate(Math.cos(h.a) * 6, Math.sin(h.a) * 6 - 14);
+        ctx.fillStyle = '#fde68a';
+        ctx.strokeStyle = '#d97706';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-5, 0);
+        ctx.lineTo(0, -20);
+        ctx.lineTo(5, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-3.5, -5);
+        ctx.lineTo(3, -7);
+        ctx.moveTo(-2.5, -11);
+        ctx.lineTo(2, -13);
+        ctx.stroke();
+        ctx.restore();
+      }
+      if (form === 'king') {
         // The crown sits on top of the head.
         ctx.rotate(-h.a);
         ctx.translate(0, -20);
@@ -671,6 +883,7 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
             </span>
           ))}
         </span>
+        <span className="snake-lv" title="Your level: it goes up as you get better">Lv {L + 1}</span>
         <span className="mm-right">
           {score} {score === 1 ? 'answer' : 'answers'}
         </span>
@@ -681,15 +894,25 @@ export default function NumberSnake({ grade, onEnd, makeRound }) {
       <div className="snake-field" ref={wrapRef}>
         <canvas ref={canvasRef} className="snake-canvas" aria-label={`Number Snake. ${round.text}`} />
         {banner && !over && <div className="snake-banner">{banner}</div>}
-        {over && <div className="snake-banner snake-over">Out of hearts!</div>}
+        {over && (
+          <div className="snake-banner snake-over">
+            Out of hearts!
+            {result?.change > 0 && <small className="snake-up">Level up! Next time is a little harder.</small>}
+          </div>
+        )}
         {score === 0 && <div className="snake-tip">Touch where the snake should go!</div>}
       </div>
-      <div className="snake-levels" aria-hidden="true">
-        {LEVELS.map((l, i) => (
-          <span key={l.at} className={`snake-level${score >= l.at ? ' snake-level-on' : ''}`}>
-            {['🌈', '✨', '👑'][i]} <small>{score >= l.at ? 'Got it!' : `${l.at - score} more`}</small>
+      <div className="snake-forms" aria-label="Snake forms">
+        {FORMS.filter((f) => f.name).map((f) => (
+          <span key={f.id} className={`snake-form${score >= f.at ? ' snake-form-on' : ''}`} title={f.name}>
+            {f.icon}
           </span>
         ))}
+        {FORMS.find((f) => f.at > score) && (
+          <small className="snake-form-next">
+            {FORMS.find((f) => f.at > score).icon} in {FORMS.find((f) => f.at > score).at - score}
+          </small>
+        )}
       </div>
     </div>
   );
