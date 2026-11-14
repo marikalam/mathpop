@@ -38,7 +38,7 @@ export const GAMES = [
     ja: { title: 'ピップの ケーキやさん', sub: 'カップケーキを はこに つめよう', how: 'はこに つめて、ちゅうもんを とどけよう！' },
   },
   { id: 'snake', title: 'Number Snake', sub: 'Eat the right answer', how: 'Tap the fruit with the answer, and your snake goes to eat it! Watch your hearts.', seconds: 0, color: ['#2fae6b', '#1f8a51'] },
-  { id: 'goFish', title: 'Go Fish!', sub: 'Find the matching cards', how: 'Find the matches! Ask Pip for a card, or go fish!', seconds: 0, color: ['#06b6d4', '#0e7490'] },
+  { id: 'goFish', title: 'Go Fish!', sub: 'Flip two, find a match', how: 'Turn over two cards at a time, and find all the matching pairs!', seconds: 0, color: ['#06b6d4', '#0e7490'] },
   { id: 'toyShop', title: "Pip's Toy Shop", sub: 'Pay with coins', how: 'Pay for each toy with the right coins!', seconds: 0, color: ['#0ea5e9', '#0284c7'] },
   { id: 'clock', title: 'Set the Clock', sub: 'Turn the hands to the time', how: 'Set the clock to the right time!', seconds: 0, color: ['#6366f1', '#4f46e5'] },
   { id: 'shapes', title: 'Speed Shapes', sub: 'Find the shape, fast', how: 'Listen to Pip, and tap the right shape, fast!', seconds: 45, color: ['#e0577f', '#c43c66'] },
