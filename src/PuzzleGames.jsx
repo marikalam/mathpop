@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Thing } from './Drawings.jsx';
 import { rand, shuffle } from './gameKit.jsx';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
+import { Bar, TenFrames } from './ThinkCard.jsx';
+import { sgSettings } from './sgMode.js';
 import { PuzzleTop, VALUE_COLORS, labelSize, sayValue, useLevel, valueKeys, waysOf } from './puzzleKit.jsx';
 
 // Puzzle games, each with levels inside (saved for each player and grade):
@@ -334,6 +336,29 @@ const pairs = (grade, x, y) => {
   const { T, unit } = tenOf(grade);
   return x === y || (T && x + y === Math.round(T / (unit || 1)));
 };
+// Singapore Math Mode: the picked number in a ten frame (or a bar for
+// 100 and 1), with what's missing to make the target.
+function TenPeek({ grade, v }) {
+  const s = sgSettings();
+  const { T } = tenOf(grade);
+  const x = shown(grade, v);
+  const need = Number((T - x).toFixed(1));
+  const frames = T <= 20 && s.tenFrames;
+  if (!frames && !s.bars) return null;
+  return (
+    <div className="tt-peek">
+      <span className="tk-tag">You picked {x}. What makes {T}?</span>
+      {frames ? <TenFrames a={x} frames={T / 10 || 1} /> : <Bar parts={[x, '?']} total={T} />}
+      <span className="tt-peek-line">
+        <span>
+          {x} + <b>?</b> = {T}
+        </span>
+        {frames && <small>Count the empty spots: {need}</small>}
+      </span>
+    </div>
+  );
+}
+
 function findPair(b, grade) {
   for (let i = 0; i < b.cells.length; i++)
     for (let j = i + 1; j < b.cells.length; j++) {
@@ -376,6 +401,11 @@ export function TakeTen({ grade, onEnd, playerId }) {
     if (!pairs(grade, x, y)) {
       playIncorrectBuzz();
       setBad([sel, i]);
+      // A hint after a miss: a partner that works glows.
+      if (sgSettings().hintAfterMiss) {
+        const j = b.cells.findIndex((c, k) => k !== sel && !c.gone && pairs(grade, x, c.v) && linked(b.cells, b.cols, sel, k));
+        if (j !== -1) setTimeout(() => setHint([sel, j]), 500);
+      }
       const line = T ? `${shown(grade, x)} and ${shown(grade, y)} make ${shown(grade, x + y)}, not ${T}.` : `${x} and ${y} aren't the same.`;
       setNote(line);
       speak(line);
@@ -432,6 +462,7 @@ export function TakeTen({ grade, onEnd, playerId }) {
           </button>
         ))}
       </div>
+      {sel !== null && T > 0 && <TenPeek grade={grade} v={b.cells[sel].v} />}
       {note && <p className="bakery-note">{note}</p>}
       <div className="bakery-actions">
         <button type="button" className="bakery-btn bakery-add" disabled={!b.adds} onClick={addMore}>

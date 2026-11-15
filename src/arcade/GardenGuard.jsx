@@ -6,6 +6,7 @@ import { useArcade, fact, heartsFor, near, shuffle, speak, text, roundRect, play
 // eats one (a heart). More snails come, a bit faster, as you go.
 export default function GardenGuard({ grade, onEnd }) {
   const { view } = useArcade({
+    think: 'slow',
     hearts: heartsFor(grade),
     onEnd,
     setup(g) {

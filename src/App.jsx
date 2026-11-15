@@ -64,6 +64,7 @@ import TrialRecap from './TrialRecap.jsx';
 import MoneyCard from './MoneyCard.jsx';
 import WelcomeCard from './WelcomeCard.jsx';
 import { CardArt, cardColors, hasCardArt } from './GameCards.jsx';
+import SgModeCard from './SgModeCard.jsx';
 import SignupCard from './SignupCard.jsx';
 import { canRemind, hourLabel, reminderState, turnOffReminder, turnOnReminder } from './reminder.js';
 import PlusScreen from './PlusScreen.jsx';
@@ -2319,6 +2320,7 @@ export default function App() {
             {/* Only for the accounts that can see MathPop's stats (the owner). */}
             {statsViewer && <StockChart onOpenStats={() => setView('stats')} />}
             {statsViewer && <MoneyCard app="mathpop" />}
+            <SgModeCard />
             <div className="settings-list">
               {draftProfiles.map((p) => (
                 <PlayerSettingsCard

@@ -7,6 +7,7 @@ import { useArcade, heartsFor, rand, speak, text, drawPip, playStickerPick, back
 // every number labeled.
 export default function PipLaunch({ grade, onEnd }) {
   const { view } = useArcade({
+    think: false,
     hearts: heartsFor(grade),
     onEnd,
     setup(g) {

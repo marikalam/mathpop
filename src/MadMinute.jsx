@@ -1,3 +1,4 @@
+import { clockSeconds } from './sgMode.js';
 import { useEffect, useRef, useState } from 'react';
 import Pip from './Pip.jsx';
 import { Confetti, CountUp } from './Celebrate.jsx';
@@ -89,7 +90,9 @@ export default function MadMinute({ playerId, grade, onDone, stickerSlot }) {
   // pick (which kind, when there's a choice) | ready | play | done
   const [phase, setPhase] = useState(modes.length > 1 ? 'pick' : 'ready');
   const [count, setCount] = useState(3);
-  const [left, setLeft] = useState(SECONDS);
+  // Think time: no clock with "Wait for me" (I'm done ends it), longer when slow.
+  const [clock] = useState(() => clockSeconds(SECONDS, grade));
+  const [left, setLeft] = useState(clock || SECONDS);
   // Leaving Mad Minute stops Pip mid-sentence.
   useEffect(() => () => stopSpeaking(), []);
   const [fact, setFact] = useState(() => madMinuteFact(grade, modes[0]));
@@ -107,7 +110,7 @@ export default function MadMinute({ playerId, grade, onDone, stickerSlot }) {
     best.current = madMinuteBest(playerId, grade, m);
     setFact(madMinuteFact(grade, m));
     setCount(3);
-    setLeft(SECONDS);
+    setLeft(clock || SECONDS);
     setTyped('');
     setFlash(null);
     setRight(0);
@@ -143,8 +146,8 @@ export default function MadMinute({ playerId, grade, onDone, stickerSlot }) {
 
   // The minute.
   useEffect(() => {
-    if (phase !== 'play') return undefined;
-    const end = Date.now() + SECONDS * 1000;
+    if (phase !== 'play' || !clock) return undefined;
+    const end = Date.now() + clock * 1000;
     const id = setInterval(() => {
       const s = Math.max(0, Math.ceil((end - Date.now()) / 1000));
       setLeft(s);
@@ -163,7 +166,9 @@ export default function MadMinute({ playerId, grade, onDone, stickerSlot }) {
     speak(
       isBest && best.current
         ? `Time's up! ${right} right. That's a new best!`
-        : `Time's up! You got ${right} right in one minute!`,
+        : clock
+          ? `Time's up! You got ${right} right!`
+          : `Great work! You got ${right} right!`,
     );
     onDone?.(right, Math.max(tries, right));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -264,16 +269,23 @@ export default function MadMinute({ playerId, grade, onDone, stickerSlot }) {
     );
   }
 
-  const pct = (left / SECONDS) * 100;
+  const pct = Math.min(100, (left / (clock || SECONDS)) * 100);
   return (
     <div className="mm mm-play">
       <div className="mm-top">
-        <span className={`mm-time${left <= 10 ? ' mm-time-low' : ''}`}>{left}s</span>
+        {clock ? <span className={`mm-time${left <= 10 ? ' mm-time-low' : ''}`}>{left}s</span> : <span className="mm-time tk-noclock">No clock · take your time</span>}
         <span className="mm-right">{right} right</span>
+        {!clock && (
+          <button type="button" className="tk-done" onClick={() => setLeft(0)}>
+            I'm done
+          </button>
+        )}
       </div>
-      <div className="mm-bar">
-        <i style={{ width: `${pct}%` }} />
-      </div>
+      {clock > 0 && (
+        <div className="mm-bar">
+          <i style={{ width: `${pct}%` }} />
+        </div>
+      )}
       <div className={`mm-fact${flash ? ` mm-fact-${flash}` : ''}`}>
         <span>{fact.text} =</span>
         <span className="mm-typed">{flash === 'wrong' ? fact.answer : typed || '?'}</span>

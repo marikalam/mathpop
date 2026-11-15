@@ -1,3 +1,4 @@
+import { sgSettings } from './sgMode.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Thing } from './Drawings.jsx';
 import Icon from './Icon.jsx';
@@ -1340,6 +1341,37 @@ function Surprise({ s, onNext, last }) {
 // miss), so every lock opens in the end. Each opened lock has a surprise
 // inside (a friend doing a dance, with a number fact); after the last one
 // the chest flies open and a treasure pops out.
+// Singapore Math Mode: the dials' number as place value disks (hundreds,
+// tens, ones), changing as the dials turn. Small, and shown on a tap so
+// the lock still fits one screen.
+function LockDisks({ dials }) {
+  const [on, setOn] = useState(false);
+  const names = dials.length === 3 ? ['hundreds', 'tens', 'ones'] : ['tens', 'ones'];
+  const val = names.length === 3 ? [100, 10, 1] : [10, 1];
+  if (!on) {
+    return (
+      <button type="button" className="lock-disks-btn" onClick={() => setOn(true)}>
+        Show it with place value disks
+      </button>
+    );
+  }
+  return (
+    <button type="button" className="lock-disks" onClick={() => setOn(false)} aria-label={`${dials.map((d, i) => `${d} ${names[i]}`).join(', ')}. Tap to hide.`}>
+      {dials.map((d, i) => (
+        <span key={i} className={`lock-disk-col lock-disk-${names[i]}`}>
+          <small>{names[i]}</small>
+          <span className="lock-disk-row">
+            {Array.from({ length: d }, (_, k) => (
+              <i key={k}>{val[i]}</i>
+            ))}
+            {!d && <em>0</em>}
+          </span>
+        </span>
+      ))}
+    </button>
+  );
+}
+
 export function LogicLock({ grade, onEnd, playerId }) {
   const N = 5;
   const [n, setN] = useState(0);
@@ -1482,6 +1514,7 @@ export function LogicLock({ grade, onEnd, playerId }) {
         ))}
       </ol>
       <Padlock dials={dials} known={known} rolls={rolls} max={r.max} open={open} rattle={rattle} lockId={r.id} onTurn={turn} />
+      {dials.length >= 2 && sgSettings().disks && <LockDisks dials={dials} />}
       {tip && (
         <button type="button" className="lock-tip" onClick={() => speak(tip)}>
           {tip}

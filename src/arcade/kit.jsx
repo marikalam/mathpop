@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { madMinuteFact } from '../MadMinute.jsx';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, speak } from '../sound.js';
 import { rand, shuffle } from '../gameKit.jsx';
+import ThinkCard, { Bond } from '../ThinkCard.jsx';
+import { sgSettings, speedFactor, thinkMode } from '../sgMode.js';
 
 // The arcade games' shared kit: a canvas that fills its box, a loop
 // (step + draw), finger/mouse input in canvas coordinates, hearts (a game
@@ -13,7 +15,15 @@ export const COLORS = ['#ff6b9a', '#3b8cf0', '#ff9f43', '#9b6bf2', '#14b8a6', '#
 export { rand, shuffle, playCorrectChime, playIncorrectBuzz, playStickerPick, speak };
 export const pick = (list) => list[Math.floor(Math.random() * list.length)];
 
-export function useArcade({ hearts: maxHearts = 3, onEnd, setup }) {
+// Think time (Singapore Math Mode, sgMode.js): with "Wait for me", a new
+// question (a prompt that is said) stops the game on the think card until
+// the kid taps I'm ready, and a miss brings it back with a hint. `think`:
+// true (default), 'slow' (never stops; runs at half speed instead) or
+// false (no think card: games with no time pressure).
+export function useArcade({ hearts: maxHearts = 3, onEnd, setup, think: thinkKind = true }) {
+  const [think, setThink] = useState(null);
+  const gRef = useRef(null);
+  const waits = () => thinkKind === true && thinkMode() === 'wait';
   const wrapRef = useRef(null);
   const canvasRef = useRef(null);
   const [hearts, setHearts] = useState(maxHearts);
@@ -50,6 +60,15 @@ export function useArcade({ hearts: maxHearts = 3, onEnd, setup }) {
       prompt(text, say) {
         setPromptState(text);
         if (say !== false) speak(say || text);
+        if (say !== false && text && waits() && !g.over) {
+          // While a hint for a missed question is up, the new question waits its turn.
+          if (g.paused && g.hinting) g.queued = text;
+          else {
+            g.paused = true;
+            g.thinkText = text;
+            setThink({ text, start: 0, n: Math.random() });
+          }
+        }
       },
       banner(text, ms = 1600) {
         setBanner(text);
@@ -85,6 +104,16 @@ export function useArcade({ hearts: maxHearts = 3, onEnd, setup }) {
           return true;
         }
         if (say) speak(say);
+        if (waits() && sgSettings().hintAfterMiss && g.thinkText) {
+          // Back to the think card, with the first hint showing.
+          g.paused = true;
+          g.hinting = true;
+          const missed = g.thinkText;
+          setTimeout(() => {
+            if (g.over) return;
+            setThink({ text: missed, start: 1, n: Math.random() });
+          }, 600);
+        }
         return false;
       },
       // End the game (for games that end on moves, not hearts).
@@ -112,6 +141,9 @@ export function useArcade({ hearts: maxHearts = 3, onEnd, setup }) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       game.resize?.();
     }
+    gRef.current = g;
+    // Slow: action at about half speed ('slow' games in Wait for me too).
+    const speed = thinkKind === 'slow' && thinkMode() === 'wait' ? 0.5 : speedFactor();
     const game = setup(g);
     size();
     game.start?.();
@@ -122,7 +154,7 @@ export function useArcade({ hearts: maxHearts = 3, onEnd, setup }) {
       const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));
       last = now;
       g.t += dt;
-      if (!g.over) game.step(dt);
+      if (!g.over && !g.paused) game.step(dt * speed);
       g.parts = g.parts.filter((p) => {
         p.x += p.vx * dt;
         p.y += p.vy * dt;
@@ -162,7 +194,7 @@ export function useArcade({ hearts: maxHearts = 3, onEnd, setup }) {
       return { x: e.clientX - r.left, y: e.clientY - r.top };
     };
     const down = (e) => {
-      if (g.over) return;
+      if (g.over || g.paused) return;
       canvas.setPointerCapture?.(e.pointerId);
       game.down?.(at(e));
     };
@@ -198,12 +230,44 @@ export function useArcade({ hearts: maxHearts = 3, onEnd, setup }) {
       </div>
       {prompt && (
         <div className="game-question arc-prompt" key={prompt}>
-          {prompt}
+          {/^\d+ = \d+ \+ \?$/.test(prompt) ? (
+            <span className="arc-bond">
+              <Bond whole={prompt.split(' = ')[0]} parts={[prompt.split(' = ')[1].split(' + ')[0], '?']} />
+              <span>
+                {prompt.split(' = ')[1].split(' + ')[0]} and what make {prompt.split(' = ')[0]}?
+              </span>
+            </span>
+          ) : (
+            prompt
+          )}
         </div>
       )}
       <div className="arc-field" ref={wrapRef}>
         <canvas ref={canvasRef} className="arc-canvas" />
-        {banner && !over && <div className="snake-banner">{banner}</div>}
+        {banner && !over && !think && <div className="snake-banner">{banner}</div>}
+        {think && !over && (
+          <ThinkCard
+            key={think.n}
+            text={think.text}
+            start={think.start}
+            onReady={() => {
+              const gg = gRef.current;
+              if (gg && gg.queued) {
+                const next = gg.queued;
+                gg.queued = null;
+                gg.hinting = false;
+                gg.thinkText = next;
+                setThink({ text: next, start: 0, n: Math.random() });
+                return;
+              }
+              setThink(null);
+              if (gg) {
+                gg.paused = false;
+                gg.hinting = false;
+              }
+            }}
+          />
+        )}
         {over && <div className={`snake-banner${maxHearts ? ' snake-over' : ''}`}>{maxHearts ? 'Out of hearts!' : 'Great game!'}</div>}
       </div>
     </>
