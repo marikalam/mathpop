@@ -418,23 +418,25 @@ const ART = {
   // The new puzzle games.
   valueSort: (
     <g>
+      <rect x="50" y="4" width="60" height="38" rx="8" fill="#fff" stroke="#173a66" strokeWidth="3" />
+      <T x="80" y="23" s={18} c="#173a66">
+        2+3
+      </T>
       {[
-        [26, ['5', '2+3', '●●●●●']],
-        [70, ['8', '4+4', '5']],
-        [114, ['8', '10−2']],
-      ].map(([x, cards]) => (
-        <g key={x}>
-          <rect x={x - 4} y="10" width="40" height="100" rx="14" fill="rgba(255,255,255,0.18)" stroke="#fff" strokeWidth="3" />
-          {cards.map((c, k) => (
-            <g key={k}>
-              <rect x={x} y={86 - k * 24} width="32" height="21" rx="5" fill={['#ffd23f', '#ff6b9a', '#3b8cf0'][(k + x) % 3]} />
-              <T x={x + 16} y={97 - k * 24} s={c.length > 3 ? 9 : 12}>
-                {c}
-              </T>
-            </g>
-          ))}
+        [10, '#ff6b9a', '5'],
+        [60, '#3b8cf0', '8'],
+        [110, '#2fae6b', '10'],
+      ].map(([x, c, v]) => (
+        <g key={v}>
+          <rect x={x + 6} y="50" width="28" height="7" rx="3" fill={c} />
+          <rect x={x} y="56" width="40" height="52" rx="10" fill="rgba(255,255,255,0.22)" stroke={c} strokeWidth="3" />
+          <rect x={x + 6} y="62" width="28" height="20" rx="6" fill={c} />
+          <T x={x + 20} y={72} s={14}>
+            {v}
+          </T>
         </g>
       ))}
+      <path d="M80 44 Q60 50 34 60" stroke="#fff" strokeWidth="2.5" strokeDasharray="4 4" fill="none" />
     </g>
   ),
   doubleUp: (

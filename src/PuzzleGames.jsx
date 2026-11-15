@@ -4,7 +4,7 @@ import { rand, shuffle } from './gameKit.jsx';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
 import { Bar, TenFrames } from './ThinkCard.jsx';
 import { sgSettings } from './sgMode.js';
-import { PuzzleTop, VALUE_COLORS, labelSize, sayValue, useLevel, valueKeys, waysOf } from './puzzleKit.jsx';
+import { PuzzleTop, VALUE_COLORS, dots, labelSize, sayValue, useLevel, valueKeys, waysOf } from './puzzleKit.jsx';
 
 // Puzzle games, each with levels inside (saved for each player and grade):
 //   ValueSort   sort number cards into tubes by what they're worth (5, 2 + 3, ●●●●●)
@@ -38,103 +38,120 @@ function useBoards(boards, onEnd, levelUp) {
 const Banner = ({ text }) => (text ? <div className="pz-banner">{text}</div> : null);
 
 // ------------------------------------------------------------ Value Sort
+// Jars with a number on each; one card at a time ("2 + 3", "●●●●●",
+// "10 − 2"): tap the jar it's worth. A miss says what the card makes,
+// then the right jar glows. Fill every jar to finish the level.
 function sortBoard(grade, level) {
   const little = grade === 'p';
-  const n = little ? Math.min(4, 2 + Math.floor((level - 1) / 2)) : Math.min(6, 3 + Math.floor((level - 1) / 2));
-  const cap = little ? 3 : 4;
-  const keys = valueKeys(grade, n);
+  const n = little ? Math.min(3, 2 + Math.floor((level - 1) / 2)) : Math.min(5, 3 + Math.floor((level - 1) / 2));
+  const per = little ? 2 : 3;
+  const keys = valueKeys(grade, n).sort((a, b) => (grade === '4' ? 0 : Number(a) - Number(b)));
   let id = 0;
-  const items = keys.flatMap((key, ki) => waysOf(grade, key, cap).map((label) => ({ id: ++id, key, label, c: ki })));
-  for (;;) {
-    const s = shuffle(items);
-    const tubes = keys.map((_, i) => s.slice(i * cap, i * cap + cap));
-    tubes.push([], []);
-    if (!tubes.some((t) => t.length === cap && t.every((x) => x.key === t[0].key))) return { tubes, cap, keys };
-  }
+  const cards = keys.flatMap((key, ki) => {
+    // The cards say the value a different way from the jar (toddlers: dots).
+    let ways = waysOf(grade, key, per + 2).filter((w) => w !== key);
+    if (little) ways = [dots(Number(key))];
+    return Array.from({ length: per }, (_, k) => ({ id: ++id, key, label: ways[k % ways.length], c: ki }));
+  });
+  return { keys, per, queue: shuffle(cards) };
 }
-const full = (t, cap) => t.length === cap && t.every((x) => x.key === t[0].key);
 
 export function ValueSort({ grade, onEnd, playerId }) {
   const [level, levelUp] = useLevel(playerId, grade, 'valueSort');
   const [b, setB] = useState(() => sortBoard(grade, level));
-  const [sel, setSel] = useState(null);
-  const [hist, setHist] = useState([]);
+  const [jars, setJars] = useState({});
   const [score, setScore] = useState(0);
+  const [misses, setMisses] = useState(0);
   const [shake, setShake] = useState(null);
+  const [glow, setGlow] = useState(null);
+  const [pop, setPop] = useState(null);
   const [note, setNote] = useState(null);
   const { banner, boardDone } = useBoards(3, onEnd, levelUp);
-  const colored = grade === 'p';
+  const card = b.queue[0];
   useEffect(() => {
-    speak(colored ? 'Put the same numbers together in one tube!' : 'Sort the cards! Each tube gets cards worth the same number.');
-  }, [b]); // eslint-disable-line react-hooks/exhaustive-deps
-  function tapTube(i) {
-    if (banner) return;
-    const tubes = b.tubes;
-    if (sel === null) {
-      if (!tubes[i].length || full(tubes[i], b.cap)) return;
-      playStickerPick();
-      setSel(i);
-      speak(sayValue(tubes[i][tubes[i].length - 1].label));
+    if (card) speak(`${sayValue(card.label)}. Which jar is it worth?`);
+  }, [card && card.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    speak(grade === 'p' ? 'Count the dots, then tap the jar with that number!' : 'Each card goes in the jar with the same value. Tap the right jar!');
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  function drop(key, ki) {
+    if (!card || banner) return;
+    if (key !== card.key) {
+      playIncorrectBuzz();
+      setShake(ki);
+      setTimeout(() => setShake(null), 450);
+      const m = misses + 1;
+      setMisses(m);
+      const line = grade === 'p' ? `Count the dots: that's ${card.key}! Find the ${card.key} jar.` : `${card.label} isn't ${key}. ${m >= 1 && sgSettings().hintAfterMiss ? `It makes ${card.key}. Find the ${card.key} jar!` : 'Try again!'}`;
+      setNote(line);
+      speak(line.replace(card.label, sayValue(card.label)));
+      if (m >= 1) setGlow(card.key);
       return;
     }
-    if (sel === i) return setSel(null);
-    const card = tubes[sel][tubes[sel].length - 1];
-    const to = tubes[i];
-    const top = to[to.length - 1];
-    if (to.length >= b.cap || (top && top.key !== card.key)) {
-      playIncorrectBuzz();
-      setShake(i);
-      const line = to.length >= b.cap ? 'That tube is full!' : `${card.label} isn't worth the same as ${top.label}. Find a match, or an empty tube.`;
-      setNote(line);
-      speak(line.replace(card.label, sayValue(card.label)).replace(top?.label || '¤', sayValue(top?.label || '')));
-      setTimeout(() => setShake(null), 400);
-      setSel(null);
-      return undefined;
-    }
-    const next = tubes.map((t) => [...t]);
-    next[i].push(next[sel].pop());
-    setHist((h) => [...h, tubes]);
-    setSel(null);
+    playCorrectChime();
+    speak(`${sayValue(card.label)} is ${sayValue(card.key)}!`);
     setNote(null);
-    if (full(next[i], b.cap)) {
-      playCorrectChime();
-      speak(colored ? 'A full tube!' : `All worth ${sayValue(next[i][0].key)}!`);
-    } else playStickerPick();
-    setB({ ...b, tubes: next });
-    if (next.every((t) => !t.length || full(t, b.cap))) {
-      const total = score + 3;
-      setScore(total);
+    setGlow(null);
+    setPop(key);
+    setTimeout(() => setPop(null), 400);
+    const nj = { ...jars, [key]: [...(jars[key] || []), card] };
+    setJars(nj);
+    const total = score + (misses ? 1 : 2);
+    setScore(total);
+    setMisses(0);
+    const rest = b.queue.slice(1);
+    setB({ ...b, queue: rest });
+    if (!rest.length) {
       boardDone(total, (lv) => {
         setB(sortBoard(grade, lv));
-        setHist([]);
+        setJars({});
       });
     }
-    return undefined;
   }
   return (
     <div className="game game-pz">
       <PuzzleTop level={level} score={score} label="stars" />
-      <p className="game-ask">{colored ? 'Same numbers in one tube!' : 'Same value in one tube!'}</p>
-      <div className="vs-tubes">
-        {b.tubes.map((t, i) => (
-          <button key={i} type="button" className={`vs-tube${sel === i ? ' vs-sel' : ''}${shake === i ? ' make10-bad' : ''}${full(t, b.cap) ? ' vs-full' : ''}`} style={{ '--cap': b.cap, '--vs': full(t, b.cap) ? VALUE_COLORS[t[0].c % VALUE_COLORS.length] : undefined }} onClick={() => tapTube(i)} aria-label={`Tube ${i + 1}`}>
-            {t.map((x, k) => (
-              <span key={x.id} className={`vs-card${sel === i && k === t.length - 1 ? ' vs-lift' : ''}`} style={{ '--vc': colored || full(t, b.cap) ? VALUE_COLORS[x.c % VALUE_COLORS.length] : '#fff', '--fs': labelSize(x.label), color: colored || full(t, b.cap) ? '#fff' : '#173a66' }}>
-                {x.label}
+      <div className="vs-deal">
+        {card ? (
+          <>
+            <p className="vs-ask">Which jar is this card worth?</p>
+            <button type="button" key={card.id} className="vs-now" onClick={() => speak(sayValue(card.label))} style={{ '--fs': labelSize(card.label) }}>
+              {card.label}
+            </button>
+            <span className="vs-left">
+              {b.queue.length} {b.queue.length === 1 ? 'card' : 'cards'} left
+            </span>
+          </>
+        ) : (
+          <p className="vs-ask">All sorted!</p>
+        )}
+      </div>
+      <div className="vs-jars" style={{ '--n': Math.min(b.keys.length, 3) }}>
+        {b.keys.map((key, ki) => {
+          const inJar = jars[key] || [];
+          const color = VALUE_COLORS[ki % VALUE_COLORS.length];
+          return (
+            <button key={key} type="button" className={`vs-jar${shake === ki ? ' make10-bad' : ''}${glow === key ? ' vs-glow' : ''}${pop === key ? ' vs-pop' : ''}${inJar.length >= b.per ? ' vs-jar-full' : ''}`} style={{ '--jc': color }} onClick={() => drop(key, ki)} aria-label={`Jar ${key}`}>
+              <span className="vs-lid" />
+              <span className="vs-label">
+                {key}
+                {grade === 'p' && <small>{dots(Number(key))}</small>}
               </span>
-            ))}
-          </button>
-        ))}
+              <span className="vs-in">
+                {inJar.map((x) => (
+                  <i key={x.id} style={{ '--fs': labelSize(x.label) }}>
+                    {x.label}
+                  </i>
+                ))}
+              </span>
+              <span className="vs-count">
+                {inJar.length} / {b.per}
+              </span>
+            </button>
+          );
+        })}
       </div>
       {note && <p className="bakery-note">{note}</p>}
-      <div className="bakery-actions">
-        <button type="button" className="bakery-btn" disabled={!hist.length} onClick={() => { setB({ ...b, tubes: hist[hist.length - 1] }); setHist(hist.slice(0, -1)); setSel(null); }}>
-          ↶ Undo
-        </button>
-        <button type="button" className="bakery-btn" onClick={() => { setB({ ...b, tubes: hist[0] || b.tubes }); setHist([]); setSel(null); }}>
-          ↺ Start over
-        </button>
-      </div>
       <Banner text={banner} />
     </div>
   );

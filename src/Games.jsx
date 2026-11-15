@@ -55,7 +55,7 @@ export const GAMES = [
   // Arcade games (src/arcade): fun to play, with the math built in.
   // Puzzle and play games (PuzzleGames.jsx, PlayGames.jsx, arcade/HoopHop.jsx),
   // each with levels inside that start at the player's grade.
-  { id: 'valueSort', title: 'Value Sort', sub: 'Sort cards worth the same', how: 'Sort the cards: each tube gets cards worth the same!', seconds: 0, color: ['#5b3f73', '#4a3360'] },
+  { id: 'valueSort', title: 'Value Sort', sub: 'Put each card in its jar', how: 'Look at the card, and tap the jar with the same value!', seconds: 0, color: ['#5b3f73', '#4a3360'] },
   { id: 'doubleUp', title: 'Double Up', sub: 'Slide, and two make double', how: 'Swipe to slide the tiles. Two the same join into their double!', seconds: 0, color: ['#7d4f63', '#663f51'] },
   { id: 'takeTen', title: 'Take Ten', sub: 'Clear pairs that make 10', how: 'Tap two that make ten, or two the same, with nothing in between!', seconds: 0, color: ['#0ea5e9', '#0284c7'] },
   { id: 'crossSums', title: 'Cross Sums', sub: 'Cross out to make the totals', how: 'Cross out numbers so every row and column makes its total!', seconds: 0, color: ['#38bdf8', '#0ea5e9'] },
