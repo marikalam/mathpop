@@ -1,3 +1,5 @@
+import ThinkCard from './ThinkCard.jsx';
+import { sgSettings, speedFactor, thinkMode } from './sgMode.js';
 import { useEffect, useRef, useState } from 'react';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
 import { rand, shuffle } from './gameKit.jsx';
@@ -138,6 +140,8 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
   const roundRef = useRef(round);
   roundRef.current = round;
   const scoreRef = useRef(0);
+  const [think, setThink] = useState(null);
+  const pausedRef = useRef(false);
 
   // Pre-K's "Pop 4!" becomes "Eat 4!".
   function kidRound(r, gr) {
@@ -146,7 +150,12 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
 
   useEffect(() => {
     if (round.say) speak(round.say);
-  }, [round]);
+    // Think time (Wait for me): the snake waits on the think card.
+    if (thinkMode(grade) === 'wait') {
+      pausedRef.current = true;
+      setThink({ text: round.text, start: 0, n: Math.random() });
+    }
+  }, [round]); // eslint-disable-line react-hooks/exhaustive-deps
   // Out of hearts: a moment to see it, then the results.
   useEffect(() => {
     if (!over) return undefined;
@@ -224,7 +233,7 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
     let raf = requestAnimationFrame(function frame(now) {
       const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));
       last = now;
-      if (!state.over) step(dt);
+      if (!state.over && !pausedRef.current) step(dt * speedFactor(grade));
       draw();
       raf = requestAnimationFrame(frame);
     });
@@ -235,6 +244,7 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
       return { x: e.clientX - r.left, y: e.clientY - r.top };
     };
     const down = (e) => {
+      if (pausedRef.current) return;
       canvas.setPointerCapture?.(e.pointerId);
       state.target = toLocal(e);
       state.dragging = true;
@@ -421,6 +431,11 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
             setOver(true);
             speak(`Oh no, no more hearts! You got ${scoreRef.current} ${scoreRef.current === 1 ? 'answer' : 'answers'}!`);
             break;
+          }
+          if (thinkMode(grade) === 'wait' && sgSettings().hintAfterMiss) {
+            pausedRef.current = true;
+            const missed = roundRef.current.text;
+            setTimeout(() => setThink({ text: missed, start: 1, n: Math.random() }), 500);
           }
           if (state.misses === 1) speak(`Oops, that's ${b.v}! You lost a heart. Look for the glowing one!`);
           else if (state.misses === 2) speak('Follow the arrow!');
@@ -902,7 +917,19 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
       </div>
       <div className="snake-field" ref={wrapRef}>
         <canvas ref={canvasRef} className="snake-canvas" aria-label={`Number Snake. ${round.text}`} />
-        {banner && !over && <div className="snake-banner">{banner}</div>}
+        {banner && !over && !think && <div className="snake-banner">{banner}</div>}
+        {think && !over && (
+          <ThinkCard
+            key={think.n}
+            text={think.text}
+            title="The snake is waiting for you"
+            start={think.start}
+            onReady={() => {
+              setThink(null);
+              pausedRef.current = false;
+            }}
+          />
+        )}
         {over && (
           <div className="snake-banner snake-over">
             Out of hearts!

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { FINISH_EVENT, clockSeconds, finishRound, thinkMode } from './sgMode.js';
 
 // Shared pieces for the games (Games.jsx, GamesSG.jsx).
 export const rand = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
@@ -12,23 +13,46 @@ export const shuffle = (list) => {
   return a;
 };
 
-// The timer for the timed games: seconds left, and done at 0.
+// The timer for the timed games: seconds left, and done at 0. Think time
+// (sgMode.js): "Wait for me" has no clock (it ends with I'm done), "Slow"
+// has a longer one.
 export function useCountdown(seconds, running) {
-  const [left, setLeft] = useState(seconds);
+  const [eff] = useState(() => clockSeconds(seconds));
+  const [left, setLeft] = useState(eff || seconds);
   useEffect(() => {
-    if (!running || !seconds) return undefined;
-    const end = Date.now() + seconds * 1000;
+    const done = () => setLeft(0);
+    window.addEventListener(FINISH_EVENT, done);
+    return () => window.removeEventListener(FINISH_EVENT, done);
+  }, []);
+  useEffect(() => {
+    if (!running || !eff) return undefined;
+    const end = Date.now() + eff * 1000;
     const id = setInterval(() => {
       const s = Math.max(0, Math.ceil((end - Date.now()) / 1000));
       setLeft(s);
       if (s === 0) clearInterval(id);
     }, 200);
     return () => clearInterval(id);
-  }, [running, seconds]);
+  }, [running, eff]);
   return left;
 }
 
 export function TimerBar({ left, seconds, score, label }) {
+  const [noClock] = useState(() => thinkMode() === 'wait');
+  const [full] = useState(() => clockSeconds(seconds) || seconds);
+  if (noClock) {
+    return (
+      <div className="mm-top">
+        <span className="mm-time tk-noclock">No clock · take your time</span>
+        <span className="mm-right">
+          {score} {label}
+        </span>
+        <button type="button" className="tk-done" onClick={finishRound}>
+          I'm done
+        </button>
+      </div>
+    );
+  }
   return (
     <>
       <div className="mm-top">
@@ -38,7 +62,7 @@ export function TimerBar({ left, seconds, score, label }) {
         </span>
       </div>
       <div className="mm-bar">
-        <i style={{ width: `${(left / seconds) * 100}%` }} />
+        <i style={{ width: `${Math.min(100, (left / full) * 100)}%` }} />
       </div>
     </>
   );

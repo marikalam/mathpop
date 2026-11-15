@@ -11,6 +11,7 @@ const SONG = 'C C G G A A G F F E E D D C G G F F E E D G G F F E E D C C G G A 
 
 export default function NumberKeys({ grade, onEnd }) {
   const { view } = useArcade({
+    think: 'slow',
     hearts: heartsFor(grade),
     onEnd,
     setup(g) {

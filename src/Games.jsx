@@ -1,3 +1,4 @@
+import { setPlayGrade, sgSettings } from './sgMode.js';
 import { AreaBoxes, CrossSums, DoubleUp, PetSudoku, TakeTen, ValueSort } from './PuzzleGames.jsx';
 import { DominoMatch, FourInRow, TapMatch } from './PlayGames.jsx';
 import HoopHop from './arcade/HoopHop.jsx';
@@ -339,10 +340,14 @@ function Bakery({ grade, onEnd, lang, playerId }) {
       : o.size === 1
         ? `${o.who} wants ${o.want} cupcakes!`
         : `${o.who} wants ${o.want} cupcakes. Each box holds ${o.size}. How many boxes?`;
+  // Singapore Math Mode: the order as a bar model, then a number sentence.
+  const [model, setModel] = useState(0);
+  const showModel = !ja && order.size > 1 && sgSettings().bars;
   useEffect(() => {
     talk(say(order));
     setNote(null);
     setHappy(false);
+    setModel(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order]);
 
@@ -556,6 +561,51 @@ function Bakery({ grade, onEnd, lang, playerId }) {
       <p className="bakery-count">
         {boxes ? seqTo(boxes) : '0'} {ja ? 'こ' : 'cupcakes'}
       </p>
+      {showModel && !happy && (
+        <div className="bk-model">
+          {model === 0 ? (
+            <button
+              type="button"
+              className="bakery-btn"
+              onClick={() => {
+                setModel(1);
+                talk(`The whole bar is ${order.want} cupcakes. Each part is one box of ${order.size}. How many parts?`);
+              }}
+            >
+              Show me the bar model
+            </button>
+          ) : (
+            <>
+              <span className="tk-tag">Bar model · {order.want} cupcakes, {order.size} in each box</span>
+              <span className="tk-bar bk-bar">
+                {Array.from({ length: order.boxes }, (_, i) => (
+                  <span key={i} style={{ flex: 1, background: ['#ff8fb1', '#c4a1ff', '#ffd23f', '#7dd3fc', '#a7e8c0', '#fdba74'][i % 6] }}>
+                    {order.size}
+                  </span>
+                ))}
+              </span>
+              <span className="tk-brace">{order.want}</span>
+              {model === 1 ? (
+                <button
+                  type="button"
+                  className="bakery-btn"
+                  onClick={() => {
+                    setModel(2);
+                    talk(`What times ${order.size} makes ${order.want}? Count by ${order.size}s.`);
+                  }}
+                >
+                  Next hint
+                </button>
+              ) : (
+                <span className="bk-sentence">
+                  ? × {order.size} = {order.want}
+                  <small>Count by {order.size}s: {Array.from({ length: Math.min(order.boxes + 1, 8) }, (_, k) => (k + 1) * order.size).join(', ')}…</small>
+                </span>
+              )}
+            </>
+          )}
+        </div>
+      )}
       {note && (
         <p className={`bakery-note${happy ? ' bakery-note-good' : ''}${tries >= 2 && !happy ? ' bakery-note-pip' : ''}`}>
           {tries >= 2 && !happy && <Pip size={34} mood="wave" />}
@@ -870,6 +920,8 @@ const TIMED = ['bubbles', 'make10', 'shapes', 'bondPop', 'makeTen', 'sumGridRush
 
 // One game: how to play (said out loud), 3-2-1, play, and the result.
 export function Game({ game, playerId, grade, onDone, stickerSlot, onExit, lang }) {
+  // Think time follows the grade being played (sgMode.js).
+  setPlayGrade(grade);
   const info = GAMES.find((g) => g.id === game);
   // Japanese only for the games that have it (the rest stay in English).
   const ja = lang === 'ja' && Boolean(info.ja);

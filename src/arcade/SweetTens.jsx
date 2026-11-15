@@ -9,6 +9,7 @@ const CANDY = ['#ff6b9a', '#3b8cf0', '#ffb000', '#2fae6b', '#9b6bf2', '#ff8a3d',
 
 export default function SweetTens({ grade, onEnd }) {
   const { view } = useArcade({
+    think: false,
     hearts: 0,
     onEnd,
     setup(g) {

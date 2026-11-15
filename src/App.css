@@ -12591,3 +12591,505 @@ body {
   font-size: 11px;
   letter-spacing: 0.02em;
 }
+
+/* ---- Singapore Math Mode (ThinkCard.jsx, sgMode.js) ---- */
+.tk-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12px;
+  overflow-y: auto;
+  background: rgba(23, 58, 102, 0.38);
+  animation: tk-in 0.25s ease-out;
+}
+@keyframes tk-in {
+  from {
+    opacity: 0;
+  }
+}
+.tk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 380px;
+  padding: 16px;
+  border-radius: 24px;
+  background: #fff;
+  color: #173a66;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+  animation: pz-pop 0.35s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+@keyframes pz-pop {
+  from {
+    transform: scale(0.85);
+  }
+}
+.tk-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tk-head span {
+  display: flex;
+  flex-direction: column;
+}
+.tk-head b {
+  font: 700 16px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.tk-head small {
+  font: 500 13px 'IBM Plex Sans', sans-serif;
+  color: #4d5b72;
+}
+.tk-q {
+  border: none;
+  background: none;
+  color: #173a66;
+  font: 700 44px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  text-align: center;
+  cursor: pointer;
+}
+.tk-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 18px;
+  background: #fff7dc;
+}
+.tk-tag {
+  align-self: flex-start;
+  font: 600 13px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #8a5a00;
+}
+.tk-pic {
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.tk-line {
+  text-align: center;
+  font: 600 15px 'IBM Plex Sans', sans-serif;
+}
+.tk-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+.tk-chips span {
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: #e6ebf3;
+  color: #4d5b72;
+  font: 600 12px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.tk-chips .tk-on {
+  background: #2fae6b;
+  color: #fff;
+}
+.tk-btns {
+  display: flex;
+  gap: 10px;
+}
+.tk-btns button {
+  flex: 1;
+  min-height: 54px;
+  border: none;
+  border-radius: 18px;
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  cursor: pointer;
+}
+.tk-next {
+  background: #fff7dc;
+  color: #8a5a00;
+}
+.tk-ready {
+  flex: 1.4 !important;
+  background: #2fae6b;
+  color: #fff;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.15);
+}
+.tk-dot {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--c);
+}
+.tk-empty {
+  background: transparent;
+  border: 2px dashed #e0b45a;
+  box-sizing: border-box;
+}
+.tk-out {
+  position: relative;
+  opacity: 0.35;
+}
+.tk-out::after {
+  content: '';
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  top: 8px;
+  height: 2px;
+  background: #e5484d;
+  transform: rotate(-35deg);
+}
+.tk-counters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  max-width: 260px;
+}
+.tk-frames {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.tk-frame {
+  display: grid;
+  grid-template-columns: repeat(5, 18px);
+  gap: 4px;
+  padding: 6px;
+  border: 2px solid #173a66;
+  border-radius: 10px;
+  background: #fff;
+}
+.tk-bond {
+  width: 150px;
+  height: auto;
+}
+.tk-barwrap {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 260px;
+  gap: 4px;
+}
+.tk-bar {
+  display: flex;
+  height: 40px;
+  border: 2px solid #173a66;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.tk-bar span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  border-right: 2px solid #173a66;
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #173a66;
+}
+.tk-bar span:last-child {
+  border-right: none;
+}
+.tk-brace {
+  display: block;
+  padding-top: 6px;
+  border-top: 3px solid #173a66;
+  border-radius: 12px 12px 0 0;
+  text-align: center;
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #173a66;
+}
+.tk-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tk-op {
+  font: 700 22px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.tk-disks {
+  display: flex;
+  gap: 4px;
+}
+.tk-col {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  align-content: start;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 8px;
+}
+.tk-col b {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: #fff;
+  font: 700 8px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.tk-h {
+  background: #fde8e8;
+}
+.tk-h b {
+  background: #e5484d;
+}
+.tk-t {
+  background: #e3eefd;
+}
+.tk-t b {
+  background: #3b6fef;
+}
+.tk-o {
+  background: #e3f6ea;
+}
+.tk-o b {
+  background: #2fae6b;
+}
+.tk-array {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 16px);
+  gap: 4px;
+}
+.tk-array .tk-dot {
+  width: 16px;
+  height: 16px;
+}
+.tk-noclock {
+  font-size: 14px !important;
+  color: #2fae6b !important;
+}
+.tk-done {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 99px;
+  background: #173a66;
+  color: #fff;
+  font: 700 14px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  cursor: pointer;
+}
+/* A number bond question in the arcade games' prompt. */
+.arc-bond {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 20px;
+}
+.arc-bond .tk-bond {
+  width: 92px;
+}
+/* Pip's Bakery: the bar model. */
+.bk-model {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: #fff7dc;
+}
+.bk-bar {
+  height: 38px;
+}
+.bk-sentence {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font: 700 24px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #173a66;
+}
+.bk-sentence small {
+  font: 600 13px 'IBM Plex Sans', sans-serif;
+  color: #4d5b72;
+}
+/* Take Ten: the ten frame for the picked number. */
+.tt-peek {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 18px;
+  background: #fff7dc;
+}
+.tt-peek-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font: 700 22px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #173a66;
+}
+.tt-peek-line small {
+  font: 600 13px 'IBM Plex Sans', sans-serif;
+  color: #4d5b72;
+}
+/* Logic Lock: place value disks. */
+.lock-disks-btn {
+  align-self: center;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 99px;
+  background: #fff;
+  color: #173a66;
+  font: 600 13px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  box-shadow: inset 0 -3px 0 #dbe4f0;
+  cursor: pointer;
+}
+.lock-disks {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px;
+  border: none;
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+}
+.lock-disk-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 70px;
+  padding: 4px;
+  border-radius: 10px;
+}
+.lock-disk-col small {
+  font: 600 11px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #4d5b72;
+}
+.lock-disk-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  max-width: 96px;
+}
+.lock-disk-row i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: #fff;
+  font: 700 7px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  font-style: normal;
+}
+.lock-disk-row em {
+  font: 600 12px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #94a3b8;
+}
+.lock-disk-hundreds {
+  background: #fde8e8;
+}
+.lock-disk-hundreds i {
+  background: #e5484d;
+}
+.lock-disk-tens {
+  background: #e3eefd;
+}
+.lock-disk-tens i {
+  background: #3b6fef;
+}
+.lock-disk-ones {
+  background: #e3f6ea;
+}
+.lock-disk-ones i {
+  background: #2fae6b;
+}
+/* Players & grades: the Singapore Math Mode card. */
+.sgm-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 16px;
+  border-radius: 22px;
+  background: #fff;
+  color: #173a66;
+  box-shadow: 0 4px 14px rgba(23, 58, 102, 0.08);
+}
+.sgm-head {
+  margin: -16px -16px 4px;
+  padding: 16px;
+  border-radius: 22px 22px 0 0;
+  background: #173a66;
+  color: #fff;
+}
+.sgm-head h3 {
+  margin: 0;
+  font: 700 20px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.sgm-head p {
+  margin: 4px 0 0;
+  font: 500 14px 'IBM Plex Sans', sans-serif;
+  color: #d6e2f5;
+}
+.sgm-card h4 {
+  margin: 4px 0 0;
+  font: 700 16px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.sgm-think {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.sgm-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 58px;
+  padding: 6px;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  color: #173a66;
+  cursor: pointer;
+}
+.sgm-opt b {
+  font: 700 15px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.sgm-opt small {
+  font: 500 12px 'IBM Plex Sans', sans-serif;
+  color: #4d5b72;
+}
+.sgm-on {
+  border-color: #2fae6b;
+  background: #e6f7ee;
+}
+.sgm-note {
+  margin: 0;
+  font: 500 13px 'IBM Plex Sans', sans-serif;
+  color: #4d5b72;
+}
+.sgm-check {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 36px;
+  font: 500 15px 'IBM Plex Sans', sans-serif;
+}
+.sgm-check input {
+  width: 24px;
+  height: 24px;
+  accent-color: #2fae6b;
+}
+.sgm-steps {
+  margin: 0;
+  font: 600 13px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #4d5b72;
+}
+.sgm-steps span {
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: #fff7dc;
+  color: #8a5a00;
+}

@@ -1,4 +1,5 @@
-import { useArcade, heartsFor, fact, near, speak, text, cloud, backdrop, playStickerPick } from './kit.jsx';
+import { sgSettings } from '../sgMode.js';
+import { useArcade, heartsFor, fact, bond, near, speak, text, cloud, backdrop, playStickerPick } from './kit.jsx';
 
 // Hoop Hop: tap to flap the ball up; it falls when you don't. Two hoops
 // come along, each with a number: fly through the one with the answer.
@@ -15,6 +16,7 @@ export default function HoopHop({ grade, onEnd }) {
       let hoops = [];
       let q;
       let level = 1;
+      let asked = 0;
       let nextIn = 1.2;
       const bx = () => g.W * 0.28;
       const R = 15;
@@ -23,7 +25,9 @@ export default function HoopHop({ grade, onEnd }) {
       const HR = little ? 64 : 54;
       const speed = () => (little ? 85 : 105) + (level - 1) * 10;
       function ask() {
-        q = fact(grade);
+        // Every other question is a number bond (Singapore Math Mode).
+        asked = (asked || 0) + 1;
+        q = sgSettings().bonds && grade !== 'p' && asked % 2 === 0 ? bond(grade) : fact(grade);
         g.prompt(q.text, q.say || q.text.replace(/−/g, ' minus ').replace(/×/g, ' times ').replace(/÷/g, ' divided by '));
       }
       function addHoops() {
