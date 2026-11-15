@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Thing } from './Drawings.jsx';
+import Icon from './Icon.jsx';
 import { rand, shuffle } from './gameKit.jsx';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
 import { Bar, TenFrames } from './ThinkCard.jsx';
@@ -477,7 +478,7 @@ export function TakeTen({ grade, onEnd, playerId }) {
           + More numbers ({b.adds})
         </button>
         <button type="button" className="bakery-btn" onClick={() => setHint(findPair(b, grade))}>
-          💡 Hint
+          <Icon name="bulb" /> Hint
         </button>
       </div>
       <Banner text={banner} />
@@ -574,7 +575,7 @@ export function CrossSums({ grade, onEnd, playerId }) {
       </div>
       <div className="bakery-actions">
         <button type="button" className="bakery-btn" onClick={help}>
-          💡 Help
+          <Icon name="bulb" /> Help
         </button>
         <button type="button" className="bakery-btn" onClick={() => setOut(new Set())}>
           ↺ Start over
@@ -586,7 +587,12 @@ export function CrossSums({ grade, onEnd, playerId }) {
 }
 
 // ------------------------------------------------------------ Area Boxes
-const AREA = { p: [3, 3, 3], k: [4, 4, 4], 1: [4, 5, 6], 2: [5, 5, 8], 3: [6, 6, 12], 4: [6, 7, 12] };
+// Every number gets its own box with that many squares. Tap a number,
+// then tap (or drag over) squares next to it to build its box: the
+// squares count up (1, 2, 3...) and "4 of 6 squares" shows how many to
+// go. A box needs straight sides (a rectangle); when it's right it locks
+// in its color ("2 × 3 = 6!"). Fill the whole board for the next level.
+const AREA = { p: [3, 2, 3], k: [3, 3, 4], 1: [4, 4, 6], 2: [4, 5, 8], 3: [5, 6, 12], 4: [6, 6, 12] };
 function areaBoard(grade, level) {
   const [w0, h0, maxA] = AREA[grade] || AREA[1];
   const w = w0;
@@ -609,124 +615,233 @@ function areaBoard(grade, level) {
   };
   split({ x: 0, y: 0, w, h });
   const clues = {};
-  for (const r of rects) clues[`${r.y + rand(0, r.h - 1)},${r.x + rand(0, r.w - 1)}`] = r.w * r.h;
-  return { w, h, clues, n: rects.length };
+  const sol = {};
+  for (const r of rects) {
+    const k = `${r.y + rand(0, r.h - 1)},${r.x + rand(0, r.w - 1)}`;
+    clues[k] = r.w * r.h;
+    sol[k] = r;
+  }
+  return { w, h, clues, sol };
 }
-const BOX_COLORS = ['#ffb4c8', '#a9d1ff', '#ffd98a', '#a7e8c0', '#d6c2ff', '#ffc49b', '#9ee5dd', '#ffadad', '#c3c8ff', '#d4f0a0'];
+const BOX_COLORS = ['#ff8fb1', '#7cb8ff', '#ffc94a', '#5fd59a', '#b99bff', '#ff9f5a', '#4fd1c5', '#f87171', '#818cf8', '#a3e635'];
+const cellRC = (k) => k.split(',').map(Number);
+// Whether some cells are a full rectangle: [w, h] or null.
+function rectOf(keys) {
+  const pts = keys.map(cellRC);
+  const rs = pts.map((p) => p[0]);
+  const cs = pts.map((p) => p[1]);
+  const h = Math.max(...rs) - Math.min(...rs) + 1;
+  const w = Math.max(...cs) - Math.min(...cs) + 1;
+  return w * h === keys.length ? [w, h] : null;
+}
 
 export function AreaBoxes({ grade, onEnd, playerId }) {
   const [level, levelUp] = useLevel(playerId, grade, 'areaBoxes');
   const [b, setB] = useState(() => areaBoard(grade, level));
-  const [boxes, setBoxes] = useState([]);
-  const [drag, setDrag] = useState(null);
+  // clue key → { cells: [keys], done, c }
+  const [boxes, setBoxes] = useState({});
+  const [active, setActive] = useState(null);
   const [note, setNote] = useState(null);
   const [score, setScore] = useState(0);
+  const [helps, setHelps] = useState(0);
+  const [show, setShow] = useState(null);
   const [bad, setBad] = useState(null);
+  const painting = useRef(false);
   const { banner, boardDone } = useBoards(3, onEnd, levelUp);
+  const clueKeys = Object.keys(b.clues);
   useEffect(() => {
-    speak('Drag to draw boxes! Each box has one number, and that many squares.');
+    speak('Tap a number. Then tap the squares next to it to make a box with that many squares!');
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const owner = useMemo(() => {
     const m = {};
-    boxes.forEach((bx, k) => {
-      for (let r = bx.r1; r <= bx.r2; r++) for (let c = bx.c1; c <= bx.c2; c++) m[`${r},${c}`] = k;
-    });
+    for (const [k, bx] of Object.entries(boxes)) for (const c of bx.cells) m[c] = k;
     return m;
   }, [boxes]);
-  const cellAt = (e) => {
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    const d = el && el.closest('[data-cell]');
-    return d ? d.dataset.cell.split(',').map(Number) : null;
+  const colorOf = (k) => BOX_COLORS[clueKeys.indexOf(k) % BOX_COLORS.length];
+  const say = (line) => {
+    setNote(line);
+    speak(line);
   };
-  const span = (d) => d && { r1: Math.min(d.a[0], d.b[0]), r2: Math.max(d.a[0], d.b[0]), c1: Math.min(d.a[1], d.b[1]), c2: Math.max(d.a[1], d.b[1]) };
-  function finish(d) {
-    const s = span(d);
-    const cells = [];
-    for (let r = s.r1; r <= s.r2; r++) for (let c = s.c1; c <= s.c2; c++) cells.push(`${r},${c}`);
-    // A tap on a box takes it away.
-    if (cells.length === 1 && owner[cells[0]] !== undefined) {
+  function nope(cell, line) {
+    playIncorrectBuzz();
+    setBad(cell);
+    setTimeout(() => setBad(null), 450);
+    say(line);
+  }
+  const touches = (cells, cell) => {
+    const [r, c] = cellRC(cell);
+    return cells.some((k) => {
+      const [r2, c2] = cellRC(k);
+      return Math.abs(r - r2) + Math.abs(c - c2) === 1;
+    });
+  };
+  function tapCell(cell, dragging) {
+    if (banner) return;
+    setShow(null);
+    // A number: pick it (or open its finished box again).
+    if (b.clues[cell]) {
+      if (dragging) return;
+      const bx = boxes[cell];
       playStickerPick();
-      setBoxes(boxes.filter((_, k) => k !== owner[cells[0]]));
+      if (bx && bx.done) {
+        setBoxes({ ...boxes, [cell]: { ...bx, done: false } });
+        setActive(cell);
+        say(`Fixing the ${b.clues[cell]} box. Tap a square to take it out.`);
+        return;
+      }
+      if (!bx) setBoxes({ ...boxes, [cell]: { cells: [cell], done: false } });
+      setActive(cell);
+      say(b.clues[cell] === 1 ? 'A 1 box is just its own square!' : `Now tap ${b.clues[cell] - 1} more ${b.clues[cell] - 1 === 1 ? 'square' : 'squares'} next to the ${b.clues[cell]} to make its box.`);
+      if (b.clues[cell] === 1) lockIn(cell, [cell]);
       return;
     }
-    const clues = cells.filter((k) => b.clues[k]);
-    const area = cells.length;
-    const w = s.c2 - s.c1 + 1;
-    const h = s.r2 - s.r1 + 1;
-    let line = null;
-    if (cells.some((k) => owner[k] !== undefined)) line = 'That covers another box. Tap a box to take it away.';
-    else if (!clues.length) line = 'Every box needs one number in it.';
-    else if (clues.length > 1) line = 'Only one number in each box!';
-    else if (b.clues[clues[0]] !== area) line = w > 1 && h > 1 ? `That's ${w} × ${h} = ${area} squares. It needs ${b.clues[clues[0]]}.` : `That's ${area} ${area === 1 ? 'square' : 'squares'}. It needs ${b.clues[clues[0]]}.`;
-    if (line) {
-      if (area === 1 && !clues.length) return;
+    if (!active) {
+      if (!dragging) nope(cell, 'First tap a number. Then tap squares for its box.');
+      return;
+    }
+    const bx = boxes[active];
+    const need = b.clues[active];
+    // A square of this box: take it out.
+    if (bx.cells.includes(cell)) {
+      if (dragging) return;
+      playStickerPick();
+      setBoxes({ ...boxes, [active]: { ...bx, cells: bx.cells.filter((k) => k !== cell) } });
+      setNote(null);
+      return;
+    }
+    if (owner[cell]) {
+      if (!dragging) nope(cell, `That square is already in the ${b.clues[owner[cell]]} box.`);
+      return;
+    }
+    if (bx.cells.length >= need) {
+      if (!dragging) nope(cell, `That's enough! The ${need} box has ${need} squares.`);
+      return;
+    }
+    if (!touches(bx.cells, cell)) {
+      if (!dragging) nope(cell, `Pick a square next to the ${need} box.`);
+      return;
+    }
+    playStickerPick();
+    const cells = [...bx.cells, cell];
+    setBoxes({ ...boxes, [active]: { ...bx, cells } });
+    setNote(null);
+    if (cells.length === need) lockIn(active, cells);
+  }
+  function lockIn(key, cells) {
+    const need = b.clues[key];
+    const wh = rectOf(cells);
+    if (!wh) {
       playIncorrectBuzz();
-      setNote(line);
-      speak(line);
-      setBad(s);
-      setTimeout(() => setBad(null), 500);
+      say(`${need} squares! But a box has straight sides. Move a square to make a rectangle.`);
       return;
     }
     playCorrectChime();
-    setNote(null);
-    speak(w > 1 && h > 1 ? `${w} times ${h} is ${area}!` : `${area}!`);
-    const next = [...boxes, { ...s, c: BOX_COLORS[boxes.length % BOX_COLORS.length] }];
+    const [w, h] = wh;
+    say(w > 1 && h > 1 ? `${w} times ${h} is ${need}! The box is done.` : `${need} in a row! The box is done.`);
+    const next = { ...boxes, [key]: { cells, done: true } };
     setBoxes(next);
-    if (next.reduce((t, bx) => t + (bx.r2 - bx.r1 + 1) * (bx.c2 - bx.c1 + 1), 0) === b.w * b.h) {
-      const total = score + 3;
+    setActive(null);
+    const covered = Object.values(next).filter((x) => x.done).reduce((t, x) => t + x.cells.length, 0);
+    if (covered === b.w * b.h) {
+      const total = score + Math.max(1, 3 - helps);
       setScore(total);
       boardDone(total, (lv) => {
         setB(areaBoard(grade, lv));
-        setBoxes([]);
+        setBoxes({});
+        setHelps(0);
+        setNote(null);
       });
     }
   }
-  const live = span(drag);
-  const inLive = (r, c) => live && r >= live.r1 && r <= live.r2 && c >= live.c1 && c <= live.c2;
+  function help() {
+    const key = active || clueKeys.find((k) => !(boxes[k] && boxes[k].done));
+    if (!key) return;
+    setHelps((x) => x + 1);
+    const r = b.sol[key];
+    const cells = [];
+    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) cells.push(`${y},${x}`);
+    setShow(cells);
+    say(`The ${b.clues[key]} box can be ${r.w} by ${r.h}. Look at the dotted squares.`);
+  }
+  const cellFromEvent = (e) => {
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const d = el && el.closest('[data-cell]');
+    return d ? d.dataset.cell : null;
+  };
+  const act = active && boxes[active];
   return (
     <div className="game game-pz">
       <PuzzleTop level={level} score={score} label="stars" />
-      <p className="game-ask">Draw a box around each number with that many squares</p>
+      <div className="ab-how">
+        <span className="ab-step">
+          <b>1</b> Tap a number
+        </span>
+        <span className="ab-step">
+          <b>2</b> Tap squares to make its box
+        </span>
+      </div>
       <div
         className="ab-board"
         style={{ '--w': b.w }}
         onPointerDown={(e) => {
-          const c = cellAt(e);
-          if (c) setDrag({ a: c, b: c });
+          const c = cellFromEvent(e);
+          if (!c) return;
+          painting.current = true;
+          tapCell(c, false);
         }}
         onPointerMove={(e) => {
-          if (!drag) return;
-          const c = cellAt(e);
-          if (c && (c[0] !== drag.b[0] || c[1] !== drag.b[1])) setDrag({ ...drag, b: c });
+          if (!painting.current || !active) return;
+          const c = cellFromEvent(e);
+          if (c && !b.clues[c] && !(boxes[active] && boxes[active].cells.includes(c))) tapCell(c, true);
         }}
-        onPointerUp={() => {
-          if (drag) finish(drag);
-          setDrag(null);
-        }}
-        onPointerCancel={() => setDrag(null)}
+        onPointerUp={() => (painting.current = false)}
+        onPointerCancel={() => (painting.current = false)}
       >
         {Array.from({ length: b.h }, (_, r) =>
           Array.from({ length: b.w }, (_, c) => {
             const k = `${r},${c}`;
             const o = owner[k];
-            const isBad = bad && r >= bad.r1 && r <= bad.r2 && c >= bad.c1 && c <= bad.c2;
+            const box = o && boxes[o];
+            const idx = box ? box.cells.indexOf(k) : -1;
+            const isActive = o && o === active;
+            const clue = b.clues[k];
             return (
-              <span key={k} data-cell={k} className={`ab-cell${inLive(r, c) ? ' ab-live' : ''}${isBad ? ' make10-bad ab-bad' : ''}`} style={o !== undefined ? { background: boxes[o].c } : undefined}>
-                {b.clues[k] || ''}
+              <span
+                key={k}
+                data-cell={k}
+                className={`ab-cell${clue ? ' ab-clue' : ''}${box && box.done ? ' ab-done' : ''}${isActive ? ' ab-act' : ''}${k === active ? ' ab-picked' : ''}${bad === k ? ' make10-bad' : ''}${show && show.includes(k) ? ' ab-show' : ''}`}
+                style={o ? { '--bc': colorOf(o) } : undefined}
+              >
+                {clue || (box && !box.done ? <small>{idx + 1}</small> : '')}
               </span>
             );
           }),
         )}
       </div>
-      {live && (
-        <p className="ab-size">
-          {live.c2 - live.c1 + 1} × {live.r2 - live.r1 + 1} = {(live.c2 - live.c1 + 1) * (live.r2 - live.r1 + 1)}
-        </p>
-      )}
-      {note && !live && <p className="bakery-note">{note}</p>}
+      <div className="ab-status">
+        {act ? (
+          <span>
+            <b style={{ background: colorOf(active) }}>{b.clues[active]}</b> box: {act.cells.length} of {b.clues[active]} squares
+          </span>
+        ) : (
+          <span>Tap a number to start its box</span>
+        )}
+      </div>
+      {note && <p className="bakery-note">{note}</p>}
       <div className="bakery-actions">
-        <button type="button" className="bakery-btn" onClick={() => setBoxes([])}>
-          ↺ Start over
+        <button type="button" className="bakery-btn" onClick={help}>
+          <Icon name="bulb" /> Show me
+        </button>
+        <button
+          type="button"
+          className="bakery-btn"
+          onClick={() => {
+            setBoxes({});
+            setActive(null);
+            setNote(null);
+          }}
+        >
+          Start over
         </button>
       </div>
       <Banner text={banner} />

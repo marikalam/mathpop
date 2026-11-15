@@ -137,7 +137,7 @@ export default function GardenGuard({ grade, onEnd }) {
             ctx.closePath();
             ctx.fill();
             ctx.restore();
-            text(ctx, s.hit ? '😊' : s.q.text, s.x + 10, y - 12, s.q.text.length > 7 ? 15 : 19, '#fff');
+            text(ctx, s.hit ? '✓' : s.q.text, s.x + 10, y - 12, s.q.text.length > 7 ? 15 : 19, '#fff');
           }
           // Seeds flying.
           for (const sh of shots) {

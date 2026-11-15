@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Pip from './Pip.jsx';
+import { Heart } from './arcade/kit.jsx';
 import { madMinuteFact } from './MadMinute.jsx';
 import { pick, rand, shuffle } from './gameKit.jsx';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
@@ -109,7 +110,13 @@ export function TapMatch({ grade, onEnd, playerId }) {
   return (
     <div className="game game-pz">
       <PuzzleTop level={level} score={score} label="matches">
-        <span className="snake-hearts">{'❤'.repeat(hearts)}</span>
+        <span className="snake-hearts">
+          {Array.from({ length: hearts }, (_, i) => (
+            <span key={i} className="snake-heart">
+              <Heart />
+            </span>
+          ))}
+        </span>
       </PuzzleTop>
       <p className="game-ask">Three worth the same clear away</p>
       <div className="tm-pile" style={{ '--mx': maxX, '--my': maxY }}>
@@ -285,7 +292,7 @@ export function FourInRow({ grade, onEnd, playerId }) {
         </div>
       ) : (
         <p className="game-ask fr-turn">
-          {phase === 'drop' ? '👇 Tap a column to drop your piece' : phase === 'pip' ? (
+          {phase === 'drop' ? 'Tap a column to drop your piece' : phase === 'pip' ? (
             <>
               <Pip size={28} /> Pip's turn…
             </>
@@ -464,7 +471,7 @@ export function DominoMatch({ grade, onEnd, playerId }) {
           ))}
         </div>
       </div>
-      <p className="fr-turn game-ask">{over ? (over === 'you' ? 'You win! 🎉' : 'Pip wins this time!') : turn === 'you' ? 'Your turn: tap a domino' : "Pip's turn…"}</p>
+      <p className="fr-turn game-ask">{over ? (over === 'you' ? 'You win!' : 'Pip wins this time!') : turn === 'you' ? 'Your turn: tap a domino' : "Pip's turn…"}</p>
       <div className="dm-hand">
         {g.you.map((d) => (
           <Domino key={d.id} d={d} onClick={() => play(d)} glow={helped && playable(d)} bad={bad === d.id} />

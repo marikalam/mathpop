@@ -20,6 +20,13 @@ export const pick = (list) => list[Math.floor(Math.random() * list.length)];
 // the kid taps I'm ready, and a miss brings it back with a hint. `think`:
 // true (default), 'slow' (never stops; runs at half speed instead) or
 // false (no think card: games with no time pressure).
+// A heart, drawn (no emoji): it takes the text's color.
+export const Heart = () => (
+  <svg viewBox="0 0 24 22" width="1em" height="0.92em" aria-hidden="true" style={{ display: 'block' }}>
+    <path d="M12 21C-4 10 4-2 12 5c8-7 16 5 0 16z" fill="currentColor" />
+  </svg>
+);
+
 export function useArcade({ hearts: maxHearts = 3, onEnd, setup, think: thinkKind = true }) {
   const [think, setThink] = useState(null);
   const gRef = useRef(null);
@@ -222,7 +229,7 @@ export function useArcade({ hearts: maxHearts = 3, onEnd, setup, think: thinkKin
         <span className="snake-hearts" aria-label={`${hearts} hearts left`} style={maxHearts ? undefined : { visibility: 'hidden' }}>
           {Array.from({ length: maxHearts }, (_, i) => (
             <span key={i} className={`snake-heart${i < hearts ? '' : ' snake-heart-gone'}`}>
-              ❤
+              <Heart />
             </span>
           ))}
         </span>

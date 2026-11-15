@@ -512,22 +512,49 @@ const ART = {
   petSudoku: (
     <g transform="rotate(-10 80 60)">
       {[
-        ['#4ade80', '🐱', '#f472b6'],
-        ['#f472b6', '#60a5fa', '🐶'],
-        ['🐰', '#fbbf24', '#4ade80'],
+        ['#4ade80', 'cat', '#f472b6'],
+        ['#f472b6', '#60a5fa', 'dog'],
+        ['bunny', '#fbbf24', '#4ade80'],
       ].map((row, r) =>
-        row.map((v, c) => (
-          <g key={`${r}${c}`}>
-            <rect x={30 + c * 36} y={8 + r * 36} width="33" height="33" rx="6" fill={v.startsWith('#') ? v : '#fff'} />
-            {v.startsWith('#') ? (
-              <path d={`M${38 + c * 36} ${16 + r * 36} l17 17 M${55 + c * 36} ${16 + r * 36} l-17 17`} stroke="#fff" strokeWidth="5" strokeLinecap="round" />
-            ) : (
-              <text x={46.5 + c * 36} y={26 + r * 36} fontSize="20" textAnchor="middle" dominantBaseline="central">
-                {v}
-              </text>
-            )}
-          </g>
-        )),
+        row.map((v, c) => {
+          const x = 30 + c * 36;
+          const y = 8 + r * 36;
+          const cx = x + 16.5;
+          const cy = y + 18;
+          return (
+            <g key={`${r}${c}`}>
+              <rect x={x} y={y} width="33" height="33" rx="6" fill={v.startsWith('#') ? v : '#fff'} />
+              {v.startsWith('#') && <path d={`M${x + 8} ${y + 8} l17 17 M${x + 25} ${y + 8} l-17 17`} stroke="#fff" strokeWidth="5" strokeLinecap="round" />}
+              {v === 'cat' && (
+                <g>
+                  <path d={`M${cx - 10} ${cy - 4} l2 -10 l6 6z M${cx + 10} ${cy - 4} l-2 -10 l-6 6z`} fill="#f59e0b" />
+                  <circle cx={cx} cy={cy + 1} r="10" fill="#f59e0b" />
+                </g>
+              )}
+              {v === 'dog' && (
+                <g>
+                  <ellipse cx={cx - 10} cy={cy} rx="4" ry="8" fill="#8a5a2b" />
+                  <ellipse cx={cx + 10} cy={cy} rx="4" ry="8" fill="#8a5a2b" />
+                  <circle cx={cx} cy={cy + 1} r="10" fill="#d6a26a" />
+                </g>
+              )}
+              {v === 'bunny' && (
+                <g>
+                  <ellipse cx={cx - 4} cy={cy - 10} rx="3" ry="8" fill="#e2e8f0" stroke="#f9a8d4" strokeWidth="1.5" />
+                  <ellipse cx={cx + 4} cy={cy - 10} rx="3" ry="8" fill="#e2e8f0" stroke="#f9a8d4" strokeWidth="1.5" />
+                  <circle cx={cx} cy={cy + 2} r="9.5" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.5" />
+                </g>
+              )}
+              {!v.startsWith('#') && (
+                <g>
+                  <circle cx={cx - 3.5} cy={cy} r="1.6" fill="#173a66" />
+                  <circle cx={cx + 3.5} cy={cy} r="1.6" fill="#173a66" />
+                  <circle cx={cx} cy={cy + 4} r="1.4" fill="#e5484d" />
+                </g>
+              )}
+            </g>
+          );
+        }),
       )}
     </g>
   ),
