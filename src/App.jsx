@@ -95,6 +95,9 @@ const SEEN_PLAYERS_KEY = 'mathpop-account-seen-v1';
 const WELCOME_KEY = 'mathpop-welcomed-v1';
 // When the sign-up card was last put off with "Not now" (it asks again
 // after SIGNUP_ASK_AGAIN_DAYS).
+// The home page shows only Pip's Closet and the games for now: today's
+// round and the Practice a topic tiles are hidden (true shows them).
+const SHOW_PRACTICE = false;
 const SIGNUP_LATER_KEY = 'mathpop-signup-later-v1';
 // The day the end-of-trial recap (TrialRecap.jsx) was last shown.
 const RECAP_SEEN_KEY = 'mathpop-trial-recap-v1';
@@ -1796,6 +1799,15 @@ export default function App() {
               </div>
             </section>
 
+            {/* Pip's Closet on top, with the stars to unlock outfits (a red NEW
+                when something's newly unlocked for Pip). */}
+            <div className="home-pair">
+              <button className="home-pair-btn home-pair-closet" onClick={() => setView('closet')}>
+                {langFor(currentProfile.id) === 'ja' ? 'ピップの クローゼット' : "Pip's Closet"} <span className="home-pair-stars">★ {stickerCount(currentProfile.id)}</span>
+                {newItems(currentProfile.id).length > 0 && <span className="home-pair-new">{langFor(currentProfile.id) === 'ja' ? 'あたらしい' : 'NEW'}</span>}
+              </button>
+            </div>
+
             {/* Games first, right under the greeting: Mad Minute and the games
                 in Games.jsx, all of them showing, three across. */}
             <p className="home-topics-label">Games</p>
@@ -1842,8 +1854,8 @@ export default function App() {
             </div>
 
             {/* Today's practice: today's "Just for me" rounds (myPath.js),
-                each made from this player's history. */}
-            {(() => {
+                each made from this player's history. Hidden for now. */}
+            {SHOW_PRACTICE && (() => {
               const path = pathStatus(currentProfile.id, level, playerProgress);
               const label = (n) => ALL_META[n.topic]?.label || n.topic;
               const assigned = assignedTopics(currentProfile.id, level);
@@ -1868,15 +1880,6 @@ export default function App() {
               );
             })()}
 
-            {/* Pip's Closet, with the stars to unlock outfits (a red NEW
-                when something's newly unlocked for Pip). */}
-            <div className="home-pair">
-              <button className="home-pair-btn home-pair-closet" onClick={() => setView('closet')}>
-                {langFor(currentProfile.id) === 'ja' ? 'ピップの クローゼット' : "Pip's Closet"} <span className="home-pair-stars">★ {stickerCount(currentProfile.id)}</span>
-                {newItems(currentProfile.id).length > 0 && <span className="home-pair-new">{langFor(currentProfile.id) === 'ja' ? 'あたらしい' : 'NEW'}</span>}
-              </button>
-            </div>
-
             {installPrompt && (
               <button type="button" className="install-banner" onClick={installApp}>
                 <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="" />
@@ -1887,9 +1890,10 @@ export default function App() {
                 <span className="install-banner-btn">Install</span>
               </button>
             )}
-            <p className="home-topics-label">Practice a topic</p>
-            {/* Every section, and Explore Numbers, as small tiles under it. */}
-            {(() => {
+            {SHOW_PRACTICE && <p className="home-topics-label">Practice a topic</p>}
+            {/* Every section, and Explore Numbers, as small tiles under it
+                (hidden for now). */}
+            {SHOW_PRACTICE && (() => {
               // Japanese Math shows only when the player's language is 日本語.
               const sections = gradeSections(gradeInfo(level).id).filter((sec) => sec.id !== 'japanese' || langFor(currentProfile.id) === 'ja');
               const n = sections.length + 1 + (TAP_BOARDS_FOR.includes(gradeInfo(level).id) ? TAP_BOARDS.length + 1 : 0);
