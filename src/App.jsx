@@ -8,7 +8,7 @@ import TapBoard from './TapBoards.jsx';
 import PipCloset from './PipCloset.jsx';
 import { Confetti, CountUp } from './Celebrate.jsx';
 import MadMinute, { madMinuteBest } from './MadMinute.jsx';
-import GamesMenu, { Game, GameArt, gameBest, gameTitle, gamesFor, hasJa } from './Games.jsx';
+import GamesMenu, { Game, GameArt, POPULAR, gameBest, gameTitle, gamesFor, hasJa } from './Games.jsx';
 import { anItem, closetFor, newItems, nextItem, rememberUnlocks, stickerCount } from './pipCloset.js';
 import { COLORING_PACKS, ColoringPage, ColoringPrint } from './ColoringPages.jsx';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
@@ -1834,7 +1834,7 @@ export default function App() {
                 <button
                   key={g.id}
                   className="home-game"
-                  style={{ '--card-from': cardColors(g.id, g.color[0]).bg, '--card-ink': cardColors(g.id, g.color[0]).ink }}
+                  style={{ '--card-from': cardColors(g.id, g.color[0]).bg, '--card-ink': cardColors(g.id, g.color[0]).ink, order: POPULAR.includes(g.id) ? POPULAR.indexOf(g.id) - 10 : undefined }}
                   onClick={() => {
                     unlockAudio();
                     setGameId(g.id);
@@ -1842,6 +1842,12 @@ export default function App() {
                   }}
                 >
                   <span className="home-game-title">{gameTitle(g.id, gradeInfo(level).id, langFor(currentProfile.id))}</span>
+                  {POPULAR.includes(g.id) && (
+                    <span className="home-game-popular">
+                      MOST
+                      <small>POPULAR!</small>
+                    </span>
+                  )}
                   {hasCardArt(g.id) ? (
                     <CardArt id={g.id} />
                   ) : (
