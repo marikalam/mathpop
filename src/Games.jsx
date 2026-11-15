@@ -97,6 +97,11 @@ const sayIn = (lang) => (text) => (lang === 'ja' ? speakInLanguage(text, 'ja-JP'
 // Whether a game can be played in Japanese.
 export const hasJa = (id) => Boolean(GAMES.find((g) => g.id === id)?.ja);
 
+// The most played games (rounds finished in the iPhone app, last 60 days,
+// on Nov 15, 2026): shown first on the home page with a MOST POPULAR!
+// badge. Update this list as the numbers change.
+export const POPULAR = ['snake', 'logicLock', 'make10'];
+
 // The games a grade plays.
 // (A game with hidden: true is kept but not shown: Pop Defense, for now.)
 export const gamesFor = (grade) => GAMES.filter((g) => !g.hidden && (!g.grades || g.grades.includes(grade)));
