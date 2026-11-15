@@ -1,3 +1,6 @@
+import { AreaBoxes, CrossSums, DoubleUp, PetSudoku, TakeTen, ValueSort } from './PuzzleGames.jsx';
+import { DominoMatch, FourInRow, TapMatch } from './PlayGames.jsx';
+import HoopHop from './arcade/HoopHop.jsx';
 import { useEffect, useRef, useState } from 'react';
 import Pip from './Pip.jsx';
 import { Confetti, CountUp } from './Celebrate.jsx';
@@ -49,11 +52,23 @@ export const GAMES = [
   },
   { id: 'snake', title: 'Number Snake', sub: 'Eat the right answer', how: 'Tap the fruit with the answer, and your snake goes to eat it! Watch your hearts.', seconds: 0, color: ['#2fae6b', '#1f8a51'] },
   // Arcade games (src/arcade): fun to play, with the math built in.
+  // Puzzle and play games (PuzzleGames.jsx, PlayGames.jsx, arcade/HoopHop.jsx),
+  // each with levels inside that start at the player's grade.
+  { id: 'valueSort', title: 'Value Sort', sub: 'Sort cards worth the same', how: 'Sort the cards: each tube gets cards worth the same!', seconds: 0, color: ['#5b3f73', '#4a3360'] },
+  { id: 'doubleUp', title: 'Double Up', sub: 'Slide, and two make double', how: 'Swipe to slide the tiles. Two the same join into their double!', seconds: 0, color: ['#7d4f63', '#663f51'] },
+  { id: 'takeTen', title: 'Take Ten', sub: 'Clear pairs that make 10', how: 'Tap two that make ten, or two the same, with nothing in between!', seconds: 0, color: ['#0ea5e9', '#0284c7'] },
+  { id: 'crossSums', title: 'Cross Sums', sub: 'Cross out to make the totals', how: 'Cross out numbers so every row and column makes its total!', seconds: 0, color: ['#38bdf8', '#0ea5e9'] },
+  { id: 'areaBoxes', title: 'Area Boxes', sub: 'Draw boxes with that many squares', how: 'Draw a box around each number with that many squares!', seconds: 0, color: ['#fdf2e9', '#f5d9c4'] },
+  { id: 'petSudoku', title: 'Pet Sudoku', sub: 'Each pet once in a row', how: 'Every pet once in each row and column!', seconds: 0, color: ['#fff5ec', '#f5dcc4'] },
+  { id: 'tapMatch', title: 'Tap Match', sub: 'Three worth the same clear', how: 'Tap tiles into the tray. Three worth the same clear away!', seconds: 0, color: ['#f87171', '#dc2626'] },
+  { id: 'hoopHop', title: 'Hoop Hop', sub: 'Fly through the answer', how: 'Tap to fly! Go through the hoop with the answer!', seconds: 0, color: ['#fde3a7', '#f5c26b'] },
+  { id: 'fourInRow', title: 'Four in a Row', sub: 'Answer, then drop a piece', how: 'Answer to drop your piece. Get four in a row before Pip!', seconds: 0, color: ['#60a5fa', '#2563eb'] },
+  { id: 'domino', title: 'Domino Match', sub: 'Match ends worth the same', how: 'Play dominoes end to end. The ends that touch are worth the same!', seconds: 0, color: ['#0f6b4f', '#0b5640'] },
   { id: 'snipDrop', title: 'Snip & Drop', sub: 'Snip the rope, drop the sweet', how: 'Tap to snip the rope when the sweet is over the right basket!', seconds: 0, color: ['#f472b6', '#db2777'] },
   { id: 'pipHop', title: 'Pip Hop', sub: 'Skip count up the clouds', how: 'Hop up the clouds in counting order!', seconds: 0, color: ['#38bdf8', '#0284c7'] },
   { id: 'numberRun', title: 'Number Run', sub: 'Run through the right gate', how: 'Swipe into the gate with the answer!', seconds: 0, color: ['#f59e0b', '#d97706'] },
   { id: 'gardenGuard', title: 'Garden Guard', sub: 'Stop the snails with answers', how: 'Tap the answer to stop each snail before it reaches the flowers!', seconds: 0, color: ['#22c55e', '#15803d'] },
-  { id: 'popDefense', title: 'Pop Defense', sub: 'Pop the balloons that fit', how: 'Tap the balloons that fit the rule!', seconds: 0, color: ['#ef4444', '#b91c1c'] },
+  { id: 'popDefense', hidden: true, title: 'Pop Defense', sub: 'Pop the balloons that fit', how: 'Tap the balloons that fit the rule!', seconds: 0, color: ['#ef4444', '#b91c1c'] },
   { id: 'sweetTens', title: 'Sweet Tens', sub: 'Line up candies that make 10', how: 'Swap candies to line up three that make ten!', seconds: 0, color: ['#ec4899', '#be185d'] },
   { id: 'numberKeys', title: 'Number Keys', sub: 'Tap tiles in counting order', how: 'Tap the tiles in counting order, and play a song!', seconds: 0, color: ['#6366f1', '#4338ca'] },
   { id: 'pipLaunch', title: 'Pip Launch', sub: 'Fly Pip onto the number line', how: 'Pull Pip back and launch onto the number!', seconds: 0, color: ['#0ea5e9', '#0369a1'] },
@@ -83,7 +98,8 @@ const sayIn = (lang) => (text) => (lang === 'ja' ? speakInLanguage(text, 'ja-JP'
 export const hasJa = (id) => Boolean(GAMES.find((g) => g.id === id)?.ja);
 
 // The games a grade plays.
-export const gamesFor = (grade) => GAMES.filter((g) => !g.grades || g.grades.includes(grade));
+// (A game with hidden: true is kept but not shown: Pop Defense, for now.)
+export const gamesFor = (grade) => GAMES.filter((g) => !g.hidden && (!g.grades || g.grades.includes(grade)));
 
 const BEST_KEY = 'mathpop-games-best-v1';
 function readBest() {
@@ -794,6 +810,16 @@ const PLAY = {
   timesTiles: TimesTiles,
   pizza: PizzaShop,
   logicLock: LogicLock,
+  valueSort: ValueSort,
+  doubleUp: DoubleUp,
+  takeTen: TakeTen,
+  crossSums: CrossSums,
+  areaBoxes: AreaBoxes,
+  petSudoku: PetSudoku,
+  tapMatch: TapMatch,
+  hoopHop: HoopHop,
+  fourInRow: FourInRow,
+  domino: DominoMatch,
 };
 const SCORE_WORD = {
   bubbles: 'popped',
@@ -823,6 +849,16 @@ const SCORE_WORD = {
   timesTiles: 'matches',
   pizza: 'coins',
   logicLock: 'stars',
+  valueSort: 'stars',
+  doubleUp: 'joins',
+  takeTen: 'points',
+  crossSums: 'stars',
+  areaBoxes: 'stars',
+  petSudoku: 'stars',
+  tapMatch: 'points',
+  hoopHop: 'points',
+  fourInRow: 'points',
+  domino: 'points',
 };
 // The games that end with Time's up (the others end their own way).
 const TIMED = ['bubbles', 'make10', 'shapes', 'bondPop', 'makeTen', 'sumGridRush', 'timesTiles'];

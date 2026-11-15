@@ -63,6 +63,7 @@ import WeekCard from './WeekCard.jsx';
 import TrialRecap from './TrialRecap.jsx';
 import MoneyCard from './MoneyCard.jsx';
 import WelcomeCard from './WelcomeCard.jsx';
+import { CardArt, cardColors, hasCardArt } from './GameCards.jsx';
 import SignupCard from './SignupCard.jsx';
 import { canRemind, hourLabel, reminderState, turnOffReminder, turnOnReminder } from './reminder.js';
 import PlusScreen from './PlusScreen.jsx';
@@ -1822,10 +1823,8 @@ export default function App() {
                     setView('madminute');
                   }}
                 >
-                  <span className="home-game-art" aria-hidden="true">
-                    <SectionIcon id="madminute" />
-                  </span>
                   <span className="home-game-title">Mad Minute</span>
+                  <CardArt id="madminute" />
                   {madMinuteBest(currentProfile.id, gradeInfo(level).id) > 0 && (
                     <span className="home-game-best">Best {madMinuteBest(currentProfile.id, gradeInfo(level).id)}</span>
                   )}
@@ -1835,17 +1834,21 @@ export default function App() {
                 <button
                   key={g.id}
                   className="home-game"
-                  style={{ '--card-from': g.color[0] }}
+                  style={{ '--card-from': cardColors(g.id, g.color[0]).bg, '--card-ink': cardColors(g.id, g.color[0]).ink }}
                   onClick={() => {
                     unlockAudio();
                     setGameId(g.id);
                     setView('game');
                   }}
                 >
-                  <span className="home-game-art" aria-hidden="true">
-                    <GameArt id={g.id} />
-                  </span>
                   <span className="home-game-title">{gameTitle(g.id, gradeInfo(level).id, langFor(currentProfile.id))}</span>
+                  {hasCardArt(g.id) ? (
+                    <CardArt id={g.id} />
+                  ) : (
+                    <span className="home-game-art" aria-hidden="true">
+                      <GameArt id={g.id} />
+                    </span>
+                  )}
                   {gameBest(currentProfile.id, gradeInfo(level).id, g.id) > 0 && (
                     <span className="home-game-best">Best {gameBest(currentProfile.id, gradeInfo(level).id, g.id)}</span>
                   )}

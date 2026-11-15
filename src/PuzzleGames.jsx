@@ -1,0 +1,828 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Thing } from './Drawings.jsx';
+import { rand, shuffle } from './gameKit.jsx';
+import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
+import { PuzzleTop, VALUE_COLORS, labelSize, sayValue, useLevel, valueKeys, waysOf } from './puzzleKit.jsx';
+
+// Puzzle games, each with levels inside (saved for each player and grade):
+//   ValueSort   sort number cards into tubes by what they're worth (5, 2 + 3, ●●●●●)
+//   DoubleUp    slide tiles; two the same join into their double
+//   TakeTen     clear pairs that make 10 (or are the same) when nothing is between
+//   CrossSums   cross out numbers until each row and column makes its total
+//   AreaBoxes   draw boxes: each has one number, and that many squares
+//   PetSudoku   every pet (or number) once in each row, column and box
+
+// A board done: a cheer and a "Level up!", then the next board (or the end).
+function useBoards(boards, onEnd, levelUp) {
+  const [done, setDone] = useState(0);
+  const [banner, setBanner] = useState(null);
+  const timer = useRef(null);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  function boardDone(score, next) {
+    playStickerStick();
+    const lv = levelUp();
+    const n = done + 1;
+    setDone(n);
+    setBanner(n >= boards ? 'You did it!' : `Level ${lv}!`);
+    speak(n >= boards ? 'You did it!' : `Level up! Level ${lv}!`);
+    timer.current = setTimeout(() => {
+      setBanner(null);
+      if (n >= boards) onEnd(score);
+      else next(lv);
+    }, 1500);
+  }
+  return { done, banner, boardDone };
+}
+const Banner = ({ text }) => (text ? <div className="pz-banner">{text}</div> : null);
+
+// ------------------------------------------------------------ Value Sort
+function sortBoard(grade, level) {
+  const little = grade === 'p';
+  const n = little ? Math.min(4, 2 + Math.floor((level - 1) / 2)) : Math.min(6, 3 + Math.floor((level - 1) / 2));
+  const cap = little ? 3 : 4;
+  const keys = valueKeys(grade, n);
+  let id = 0;
+  const items = keys.flatMap((key, ki) => waysOf(grade, key, cap).map((label) => ({ id: ++id, key, label, c: ki })));
+  for (;;) {
+    const s = shuffle(items);
+    const tubes = keys.map((_, i) => s.slice(i * cap, i * cap + cap));
+    tubes.push([], []);
+    if (!tubes.some((t) => t.length === cap && t.every((x) => x.key === t[0].key))) return { tubes, cap, keys };
+  }
+}
+const full = (t, cap) => t.length === cap && t.every((x) => x.key === t[0].key);
+
+export function ValueSort({ grade, onEnd, playerId }) {
+  const [level, levelUp] = useLevel(playerId, grade, 'valueSort');
+  const [b, setB] = useState(() => sortBoard(grade, level));
+  const [sel, setSel] = useState(null);
+  const [hist, setHist] = useState([]);
+  const [score, setScore] = useState(0);
+  const [shake, setShake] = useState(null);
+  const [note, setNote] = useState(null);
+  const { banner, boardDone } = useBoards(3, onEnd, levelUp);
+  const colored = grade === 'p';
+  useEffect(() => {
+    speak(colored ? 'Put the same numbers together in one tube!' : 'Sort the cards! Each tube gets cards worth the same number.');
+  }, [b]); // eslint-disable-line react-hooks/exhaustive-deps
+  function tapTube(i) {
+    if (banner) return;
+    const tubes = b.tubes;
+    if (sel === null) {
+      if (!tubes[i].length || full(tubes[i], b.cap)) return;
+      playStickerPick();
+      setSel(i);
+      speak(sayValue(tubes[i][tubes[i].length - 1].label));
+      return;
+    }
+    if (sel === i) return setSel(null);
+    const card = tubes[sel][tubes[sel].length - 1];
+    const to = tubes[i];
+    const top = to[to.length - 1];
+    if (to.length >= b.cap || (top && top.key !== card.key)) {
+      playIncorrectBuzz();
+      setShake(i);
+      const line = to.length >= b.cap ? 'That tube is full!' : `${card.label} isn't worth the same as ${top.label}. Find a match, or an empty tube.`;
+      setNote(line);
+      speak(line.replace(card.label, sayValue(card.label)).replace(top?.label || '¤', sayValue(top?.label || '')));
+      setTimeout(() => setShake(null), 400);
+      setSel(null);
+      return undefined;
+    }
+    const next = tubes.map((t) => [...t]);
+    next[i].push(next[sel].pop());
+    setHist((h) => [...h, tubes]);
+    setSel(null);
+    setNote(null);
+    if (full(next[i], b.cap)) {
+      playCorrectChime();
+      speak(colored ? 'A full tube!' : `All worth ${sayValue(next[i][0].key)}!`);
+    } else playStickerPick();
+    setB({ ...b, tubes: next });
+    if (next.every((t) => !t.length || full(t, b.cap))) {
+      const total = score + 3;
+      setScore(total);
+      boardDone(total, (lv) => {
+        setB(sortBoard(grade, lv));
+        setHist([]);
+      });
+    }
+    return undefined;
+  }
+  return (
+    <div className="game game-pz">
+      <PuzzleTop level={level} score={score} label="stars" />
+      <p className="game-ask">{colored ? 'Same numbers in one tube!' : 'Same value in one tube!'}</p>
+      <div className="vs-tubes">
+        {b.tubes.map((t, i) => (
+          <button key={i} type="button" className={`vs-tube${sel === i ? ' vs-sel' : ''}${shake === i ? ' make10-bad' : ''}${full(t, b.cap) ? ' vs-full' : ''}`} style={{ '--cap': b.cap, '--vs': full(t, b.cap) ? VALUE_COLORS[t[0].c % VALUE_COLORS.length] : undefined }} onClick={() => tapTube(i)} aria-label={`Tube ${i + 1}`}>
+            {t.map((x, k) => (
+              <span key={x.id} className={`vs-card${sel === i && k === t.length - 1 ? ' vs-lift' : ''}`} style={{ '--vc': colored || full(t, b.cap) ? VALUE_COLORS[x.c % VALUE_COLORS.length] : '#fff', '--fs': labelSize(x.label), color: colored || full(t, b.cap) ? '#fff' : '#173a66' }}>
+                {x.label}
+              </span>
+            ))}
+          </button>
+        ))}
+      </div>
+      {note && <p className="bakery-note">{note}</p>}
+      <div className="bakery-actions">
+        <button type="button" className="bakery-btn" disabled={!hist.length} onClick={() => { setB({ ...b, tubes: hist[hist.length - 1] }); setHist(hist.slice(0, -1)); setSel(null); }}>
+          ↶ Undo
+        </button>
+        <button type="button" className="bakery-btn" onClick={() => { setB({ ...b, tubes: hist[0] || b.tubes }); setHist([]); setSel(null); }}>
+          ↺ Start over
+        </button>
+      </div>
+      <Banner text={banner} />
+    </div>
+  );
+}
+
+// ------------------------------------------------------------- Double Up
+const BASE = { p: 1, k: 1, 1: 2, 2: 2, 3: 3, 4: 5 };
+const STEPS = { p: 3, k: 4, 1: 4, 2: 5, 3: 5, 4: 5 };
+let tileId = 0;
+function addTile(cells, base) {
+  const free = cells.map((c, i) => (c ? -1 : i)).filter((i) => i >= 0);
+  if (!free.length) return cells;
+  const next = [...cells];
+  next[free[rand(0, free.length - 1)]] = { id: ++tileId, v: Math.random() < 0.85 ? base : base * 2, born: true };
+  return next;
+}
+// Slide one way: returns { cells, merged: [values], moved }.
+function slide(cells, n, dir) {
+  const out = Array(n * n).fill(null);
+  const merged = [];
+  let moved = false;
+  for (let line = 0; line < n; line++) {
+    const idx = Array.from({ length: n }, (_, k) => {
+      if (dir === 'left') return line * n + k;
+      if (dir === 'right') return line * n + (n - 1 - k);
+      if (dir === 'up') return k * n + line;
+      return (n - 1 - k) * n + line;
+    });
+    const vals = idx.map((i) => cells[i]).filter(Boolean);
+    const res = [];
+    for (let k = 0; k < vals.length; k++) {
+      if (k + 1 < vals.length && vals[k].v === vals[k + 1].v) {
+        res.push({ id: ++tileId, v: vals[k].v * 2, pop: true });
+        merged.push(vals[k].v);
+        k++;
+      } else res.push({ ...vals[k], born: false, pop: false });
+    }
+    idx.forEach((i, k) => {
+      out[i] = res[k] || null;
+      if ((cells[i] && cells[i].id) !== (out[i] && out[i].id)) moved = true;
+    });
+  }
+  return { cells: out, merged, moved };
+}
+const canMove = (cells, n) => ['left', 'right', 'up', 'down'].some((d) => slide(cells, n, d).moved);
+
+export function DoubleUp({ grade, onEnd, playerId }) {
+  const [level, levelUp] = useLevel(playerId, grade, 'doubleUp');
+  const n = grade === 'p' ? 3 : 4;
+  const base = BASE[grade] || 2;
+  const goalFor = (lv) => base * 2 ** Math.min(STEPS[grade] + lv - 1, STEPS[grade] + 4);
+  const [goal, setGoal] = useState(() => goalFor(level));
+  const [cells, setCells] = useState(() => addTile(addTile(Array(n * n).fill(null), base), base));
+  const [score, setScore] = useState(0);
+  const [banner, setBanner] = useState(null);
+  const [over, setOver] = useState(false);
+  const start = useRef(null);
+  const said = useRef(0);
+  useEffect(() => {
+    speak(`Swipe to slide the tiles. Two the same join into their double! Make ${goal}!`);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  function go(dir) {
+    if (over) return;
+    const r = slide(cells, n, dir);
+    if (!r.moved) return;
+    let next = addTile(r.cells, base);
+    if (r.merged.length) {
+      playCorrectChime();
+      const top = Math.max(...r.merged);
+      setScore((s) => s + r.merged.length);
+      if (top * 2 > said.current) {
+        said.current = top * 2;
+        speak(`${top} and ${top} make ${top * 2}!`);
+      }
+    } else playStickerPick();
+    if (next.some((c) => c && c.v >= goal)) {
+      const lv = levelUp();
+      const g2 = goalFor(lv);
+      setGoal(g2);
+      playStickerStick();
+      setBanner(`${goal}! Level ${lv}!`);
+      speak(`You made ${goal}! Level ${lv}! Now make ${g2}!`);
+      setTimeout(() => setBanner(null), 1600);
+    }
+    setCells(next);
+    if (!canMove(next, n)) {
+      setOver(true);
+      speak('No more moves!');
+      setTimeout(() => onEnd(score + r.merged.length), 1400);
+    }
+    next = null;
+  }
+  useEffect(() => {
+    const key = (e) => {
+      const d = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' }[e.key];
+      if (d) {
+        e.preventDefault();
+        go(d);
+      }
+    };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  });
+  const tint = (v) => VALUE_COLORS[Math.round(Math.log2(v / base)) % VALUE_COLORS.length];
+  return (
+    <div className="game game-pz">
+      <PuzzleTop level={level} score={score} label="joins" />
+      <p className="game-ask">
+        Make <b className="du-goal">{goal}</b> · two the same make double!
+      </p>
+      <div
+        className="du-board"
+        style={{ '--n': n }}
+        onPointerDown={(e) => {
+          start.current = { x: e.clientX, y: e.clientY };
+        }}
+        onPointerUp={(e) => {
+          if (!start.current) return;
+          const dx = e.clientX - start.current.x;
+          const dy = e.clientY - start.current.y;
+          start.current = null;
+          if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+          go(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up');
+        }}
+      >
+        {cells.map((c, i) => (
+          <span key={c ? c.id : `e${i}`} className={`du-cell${c ? ' du-tile' : ''}${c?.pop ? ' du-pop' : ''}${c?.born ? ' du-born' : ''}`} style={c ? { '--dc': tint(c.v), '--fs': String(c.v).length > 3 ? 0.62 : String(c.v).length > 2 ? 0.78 : 1 } : undefined}>
+            {c ? c.v : ''}
+          </span>
+        ))}
+      </div>
+      <div className="du-arrows">
+        {[
+          ['left', '←'],
+          ['up', '↑'],
+          ['down', '↓'],
+          ['right', '→'],
+        ].map(([d, a]) => (
+          <button key={d} type="button" className="bakery-btn" onClick={() => go(d)} aria-label={`Slide ${d}`}>
+            {a}
+          </button>
+        ))}
+      </div>
+      <Banner text={banner || (over ? 'No more moves!' : null)} />
+    </div>
+  );
+}
+
+// -------------------------------------------------------------- Take Ten
+// Each grade's pairs: the same number, or two that make T (in steps of unit).
+const TEN = { p: { T: 0, hi: 5 }, k: { T: 10, hi: 9 }, 1: { T: 10, hi: 9 }, 2: { T: 20, hi: 19 }, 3: { T: 100, hi: 19, unit: 5 }, 4: { T: 1, hi: 9, unit: 0.1 } };
+const tenOf = (grade) => TEN[grade] || TEN[1];
+const shown = (grade, k) => {
+  const u = tenOf(grade).unit || 1;
+  return Number((k * u).toFixed(1));
+};
+function tenBoard(grade, level) {
+  const { T, hi, unit } = tenOf(grade);
+  const cols = grade === 'p' ? 4 : grade === 'k' ? 5 : 6;
+  const rows = Math.min(8, 2 + level);
+  const steps = T ? Math.round(T / (unit || 1)) : 0;
+  const seq = [];
+  for (let i = 0; i < (rows * cols) / 2; i++) {
+    const a = rand(1, hi);
+    const same = !T || Math.random() < 0.25 || steps - a < 1 || steps - a > hi;
+    seq.push(a, same ? a : steps - a);
+  }
+  // Mix a little, so pairs are near each other but not always side by side.
+  for (let t = 0; t < seq.length; t++) {
+    const i = rand(0, seq.length - 1);
+    const j = Math.min(seq.length - 1, i + rand(1, cols));
+    [seq[i], seq[j]] = [seq[j], seq[i]];
+  }
+  return { cols, cells: seq.map((v, i) => ({ id: i, v, gone: false })), adds: 3 };
+}
+function linked(cells, cols, i, j) {
+  const [a, b] = i < j ? [i, j] : [j, i];
+  // Next to each other in reading order (cleared ones between are fine).
+  let clear = true;
+  for (let k = a + 1; k < b; k++) if (!cells[k].gone) clear = false;
+  if (clear) return true;
+  const ra = Math.floor(a / cols);
+  const ca = a % cols;
+  const rb = Math.floor(b / cols);
+  const cb = b % cols;
+  const dr = Math.sign(rb - ra);
+  const dc = Math.sign(cb - ca);
+  if (!(ra === rb || ca === cb || Math.abs(rb - ra) === Math.abs(cb - ca))) return false;
+  let r = ra + dr;
+  let c = ca + dc;
+  while (r !== rb || c !== cb) {
+    if (!cells[r * cols + c].gone) return false;
+    r += dr;
+    c += dc;
+  }
+  return true;
+}
+const pairs = (grade, x, y) => {
+  const { T, unit } = tenOf(grade);
+  return x === y || (T && x + y === Math.round(T / (unit || 1)));
+};
+function findPair(b, grade) {
+  for (let i = 0; i < b.cells.length; i++)
+    for (let j = i + 1; j < b.cells.length; j++) {
+      if (b.cells[i].gone || b.cells[j].gone) continue;
+      if (pairs(grade, b.cells[i].v, b.cells[j].v) && linked(b.cells, b.cols, i, j)) return [i, j];
+    }
+  return null;
+}
+
+export function TakeTen({ grade, onEnd, playerId }) {
+  const [level, levelUp] = useLevel(playerId, grade, 'takeTen');
+  const [b, setB] = useState(() => tenBoard(grade, level));
+  const [sel, setSel] = useState(null);
+  const [score, setScore] = useState(0);
+  const [bad, setBad] = useState([]);
+  const [hint, setHint] = useState(null);
+  const [note, setNote] = useState(null);
+  const { banner, boardDone } = useBoards(2, onEnd, levelUp);
+  const { T } = tenOf(grade);
+  const ask = T ? `Tap two that make ${T}, or two the same` : 'Tap two the same';
+  const idle = useRef(null);
+  useEffect(() => {
+    speak(`${ask}! They have to be next to each other, with nothing in between.`);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    clearTimeout(idle.current);
+    idle.current = setTimeout(() => setHint(findPair(b, grade)), 12000);
+    return () => clearTimeout(idle.current);
+  }, [b, grade]);
+  function tap(i) {
+    if (banner || b.cells[i].gone) return;
+    setHint(null);
+    if (sel === null) {
+      playStickerPick();
+      return setSel(i);
+    }
+    if (sel === i) return setSel(null);
+    const x = b.cells[sel].v;
+    const y = b.cells[i].v;
+    if (!pairs(grade, x, y)) {
+      playIncorrectBuzz();
+      setBad([sel, i]);
+      const line = T ? `${shown(grade, x)} and ${shown(grade, y)} make ${shown(grade, x + y)}, not ${T}.` : `${x} and ${y} aren't the same.`;
+      setNote(line);
+      speak(line);
+    } else if (!linked(b.cells, b.cols, sel, i)) {
+      playIncorrectBuzz();
+      setBad([sel, i]);
+      const line = 'Those two need a clear path: side by side, up and down, slanting, or next in the line.';
+      setNote(line);
+      speak(line);
+    } else {
+      playCorrectChime();
+      speak(x === y ? `${shown(grade, x)} and ${shown(grade, y)}, the same!` : `${shown(grade, x)} and ${shown(grade, y)} make ${T}!`);
+      let cells = b.cells.map((c, k) => (k === sel || k === i ? { ...c, gone: true } : c));
+      // Rows that are all cleared go away.
+      const keep = [];
+      for (let r = 0; r * b.cols < cells.length; r++) {
+        const row = cells.slice(r * b.cols, r * b.cols + b.cols);
+        if (!(row.length === b.cols && row.every((c) => c.gone))) keep.push(...row);
+      }
+      cells = keep;
+      const total = score + 1;
+      setScore(total);
+      setNote(null);
+      const nb = { ...b, cells };
+      setB(nb);
+      if (cells.every((c) => c.gone)) {
+        boardDone(total + 3, (lv) => setB(tenBoard(grade, lv)));
+        setScore(total + 3);
+      } else if (!findPair(nb, grade) && !nb.adds) {
+        speak('No more pairs!');
+        setTimeout(() => onEnd(total), 1400);
+      }
+    }
+    setSel(null);
+    setTimeout(() => setBad([]), 450);
+    return undefined;
+  }
+  function addMore() {
+    if (!b.adds) return;
+    playStickerPick();
+    let id = Math.max(...b.cells.map((c) => c.id)) + 1;
+    const more = b.cells.filter((c) => !c.gone).map((c) => ({ id: id++, v: c.v, gone: false }));
+    setB({ ...b, cells: [...b.cells, ...more], adds: b.adds - 1 });
+    speak('More numbers!');
+  }
+  return (
+    <div className="game game-pz">
+      <PuzzleTop level={level} score={score} label="pairs" />
+      <p className="game-ask">{ask}</p>
+      <div className="tt-board" style={{ '--cols': b.cols }}>
+        {b.cells.map((c, i) => (
+          <button key={c.id} type="button" disabled={c.gone} className={`tt-cell${c.gone ? ' tt-gone' : ''}${sel === i ? ' tt-sel' : ''}${bad.includes(i) ? ' make10-bad' : ''}${hint && hint.includes(i) ? ' tt-hint' : ''}`} style={{ '--tc': VALUE_COLORS[c.v % VALUE_COLORS.length] }} onClick={() => tap(i)}>
+            {shown(grade, c.v)}
+          </button>
+        ))}
+      </div>
+      {note && <p className="bakery-note">{note}</p>}
+      <div className="bakery-actions">
+        <button type="button" className="bakery-btn bakery-add" disabled={!b.adds} onClick={addMore}>
+          + More numbers ({b.adds})
+        </button>
+        <button type="button" className="bakery-btn" onClick={() => setHint(findPair(b, grade))}>
+          💡 Hint
+        </button>
+      </div>
+      <Banner text={banner} />
+    </div>
+  );
+}
+
+// ------------------------------------------------------------ Cross Sums
+function crossBoard(grade, level) {
+  const n = Math.min({ p: 3, k: 3, 1: 4, 2: 4, 3: 5, 4: 5 }[grade] || 4, ({ p: 2, k: 3, 1: 3, 2: 4, 3: 4, 4: 5 }[grade] || 3) + (level >= 4 ? 1 : 0));
+  const hi = { p: 3, k: 5, 1: 9, 2: 9, 3: 9, 4: 12 }[grade] || 9;
+  for (;;) {
+    const nums = Array.from({ length: n * n }, () => rand(1, hi));
+    const keep = nums.map(() => Math.random() < 0.6);
+    const rowsOk = Array.from({ length: n }, (_, r) => keep.slice(r * n, r * n + n).some(Boolean));
+    const colsOk = Array.from({ length: n }, (_, c) => keep.filter((_, i) => i % n === c).some(Boolean));
+    if (!rowsOk.every(Boolean) || !colsOk.every(Boolean) || keep.every(Boolean)) continue;
+    const rows = Array.from({ length: n }, (_, r) => nums.slice(r * n, r * n + n).reduce((s, v, c) => s + (keep[r * n + c] ? v : 0), 0));
+    const cols = Array.from({ length: n }, (_, c) => nums.reduce((s, v, i) => s + (i % n === c && keep[i] ? v : 0), 0));
+    return { n, nums, keep, rows, cols };
+  }
+}
+export function CrossSums({ grade, onEnd, playerId }) {
+  const [level, levelUp] = useLevel(playerId, grade, 'crossSums');
+  const [b, setB] = useState(() => crossBoard(grade, level));
+  const [out, setOut] = useState(() => new Set());
+  const [score, setScore] = useState(0);
+  const [hint, setHint] = useState(null);
+  const [helps, setHelps] = useState(0);
+  const { banner, boardDone } = useBoards(3, onEnd, levelUp);
+  useEffect(() => {
+    speak('Cross out numbers so each row and each column adds up to its total!');
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const { n } = b;
+  const rowSum = (r) => b.nums.slice(r * n, r * n + n).reduce((s, v, c) => s + (out.has(r * n + c) ? 0 : v), 0);
+  const colSum = (c) => b.nums.reduce((s, v, i) => s + (i % n === c && !out.has(i) ? v : 0), 0);
+  function tap(i) {
+    if (banner) return;
+    setHint(null);
+    const next = new Set(out);
+    if (next.has(i)) next.delete(i);
+    else next.add(i);
+    playStickerPick();
+    setOut(next);
+    const rs = (r) => b.nums.slice(r * n, r * n + n).reduce((s, v, c) => s + (next.has(r * n + c) ? 0 : v), 0);
+    const cs = (c) => b.nums.reduce((s, v, k) => s + (k % n === c && !next.has(k) ? v : 0), 0);
+    const r = Math.floor(i / n);
+    if (rs(r) === b.rows[r]) playCorrectChime();
+    if (Array.from({ length: n }, (_, k) => rs(k) === b.rows[k] && cs(k) === b.cols[k]).every(Boolean)) {
+      const total = score + Math.max(1, 3 - helps);
+      setScore(total);
+      boardDone(total, (lv) => {
+        setB(crossBoard(grade, lv));
+        setOut(new Set());
+        setHelps(0);
+      });
+    }
+  }
+  function help() {
+    // One cell that is in the wrong state now.
+    const wrong = b.nums.map((_, i) => i).filter((i) => out.has(i) === b.keep[i]);
+    if (!wrong.length) return;
+    const i = wrong[rand(0, wrong.length - 1)];
+    setHelps((h) => h + 1);
+    setHint(i);
+    speak(b.keep[i] ? `Keep the ${b.nums[i]}!` : `Cross out the ${b.nums[i]}!`);
+  }
+  return (
+    <div className="game game-pz">
+      <PuzzleTop level={level} score={score} label="stars" />
+      <p className="game-ask">Tap to cross out numbers. Each row and column must make its total!</p>
+      <div className="cs-board" style={{ '--n': n + 1 }}>
+        {Array.from({ length: n }, (_, r) => (
+          <div key={r} className="cs-row">
+            {Array.from({ length: n }, (_, c) => {
+              const i = r * n + c;
+              return (
+                <button key={c} type="button" className={`cs-cell${out.has(i) ? ' cs-out' : ''}${hint === i ? ' tt-hint' : ''}`} onClick={() => tap(i)}>
+                  {b.nums[i]}
+                </button>
+              );
+            })}
+            <span className={`cs-sum${rowSum(r) === b.rows[r] ? ' cs-ok' : ''}`}>{b.rows[r]}</span>
+          </div>
+        ))}
+        <div className="cs-row">
+          {Array.from({ length: n }, (_, c) => (
+            <span key={c} className={`cs-sum${colSum(c) === b.cols[c] ? ' cs-ok' : ''}`}>
+              {b.cols[c]}
+            </span>
+          ))}
+          <span className="cs-corner" />
+        </div>
+      </div>
+      <div className="bakery-actions">
+        <button type="button" className="bakery-btn" onClick={help}>
+          💡 Help
+        </button>
+        <button type="button" className="bakery-btn" onClick={() => setOut(new Set())}>
+          ↺ Start over
+        </button>
+      </div>
+      <Banner text={banner} />
+    </div>
+  );
+}
+
+// ------------------------------------------------------------ Area Boxes
+const AREA = { p: [3, 3, 3], k: [4, 4, 4], 1: [4, 5, 6], 2: [5, 5, 8], 3: [6, 6, 12], 4: [6, 7, 12] };
+function areaBoard(grade, level) {
+  const [w0, h0, maxA] = AREA[grade] || AREA[1];
+  const w = w0;
+  const h = Math.min(h0 + (level >= 3 ? 1 : 0), 8);
+  const rects = [];
+  const split = (r) => {
+    const a = r.w * r.h;
+    if (a <= maxA && (a <= 2 || Math.random() < 0.45)) return rects.push(r);
+    const vert = r.w > 1 && (r.h === 1 || Math.random() < r.w / (r.w + r.h));
+    if (vert) {
+      const k = rand(1, r.w - 1);
+      split({ ...r, w: k });
+      split({ ...r, x: r.x + k, w: r.w - k });
+    } else {
+      const k = rand(1, r.h - 1);
+      split({ ...r, h: k });
+      split({ ...r, y: r.y + k, h: r.h - k });
+    }
+    return undefined;
+  };
+  split({ x: 0, y: 0, w, h });
+  const clues = {};
+  for (const r of rects) clues[`${r.y + rand(0, r.h - 1)},${r.x + rand(0, r.w - 1)}`] = r.w * r.h;
+  return { w, h, clues, n: rects.length };
+}
+const BOX_COLORS = ['#ffb4c8', '#a9d1ff', '#ffd98a', '#a7e8c0', '#d6c2ff', '#ffc49b', '#9ee5dd', '#ffadad', '#c3c8ff', '#d4f0a0'];
+
+export function AreaBoxes({ grade, onEnd, playerId }) {
+  const [level, levelUp] = useLevel(playerId, grade, 'areaBoxes');
+  const [b, setB] = useState(() => areaBoard(grade, level));
+  const [boxes, setBoxes] = useState([]);
+  const [drag, setDrag] = useState(null);
+  const [note, setNote] = useState(null);
+  const [score, setScore] = useState(0);
+  const [bad, setBad] = useState(null);
+  const { banner, boardDone } = useBoards(3, onEnd, levelUp);
+  useEffect(() => {
+    speak('Drag to draw boxes! Each box has one number, and that many squares.');
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const owner = useMemo(() => {
+    const m = {};
+    boxes.forEach((bx, k) => {
+      for (let r = bx.r1; r <= bx.r2; r++) for (let c = bx.c1; c <= bx.c2; c++) m[`${r},${c}`] = k;
+    });
+    return m;
+  }, [boxes]);
+  const cellAt = (e) => {
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const d = el && el.closest('[data-cell]');
+    return d ? d.dataset.cell.split(',').map(Number) : null;
+  };
+  const span = (d) => d && { r1: Math.min(d.a[0], d.b[0]), r2: Math.max(d.a[0], d.b[0]), c1: Math.min(d.a[1], d.b[1]), c2: Math.max(d.a[1], d.b[1]) };
+  function finish(d) {
+    const s = span(d);
+    const cells = [];
+    for (let r = s.r1; r <= s.r2; r++) for (let c = s.c1; c <= s.c2; c++) cells.push(`${r},${c}`);
+    // A tap on a box takes it away.
+    if (cells.length === 1 && owner[cells[0]] !== undefined) {
+      playStickerPick();
+      setBoxes(boxes.filter((_, k) => k !== owner[cells[0]]));
+      return;
+    }
+    const clues = cells.filter((k) => b.clues[k]);
+    const area = cells.length;
+    const w = s.c2 - s.c1 + 1;
+    const h = s.r2 - s.r1 + 1;
+    let line = null;
+    if (cells.some((k) => owner[k] !== undefined)) line = 'That covers another box. Tap a box to take it away.';
+    else if (!clues.length) line = 'Every box needs one number in it.';
+    else if (clues.length > 1) line = 'Only one number in each box!';
+    else if (b.clues[clues[0]] !== area) line = w > 1 && h > 1 ? `That's ${w} × ${h} = ${area} squares. It needs ${b.clues[clues[0]]}.` : `That's ${area} ${area === 1 ? 'square' : 'squares'}. It needs ${b.clues[clues[0]]}.`;
+    if (line) {
+      if (area === 1 && !clues.length) return;
+      playIncorrectBuzz();
+      setNote(line);
+      speak(line);
+      setBad(s);
+      setTimeout(() => setBad(null), 500);
+      return;
+    }
+    playCorrectChime();
+    setNote(null);
+    speak(w > 1 && h > 1 ? `${w} times ${h} is ${area}!` : `${area}!`);
+    const next = [...boxes, { ...s, c: BOX_COLORS[boxes.length % BOX_COLORS.length] }];
+    setBoxes(next);
+    if (next.reduce((t, bx) => t + (bx.r2 - bx.r1 + 1) * (bx.c2 - bx.c1 + 1), 0) === b.w * b.h) {
+      const total = score + 3;
+      setScore(total);
+      boardDone(total, (lv) => {
+        setB(areaBoard(grade, lv));
+        setBoxes([]);
+      });
+    }
+  }
+  const live = span(drag);
+  const inLive = (r, c) => live && r >= live.r1 && r <= live.r2 && c >= live.c1 && c <= live.c2;
+  return (
+    <div className="game game-pz">
+      <PuzzleTop level={level} score={score} label="stars" />
+      <p className="game-ask">Draw a box around each number with that many squares</p>
+      <div
+        className="ab-board"
+        style={{ '--w': b.w }}
+        onPointerDown={(e) => {
+          const c = cellAt(e);
+          if (c) setDrag({ a: c, b: c });
+        }}
+        onPointerMove={(e) => {
+          if (!drag) return;
+          const c = cellAt(e);
+          if (c && (c[0] !== drag.b[0] || c[1] !== drag.b[1])) setDrag({ ...drag, b: c });
+        }}
+        onPointerUp={() => {
+          if (drag) finish(drag);
+          setDrag(null);
+        }}
+        onPointerCancel={() => setDrag(null)}
+      >
+        {Array.from({ length: b.h }, (_, r) =>
+          Array.from({ length: b.w }, (_, c) => {
+            const k = `${r},${c}`;
+            const o = owner[k];
+            const isBad = bad && r >= bad.r1 && r <= bad.r2 && c >= bad.c1 && c <= bad.c2;
+            return (
+              <span key={k} data-cell={k} className={`ab-cell${inLive(r, c) ? ' ab-live' : ''}${isBad ? ' make10-bad ab-bad' : ''}`} style={o !== undefined ? { background: boxes[o].c } : undefined}>
+                {b.clues[k] || ''}
+              </span>
+            );
+          }),
+        )}
+      </div>
+      {live && (
+        <p className="ab-size">
+          {live.c2 - live.c1 + 1} × {live.r2 - live.r1 + 1} = {(live.c2 - live.c1 + 1) * (live.r2 - live.r1 + 1)}
+        </p>
+      )}
+      {note && !live && <p className="bakery-note">{note}</p>}
+      <div className="bakery-actions">
+        <button type="button" className="bakery-btn" onClick={() => setBoxes([])}>
+          ↺ Start over
+        </button>
+      </div>
+      <Banner text={banner} />
+    </div>
+  );
+}
+
+// ------------------------------------------------------------ Pet Sudoku
+const PETS = ['cat', 'dog', 'bunny', 'panda', 'frog', 'fox'];
+const SUDOKU = { p: [3, 0, 0], k: [3, 0, 0], 1: [4, 2, 2], 2: [4, 2, 2], 3: [4, 2, 2], 4: [6, 2, 3] };
+function solve(grid, n, br, bc, limit = 2) {
+  let count = 0;
+  const g = [...grid];
+  const ok = (i, v) => {
+    const r = Math.floor(i / n);
+    const c = i % n;
+    for (let k = 0; k < n; k++) if (g[r * n + k] === v || g[k * n + c] === v) return false;
+    if (br) {
+      const r0 = r - (r % br);
+      const c0 = c - (c % bc);
+      for (let y = r0; y < r0 + br; y++) for (let x = c0; x < c0 + bc; x++) if (g[y * n + x] === v) return false;
+    }
+    return true;
+  };
+  const go = () => {
+    const i = g.indexOf(-1);
+    if (i === -1) return ++count >= limit;
+    for (let v = 0; v < n; v++)
+      if (ok(i, v)) {
+        g[i] = v;
+        if (go()) return true;
+        g[i] = -1;
+      }
+    return false;
+  };
+  go();
+  return count;
+}
+function sudokuBoard(grade, level) {
+  const [n, br, bc] = SUDOKU[grade] || SUDOKU[1];
+  // A solved grid from the standard pattern, then shuffled.
+  const base = (r, c) => (br ? (bc * (r % br) + Math.floor(r / br) + c) % n : (r + c) % n);
+  const sym = shuffle(Array.from({ length: n }, (_, i) => i));
+  const bands = br ? shuffle(Array.from({ length: n / br }, (_, i) => i)) : [0];
+  const rowOrder = br ? bands.flatMap((bd) => shuffle(Array.from({ length: br }, (_, i) => bd * br + i))) : shuffle(Array.from({ length: n }, (_, i) => i));
+  const stacks = bc ? shuffle(Array.from({ length: n / bc }, (_, i) => i)) : [0];
+  const colOrder = bc ? stacks.flatMap((st) => shuffle(Array.from({ length: bc }, (_, i) => st * bc + i))) : shuffle(Array.from({ length: n }, (_, i) => i));
+  const sol = [];
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) sol.push(sym[base(rowOrder[r], colOrder[c])]);
+  const holes = n === 3 ? Math.min(6, 2 + level) : n === 4 ? Math.min(11, 5 + level) : Math.min(22, 12 + level * 2);
+  const grid = [...sol];
+  let made = 0;
+  for (const i of shuffle(sol.map((_, k) => k))) {
+    if (made >= holes) break;
+    const keep = grid[i];
+    grid[i] = -1;
+    if (solve(grid, n, br, bc) === 1) made++;
+    else grid[i] = keep;
+  }
+  return { n, br, bc, sol, grid, given: grid.map((v) => v !== -1) };
+}
+export function PetSudoku({ grade, onEnd, playerId }) {
+  const [level, levelUp] = useLevel(playerId, grade, 'petSudoku');
+  const [b, setB] = useState(() => sudokuBoard(grade, level));
+  const [sel, setSel] = useState(null);
+  const [score, setScore] = useState(0);
+  const [misses, setMisses] = useState(0);
+  const [bad, setBad] = useState(null);
+  const [note, setNote] = useState(null);
+  const { banner, boardDone } = useBoards(3, onEnd, levelUp);
+  const pets = grade !== '3' && grade !== '4';
+  const nameOf = (v) => (pets ? PETS[v] : String(v + 1));
+  const Sym = ({ v, size = 34 }) => (pets ? <Thing id={PETS[v]} size={size} /> : <b className="sd-num">{v + 1}</b>);
+  useEffect(() => {
+    speak(pets ? 'Every pet once in each row and each column! Tap a square, then a pet.' : 'Every number once in each row, column and box! Tap a square, then a number.');
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const { n, br, bc } = b;
+  function place(v) {
+    if (sel === null || banner) return;
+    if (b.sol[sel] !== v) {
+      playIncorrectBuzz();
+      setMisses((m) => m + 1);
+      setBad(sel);
+      setTimeout(() => setBad(null), 450);
+      const r = Math.floor(sel / n);
+      const c = sel % n;
+      const rowHas = Array.from({ length: n }, (_, k) => b.grid[r * n + k]).includes(v);
+      const colHas = Array.from({ length: n }, (_, k) => b.grid[k * n + c]).includes(v);
+      const article = pets ? `a ${nameOf(v)}` : `a ${nameOf(v)}`;
+      const line = rowHas ? `There's already ${article} in this row.` : colHas ? `There's already ${article} in this column.` : br ? `Look at the box, and the other rows and columns. Try another!` : 'Look at the other rows and columns. Try another!';
+      setNote(line);
+      speak(line);
+      return;
+    }
+    playCorrectChime();
+    setNote(null);
+    const grid = [...b.grid];
+    grid[sel] = v;
+    setB({ ...b, grid });
+    setSel(null);
+    if (!grid.includes(-1)) {
+      const total = score + Math.max(1, 3 - misses);
+      setScore(total);
+      boardDone(total, (lv) => {
+        setB(sudokuBoard(grade, lv));
+        setMisses(0);
+      });
+    }
+  }
+  return (
+    <div className="game game-pz">
+      <PuzzleTop level={level} score={score} label="stars" />
+      <p className="game-ask">{pets ? 'Each pet once in every row and column' : 'Each number once in every row, column and box'}</p>
+      <div className="sd-board" style={{ '--n': n }}>
+        {b.grid.map((v, i) => {
+          const r = Math.floor(i / n);
+          const c = i % n;
+          const edgeR = bc && (c + 1) % bc === 0 && c < n - 1;
+          const edgeB = br && (r + 1) % br === 0 && r < n - 1;
+          return (
+            <button key={i} type="button" disabled={b.given[i]} className={`sd-cell${b.given[i] ? ' sd-given' : ''}${sel === i ? ' sd-sel' : ''}${bad === i ? ' make10-bad' : ''}${edgeR ? ' sd-er' : ''}${edgeB ? ' sd-eb' : ''}`} onClick={() => { playStickerPick(); setSel(i); }}>
+              {v !== -1 && <Sym v={v} size={n > 4 ? 26 : 36} />}
+            </button>
+          );
+        })}
+      </div>
+      {note && <p className="bakery-note">{note}</p>}
+      <div className="sd-pal">
+        {Array.from({ length: n }, (_, v) => (
+          <button key={v} type="button" className="sd-pick" disabled={sel === null} onClick={() => place(v)} aria-label={nameOf(v)}>
+            <Sym v={v} size={34} />
+          </button>
+        ))}
+      </div>
+      <Banner text={banner} />
+    </div>
+  );
+}
