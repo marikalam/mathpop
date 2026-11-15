@@ -4,6 +4,7 @@ import { DominoMatch, FourInRow, TapMatch } from './PlayGames.jsx';
 import HoopHop from './arcade/HoopHop.jsx';
 import { useEffect, useRef, useState } from 'react';
 import Pip from './Pip.jsx';
+import Icon from './Icon.jsx';
 import { Confetti, CountUp } from './Celebrate.jsx';
 import { Thing } from './Drawings.jsx';
 import { ShapeIcon } from './preK.jsx';
@@ -59,7 +60,7 @@ export const GAMES = [
   { id: 'doubleUp', title: 'Double Up', sub: 'Two the same make double', how: 'Tap two tiles with the same number. They join into the double!', seconds: 0, color: ['#7d4f63', '#663f51'] },
   { id: 'takeTen', title: 'Take Ten', sub: 'Clear pairs that make 10', how: 'Tap two that make ten, or two the same, with nothing in between!', seconds: 0, color: ['#0ea5e9', '#0284c7'] },
   { id: 'crossSums', title: 'Cross Sums', sub: 'Cross out to make the totals', how: 'Cross out numbers so every row and column makes its total!', seconds: 0, color: ['#38bdf8', '#0ea5e9'] },
-  { id: 'areaBoxes', title: 'Area Boxes', sub: 'Draw boxes with that many squares', how: 'Draw a box around each number with that many squares!', seconds: 0, color: ['#fdf2e9', '#f5d9c4'] },
+  { id: 'areaBoxes', title: 'Area Boxes', sub: 'Build a box for each number', how: 'Tap a number, then tap squares next to it to build its box. A 6 gets 6 squares!', seconds: 0, color: ['#fdf2e9', '#f5d9c4'] },
   { id: 'petSudoku', title: 'Pet Sudoku', sub: 'Each pet once in a row', how: 'Every pet once in each row and column!', seconds: 0, color: ['#fff5ec', '#f5dcc4'] },
   { id: 'tapMatch', title: 'Tap Match', sub: 'Three worth the same clear', how: 'Tap tiles into the tray. Three worth the same clear away!', seconds: 0, color: ['#f87171', '#dc2626'] },
   { id: 'hoopHop', title: 'Hoop Hop', sub: 'Fly through the answer', how: 'Tap to fly! Go through the hoop with the answer!', seconds: 0, color: ['#fde3a7', '#f5c26b'] },
@@ -533,7 +534,7 @@ function Bakery({ grade, onEnd, lang, playerId }) {
           {slots === 0 && (
             <span className="bake-empty">
               <span className="bake-empty-hand" aria-hidden="true">
-                👇
+                <Icon name="pointer" size="28px" />
               </span>
               {ja ? 'ここに はこを おいてね' : 'Drag a box here!'}
             </span>
@@ -1032,8 +1033,8 @@ export function GameArt({ id }) {
     );
   }
   if (id === 'bakery') return <Thing id="cupcake" size={48} />;
-  const ARCADE_ART = { snipDrop: '🍬', pipHop: '☁️', numberRun: '🏃', gardenGuard: '🐌', popDefense: '🎈', sweetTens: '🍭', numberKeys: '🎹', pipLaunch: '🎯', shapeDash: '🔷', fruitSlice: '🍉' };
-  if (ARCADE_ART[id]) return <span className="games-art-emoji">{ARCADE_ART[id]}</span>;
+  const ARCADE_ART = { snipDrop: 'candy', pipHop: 'arrow', numberRun: 'rocket', gardenGuard: 'shapes', popDefense: 'target', sweetTens: 'candy', numberKeys: 'keypad', pipLaunch: 'target', shapeDash: 'shapes', fruitSlice: 'scissors' };
+  if (ARCADE_ART[id]) return <Icon name={ARCADE_ART[id]} size="44px" />;
   if (id === 'goFish') {
     return (
       <span className="games-art-gofish">

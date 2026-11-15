@@ -1,4 +1,5 @@
 import ThinkCard from './ThinkCard.jsx';
+import { Heart } from './arcade/kit.jsx';
 import { sgSettings, speedFactor, thinkMode } from './sgMode.js';
 import { useEffect, useRef, useState } from 'react';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
@@ -41,19 +42,19 @@ const FRUITS = [
 // to the LEGEND dragon.
 const FORMS = [
   { at: 0, id: 'plain' },
-  { at: 3, id: 'emerald', name: 'Emerald snake!', icon: '💚' },
-  { at: 6, id: 'ruby', name: 'Ruby snake!', icon: '❤️' },
-  { at: 10, id: 'sapphire', name: 'Sapphire snake!', icon: '💙' },
-  { at: 14, id: 'gold', name: 'Gold snake!', icon: '👑' },
-  { at: 18, id: 'silver', name: 'Silver snake!', icon: '🪙' },
-  { at: 22, id: 'fire', name: 'It hatched! Fire dragon!', icon: '🔥' },
-  { at: 27, id: 'water', name: 'Water dragon!', icon: '🌊' },
-  { at: 32, id: 'ice', name: 'Ice dragon!', icon: '❄️' },
-  { at: 37, id: 'lightning', name: 'Lightning dragon!', icon: '⚡' },
-  { at: 42, id: 'moon', name: 'Moon dragon!', icon: '🌙' },
-  { at: 48, id: 'sun', name: 'Sun dragon!', icon: '☀️' },
-  { at: 54, id: 'rainbow', name: 'Rainbow dragon!', icon: '🌈' },
-  { at: 60, id: 'legend', name: 'LEGEND dragon!', icon: '🌟' },
+  { at: 3, id: 'emerald', name: 'Emerald snake!' },
+  { at: 6, id: 'ruby', name: 'Ruby snake!' },
+  { at: 10, id: 'sapphire', name: 'Sapphire snake!' },
+  { at: 14, id: 'gold', name: 'Gold snake!' },
+  { at: 18, id: 'silver', name: 'Silver snake!' },
+  { at: 22, id: 'fire', name: 'It hatched! Fire dragon!' },
+  { at: 27, id: 'water', name: 'Water dragon!' },
+  { at: 32, id: 'ice', name: 'Ice dragon!' },
+  { at: 37, id: 'lightning', name: 'Lightning dragon!' },
+  { at: 42, id: 'moon', name: 'Moon dragon!' },
+  { at: 48, id: 'sun', name: 'Sun dragon!' },
+  { at: 54, id: 'rainbow', name: 'Rainbow dragon!' },
+  { at: 60, id: 'legend', name: 'LEGEND dragon!' },
 ];
 const formFor = (score) => [...FORMS].reverse().find((f) => score >= f.at).id;
 const gem = (a, b, i) => (i % 2 ? a : b);
@@ -77,6 +78,20 @@ const LOOKS = {
   legend: { body: (i, t) => [`hsl(${(i * 25 - t * 160) % 360}, 90%, ${i % 2 ? 62 : 45}%)`, '#ffd23f'], marks: 'stars', trail: ['#ffd23f', '#fff', '#f472b6', '#a78bfa', '#38bdf8'], wings: ['rgba(253,224,71,0.8)', '#d97706'], spikes: '#facc15', horns: '#facc15', crown: true, glow: (t) => `hsl(${(t * 160) % 360}, 90%, 60%)` },
 };
 const look = (form) => LOOKS[form] || LOOKS.plain;
+// A form's little badge (no emoji): a ball in its color; dragons have
+// wings, gold and LEGEND a crown.
+function FormDot({ id }) {
+  const lk = look(id);
+  const [fill, edge] = lk.body(1, 0);
+  return (
+    <svg viewBox="0 0 28 24" width="26" height="22" aria-hidden="true">
+      {lk.wings && <path d="M9 12 1 5l2 10zM19 12l8-7-2 10z" fill={lk.wings[0]} stroke={lk.wings[1]} strokeWidth="1.2" />}
+      <circle cx="14" cy="13" r="8" fill={fill} stroke={edge} strokeWidth="2" />
+      <circle cx="11.5" cy="10.5" r="2.2" fill="rgba(255,255,255,0.6)" />
+      {lk.crown && <path d="M9 6 10 1l2.5 3L14 0l1.5 4L18 1l1 5z" fill="#ffd23f" stroke="#d99a00" strokeWidth="0.8" />}
+    </svg>
+  );
+}
 function bodyColor(form, i, t) {
   return look(form).body(i, t);
 }
@@ -399,12 +414,12 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
           if (s % 5 === 0 && heartsRef.current < maxHearts) {
             heartsRef.current += 1;
             setHearts(heartsRef.current);
-            state.floats.push({ x: h.x, y: h.y - 30, text: '+❤', life: 1.2 });
+            state.floats.push({ x: h.x, y: h.y - 30, text: '+1 ♥', life: 1.2 });
           }
           const lv = FORMS.find((f) => f.at === s && f.name);
           if (lv) {
             playStickerStick();
-            setBanner(`${lv.icon} ${lv.name}`);
+            setBanner(lv.name);
             speak(lv.name);
             setTimeout(() => setBanner(null), 1800);
             burst(h.x, h.y, '#ffd23f', 40, 260);
@@ -903,7 +918,7 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
         <span className="snake-hearts" aria-label={`${hearts} ${hearts === 1 ? 'heart' : 'hearts'} left`}>
           {Array.from({ length: maxHearts }, (_, i) => (
             <span key={i} className={`snake-heart${i < hearts ? '' : ' snake-heart-gone'}${i === lost ? ' snake-heart-lost' : ''}`}>
-              ❤
+              <Heart />
             </span>
           ))}
         </span>
@@ -941,12 +956,12 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
       <div className="snake-forms" aria-label="Snake forms">
         {FORMS.filter((f) => f.name).map((f) => (
           <span key={f.id} className={`snake-form${score >= f.at ? ' snake-form-on' : ''}`} title={f.name}>
-            {f.icon}
+            <FormDot id={f.id} />
           </span>
         ))}
         {FORMS.find((f) => f.at > score) && (
           <small className="snake-form-next">
-            {FORMS.find((f) => f.at > score).icon} in {FORMS.find((f) => f.at > score).at - score}
+            <FormDot id={FORMS.find((f) => f.at > score).id} /> in {FORMS.find((f) => f.at > score).at - score}
           </small>
         )}
       </div>

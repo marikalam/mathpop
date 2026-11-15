@@ -10703,8 +10703,10 @@ body {
   place-items: center;
 }
 .gf-back-fish::after {
-  content: '🐟';
-  font-size: 22px;
+  content: '';
+  width: 30px;
+  height: 18px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 18'%3E%3Cpath d='M2 9c5-8 15-8 20 0-5 8-15 8-20 0zM21 9l8-6v12z' fill='%23fff' opacity='.85'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 .gf-back-up {
   z-index: 2;
@@ -13325,4 +13327,80 @@ body {
 .game .snake-field .snake-canvas {
   position: absolute;
   inset: 0;
+}
+
+/* Area Boxes: tap a number, then its squares. */
+.ab-how {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ab-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 99px;
+  background: #fff;
+  color: #173a66;
+  font: 600 14px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  box-shadow: 0 2px 6px rgba(23, 58, 102, 0.08);
+}
+.ab-step b {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #173a66;
+  color: #fff;
+  font-size: 13px;
+}
+.ab-board .ab-cell {
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+.ab-clue {
+  background: #fff !important;
+  box-shadow: inset 0 0 0 3px #173a66;
+}
+.ab-board .ab-act {
+  background: color-mix(in srgb, var(--bc) 45%, #fff);
+}
+.ab-board .ab-act.ab-clue,
+.ab-board .ab-picked {
+  background: var(--bc) !important;
+  color: #fff;
+  box-shadow: inset 0 0 0 3px #173a66, 0 0 0 3px #ffd23f;
+}
+.ab-board .ab-done {
+  background: var(--bc) !important;
+  color: #fff;
+  box-shadow: none;
+}
+.ab-cell small {
+  font: 700 13px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #173a66;
+  opacity: 0.7;
+}
+.ab-show {
+  outline: 3px dashed #173a66;
+  outline-offset: -5px;
+}
+.ab-status {
+  display: flex;
+  justify-content: center;
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #173a66;
+}
+.ab-status b {
+  display: inline-block;
+  min-width: 30px;
+  margin-right: 4px;
+  padding: 0 6px;
+  border-radius: 8px;
+  color: #fff;
+  text-align: center;
 }
