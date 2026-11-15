@@ -13259,3 +13259,70 @@ body {
   transform: scale(1.08);
   box-shadow: 0 0 0 7px #ffd23f !important;
 }
+
+/* ---- Games fill the whole screen ----
+   The game area reaches the bottom of the screen; its main part (the
+   board, the field, the cards) grows to fill it, and boards that keep
+   their shape sit in the middle of the space. */
+.game {
+  min-height: calc(100dvh - 196px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+}
+/* Fields and boards that grow. */
+.game .arc-field,
+.game .snake-field,
+.game .bubble-tank {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 360px;
+}
+.game .tt-board,
+.game .make10-grid,
+.game .times-grid,
+.game .mem-grid,
+.game .shapes-grid,
+.game .vs-jars,
+.game .dm-hand {
+  flex: 1 1 auto;
+  max-height: none;
+  align-content: stretch;
+}
+.game .tt-board,
+.game .make10-grid,
+.game .times-grid {
+  grid-auto-rows: minmax(48px, 1fr);
+}
+.game .tt-board > *,
+.game .make10-grid > *,
+.game .times-grid > * {
+  aspect-ratio: auto;
+  height: 100%;
+}
+.game .vs-jar {
+  min-height: 0;
+}
+.game .dm-hand {
+  align-content: center;
+}
+/* Boards that keep their shape: centered in the space. */
+.game .du-board,
+.game .cs-board,
+.game .ab-board,
+.game .sd-board,
+.game .fr-board,
+.game .tm-pile,
+.game .bm-board,
+.game .clock-scene,
+.game .padlock,
+.game .bond-pic,
+.game .pizza-pic,
+.game .sgk-board {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+/* The canvas fills its field (absolutely, so a growing field doesn't
+   take the canvas's own size). */
+.game .arc-field .arc-canvas,
+.game .snake-field .snake-canvas {
+  position: absolute;
+  inset: 0;
+}

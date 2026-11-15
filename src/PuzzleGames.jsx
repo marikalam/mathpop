@@ -301,7 +301,8 @@ const shown = (grade, k) => {
 function tenBoard(grade, level) {
   const { T, hi, unit } = tenOf(grade);
   const cols = grade === 'p' ? 4 : grade === 'k' ? 5 : 6;
-  const rows = Math.min(8, 2 + level);
+  // Enough rows to fill the screen, more as the levels go.
+  const rows = Math.min(9, 4 + level);
   const steps = T ? Math.round(T / (unit || 1)) : 0;
   const seq = [];
   for (let i = 0; i < (rows * cols) / 2; i++) {
