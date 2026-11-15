@@ -158,144 +158,134 @@ export function ValueSort({ grade, onEnd, playerId }) {
 }
 
 // ------------------------------------------------------------- Double Up
+// Doubles: tap two tiles with the same number and they join into their
+// double ("4 + 4 = 8!"). A new tile drops into the empty spot. The ladder
+// on top shows the way to the goal (2 → 4 → 8 → 16). Make the goal to
+// finish the level. Same numbers glow when you're stuck.
 const BASE = { p: 1, k: 1, 1: 2, 2: 2, 3: 3, 4: 5 };
-const STEPS = { p: 3, k: 4, 1: 4, 2: 5, 3: 5, 4: 5 };
+const STEPS = { p: 2, k: 3, 1: 3, 2: 4, 3: 4, 4: 4 };
 let tileId = 0;
-function addTile(cells, base) {
-  const free = cells.map((c, i) => (c ? -1 : i)).filter((i) => i >= 0);
-  if (!free.length) return cells;
+const newTile = (base, big) => ({ id: ++tileId, v: big && Math.random() < 0.3 ? base * 2 : base, born: true });
+function dupBoard(grade, n) {
+  const base = BASE[grade] || 2;
+  return Array.from({ length: n }, (_, i) => newTile(base, i % 3 === 2));
+}
+// Makes sure two tiles match (so there's always a move).
+function withPair(cells, base) {
+  const seen = new Set();
+  for (const c of cells) {
+    if (seen.has(c.v)) return cells;
+    seen.add(c.v);
+  }
   const next = [...cells];
-  next[free[rand(0, free.length - 1)]] = { id: ++tileId, v: Math.random() < 0.85 ? base : base * 2, born: true };
+  const k = rand(0, next.length - 1);
+  const other = next.find((_, i) => i !== k) || { v: base };
+  next[k] = { id: ++tileId, v: other.v, born: true };
   return next;
 }
-// Slide one way: returns { cells, merged: [values], moved }.
-function slide(cells, n, dir) {
-  const out = Array(n * n).fill(null);
-  const merged = [];
-  let moved = false;
-  for (let line = 0; line < n; line++) {
-    const idx = Array.from({ length: n }, (_, k) => {
-      if (dir === 'left') return line * n + k;
-      if (dir === 'right') return line * n + (n - 1 - k);
-      if (dir === 'up') return k * n + line;
-      return (n - 1 - k) * n + line;
-    });
-    const vals = idx.map((i) => cells[i]).filter(Boolean);
-    const res = [];
-    for (let k = 0; k < vals.length; k++) {
-      if (k + 1 < vals.length && vals[k].v === vals[k + 1].v) {
-        res.push({ id: ++tileId, v: vals[k].v * 2, pop: true });
-        merged.push(vals[k].v);
-        k++;
-      } else res.push({ ...vals[k], born: false, pop: false });
-    }
-    idx.forEach((i, k) => {
-      out[i] = res[k] || null;
-      if ((cells[i] && cells[i].id) !== (out[i] && out[i].id)) moved = true;
-    });
-  }
-  return { cells: out, merged, moved };
-}
-const canMove = (cells, n) => ['left', 'right', 'up', 'down'].some((d) => slide(cells, n, d).moved);
 
 export function DoubleUp({ grade, onEnd, playerId }) {
   const [level, levelUp] = useLevel(playerId, grade, 'doubleUp');
-  const n = grade === 'p' ? 3 : 4;
   const base = BASE[grade] || 2;
-  const goalFor = (lv) => base * 2 ** Math.min(STEPS[grade] + lv - 1, STEPS[grade] + 4);
-  const [goal, setGoal] = useState(() => goalFor(level));
-  const [cells, setCells] = useState(() => addTile(addTile(Array(n * n).fill(null), base), base));
+  const size = grade === 'p' ? 6 : grade === 'k' ? 9 : 12;
+  const cols = grade === 'p' ? 3 : grade === 'k' ? 3 : 4;
+  const stepsFor = (lv) => STEPS[grade] + Math.min(2, Math.floor((lv - 1) / 2));
+  const [steps, setSteps] = useState(() => stepsFor(level));
+  const goal = base * 2 ** steps;
+  const [cells, setCells] = useState(() => withPair(dupBoard(grade, size), base));
+  const [sel, setSel] = useState(null);
   const [score, setScore] = useState(0);
-  const [banner, setBanner] = useState(null);
-  const [over, setOver] = useState(false);
-  const start = useRef(null);
-  const said = useRef(0);
+  const [made, setMade] = useState(base);
+  const [sum, setSum] = useState(null);
+  const [bad, setBad] = useState([]);
+  const [hint, setHint] = useState(null);
+  const { banner, boardDone } = useBoards(3, onEnd, levelUp);
+  const idle = useRef(null);
+  const ladder = Array.from({ length: steps + 1 }, (_, k) => base * 2 ** k);
   useEffect(() => {
-    speak(`Swipe to slide the tiles. Two the same join into their double! Make ${goal}!`);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  function go(dir) {
-    if (over) return;
-    const r = slide(cells, n, dir);
-    if (!r.moved) return;
-    let next = addTile(r.cells, base);
-    if (r.merged.length) {
-      playCorrectChime();
-      const top = Math.max(...r.merged);
-      setScore((s) => s + r.merged.length);
-      if (top * 2 > said.current) {
-        said.current = top * 2;
-        speak(`${top} and ${top} make ${top * 2}!`);
-      }
-    } else playStickerPick();
-    if (next.some((c) => c && c.v >= goal)) {
-      const lv = levelUp();
-      const g2 = goalFor(lv);
-      setGoal(g2);
-      playStickerStick();
-      setBanner(`${goal}! Level ${lv}!`);
-      speak(`You made ${goal}! Level ${lv}! Now make ${g2}!`);
-      setTimeout(() => setBanner(null), 1600);
+    speak(`Tap two the same, and they make double! Can you make ${goal}?`);
+  }, [goal]);
+  useEffect(() => {
+    clearTimeout(idle.current);
+    setHint(null);
+    idle.current = setTimeout(() => {
+      const byV = {};
+      cells.forEach((c, i) => (byV[c.v] = [...(byV[c.v] || []), i]));
+      const pair = Object.values(byV).find((l) => l.length >= 2);
+      if (pair) setHint(pair.slice(0, 2));
+    }, 8000);
+    return () => clearTimeout(idle.current);
+  }, [cells]);
+  function tap(i) {
+    if (banner) return;
+    setHint(null);
+    if (sel === null) {
+      playStickerPick();
+      speak(String(cells[i].v));
+      return setSel(i);
     }
-    setCells(next);
-    if (!canMove(next, n)) {
-      setOver(true);
-      speak('No more moves!');
-      setTimeout(() => onEnd(score + r.merged.length), 1400);
+    if (sel === i) return setSel(null);
+    const a = cells[sel];
+    const c = cells[i];
+    if (a.v !== c.v) {
+      playIncorrectBuzz();
+      setBad([sel, i]);
+      setTimeout(() => setBad([]), 450);
+      speak(`${a.v} and ${c.v} aren't the same. Find two ${a.v}s!`);
+      setSel(null);
+      return undefined;
     }
-    next = null;
+    playCorrectChime();
+    const v = a.v * 2;
+    speak(`${a.v} plus ${a.v} makes ${v}!`);
+    setSum({ text: `${a.v} + ${a.v} = ${v}`, n: Math.random() });
+    const next = [...cells];
+    next[i] = { id: ++tileId, v, pop: true };
+    next[sel] = newTile(base, true);
+    setSel(null);
+    const total = score + 1;
+    setScore(total);
+    if (v > made) setMade(v);
+    if (v >= goal) {
+      boardDone(total + 3, (lv) => {
+        setSteps(stepsFor(lv));
+        setCells(withPair(dupBoard(grade, size), base));
+        setMade(base);
+        setSum(null);
+      });
+      setScore(total + 3);
+      setCells(next);
+      return undefined;
+    }
+    setCells(withPair(next, base));
+    return undefined;
   }
-  useEffect(() => {
-    const key = (e) => {
-      const d = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' }[e.key];
-      if (d) {
-        e.preventDefault();
-        go(d);
-      }
-    };
-    window.addEventListener('keydown', key);
-    return () => window.removeEventListener('keydown', key);
-  });
   const tint = (v) => VALUE_COLORS[Math.round(Math.log2(v / base)) % VALUE_COLORS.length];
   return (
     <div className="game game-pz">
-      <PuzzleTop level={level} score={score} label="joins" />
-      <p className="game-ask">
-        Make <b className="du-goal">{goal}</b> · two the same make double!
-      </p>
-      <div
-        className="du-board"
-        style={{ '--n': n }}
-        onPointerDown={(e) => {
-          start.current = { x: e.clientX, y: e.clientY };
-        }}
-        onPointerUp={(e) => {
-          if (!start.current) return;
-          const dx = e.clientX - start.current.x;
-          const dy = e.clientY - start.current.y;
-          start.current = null;
-          if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
-          go(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up');
-        }}
-      >
-        {cells.map((c, i) => (
-          <span key={c ? c.id : `e${i}`} className={`du-cell${c ? ' du-tile' : ''}${c?.pop ? ' du-pop' : ''}${c?.born ? ' du-born' : ''}`} style={c ? { '--dc': tint(c.v), '--fs': String(c.v).length > 3 ? 0.62 : String(c.v).length > 2 ? 0.78 : 1 } : undefined}>
-            {c ? c.v : ''}
+      <PuzzleTop level={level} score={score} label="doubles" />
+      <div className="du-ladder" aria-label={`Make ${goal}`}>
+        {ladder.map((v, k) => (
+          <span key={v} className="du-step">
+            {k > 0 && <i aria-hidden="true">→</i>}
+            <b className={`${made >= v ? 'du-got' : ''}${k === ladder.length - 1 ? ' du-goal' : ''}`} style={{ '--dc': tint(v) }}>
+              {v}
+            </b>
           </span>
         ))}
       </div>
-      <div className="du-arrows">
-        {[
-          ['left', '←'],
-          ['up', '↑'],
-          ['down', '↓'],
-          ['right', '→'],
-        ].map(([d, a]) => (
-          <button key={d} type="button" className="bakery-btn" onClick={() => go(d)} aria-label={`Slide ${d}`}>
-            {a}
+      <p className="game-ask">Tap two the same to make double!</p>
+      <div className="du-sum" key={sum ? sum.n : 'none'}>
+        {sum ? sum.text : `${base} + ${base} = ${base * 2}`}
+      </div>
+      <div className="du-board" style={{ '--n': cols }}>
+        {cells.map((c, i) => (
+          <button key={c.id} type="button" className={`du-cell du-tile${sel === i ? ' du-sel' : ''}${c.pop ? ' du-pop' : ''}${c.born ? ' du-born' : ''}${bad.includes(i) ? ' make10-bad' : ''}${hint && hint.includes(i) ? ' tt-hint' : ''}`} style={{ '--dc': tint(c.v), '--fs': String(c.v).length > 2 ? 0.78 : 1 }} onClick={() => tap(i)}>
+            {c.v}
           </button>
         ))}
       </div>
-      <Banner text={banner || (over ? 'No more moves!' : null)} />
+      <Banner text={banner} />
     </div>
   );
 }

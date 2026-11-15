@@ -13204,3 +13204,58 @@ body {
 .vs-pop {
   animation: du-pop 0.3s ease-out;
 }
+
+/* Double Up: tap two the same. */
+.du-ladder {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+}
+.du-step {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.du-step i {
+  font-style: normal;
+  color: #94a3b8;
+  font-weight: 700;
+}
+.du-step b {
+  min-width: 34px;
+  padding: 4px 6px;
+  border-radius: 10px;
+  background: #e6ebf3;
+  color: #4d5b72;
+  text-align: center;
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.du-step .du-got {
+  background: var(--dc);
+  color: #fff;
+}
+.du-step .du-goal {
+  outline: 3px solid #ffc94a;
+  outline-offset: 1px;
+}
+.du-sum {
+  align-self: center;
+  padding: 4px 16px;
+  border-radius: 99px;
+  background: #fff;
+  color: #173a66;
+  font: 700 22px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  box-shadow: 0 2px 8px rgba(23, 58, 102, 0.1);
+  animation: du-pop 0.35s ease-out;
+}
+.du-board button.du-cell {
+  border: none;
+  cursor: pointer;
+}
+.du-sel {
+  outline: 4px solid #fff;
+  transform: scale(1.08);
+  box-shadow: 0 0 0 7px #ffd23f !important;
+}

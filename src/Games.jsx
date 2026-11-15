@@ -56,7 +56,7 @@ export const GAMES = [
   // Puzzle and play games (PuzzleGames.jsx, PlayGames.jsx, arcade/HoopHop.jsx),
   // each with levels inside that start at the player's grade.
   { id: 'valueSort', title: 'Value Sort', sub: 'Put each card in its jar', how: 'Look at the card, and tap the jar with the same value!', seconds: 0, color: ['#5b3f73', '#4a3360'] },
-  { id: 'doubleUp', title: 'Double Up', sub: 'Slide, and two make double', how: 'Swipe to slide the tiles. Two the same join into their double!', seconds: 0, color: ['#7d4f63', '#663f51'] },
+  { id: 'doubleUp', title: 'Double Up', sub: 'Two the same make double', how: 'Tap two tiles with the same number. They join into the double!', seconds: 0, color: ['#7d4f63', '#663f51'] },
   { id: 'takeTen', title: 'Take Ten', sub: 'Clear pairs that make 10', how: 'Tap two that make ten, or two the same, with nothing in between!', seconds: 0, color: ['#0ea5e9', '#0284c7'] },
   { id: 'crossSums', title: 'Cross Sums', sub: 'Cross out to make the totals', how: 'Cross out numbers so every row and column makes its total!', seconds: 0, color: ['#38bdf8', '#0ea5e9'] },
   { id: 'areaBoxes', title: 'Area Boxes', sub: 'Draw boxes with that many squares', how: 'Draw a box around each number with that many squares!', seconds: 0, color: ['#fdf2e9', '#f5d9c4'] },
@@ -905,7 +905,7 @@ const SCORE_WORD = {
   pizza: 'coins',
   logicLock: 'stars',
   valueSort: 'stars',
-  doubleUp: 'joins',
+  doubleUp: 'doubles',
   takeTen: 'points',
   crossSums: 'stars',
   areaBoxes: 'stars',
