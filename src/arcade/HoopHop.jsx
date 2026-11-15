@@ -18,7 +18,10 @@ export default function HoopHop({ grade, onEnd }) {
       let nextIn = 1.2;
       const bx = () => g.W * 0.28;
       const R = 15;
-      const speed = () => (little ? 95 : 115) + (level - 1) * 12;
+      // The hoop's half height: big, and biggest for the youngest. Anywhere
+      // inside it counts.
+      const HR = little ? 64 : 54;
+      const speed = () => (little ? 85 : 105) + (level - 1) * 10;
       function ask() {
         q = fact(grade);
         g.prompt(q.text, q.say || q.text.replace(/−/g, ' minus ').replace(/×/g, ' times ').replace(/÷/g, ' divided by '));
@@ -26,7 +29,7 @@ export default function HoopHop({ grade, onEnd }) {
       function addHoops() {
         const wrong = near(q.answer, 2).find((v) => v !== q.answer) ?? q.answer + 1;
         const upRight = Math.random() < 0.5;
-        const ys = [g.H * 0.3, g.H * 0.66];
+        const ys = [g.H * 0.27, g.H * 0.68];
         for (const [k, y] of ys.entries()) {
           const right = (k === 0) === upRight;
           hoops.push({ x: g.W + 40, y, v: right ? q.answer : wrong, right, col: hoops.length, done: false });
@@ -56,11 +59,18 @@ export default function HoopHop({ grade, onEnd }) {
             addHoops();
             nextIn = 0.8;
           }
+          // As a hoop comes close, the ball drifts toward the nearest one a
+          // little, so a near miss still goes in (which one is still up to you).
+          const ahead = hoops.filter((h) => !h.done && h.x > bx() && h.x - bx() < 150);
+          if (ahead.length) {
+            const h = ahead.reduce((a, b) => (Math.abs(a.y - ball.y) < Math.abs(b.y - ball.y) ? a : b));
+            ball.y += Math.max(-1, Math.min(1, (h.y - ball.y) / 40)) * (little ? 90 : 60) * dt;
+          }
           for (const h of hoops) {
             h.x -= speed() * dt;
             if (!h.done && h.x < bx()) {
               h.done = true;
-              if (Math.abs(ball.y - h.y) < 30) {
+              if (Math.abs(ball.y - h.y) < HR + 6) {
                 hoops.forEach((o) => (o.done = true));
                 if (h.right) {
                   g.win(1, bx(), ball.y);
@@ -94,12 +104,12 @@ export default function HoopHop({ grade, onEnd }) {
             ctx.strokeStyle = front ? '#e5484d' : '#b91c1c';
             ctx.lineWidth = 7;
             ctx.beginPath();
-            ctx.ellipse(h.x, h.y, 12, 34, 0, front ? -Math.PI / 2 : Math.PI / 2, front ? Math.PI / 2 : (Math.PI * 3) / 2);
+            ctx.ellipse(h.x, h.y, 16, HR, 0, front ? -Math.PI / 2 : Math.PI / 2, front ? Math.PI / 2 : (Math.PI * 3) / 2);
             ctx.stroke();
           };
           for (const h of hoops) {
             ring(h, false);
-            text(ctx, h.v, h.x + 30, h.y, String(h.v).length > 2 ? 20 : 26, '#173a66', 'rgba(255,255,255,0.95)');
+            text(ctx, h.v, h.x + 36, h.y, String(h.v).length > 2 ? 20 : 26, '#173a66', 'rgba(255,255,255,0.95)');
           }
           // The ball, with little wings.
           const y = ball.y;
