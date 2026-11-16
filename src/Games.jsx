@@ -80,8 +80,8 @@ export const GAMES = [
   { id: 'popDefense', hidden: true, title: 'Pop Defense', sub: 'Pop the balloons that fit', how: 'Tap the balloons that fit the rule!', seconds: 0, color: ['#ef4444', '#b91c1c'] },
   { id: 'sweetTens', title: 'Sweet Tens', sub: 'Line up candies that make 10', how: 'Swap candies to line up three that make ten!', seconds: 0, color: ['#ec4899', '#be185d'] },
   { id: 'numberKeys', title: 'Number Keys', sub: 'Tap tiles in counting order', how: 'Tap the tiles in counting order, and play a song!', seconds: 0, color: ['#6366f1', '#4338ca'] },
-  { id: 'pipLaunch', title: 'Pip Launch', sub: 'Fly Pip onto the number line', how: 'Pull Pip back and launch onto the number!', seconds: 0, color: ['#0ea5e9', '#0369a1'] },
-  { id: 'shapeDash', title: 'Shape Dash', sub: 'Jump through the right shape', how: 'Tap to jump! Go through the right shape door!', seconds: 0, color: ['#8b5cf6', '#6d28d9'] },
+  { id: 'pipLaunch', hidden: true, title: 'Pip Launch', sub: 'Fly Pip onto the number line', how: 'Pull Pip back and launch onto the number!', seconds: 0, color: ['#0ea5e9', '#0369a1'] },
+  { id: 'shapeDash', hidden: true, title: 'Shape Dash', sub: 'Jump through the right shape', how: 'Tap to jump! Go through the right shape door!', seconds: 0, color: ['#8b5cf6', '#6d28d9'] },
   { id: 'fruitSlice', title: 'Fruit Slice', sub: 'Slice the right answer', how: 'Swipe through the fruit with the answer!', seconds: 0, color: ['#84cc16', '#4d7c0f'] },
   { id: 'goFish', title: 'Go Fish!', sub: 'Flip two, find a match', how: 'Turn over two cards at a time, and find all the matching pairs!', seconds: 0, color: ['#06b6d4', '#0e7490'] },
   { id: 'toyShop', title: "Pip's Toy Shop", sub: 'Pay with coins', how: 'Pay for each toy with the right coins!', seconds: 0, color: ['#0ea5e9', '#0284c7'] },
@@ -112,7 +112,7 @@ export const hasJa = (id) => Boolean(GAMES.find((g) => g.id === id)?.ja);
 export const POPULAR = ['snake', 'logicLock', 'make10'];
 
 // The games a grade plays.
-// (A game with hidden: true is kept but not shown: Pop Defense and Hoop Hop, for now.)
+// (A game with hidden: true is kept but not shown: Pop Defense, Hoop Hop, Pip Launch and Shape Dash, for now.)
 export const gamesFor = (grade) => GAMES.filter((g) => !g.hidden && (!g.grades || g.grades.includes(grade)));
 
 const BEST_KEY = 'mathpop-games-best-v1';
