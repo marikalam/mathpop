@@ -923,15 +923,6 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
           ))}
         </span>
         <span className="snake-lv" title="Your level: it goes up as you get better">Lv {L + 1}</span>
-        {!over && (
-          <PauseButton
-            onClick={() => {
-              if (think) return;
-              pausedRef.current = true;
-              setThink({ text: round.text, start: 0, n: Math.random(), title: 'Paused: take your time' });
-            }}
-          />
-        )}
         <span className="mm-right">
           {score} {score === 1 ? 'answer' : 'answers'}
         </span>
@@ -940,6 +931,15 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
         {round.text}
       </div>
       <div className="snake-field" ref={wrapRef}>
+          {!over && (
+            <PauseButton
+              onClick={() => {
+                if (think) return;
+                pausedRef.current = true;
+                setThink({ text: round.text, start: 0, n: Math.random(), title: 'Paused: take your time' });
+              }}
+            />
+          )}
         <canvas ref={canvasRef} className="snake-canvas" aria-label={`Number Snake. ${round.text}`} />
         {banner && !over && !think && <div className="snake-banner">{banner}</div>}
         {think && !over && (
