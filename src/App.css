@@ -13404,3 +13404,89 @@ body {
   color: #fff;
   text-align: center;
 }
+
+/* The parental gate (ParentGate.jsx). */
+.pg-back {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 30, 55, 0.6);
+}
+.pg-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 360px;
+  padding: 20px;
+  border-radius: 24px;
+  background: #fff;
+  color: #173a66;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+}
+.pg-card h2 {
+  margin: 0;
+  font: 700 22px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.pg-sub {
+  margin: 0;
+  text-align: center;
+  font: 500 15px 'IBM Plex Sans', sans-serif;
+  color: #4d5b72;
+}
+.pg-words {
+  margin: 0;
+  font: 700 20px 'IBM Plex Sans', sans-serif;
+  text-align: center;
+}
+.pg-typed {
+  display: flex;
+  gap: 8px;
+}
+.pg-typed span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 46px;
+  border-radius: 10px;
+  background: #eef2f8;
+  font: 700 26px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.pg-wrong {
+  margin: 0;
+  color: #c2410c;
+  font: 600 14px 'IBM Plex Sans', sans-serif;
+}
+.pg-pad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+.pg-pad button {
+  height: 52px;
+  border: none;
+  border-radius: 14px;
+  background: #eef2f8;
+  color: #173a66;
+  font: 700 22px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  cursor: pointer;
+}
+.pg-pad button:nth-child(10) {
+  grid-column: 2;
+}
+.pg-cancel {
+  min-height: 44px;
+  padding: 8px 20px;
+  border: none;
+  background: none;
+  color: #4d5b72;
+  font: 600 15px 'IBM Plex Sans', sans-serif;
+  cursor: pointer;
+}

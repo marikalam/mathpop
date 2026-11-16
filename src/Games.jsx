@@ -63,7 +63,7 @@ export const GAMES = [
   { id: 'areaBoxes', title: 'Area Boxes', sub: 'Build a box for each number', how: 'Tap a number, then tap squares next to it to build its box. A 6 gets 6 squares!', seconds: 0, color: ['#fdf2e9', '#f5d9c4'] },
   { id: 'petSudoku', title: 'Pet Sudoku', sub: 'Each pet once in a row', how: 'Every pet once in each row and column!', seconds: 0, color: ['#fff5ec', '#f5dcc4'] },
   { id: 'tapMatch', title: 'Tap Match', sub: 'Three worth the same clear', how: 'Tap tiles into the tray. Three worth the same clear away!', seconds: 0, color: ['#f87171', '#dc2626'] },
-  { id: 'hoopHop', title: 'Hoop Hop', sub: 'Fly through the answer', how: 'Tap to fly! Go through the hoop with the answer!', seconds: 0, color: ['#fde3a7', '#f5c26b'] },
+  { id: 'hoopHop', hidden: true, title: 'Hoop Hop', sub: 'Fly through the answer', how: 'Tap to fly! Go through the hoop with the answer!', seconds: 0, color: ['#fde3a7', '#f5c26b'] },
   { id: 'fourInRow', title: 'Four in a Row', sub: 'Answer, then drop a piece', how: 'Answer to drop your piece. Get four in a row before Pip!', seconds: 0, color: ['#60a5fa', '#2563eb'] },
   { id: 'domino', title: 'Domino Match', sub: 'Match ends worth the same', how: 'Play dominoes end to end. The ends that touch are worth the same!', seconds: 0, color: ['#0f6b4f', '#0b5640'] },
   { id: 'snipDrop', title: 'Snip & Drop', sub: 'Snip the rope, drop the sweet', how: 'Tap to snip the rope when the sweet is over the right basket!', seconds: 0, color: ['#f472b6', '#db2777'] },
@@ -105,7 +105,7 @@ export const hasJa = (id) => Boolean(GAMES.find((g) => g.id === id)?.ja);
 export const POPULAR = ['snake', 'logicLock', 'make10'];
 
 // The games a grade plays.
-// (A game with hidden: true is kept but not shown: Pop Defense, for now.)
+// (A game with hidden: true is kept but not shown: Pop Defense and Hoop Hop, for now.)
 export const gamesFor = (grade) => GAMES.filter((g) => !g.hidden && (!g.grades || g.grades.includes(grade)));
 
 const BEST_KEY = 'mathpop-games-best-v1';
