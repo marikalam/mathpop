@@ -448,6 +448,22 @@ const ART = {
       <path d="M65 70 Q80 40 95 43" stroke="#ffd23f" strokeWidth="3" strokeDasharray="4 4" fill="none" />
     </g>
   ),
+  shapeFit: (
+    <g>
+      <rect x="22" y="14" width="116" height="92" rx="8" fill="#1e1b4b" />
+      {[
+        [28, 20, '#ff6b9a'], [50, 20, '#ff6b9a'], [72, 20, '#ff6b9a'], [28, 42, '#ff6b9a'],
+        [94, 20, '#3b8cf0'], [116, 20, '#3b8cf0'], [116, 42, '#3b8cf0'], [116, 64, '#3b8cf0'],
+        [50, 42, '#ffb000'], [72, 42, '#ffb000'], [94, 42, '#ffb000'], [72, 64, '#ffb000'],
+        [28, 64, '#2fae6b'], [50, 64, '#2fae6b'], [28, 86, '#2fae6b'],
+        [94, 64, '#9b6bf2'], [94, 86, '#9b6bf2'], [116, 86, '#9b6bf2'],
+      ].map(([x, y, c]) => (
+        <rect key={`${x}-${y}`} x={x} y={y} width="20" height="20" rx="5" fill={c} />
+      ))}
+      <rect x="50" y="86" width="20" height="20" rx="5" fill="none" stroke="#ffd23f" strokeWidth="2" strokeDasharray="4 3" />
+      <rect x="72" y="86" width="20" height="20" rx="5" fill="none" stroke="#ffd23f" strokeWidth="2" strokeDasharray="4 3" />
+    </g>
+  ),
   carPark: (
     <g>
       <rect x="18" y="10" width="124" height="98" rx="8" fill="#7b5641" />
@@ -700,6 +716,7 @@ const INK = {
   chess: '#5b3a1e',
   checkers: '#fff',
   carPark: '#ffd23f',
+  shapeFit: '#fff',
   reversi: '#fff',
 };
 const BG = {
@@ -716,6 +733,7 @@ const BG = {
   chess: '#eedbb8',
   checkers: '#c0392b',
   carPark: '#5b3a29',
+  shapeFit: '#4338ca',
   reversi: '#2e7d4f',
 };
 export const cardColors = (id, fallback) => ({ bg: BG[id] || fallback, ink: INK[id] });
