@@ -65,6 +65,7 @@ import MoneyCard from './MoneyCard.jsx';
 import WelcomeCard from './WelcomeCard.jsx';
 import { CardArt, cardColors, hasCardArt } from './GameCards.jsx';
 import SgModeCard from './SgModeCard.jsx';
+import GameGuide from './GameGuide.jsx';
 import GiftsCard from './GiftsCard.jsx';
 import ParentGate from './ParentGate.jsx';
 import SignupCard from './SignupCard.jsx';
@@ -769,6 +770,8 @@ export default function App() {
   const [reportFor, setReportFor] = useState(null);
 
   const [plusBack, setPlusBack] = useState('players');
+  // Where Back goes from "What the games teach".
+  const [guideBack, setGuideBack] = useState('home');
   // MathPop Plus (where the buying is) opens only past the parental gate.
   function openPlus(back = 'players') {
     withGate(() => {
@@ -1826,7 +1829,19 @@ export default function App() {
 
             {/* Games first, right under the greeting: Mad Minute and the games
                 in Games.jsx, all of them showing, three across. */}
-            <p className="home-topics-label">Games</p>
+            <div className="home-games-head">
+              <p className="home-topics-label">Games</p>
+              <button
+                type="button"
+                className="gg-link"
+                onClick={() => {
+                  setGuideBack('home');
+                  setView('guide');
+                }}
+              >
+                What do they teach?
+              </button>
+            </div>
             <div className="home-games">
               {gradeInfo(level).id !== 'p' && (
                 <button
@@ -1996,6 +2011,14 @@ export default function App() {
           </>
         )}
 
+
+        {view === 'guide' && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={() => (guideBack === 'players' ? setView('players') : goHome())} />
+            <h2 className="screen-title">What the games teach</h2>
+            <GameGuide titleOf={(id) => gameTitle(id, gradeInfo(level).id, 'en')} />
+          </>
+        )}
 
         {view === 'madminute' && (
           <>
@@ -2335,6 +2358,17 @@ export default function App() {
             {statsViewer && <StockChart onOpenStats={() => setView('stats')} />}
             {statsViewer && <MoneyCard app="mathpop" />}
             {statsViewer && <GiftsCard />}
+            <button
+              type="button"
+              className="gg-card-link"
+              onClick={() => {
+                setGuideBack('players');
+                setView('guide');
+              }}
+            >
+              <b>What each game teaches</b>
+              <span>Every game, side by side with Singapore math and Beast Academy</span>
+            </button>
             <SgModeCard />
             <div className="settings-list">
               {draftProfiles.map((p) => (
