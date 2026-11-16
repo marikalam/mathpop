@@ -13597,3 +13597,65 @@ body {
   z-index: 2;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
+
+/* The pause button in the action games (ThinkCard.jsx). */
+.tk-pause {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 4px 12px;
+  border: none;
+  border-radius: 99px;
+  background: #173a66;
+  color: #fff;
+  font: 700 14px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  cursor: pointer;
+}
+/* The get-ready screen's "Which math?" (ops.js). */
+.ops-ready {
+  gap: 14px;
+}
+.ops-ask {
+  margin: 0;
+  font: 700 20px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #173a66;
+}
+.ops-pick {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+.ops-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 84px;
+  padding: 8px 4px;
+  border: 3px solid #dbe4f0;
+  border-radius: 18px;
+  background: #fff;
+  color: #173a66;
+  cursor: pointer;
+}
+.ops-opt b {
+  font: 800 30px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.ops-opt small {
+  font: 600 12px 'IBM Plex Sans', sans-serif;
+  color: #4d5b72;
+}
+.ops-on {
+  border-color: #2fae6b;
+  background: #e6f7ee;
+}
+.ops-go {
+  min-height: 56px;
+  font-size: 20px;
+}
+
+.snake-lv {
+  white-space: nowrap;
+}

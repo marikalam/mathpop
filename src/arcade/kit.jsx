@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { madMinuteFact } from '../MadMinute.jsx';
+import { gameFact } from '../ops.js';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, speak } from '../sound.js';
 import { rand, shuffle } from '../gameKit.jsx';
-import ThinkCard, { Bond } from '../ThinkCard.jsx';
+import ThinkCard, { Bond, PauseButton } from '../ThinkCard.jsx';
 import { sgSettings, speedFactor, thinkMode } from '../sgMode.js';
 
 // The arcade games' shared kit: a canvas that fills its box, a loop
@@ -67,6 +67,7 @@ export function useArcade({ hearts: maxHearts = 3, onEnd, setup, think: thinkKin
       prompt(text, say) {
         setPromptState(text);
         if (say !== false) speak(say || text);
+        if (say !== false && text) g.thinkText = text;
         if (say !== false && text && waits() && !g.over) {
           // While a hint for a missed question is up, the new question waits its turn.
           if (g.paused && g.hinting) g.queued = text;
@@ -233,6 +234,16 @@ export function useArcade({ hearts: maxHearts = 3, onEnd, setup, think: thinkKin
             </span>
           ))}
         </span>
+        {!over && (
+          <PauseButton
+            onClick={() => {
+              const gg = gRef.current;
+              if (!gg || gg.over || think) return;
+              gg.paused = true;
+              setThink({ text: gg.thinkText || '', start: 0, n: Math.random(), title: 'Paused: take your time' });
+            }}
+          />
+        )}
         <span className="mm-right">{score}</span>
       </div>
       {prompt && (
@@ -257,6 +268,7 @@ export function useArcade({ hearts: maxHearts = 3, onEnd, setup, think: thinkKin
             key={think.n}
             text={think.text}
             start={think.start}
+            title={think.title}
             onReady={() => {
               const gg = gRef.current;
               if (gg && gg.queued) {
@@ -374,7 +386,8 @@ export function fact(grade) {
     const n = rand(1, 5);
     return { text: `${'●'.repeat(n)}`, answer: n, say: `How many dots?` };
   }
-  return madMinuteFact(grade);
+  // Harder by grade, and the operations picked on the get-ready screen.
+  return gameFact(grade);
 }
 // Number bonds: a whole and one part; the answer is the other part.
 export function bond(grade) {

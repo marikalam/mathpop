@@ -1,4 +1,5 @@
 import { setPlayGrade, sgSettings } from './sgMode.js';
+import { OPS, gameFact, hasOpsChoice, nearMisses, setGameOps, useGameOps } from './ops.js';
 import { AreaBoxes, CrossSums, DoubleUp, PetSudoku, TakeTen, ValueSort } from './PuzzleGames.jsx';
 import { DominoMatch, FourInRow, TapMatch } from './PlayGames.jsx';
 import HoopHop from './arcade/HoopHop.jsx';
@@ -8,7 +9,6 @@ import Icon from './Icon.jsx';
 import { Confetti, CountUp } from './Celebrate.jsx';
 import { Thing } from './Drawings.jsx';
 import { ShapeIcon } from './preK.jsx';
-import { madMinuteFact } from './MadMinute.jsx';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak, speakInLanguage, stopSpeaking } from './sound.js';
 import { CAKE_SIZE, Finale, PartyCake, SHOP_DECOR, ShopDecor, addReward, rewardCount } from './Rewards.jsx';
 import { TimerBar, rand, shuffle, useCountdown } from './gameKit.jsx';
@@ -141,9 +141,9 @@ function bubbleRound(grade) {
     const n = rand(1, 10);
     return { text: `Pop ${n}!`, say: `Pop the number ${n}!`, answer: n, others: shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter((x) => x !== n)).slice(0, 4) };
   }
-  const f = madMinuteFact(grade);
-  const near = shuffle([1, 2, 3, -1, -2, 10, -10].map((d) => f.answer + d).filter((x) => x >= 0 && x !== f.answer));
-  return { text: `${f.text} = ?`, say: null, answer: f.answer, others: [...new Set(near)].slice(0, 4) };
+  // Harder by grade, and the operations picked on the get-ready screen (ops.js).
+  const f = gameFact(grade);
+  return { text: `${f.text} = ?`, say: null, answer: f.answer, others: nearMisses(f.answer, 4) };
 }
 
 let bubbleId = 0;
@@ -917,6 +917,8 @@ const SCORE_WORD = {
   domino: 'points',
 };
 // The games that end with Time's up (the others end their own way).
+// The games whose questions follow the + − / × ÷ choice (ops.js).
+const OPS_GAMES = ['bubbles', 'snake', 'fruitSlice', 'numberRun', 'gardenGuard', 'hoopHop'];
 const TIMED = ['bubbles', 'make10', 'shapes', 'bondPop', 'makeTen', 'sumGridRush', 'timesTiles'];
 
 // One game: how to play (said out loud), 3-2-1, play, and the result.
@@ -929,6 +931,11 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit, lang 
   const talk = sayIn(ja ? 'ja' : 'en');
   const scoreWord = ja ? 'コイン' : SCORE_WORD[game];
   const [phase, setPhase] = useState('ready');
+  // Games with + − / × ÷ questions: pick which on the get-ready screen
+  // (2nd to 4th), then Start; the choice is remembered.
+  const opsGame = OPS_GAMES.includes(game) && hasOpsChoice(grade) && !ja;
+  const ops = useGameOps(grade);
+  const [started, setStarted] = useState(!opsGame);
   const [count, setCount] = useState(3);
   const [result, setResult] = useState(null);
   const [run, setRun] = useState(0);
@@ -937,7 +944,7 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit, lang 
   useEffect(() => () => stopSpeaking(), []);
 
   useEffect(() => {
-    if (phase !== 'ready') return undefined;
+    if (phase !== 'ready' || !started) return undefined;
     talk(ja ? `${info.ja.how} よーい、3、2、1、スタート！` : `${info.how} Ready? 3, 2, 1, go!`);
     setCount(3);
     const id = setInterval(() => {
@@ -952,7 +959,7 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit, lang 
     }, 1000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, run]);
+  }, [phase, run, started]);
 
   function end(score) {
     const isBest = score > best;
@@ -964,6 +971,26 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit, lang 
     onDone?.(game, score);
   }
 
+  if (phase === 'ready' && !started) {
+    return (
+      <div className="mm mm-ready ops-ready">
+        <p className="mm-how">{info.how}</p>
+        <p className="ops-ask">Which math?</p>
+        <div className="ops-pick" role="radiogroup" aria-label="Which math">
+          {OPS.map(([id, sign, name]) => (
+            <button key={id} type="button" role="radio" aria-checked={ops === id} className={`ops-opt${ops === id ? ' ops-on' : ''}`} onClick={() => setGameOps(grade, id)}>
+              <b>{sign}</b>
+              <small>{name}</small>
+            </button>
+          ))}
+        </div>
+        <button type="button" className="pill-btn-primary pill-btn-full ops-go" onClick={() => setStarted(true)}>
+          Start
+        </button>
+        <p className="mm-best">{best ? `Your best: ${best}` : 'Your first game!'}</p>
+      </div>
+    );
+  }
   if (phase === 'ready') {
     return (
       <div className="mm mm-ready">
@@ -1006,6 +1033,7 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit, lang 
           onClick={() => {
             setResult(null);
             setRun((r) => r + 1);
+            setStarted(!opsGame);
             setPhase('ready');
           }}
         >

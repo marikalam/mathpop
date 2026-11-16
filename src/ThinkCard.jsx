@@ -117,6 +117,7 @@ export function hintSteps(text) {
   const s = sgSettings();
   let t = String(text || '')
     .trim()
+    .replace(/(\d),(\d)/g, '$1$2')
     .replace(/\s*=\s*\?$/, '');
   // "4 + ? = 10" and "? + 4 = 10" are number bonds.
   const missing = t.match(/^(\d+) \+ \? = (\d+)$/) || t.match(/^\? \+ (\d+) = (\d+)$/);
@@ -194,7 +195,8 @@ const say = (t) =>
     .replace(/\?/g, ' what');
 
 // The card. `start`: how many hint steps to show at first (1 after a miss).
-export default function ThinkCard({ text, title = 'The game is waiting for you', onReady, start = 0 }) {
+export default function ThinkCard({ text, title, onReady, start = 0 }) {
+  title = title || 'The game is waiting for you';
   const steps = hintSteps(text);
   const [shown, setShown] = useState(Math.min(start, steps.length));
   useEffect(() => {
@@ -218,9 +220,13 @@ export default function ThinkCard({ text, title = 'The game is waiting for you',
             <small>No rush. Think, then tap I'm ready.</small>
           </span>
         </div>
-        <button type="button" className="tk-q" onClick={() => speak(say(text))}>
-          {/^●+$/.test(text) ? <Counters a={text.length} /> : text}
-        </button>
+        {text ? (
+          <button type="button" className="tk-q" onClick={() => speak(say(text))}>
+            {/^●+$/.test(text) ? <Counters a={text.length} /> : text}
+          </button>
+        ) : (
+          <p className="tk-line">Paused. Take a breath!</p>
+        )}
         {cur && (
           <div className="tk-hint">
             <span className="tk-tag">
@@ -251,5 +257,19 @@ export default function ThinkCard({ text, title = 'The game is waiting for you',
         </div>
       </div>
     </div>
+  );
+}
+
+// The pause button in the action games: stops the game on the think card
+// (the question, and hints) until I'm ready.
+export function PauseButton({ onClick }) {
+  return (
+    <button type="button" className="tk-pause" onClick={onClick} aria-label="Pause and think">
+      <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+        <rect x="4" y="3" width="4" height="14" rx="1.5" fill="currentColor" />
+        <rect x="12" y="3" width="4" height="14" rx="1.5" fill="currentColor" />
+      </svg>
+      Think
+    </button>
   );
 }
