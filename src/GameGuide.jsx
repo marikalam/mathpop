@@ -55,7 +55,7 @@ const TEACHES = {
   equalDiff: ['Taking away in your head', 'Equal differences'],
   timesTiles: ['Facts, times tables', ''],
   pizza: ['Fractions as equal parts', 'Equal fractions'],
-  chess: ['', 'Strategy, thinking ahead'],
+  chess: ['', 'Strategy, thinking ahead; Chess School: check, skewers, checkmate'],
   checkers: ['', 'Strategy, thinking ahead'],
   carPark: ['', 'Logic, planning moves'],
   reversi: ['Counting', 'Strategy'],
