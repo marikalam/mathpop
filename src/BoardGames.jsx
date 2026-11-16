@@ -2,19 +2,20 @@ import { useEffect, useRef, useState } from 'react';
 import Pip from './Pip.jsx';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
 import { PuzzleTop, useLevel } from './puzzleKit.jsx';
+import ChessSchool, { SCHOOL } from './ChessSchool.jsx';
 
 // Board games against Pip: Chess (start with pawns only, then rooks and
 // pawns, then knights and bishops, then full chess), Checkers and Reversi.
 // You always see where a piece can go. Pip looks a move or two ahead and
 // gets a little smarter each time you win (the level). Win 3, draw 1.
 
-const later = (ref, fn, ms) => ref.current.push(setTimeout(fn, ms));
-const rc = (i) => [Math.floor(i / 8), i % 8];
-const at = (r, c) => (r >= 0 && r < 8 && c >= 0 && c < 8 ? r * 8 + c : -1);
+export const later = (ref, fn, ms) => ref.current.push(setTimeout(fn, ms));
+export const rc = (i) => [Math.floor(i / 8), i % 8];
+export const at = (r, c) => (r >= 0 && r < 8 && c >= 0 && c < 8 ? r * 8 + c : -1);
 // A small search: negamax with alpha-beta. gen(b, side) → moves,
 // play(b, m) → board, score(b, side) → number (side's view), over(b,
 // side) → null or a final score for `side`.
-function search(b, side, depth, { gen, play, score, over, other }, alpha = -Infinity, beta = Infinity) {
+export function search(b, side, depth, { gen, play, score, over, other }, alpha = -Infinity, beta = Infinity) {
   const end = over(b, side);
   if (end !== null) return { v: end * (1 + depth) };
   if (depth === 0) return { v: score(b, side) };
@@ -30,7 +31,7 @@ function search(b, side, depth, { gen, play, score, over, other }, alpha = -Infi
   return best;
 }
 // Pip's move: the search, with a little randomness (more at low levels).
-function pipMove(b, side, depth, rules, noise) {
+export function pipMove(b, side, depth, rules, noise) {
   const moves = rules.gen(b, side);
   let best = null;
   let bestV = -Infinity;
@@ -47,12 +48,12 @@ function pipMove(b, side, depth, rules, noise) {
 
 // ------------------------------------------------------------------ Chess
 const VARIANTS = [
-  ['pawns', 'Pawns only', 'Get a pawn to the other side first!'],
+  ['pawns', 'Pawn Wars', 'Pawns only: get a pawn across first, take all of Pip’s pawns, or leave Pip with no moves!'],
   ['rooks', 'Rooks & pawns', 'Get a pawn across, or take all of Pip’s pieces!'],
   ['minor', 'Knights & bishops too', 'Get a pawn across, or take all of Pip’s pieces!'],
   ['full', 'Full chess', 'Checkmate Pip’s king!'],
 ];
-const VAL = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+export const VAL = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
 function chessSetup(v) {
   const b = Array(64).fill(null);
   const back = { pawns: {}, rooks: { 0: 'r', 7: 'r' }, minor: { 0: 'r', 1: 'n', 2: 'b', 5: 'b', 6: 'n', 7: 'r' }, full: { 0: 'r', 1: 'n', 2: 'b', 3: 'q', 4: 'k', 5: 'b', 6: 'n', 7: 'r' } }[v];
@@ -68,7 +69,7 @@ function chessSetup(v) {
 }
 const SLIDE = { r: [[1, 0], [-1, 0], [0, 1], [0, -1]], b: [[1, 1], [1, -1], [-1, 1], [-1, -1]] };
 SLIDE.q = [...SLIDE.r, ...SLIDE.b];
-function pseudo(b, side) {
+export function pseudo(b, side) {
   const out = [];
   b.forEach((p, i) => {
     if (!p || p.c !== side) return;
@@ -106,7 +107,7 @@ function pseudo(b, side) {
   });
   return out;
 }
-function chessPlay(b, m, v) {
+export function chessPlay(b, m, v) {
   const n = [...b];
   const p = n[m.from];
   n[m.to] = p;
@@ -116,7 +117,7 @@ function chessPlay(b, m, v) {
   if (v === 'full' && p.t === 'p' && (r === 0 || r === 7)) n[m.to] = { c: p.c, t: 'q' };
   return n;
 }
-function inCheck(b, side) {
+export function inCheck(b, side) {
   const k = b.findIndex((p) => p && p.c === side && p.t === 'k');
   if (k < 0) return false;
   return pseudo(b, side === 'w' ? 'b' : 'w').some((m) => m.to === k);
@@ -192,7 +193,7 @@ export function ChessPiece({ p, size = '86%' }) {
     </svg>
   );
 }
-const NAMES = { p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king' };
+export const NAMES = { p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king' };
 const VAR_KEY = 'mathpop-chess-variant-v1';
 
 export function Chess({ grade, onEnd, playerId }) {
@@ -204,7 +205,8 @@ export function Chess({ grade, onEnd, playerId }) {
       return 'pawns';
     }
   });
-  const [phase, setPhase] = useState('pick'); // pick, you, pip, over
+  const [phase, setPhase] = useState('pick'); // pick, you, pip, over, school
+  const [school, setSchool] = useState(null);
   const [b, setB] = useState(null);
   const [sel, setSel] = useState(null);
   const [last, setLast] = useState(null);
@@ -299,10 +301,23 @@ export function Chess({ grade, onEnd, playerId }) {
     }
     setSel(null);
   }
+  if (phase === 'school' && school) {
+    return (
+      <ChessSchool
+        key={school}
+        mode={school}
+        onEnd={onEnd}
+        onBack={() => {
+          setSchool(null);
+          setPhase('pick');
+        }}
+      />
+    );
+  }
   if (phase === 'pick' || !b) {
     return (
       <div className="game game-pz">
-        <p className="ops-ask">Which chess?</p>
+        <p className="ops-ask">Play Pip</p>
         <div className="bg-pick">
           {VARIANTS.map(([id, name, how]) => (
             <button key={id} type="button" className={`bg-var${variant === id ? ' ops-on' : ''}`} onClick={() => start(id)}>
@@ -313,6 +328,28 @@ export function Chess({ grade, onEnd, playerId }) {
               </span>
               <b>{name}</b>
               <small>{how}</small>
+            </button>
+          ))}
+        </div>
+        <p className="ops-ask">Chess School</p>
+        <div className="cs-list">
+          {SCHOOL.map(([id, name, how, t]) => (
+            <button
+              key={id}
+              type="button"
+              className="cs-item"
+              onClick={() => {
+                setSchool(id);
+                setPhase('school');
+              }}
+            >
+              <span className="cs-icon">
+                <ChessPiece p={{ c: 'w', t }} size="30px" />
+              </span>
+              <span>
+                <b>{name}</b>
+                <small>{how}</small>
+              </span>
             </button>
           ))}
         </div>
