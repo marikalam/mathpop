@@ -3,7 +3,7 @@ import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick,
 import { gameFact, nearMisses } from './ops.js';
 import ThinkCard from './ThinkCard.jsx';
 
-// Math Island: sail from island to island by answering questions (from
+// Island Builder: sail from island to island by answering questions (from
 // the grade, and the +− / ×÷ and how-hard choices), collecting shells.
 // A miss opens the think card with a hint, then the same question again.
 // Shells build up each player's own island: buying a palm tree for 3 when

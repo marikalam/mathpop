@@ -448,6 +448,20 @@ const ART = {
       <path d="M65 70 Q80 40 95 43" stroke="#ffd23f" strokeWidth="3" strokeDasharray="4 4" fill="none" />
     </g>
   ),
+  lavaRun: (
+    <g>
+      <path d="M50 108 L80 26 h20 L130 108z" fill="#78350f" />
+      <path d="M78 28 q12 -16 24 0 q-4 12 -12 6 q-8 6 -12 -6z" fill="#f97316" />
+      <path d="M84 30 l-8 26 l10 -6 l4 24 l4 -24 l10 6 l-8 -26z" fill="#ef4444" />
+      {[[28, 98, '#d6c4a8'], [50, 84, '#f97316'], [130, 92, '#22c55e'], [146, 76, '#d6c4a8']].map(([x, y, c]) => (
+        <ellipse key={x} cx={x} cy={y} rx="12" ry="8" fill={c} />
+      ))}
+      <rect x="104" y="58" width="22" height="22" rx="5" fill="#fff" />
+      <text x="115" y="75" textAnchor="middle" fontFamily="Fredoka, sans-serif" fontWeight="800" fontSize="16" fill="#173a66">5</text>
+      <rect x="130" y="40" width="22" height="22" rx="5" fill="#ffd23f" />
+      <text x="141" y="57" textAnchor="middle" fontFamily="Fredoka, sans-serif" fontWeight="800" fontSize="16" fill="#173a66">+</text>
+    </g>
+  ),
   mathIsland: (
     <g>
       <path d="M0 96 q20 -6 40 0 t40 0 t40 0 t40 0 V112 H0z" fill="#0284c7" />
@@ -734,6 +748,7 @@ const INK = {
   carPark: '#ffd23f',
   shapeFit: '#fff',
   mathIsland: '#fff',
+  lavaRun: '#fff',
   reversi: '#fff',
 };
 const BG = {
@@ -752,6 +767,7 @@ const BG = {
   carPark: '#5b3a29',
   shapeFit: '#4338ca',
   mathIsland: '#38bdf8',
+  lavaRun: '#fdba74',
   reversi: '#2e7d4f',
 };
 export const cardColors = (id, fallback) => ({ bg: BG[id] || fallback, ink: INK[id] });

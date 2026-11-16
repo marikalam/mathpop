@@ -14450,7 +14450,7 @@ body {
   flex-wrap: wrap;
 }
 
-/* Math Island (MathIsland.jsx). */
+/* Island Builder (MathIsland.jsx). */
 .mi-game {
   gap: 12px;
 }
@@ -14580,4 +14580,103 @@ body {
 }
 .mi-short {
   opacity: 0.6;
+}
+
+/* Lava Run (LavaRun.jsx). */
+.lr-game {
+  gap: 10px;
+}
+.lr-map {
+  display: block;
+  width: 100%;
+  max-width: min(440px, calc(44dvh * 360 / 440));
+  margin: 0 auto;
+}
+.lr-num {
+  font: 700 12px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  fill: #3f2a14;
+}
+.lr-tok {
+  font: 800 7px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  fill: #fff;
+}
+.lr-token {
+  transition: transform 0.24s ease-out;
+}
+.lr-dice {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  min-height: 70px;
+}
+.lr-die {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  height: 64px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border-radius: 16px;
+  background: #fff;
+  color: #173a66;
+  font: 800 32px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  box-shadow: 0 4px 0 rgba(23, 58, 102, 0.2);
+}
+.lr-die small {
+  font-size: 20px;
+  letter-spacing: 2px;
+}
+.lr-sign {
+  min-width: 52px;
+  height: 52px;
+  background: #ffd23f;
+}
+.lr-rolling {
+  animation: lr-shake 0.18s linear infinite;
+}
+@keyframes lr-shake {
+  0% { transform: rotate(-8deg); }
+  50% { transform: rotate(8deg); }
+  100% { transform: rotate(-8deg); }
+}
+.lr-hint {
+  color: #173a66;
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.lr-choice {
+  background: #f97316;
+  box-shadow: inset 0 -5px 0 #c2410c;
+}
+.mi-sail.lr-roll {
+  background: #f97316;
+  box-shadow: inset 0 -5px 0 #c2410c;
+}
+.mi-sail:disabled {
+  opacity: 0.6;
+}
+.lr-key {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: #173a66;
+  font: 600 14px 'IBM Plex Sans', sans-serif;
+}
+.lr-key i {
+  display: inline-block;
+  width: 18px;
+  height: 12px;
+  border-radius: 50%;
+}
+.lr-k-lava {
+  background: #f97316;
+  border: 2px solid #b91c1c;
+}
+.lr-k-vine {
+  margin-left: 8px;
+  background: #22c55e;
+  border: 2px solid #15803d;
 }
