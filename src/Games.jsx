@@ -1,5 +1,5 @@
 import { setPlayGrade, sgSettings } from './sgMode.js';
-import { OPS, gameFact, hasOpsChoice, nearMisses, setGameOps, useGameOps } from './ops.js';
+import { LEVELS, OPS, gameFact, hasLevelChoice, hasOpsChoice, nearMisses, setGameLevel, setGameOps, useGameLevel, useGameOps } from './ops.js';
 import { AreaBoxes, CrossSums, DoubleUp, PetSudoku, TakeTen, ValueSort } from './PuzzleGames.jsx';
 import { DominoMatch, FourInRow, TapMatch } from './PlayGames.jsx';
 import HoopHop from './arcade/HoopHop.jsx';
@@ -933,8 +933,9 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit, lang 
   const [phase, setPhase] = useState('ready');
   // Games with + − / × ÷ questions: pick which on the get-ready screen
   // (2nd to 4th), then Start; the choice is remembered.
-  const opsGame = OPS_GAMES.includes(game) && hasOpsChoice(grade) && !ja;
+  const opsGame = OPS_GAMES.includes(game) && hasLevelChoice(grade) && !ja;
   const ops = useGameOps(grade);
+  const lvl = useGameLevel(grade);
   const [started, setStarted] = useState(!opsGame);
   const [count, setCount] = useState(3);
   const [result, setResult] = useState(null);
@@ -975,11 +976,26 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit, lang 
     return (
       <div className="mm mm-ready ops-ready">
         <p className="mm-how">{info.how}</p>
-        <p className="ops-ask">Which math?</p>
-        <div className="ops-pick" role="radiogroup" aria-label="Which math">
-          {OPS.map(([id, sign, name]) => (
-            <button key={id} type="button" role="radio" aria-checked={ops === id} className={`ops-opt${ops === id ? ' ops-on' : ''}`} onClick={() => setGameOps(grade, id)}>
-              <b>{sign}</b>
+        {hasOpsChoice(grade) && (
+          <>
+            <p className="ops-ask">Which math?</p>
+            <div className="ops-pick" role="radiogroup" aria-label="Which math">
+              {OPS.map(([id, sign, name]) => (
+                <button key={id} type="button" role="radio" aria-checked={ops === id} className={`ops-opt${ops === id ? ' ops-on' : ''}`} onClick={() => setGameOps(grade, id)}>
+                  <b>{sign}</b>
+                  <small>{name}</small>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+        <p className="ops-ask">How hard?</p>
+        <div className="ops-pick ops-level" role="radiogroup" aria-label="How hard">
+          {LEVELS.map(([lv, name]) => (
+            <button key={lv} type="button" role="radio" aria-checked={lvl === lv} className={`ops-opt${lvl === lv ? ' ops-on' : ''}`} onClick={() => setGameLevel(grade, lv)}>
+              <span className="ops-stars" aria-hidden="true">
+                {'★'.repeat(lv)}
+              </span>
               <small>{name}</small>
             </button>
           ))}
