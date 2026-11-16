@@ -1,3 +1,4 @@
+import { gameOps } from '../ops.js';
 import { useArcade, bond, fact, heartsFor, near, shuffle, speak, text, rand } from './kit.jsx';
 
 // Fruit Slice: fruits with numbers fly up. Swipe through the one with the
@@ -26,7 +27,8 @@ export default function FruitSlice({ grade, onEnd }) {
       let wave = [];
       const R = 30;
       function newQ() {
-        q = grade !== 'p' && Math.random() < 0.5 ? bond(grade) : fact(grade);
+        // Number bonds half the time, unless only × ÷ was picked.
+        q = grade !== 'p' && gameOps(grade) !== 'x/' && Math.random() < 0.5 ? bond(grade) : fact(grade);
         wave = shuffle([q.answer, ...near(q.answer, grade === 'p' || grade === 'k' ? 1 : 2)]);
         launchIn = 0.4;
         g.prompt(q.text, q.say || `${q.text.replace('×', 'times').replace('−', 'minus').replace('÷', 'divided by').replace('?', 'what')}`);

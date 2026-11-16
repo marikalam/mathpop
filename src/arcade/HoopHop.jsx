@@ -1,3 +1,4 @@
+import { gameOps } from '../ops.js';
 import { sgSettings } from '../sgMode.js';
 import { useArcade, heartsFor, fact, bond, near, speak, text, cloud, backdrop, playStickerPick } from './kit.jsx';
 
@@ -27,7 +28,7 @@ export default function HoopHop({ grade, onEnd }) {
       function ask() {
         // Every other question is a number bond (Singapore Math Mode).
         asked = (asked || 0) + 1;
-        q = sgSettings().bonds && grade !== 'p' && asked % 2 === 0 ? bond(grade) : fact(grade);
+        q = sgSettings().bonds && grade !== 'p' && gameOps(grade) !== 'x/' && asked % 2 === 0 ? bond(grade) : fact(grade);
         g.prompt(q.text, q.say || q.text.replace(/−/g, ' minus ').replace(/×/g, ' times ').replace(/÷/g, ' divided by '));
       }
       function addHoops() {

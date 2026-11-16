@@ -1,4 +1,4 @@
-import ThinkCard from './ThinkCard.jsx';
+import ThinkCard, { PauseButton } from './ThinkCard.jsx';
 import { Heart } from './arcade/kit.jsx';
 import { sgSettings, speedFactor, thinkMode } from './sgMode.js';
 import { useEffect, useRef, useState } from 'react';
@@ -923,6 +923,15 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
           ))}
         </span>
         <span className="snake-lv" title="Your level: it goes up as you get better">Lv {L + 1}</span>
+        {!over && (
+          <PauseButton
+            onClick={() => {
+              if (think) return;
+              pausedRef.current = true;
+              setThink({ text: round.text, start: 0, n: Math.random(), title: 'Paused: take your time' });
+            }}
+          />
+        )}
         <span className="mm-right">
           {score} {score === 1 ? 'answer' : 'answers'}
         </span>
@@ -937,7 +946,7 @@ export default function NumberSnake({ grade, onEnd, makeRound, playerId = 'guest
           <ThinkCard
             key={think.n}
             text={think.text}
-            title="The snake is waiting for you"
+            title={think.title || 'The snake is waiting for you'}
             start={think.start}
             onReady={() => {
               setThink(null);
