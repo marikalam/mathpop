@@ -265,11 +265,11 @@ export default function ThinkCard({ text, title, onReady, start = 0 }) {
 export function PauseButton({ onClick }) {
   return (
     <button type="button" className="tk-pause" onClick={onClick} aria-label="Pause and think">
-      <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
-        <rect x="4" y="3" width="4" height="14" rx="1.5" fill="currentColor" />
-        <rect x="12" y="3" width="4" height="14" rx="1.5" fill="currentColor" />
+      <svg viewBox="0 0 20 20" width="26" height="26" aria-hidden="true">
+        <rect x="4" y="3" width="4.5" height="14" rx="1.8" fill="currentColor" />
+        <rect x="11.5" y="3" width="4.5" height="14" rx="1.8" fill="currentColor" />
       </svg>
-      Think
+      <span>Think</span>
     </button>
   );
 }

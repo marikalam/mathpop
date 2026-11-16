@@ -234,16 +234,6 @@ export function useArcade({ hearts: maxHearts = 3, onEnd, setup, think: thinkKin
             </span>
           ))}
         </span>
-        {!over && (
-          <PauseButton
-            onClick={() => {
-              const gg = gRef.current;
-              if (!gg || gg.over || think) return;
-              gg.paused = true;
-              setThink({ text: gg.thinkText || '', start: 0, n: Math.random(), title: 'Paused: take your time' });
-            }}
-          />
-        )}
         <span className="mm-right">{score}</span>
       </div>
       {prompt && (
@@ -261,6 +251,16 @@ export function useArcade({ hearts: maxHearts = 3, onEnd, setup, think: thinkKin
         </div>
       )}
       <div className="arc-field" ref={wrapRef}>
+          {!over && (
+            <PauseButton
+              onClick={() => {
+                const gg = gRef.current;
+                if (!gg || gg.over || think) return;
+                gg.paused = true;
+                setThink({ text: gg.thinkText || '', start: 0, n: Math.random(), title: 'Paused: take your time' });
+              }}
+            />
+          )}
         <canvas ref={canvasRef} className="arc-canvas" />
         {banner && !over && !think && <div className="snake-banner">{banner}</div>}
         {think && !over && (
