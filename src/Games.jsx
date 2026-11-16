@@ -3,6 +3,8 @@ import { LEVELS, OPS, gameFact, hasLevelChoice, hasOpsChoice, nearMisses, setGam
 import { AreaBoxes, CrossSums, DoubleUp, PetSudoku, TakeTen, ValueSort } from './PuzzleGames.jsx';
 import { DominoMatch, FourInRow, TapMatch } from './PlayGames.jsx';
 import HoopHop from './arcade/HoopHop.jsx';
+import { Checkers, Chess, Reversi } from './BoardGames.jsx';
+import CarPark from './CarPark.jsx';
 import { useEffect, useRef, useState } from 'react';
 import Pip from './Pip.jsx';
 import Icon from './Icon.jsx';
@@ -66,6 +68,11 @@ export const GAMES = [
   { id: 'hoopHop', hidden: true, title: 'Hoop Hop', sub: 'Fly through the answer', how: 'Tap to fly! Go through the hoop with the answer!', seconds: 0, color: ['#fde3a7', '#f5c26b'] },
   { id: 'fourInRow', title: 'Four in a Row', sub: 'Answer, then drop a piece', how: 'Answer to drop your piece. Get four in a row before Pip!', seconds: 0, color: ['#60a5fa', '#2563eb'] },
   { id: 'domino', title: 'Domino Match', sub: 'Match ends worth the same', how: 'Play dominoes end to end. The ends that touch are worth the same!', seconds: 0, color: ['#0f6b4f', '#0b5640'] },
+  // Board games and a parking puzzle (BoardGames.jsx, CarPark.jsx).
+  { id: 'chess', title: 'Chess', sub: 'Pawns only, then more pieces', how: 'Pick your pieces, then beat Pip! Tap a piece to see where it can go.', seconds: 0, color: ['#eedbb8', '#d9bf91'] },
+  { id: 'checkers', title: 'Checkers', sub: 'Jump to take Pip’s pieces', how: 'Move forward on the dark squares, and jump over Pip’s pieces to take them!', seconds: 0, color: ['#c0392b', '#962d22'] },
+  { id: 'carPark', title: 'Car Park', sub: 'Get the red car out', how: 'Slide the cars to make a way out for the red car!', seconds: 0, color: ['#5b3a29', '#46291b'] },
+  { id: 'reversi', title: 'Reversi', sub: 'Trap and flip the discs', how: 'Put a disc where it traps Pip’s discs in a line. They flip to yours!', seconds: 0, color: ['#2e7d4f', '#24633e'] },
   { id: 'snipDrop', title: 'Snip & Drop', sub: 'Snip the rope, drop the sweet', how: 'Tap to snip the rope when the sweet is over the right basket!', seconds: 0, color: ['#f472b6', '#db2777'] },
   { id: 'pipHop', title: 'Pip Hop', sub: 'Skip count up the clouds', how: 'Hop up the clouds in counting order!', seconds: 0, color: ['#38bdf8', '#0284c7'] },
   { id: 'numberRun', title: 'Number Run', sub: 'Run through the right gate', how: 'Swipe into the gate with the answer!', seconds: 0, color: ['#f59e0b', '#d97706'] },
@@ -876,6 +883,10 @@ const PLAY = {
   hoopHop: HoopHop,
   fourInRow: FourInRow,
   domino: DominoMatch,
+  chess: Chess,
+  checkers: Checkers,
+  carPark: CarPark,
+  reversi: Reversi,
 };
 const SCORE_WORD = {
   bubbles: 'popped',
@@ -915,6 +926,10 @@ const SCORE_WORD = {
   hoopHop: 'points',
   fourInRow: 'points',
   domino: 'points',
+  chess: 'points',
+  checkers: 'points',
+  carPark: 'stars',
+  reversi: 'points',
 };
 // The games that end with Time's up (the others end their own way).
 // The games whose questions follow the + − / × ÷ choice (ops.js).

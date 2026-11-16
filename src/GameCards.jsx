@@ -415,6 +415,69 @@ const ART = {
       ))}
     </g>
   ),
+  chess: (
+    <g>
+      {Array.from({ length: 16 }, (_, i) => (
+        <rect key={i} x={16 + (i % 4) * 32} y={46 + Math.floor(i / 4) * 16} width="32" height="16" fill={(i + Math.floor(i / 4)) % 2 ? '#b58863' : '#f0d9b5'} opacity="0.9" />
+      ))}
+      <g transform="translate(30 18) scale(1.6)">
+        <path d="M10 33h20v-4h-2l-1-11h2V9h-4v3h-3V9h-4v3h-3V9h-4v9h2l-1 11h-2z" fill="#fff" stroke="#173a66" strokeWidth="2" strokeLinejoin="round" />
+      </g>
+      <g transform="translate(78 30) scale(1.3)">
+        <path d="M20 8a5 5 0 0 1 3 9c3 2 4 6 5 11h3v5H9v-5h3c1-5 2-9 5-11a5 5 0 0 1 3-9z" fill="#2b3040" stroke="#0b0d14" strokeWidth="2" strokeLinejoin="round" />
+      </g>
+    </g>
+  ),
+  checkers: (
+    <g>
+      {Array.from({ length: 12 }, (_, i) => (
+        <rect key={i} x={20 + (i % 4) * 30} y={30 + Math.floor(i / 4) * 27} width="30" height="27" fill={(i + Math.floor(i / 4)) % 2 ? '#1f2937' : '#f5e6c8'} />
+      ))}
+      {[
+        [65, 70, '#e5484d'],
+        [95, 43, '#2b3040'],
+        [35, 97, '#e5484d'],
+        [125, 97, '#2b3040'],
+      ].map(([x, y, c]) => (
+        <g key={`${x}${y}`}>
+          <circle cx={x} cy={y + 3} r="12" fill="rgba(0,0,0,0.35)" />
+          <circle cx={x} cy={y} r="12" fill={c} />
+          <circle cx={x} cy={y} r="7.5" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2" />
+        </g>
+      ))}
+      <path d="M65 70 Q80 40 95 43" stroke="#ffd23f" strokeWidth="3" strokeDasharray="4 4" fill="none" />
+    </g>
+  ),
+  carPark: (
+    <g>
+      <rect x="18" y="10" width="124" height="98" rx="8" fill="#7b5641" />
+      <rect x="142" y="42" width="10" height="28" fill="#ffd23f" />
+      <rect x="30" y="44" width="56" height="24" rx="8" fill="#e5484d" />
+      <rect x="62" y="48" width="14" height="16" rx="3" fill="rgba(255,255,255,0.6)" />
+      <rect x="96" y="20" width="24" height="56" rx="8" fill="#ece4d4" />
+      <rect x="100" y="26" width="16" height="12" rx="3" fill="rgba(23,58,102,0.4)" />
+      <rect x="30" y="78" width="80" height="22" rx="8" fill="#e9dcc3" />
+      <path d="M126 56 h12 l-4 -4 M138 56 l-4 4" stroke="#fff" strokeWidth="3" strokeLinecap="round" fill="none" />
+    </g>
+  ),
+  reversi: (
+    <g>
+      <rect x="20" y="16" width="120" height="92" rx="6" fill="#1f6b41" />
+      {Array.from({ length: 4 }, (_, k) => (
+        <path key={k} d={`M${20 + (k + 1) * 24} 16 V108 M20 ${16 + (k + 1) * 18.4} H140`} stroke="#164d2f" strokeWidth="2" />
+      ))}
+      {[
+        [56, 53, '#fff'],
+        [80, 53, '#1c1c1c'],
+        [56, 71, '#1c1c1c'],
+        [80, 71, '#fff'],
+        [104, 71, '#1c1c1c'],
+        [104, 53, '#fff'],
+      ].map(([x, y, c]) => (
+        <circle key={`${x}${y}`} cx={x} cy={y} r="9" fill={c} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
+      ))}
+    </g>
+  ),
   // The new puzzle games.
   valueSort: (
     <g>
@@ -634,6 +697,10 @@ const INK = {
   hoopHop: '#9a3412',
   fourInRow: '#1e3a8a',
   domino: '#fff',
+  chess: '#5b3a1e',
+  checkers: '#fff',
+  carPark: '#ffd23f',
+  reversi: '#fff',
 };
 const BG = {
   valueSort: '#5b3f73',
@@ -646,6 +713,10 @@ const BG = {
   hoopHop: '#fde3a7',
   fourInRow: '#60a5fa',
   domino: '#0f6b4f',
+  chess: '#eedbb8',
+  checkers: '#c0392b',
+  carPark: '#5b3a29',
+  reversi: '#2e7d4f',
 };
 export const cardColors = (id, fallback) => ({ bg: BG[id] || fallback, ink: INK[id] });
 export function CardArt({ id }) {

@@ -55,6 +55,10 @@ const TEACHES = {
   equalDiff: ['Taking away in your head', 'Equal differences'],
   timesTiles: ['Facts, times tables', ''],
   pizza: ['Fractions as equal parts', 'Equal fractions'],
+  chess: ['', 'Strategy, thinking ahead'],
+  checkers: ['', 'Strategy, thinking ahead'],
+  carPark: ['', 'Logic, planning moves'],
+  reversi: ['Counting', 'Strategy'],
 };
 
 const Badge = ({ kind }) => <span className={`gg-badge gg-${kind}`}>{kind === 'sg' ? 'Singapore math' : 'Beast Academy'}</span>;
