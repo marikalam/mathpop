@@ -65,6 +65,7 @@ import MoneyCard from './MoneyCard.jsx';
 import WelcomeCard from './WelcomeCard.jsx';
 import { CardArt, cardColors, hasCardArt } from './GameCards.jsx';
 import SgModeCard from './SgModeCard.jsx';
+import ParentGate from './ParentGate.jsx';
 import SignupCard from './SignupCard.jsx';
 import { canRemind, hourLabel, reminderState, turnOffReminder, turnOnReminder } from './reminder.js';
 import PlusScreen from './PlusScreen.jsx';
@@ -728,11 +729,20 @@ export default function App() {
   const [statsViewer, setStatsViewer] = useState(false);
   const [shareNote, setShareNote] = useState('');
 
+  // The parental gate (ParentGate.jsx): a grown-up check before buying
+  // or leaving the app. `then` runs once it's passed.
+  const [gate, setGate] = useState(null);
+  const withGate = (then) => setGate(() => then);
+  const openOutsideGated = (url) => withGate(() => openOutside(url));
+
   function rateApp() {
-    openOutside(`${APP_STORE_URL}?action=write-review`);
+    openOutsideGated(`${APP_STORE_URL}?action=write-review`);
   }
 
-  async function shareWeek(text) {
+  function shareWeek(text) {
+    withGate(() => shareWeekNow(text));
+  }
+  async function shareWeekNow(text) {
     try {
       if (navigator.share) {
         await navigator.share({ text, url: APP_STORE_URL });
@@ -758,9 +768,12 @@ export default function App() {
   const [reportFor, setReportFor] = useState(null);
 
   const [plusBack, setPlusBack] = useState('players');
+  // MathPop Plus (where the buying is) opens only past the parental gate.
   function openPlus(back = 'players') {
-    setPlusBack(back);
-    setView('plus');
+    withGate(() => {
+      setPlusBack(back);
+      setView('plus');
+    });
   }
 
   function openReport(player) {
@@ -2267,7 +2280,7 @@ export default function App() {
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={() => setView(plusBack)} />
             <h2 className="screen-title">MathPop Plus</h2>
-            <PlusScreen status={plusStatus} user={cloudUser} onStatus={setPlusStatus} onSignIn={openAccount} openOutside={openOutside} />
+            <PlusScreen status={plusStatus} user={cloudUser} onStatus={setPlusStatus} onSignIn={openAccount} openOutside={openOutsideGated} />
           </>
         )}
 
@@ -3016,6 +3029,16 @@ export default function App() {
         </div>
       )}
       <EmailHandoff />
+      {gate && (
+        <ParentGate
+          onPass={() => {
+            const then = gate;
+            setGate(null);
+            then();
+          }}
+          onCancel={() => setGate(null)}
+        />
+      )}
       {showSignup && (
         <SignupCard
           trial={trialOffer}
