@@ -207,6 +207,26 @@ export function Chess({ grade, onEnd, playerId }) {
   });
   const [phase, setPhase] = useState('pick'); // pick, you, pip, over, school
   const [school, setSchool] = useState(null);
+  // The menu talks: tap a choice to hear it (and pick it), then Play.
+  const [picked, setPicked] = useState(null);
+  useEffect(() => {
+    if (phase === 'pick') speak('Pick a chess game! Tap one to hear what it is, then tap Play.');
+  }, [phase]);
+  function hear(id) {
+    playStickerPick();
+    setPicked(id);
+    const v = VARIANTS.find((x) => x[0] === id);
+    const sc = SCHOOL.find((x) => x[0] === id);
+    speak(v ? `${v[1]}. ${v[2]}` : `${sc[1]}. ${sc[2]}`);
+  }
+  function play() {
+    if (!picked) return;
+    if (VARIANTS.some((x) => x[0] === picked)) start(picked);
+    else {
+      setSchool(picked);
+      setPhase('school');
+    }
+  }
   const [b, setB] = useState(null);
   const [sel, setSel] = useState(null);
   const [last, setLast] = useState(null);
@@ -320,7 +340,7 @@ export function Chess({ grade, onEnd, playerId }) {
         <p className="ops-ask">Play Pip</p>
         <div className="bg-pick">
           {VARIANTS.map(([id, name, how]) => (
-            <button key={id} type="button" className={`bg-var${variant === id ? ' ops-on' : ''}`} onClick={() => start(id)}>
+            <button key={id} type="button" className={`bg-var${picked === id ? ' ops-on' : ''}`} onClick={() => hear(id)} aria-pressed={picked === id}>
               <span className="bg-var-pieces">
                 {(id === 'pawns' ? ['p'] : id === 'rooks' ? ['r', 'p'] : id === 'minor' ? ['n', 'b', 'r', 'p'] : ['k', 'q', 'r', 'b', 'n', 'p']).map((t) => (
                   <ChessPiece key={t} p={{ c: 'w', t }} size="28px" />
@@ -334,15 +354,7 @@ export function Chess({ grade, onEnd, playerId }) {
         <p className="ops-ask">Chess School</p>
         <div className="cs-list">
           {SCHOOL.map(([id, name, how, t]) => (
-            <button
-              key={id}
-              type="button"
-              className="cs-item"
-              onClick={() => {
-                setSchool(id);
-                setPhase('school');
-              }}
-            >
+            <button key={id} type="button" className={`cs-item${picked === id ? ' cs-picked' : ''}`} onClick={() => hear(id)} aria-pressed={picked === id}>
               <span className="cs-icon">
                 <ChessPiece p={{ c: 'w', t }} size="30px" />
               </span>
@@ -353,6 +365,16 @@ export function Chess({ grade, onEnd, playerId }) {
             </button>
           ))}
         </div>
+        {picked && (
+          <div className="bg-playbar">
+            <button type="button" className="bg-play" onClick={play}>
+              <svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true">
+                <path d="M6 3l11 7-11 7z" fill="currentColor" />
+              </svg>
+              Play {(VARIANTS.find((x) => x[0] === picked) || SCHOOL.find((x) => x[0] === picked))[1]}
+            </button>
+          </div>
+        )}
       </div>
     );
   }
