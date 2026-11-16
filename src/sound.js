@@ -428,7 +428,30 @@ export function stopSpeaking() {
   stopCurrent();
 }
 
-export async function speak(text) {
+// Math symbols in words, so the voice says them right: "●●" is "2
+// dots", "3 × 4 = ?" is "3 times 4 equals what", "12/16" is "12 sixteenths"
+// read as "12 out of 16", "☐" is "blank".
+export function spokenMath(text) {
+  return String(text ?? '')
+    .replace(/●+/g, (m) => (m.length === 1 ? '1 dot' : `${m.length} dots`))
+    .replace(/(\d),(\d{3})/g, '$1$2')
+    .replace(/(\d+)\s*\/\s*(\d+)/g, '$1 out of $2')
+    .replace(/\s*×\s*/g, ' times ')
+    .replace(/\s*÷\s*/g, ' divided by ')
+    .replace(/(\d)\s*−\s*(\d)/g, '$1 minus $2')
+    .replace(/(\d)\s*-\s*(\d)/g, '$1 minus $2')
+    .replace(/\s*−\s*/g, ' minus ')
+    .replace(/(\d)\s*\+\s*/g, '$1 plus ')
+    .replace(/=\s*\?/g, 'equals what')
+    .replace(/\s*=\s*/g, ' equals ')
+    .replace(/☐/g, 'blank')
+    .replace(/(^|\s)\?(\s|$)/g, '$1what$2')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export async function speak(rawText) {
+  const text = spokenMath(rawText);
   // Making the voice takes a moment: if stopSpeaking() (say, the kid left
   // the game) or a newer line came in meanwhile, this one isn't played.
   const run = ++speechRun;
@@ -543,7 +566,7 @@ export function speakResults(correct, total, lang) {
 
 async function synthesize(text) {
   const { synthesizeSpeech } = await getPiperModule();
-  const blob = await synthesizeSpeech(text);
+  const blob = await synthesizeSpeech(spokenMath(text));
   return ensureAudio().decodeAudioData(await blob.arrayBuffer());
 }
 
