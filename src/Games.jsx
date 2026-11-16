@@ -932,6 +932,7 @@ const SCORE_WORD = {
   reversi: 'points',
 };
 // The games that end with Time's up (the others end their own way).
+const NO_COUNTDOWN = ['chess', 'checkers', 'reversi', 'carPark'];
 // The games whose questions follow the + − / × ÷ choice (ops.js).
 const OPS_GAMES = ['bubbles', 'snake', 'fruitSlice', 'numberRun', 'gardenGuard', 'hoopHop'];
 const TIMED = ['bubbles', 'make10', 'shapes', 'bondPop', 'makeTen', 'sumGridRush', 'timesTiles'];
@@ -945,7 +946,9 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit, lang 
   const ja = lang === 'ja' && Boolean(info.ja);
   const talk = sayIn(ja ? 'ja' : 'en');
   const scoreWord = ja ? 'コイン' : SCORE_WORD[game];
-  const [phase, setPhase] = useState('ready');
+  // Board games and puzzles start straight away (no 3, 2, 1, go!): they
+  // have no clock, and Chess opens on its own menu.
+  const [phase, setPhase] = useState(() => (NO_COUNTDOWN.includes(game) ? 'play' : 'ready'));
   // Games with + − / × ÷ questions: pick which on the get-ready screen
   // (2nd to 4th), then Start; the choice is remembered.
   const opsGame = OPS_GAMES.includes(game) && hasLevelChoice(grade) && !ja;
@@ -1065,6 +1068,10 @@ export function Game({ game, playerId, grade, onDone, stickerSlot, onExit, lang 
             setResult(null);
             setRun((r) => r + 1);
             setStarted(!opsGame);
+            if (NO_COUNTDOWN.includes(game)) {
+              setPhase('play');
+              return;
+            }
             setPhase('ready');
           }}
         >

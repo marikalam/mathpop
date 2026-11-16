@@ -14119,3 +14119,36 @@ body {
   width: 26px;
   height: 24px;
 }
+
+/* Chess menu: the picked choice, and Play. */
+.cs-picked {
+  box-shadow: 0 0 0 4px #2fae6b;
+}
+.bg-playbar {
+  position: sticky;
+  bottom: 12px;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+}
+.bg-play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 64px;
+  border: none;
+  border-radius: 20px;
+  background: #2fae6b;
+  color: #fff;
+  font: 800 20px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.18), 0 6px 16px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+.bg-var.ops-on {
+  border-color: #2fae6b;
+  background: #e6f7ee;
+  box-shadow: 0 0 0 3px #2fae6b;
+}
