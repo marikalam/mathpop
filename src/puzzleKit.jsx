@@ -141,3 +141,37 @@ export const sayValue = (s) =>
   s.includes('●') ? `${s.length} dots` : s.replace(/−/g, ' minus ').replace(/×/g, ' times ').replace(/÷/g, ' divided by ').replace(/(\d+)\/(\d+)/g, '$1 out of $2');
 // A small text size for long labels.
 export const labelSize = (s) => (s.length <= 2 ? 1 : s.length <= 5 ? 0.82 : s.length <= 7 ? 0.7 : 0.6);
+
+// A level from how each player has been doing at a game against Pip
+// (Chess, Checkers, Reversi): up one after a win, down one after two
+// losses in a row (1 to 6). [level, record(result), history]; result is
+// 1 (won), 0 (draw) or -1 (lost). Kept on this device per player.
+const SKILL_KEY = 'mathpop-board-skill-v1';
+function readSkill() {
+  try {
+    return JSON.parse(localStorage.getItem(SKILL_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+export function useSkill(playerId = 'guest', game) {
+  const key = `${playerId}:${game}`;
+  const [s, setS] = useState(() => readSkill()[key] || { lv: 1, hist: [] });
+  function record(result) {
+    const hist = [...s.hist, result].slice(-10);
+    let lv = s.lv;
+    if (result > 0) lv = Math.min(6, lv + 1);
+    else if (result < 0 && hist.length >= 2 && hist[hist.length - 2] < 0) lv = Math.max(1, lv - 1);
+    const next = { lv, hist };
+    const all = readSkill();
+    all[key] = next;
+    try {
+      localStorage.setItem(SKILL_KEY, JSON.stringify(all));
+    } catch {
+      /* private mode */
+    }
+    setS(next);
+    return next;
+  }
+  return [s.lv, record, s.hist];
+}
