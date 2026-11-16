@@ -92,7 +92,8 @@ async function deviceSubscription() {
 }
 
 // Works out whether this family has Plus: { plus, why, paidUntil,
-// trialEnds }. `why` is 'early' (Plus hasn't started), 'founder', 'paid',
+// trialEnds }. `why` is 'early' (Plus hasn't started), 'founder', 'gift'
+// (given free by the owner, plus_gifts), 'paid',
 // 'trial' or null (then trialOver says whether the trial was had).
 export async function refreshPlus(user) {
   const remote = await loadPlusStart();
@@ -133,6 +134,7 @@ export async function refreshPlus(user) {
     const trialEnds = new Date(trialStart.getTime() + TRIAL_DAYS * 86400000).toISOString();
     const previous = read(STATUS_KEY);
     if (founder) status = { plus: true, why: 'founder' };
+    else if (family?.gift) status = { plus: true, why: 'gift' };
     else if (paidUntil || sub) status = { plus: true, why: 'paid', paidUntil };
     else if (trialEnds && new Date(trialEnds) > new Date()) status = { plus: true, why: 'trial', trialEnds };
     // Signed in but offline: keep what it was, while that still holds.

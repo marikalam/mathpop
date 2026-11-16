@@ -58,6 +58,9 @@ export default function PlusScreen({ status, user, onStatus, onSignIn, openOutsi
         {status.why === 'founder' && (
           <p className="plus-hero-text">You’re a founding family <Icon name="heart" /> Plus is free for you, for good. Thank you for being here early!</p>
         )}
+        {status.why === 'gift' && (
+          <p className="plus-hero-text">Plus is a gift for your family, free <Icon name="heart" /> Enjoy all of MathPop!</p>
+        )}
         {status.why === 'early' && (
           <p className="plus-hero-text">Plus is free for everyone right now, and families using MathPop before it starts keep it free for good.</p>
         )}

@@ -444,6 +444,25 @@ export async function loadPlusStart() {
   }
 }
 
+// For the owner (stats viewers): every family account with its free
+// Plus gifts, and giving or taking one back (supabase/plus_gifts.sql).
+export async function loadFamilyAccounts() {
+  try {
+    const { data, error } = await supabase.rpc('owner_family_accounts');
+    return error ? null : data;
+  } catch {
+    return null;
+  }
+}
+export async function setPlusGift(target, app, give) {
+  try {
+    const { error } = await supabase.rpc('owner_set_gift', { target, for_app: app, give });
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
 export async function loadFamilyPlus() {
   try {
     const { data, error } = await supabase.rpc('my_plus');
