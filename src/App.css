@@ -14331,3 +14331,121 @@ body {
   text-align: center;
   font: 600 15px/1.4 'IBM Plex Sans', sans-serif;
 }
+
+/* Shape Fit (ShapeFit.jsx). */
+.sf-board {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  width: min(100%, calc(var(--cols) * 56px));
+  margin: 0 auto;
+  border-radius: 14px;
+  background: #1e1b4b;
+  box-shadow: 0 0 0 6px #1e1b4b;
+  touch-action: none;
+}
+.sf-cell {
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.sf-piece {
+  position: absolute;
+  display: block;
+  touch-action: none;
+}
+.sf-tray .sf-piece {
+  position: relative;
+}
+.sf-block {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 2px;
+}
+.sf-block::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 22%;
+  background: var(--pc);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.22), inset 0 3px 0 rgba(255, 255, 255, 0.3);
+}
+.sf-loose {
+  cursor: grab;
+}
+.sf-fixed .sf-block::before {
+  opacity: 0.8;
+  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.18);
+}
+.sf-fixed .sf-block::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18%;
+  height: 18%;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.25);
+  transform: translate(-50%, -50%);
+}
+.sf-sel .sf-block::before {
+  outline: 3px solid #ffd23f;
+  outline-offset: -2px;
+}
+.sf-float {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.35));
+  transform: scale(1.04);
+}
+.sf-ghost {
+  position: absolute;
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 3px dashed #4ade80;
+  background: rgba(74, 222, 128, 0.25);
+  pointer-events: none;
+}
+.sf-ghost.sf-bad {
+  border-color: #f87171;
+  background: rgba(248, 113, 113, 0.2);
+}
+.sf-tray {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  min-height: 96px;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.7);
+}
+.sf-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background: #fff;
+  touch-action: none;
+  cursor: grab;
+}
+.sf-slot-on {
+  border-color: #ffd23f;
+}
+.sf-slot-gone {
+  opacity: 0.25;
+}
+.sf-empty {
+  color: #173a66;
+  font: 600 15px 'IBM Plex Sans', sans-serif;
+  text-align: center;
+}
+.sf-actions {
+  flex-wrap: wrap;
+}

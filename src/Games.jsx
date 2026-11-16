@@ -5,6 +5,7 @@ import { DominoMatch, FourInRow, TapMatch } from './PlayGames.jsx';
 import HoopHop from './arcade/HoopHop.jsx';
 import { Checkers, Chess, Reversi } from './BoardGames.jsx';
 import CarPark from './CarPark.jsx';
+import ShapeFit from './ShapeFit.jsx';
 import { useEffect, useRef, useState } from 'react';
 import Pip from './Pip.jsx';
 import Icon from './Icon.jsx';
@@ -71,6 +72,7 @@ export const GAMES = [
   // Board games and a parking puzzle (BoardGames.jsx, CarPark.jsx).
   { id: 'chess', title: 'Chess', sub: 'Pawns only, then more pieces', how: 'Pick your pieces, then beat Pip! Tap a piece to see where it can go.', seconds: 0, color: ['#eedbb8', '#d9bf91'] },
   { id: 'checkers', title: 'Checkers', sub: 'Jump to take Pip’s pieces', how: 'Move forward on the dark squares, and jump over Pip’s pieces to take them!', seconds: 0, color: ['#c0392b', '#962d22'] },
+  { id: 'shapeFit', title: 'Shape Fit', sub: 'Fill the board with pieces', how: 'Drag the pieces in so every square is filled. Tap a piece to turn it!', seconds: 0, color: ['#312e81', '#241f63'] },
   { id: 'carPark', title: 'Car Park', sub: 'Get the red car out', how: 'Slide the cars to make a way out for the red car!', seconds: 0, color: ['#5b3a29', '#46291b'] },
   { id: 'reversi', title: 'Reversi', sub: 'Trap and flip the discs', how: 'Put a disc where it traps Pip’s discs in a line. They flip to yours!', seconds: 0, color: ['#2e7d4f', '#24633e'] },
   { id: 'snipDrop', title: 'Snip & Drop', sub: 'Snip the rope, drop the sweet', how: 'Tap to snip the rope when the sweet is over the right basket!', seconds: 0, color: ['#f472b6', '#db2777'] },
@@ -886,6 +888,7 @@ const PLAY = {
   chess: Chess,
   checkers: Checkers,
   carPark: CarPark,
+  shapeFit: ShapeFit,
   reversi: Reversi,
 };
 const SCORE_WORD = {
@@ -929,10 +932,11 @@ const SCORE_WORD = {
   chess: 'points',
   checkers: 'points',
   carPark: 'stars',
+  shapeFit: 'stars',
   reversi: 'points',
 };
 // The games that end with Time's up (the others end their own way).
-const NO_COUNTDOWN = ['chess', 'checkers', 'reversi', 'carPark'];
+const NO_COUNTDOWN = ['chess', 'checkers', 'reversi', 'carPark', 'shapeFit'];
 // The games whose questions follow the + − / × ÷ choice (ops.js).
 const OPS_GAMES = ['bubbles', 'snake', 'fruitSlice', 'numberRun', 'gardenGuard', 'hoopHop'];
 const TIMED = ['bubbles', 'make10', 'shapes', 'bondPop', 'makeTen', 'sumGridRush', 'timesTiles'];
