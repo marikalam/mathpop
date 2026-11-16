@@ -448,6 +448,22 @@ const ART = {
       <path d="M65 70 Q80 40 95 43" stroke="#ffd23f" strokeWidth="3" strokeDasharray="4 4" fill="none" />
     </g>
   ),
+  mathIsland: (
+    <g>
+      <path d="M0 96 q20 -6 40 0 t40 0 t40 0 t40 0 V112 H0z" fill="#0284c7" />
+      <ellipse cx="80" cy="96" rx="60" ry="16" fill="#f6e1a7" />
+      <ellipse cx="78" cy="90" rx="44" ry="10" fill="#7ccf6a" />
+      <path d="M70 90 q-4 -26 2 -44" stroke="#8b5a2b" strokeWidth="5" fill="none" strokeLinecap="round" />
+      <path d="M72 46 q-16 -8 -26 6 q12 -4 26 -6z M72 46 q16 -10 28 4 q-14 -4 -28 -4z M72 46 q-4 -14 -18 -14 q12 6 18 14z" fill="#2fae6b" />
+      <rect x="92" y="72" width="22" height="16" fill="#d9a066" />
+      <path d="M88 74 L103 62 L118 74z" fill="#a16207" />
+      <g transform="translate(120 70)">
+        <path d="M0 16 h30 l-6 8 h-18z" fill="#e5484d" />
+        <path d="M15 16 v-22" stroke="#5b3a29" strokeWidth="2" />
+        <path d="M17 -4 l11 17 h-11z" fill="#fff" />
+      </g>
+    </g>
+  ),
   shapeFit: (
     <g>
       <rect x="22" y="14" width="116" height="92" rx="8" fill="#1e1b4b" />
@@ -717,6 +733,7 @@ const INK = {
   checkers: '#fff',
   carPark: '#ffd23f',
   shapeFit: '#fff',
+  mathIsland: '#fff',
   reversi: '#fff',
 };
 const BG = {
@@ -734,6 +751,7 @@ const BG = {
   checkers: '#c0392b',
   carPark: '#5b3a29',
   shapeFit: '#4338ca',
+  mathIsland: '#38bdf8',
   reversi: '#2e7d4f',
 };
 export const cardColors = (id, fallback) => ({ bg: BG[id] || fallback, ink: INK[id] });

@@ -58,6 +58,7 @@ const TEACHES = {
   chess: ['', 'Strategy, thinking ahead; Chess School: check, skewers, checkmate'],
   checkers: ['', 'Strategy, thinking ahead'],
   carPark: ['', 'Logic, planning moves'],
+  mathIsland: ['Facts, number bonds; hints with ten frames, bonds and bar models; spending shells is subtraction in a story', 'Mental math'],
   shapeFit: ['Shapes, area (counting squares)', 'Spatial reasoning, turning and flipping shapes'],
   reversi: ['Counting', 'Strategy'],
 };
