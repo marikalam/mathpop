@@ -13818,3 +13818,214 @@ body {
   font: 500 13px/1.4 'IBM Plex Sans', sans-serif;
   color: #4d5b72;
 }
+
+/* Board games (BoardGames.jsx). */
+.bg-pick {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.bg-var {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 130px;
+  padding: 12px 8px;
+  border: 3px solid #dbe4f0;
+  border-radius: 18px;
+  background: #fff;
+  color: #173a66;
+  cursor: pointer;
+}
+.bg-var b {
+  font: 700 17px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.bg-var small {
+  font: 500 12px/1.3 'IBM Plex Sans', sans-serif;
+  color: #4d5b72;
+  text-align: center;
+}
+.bg-var-pieces {
+  display: flex;
+  justify-content: center;
+  min-height: 30px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: #b58863;
+}
+.bg-turn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+}
+.bg-board {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  width: min(100%, 400px);
+  margin: auto;
+  border: 4px solid #6b4a2b;
+  border-radius: 10px;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+.bg-sq {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  padding: 0;
+  border: none;
+  background: #f0d9b5;
+  cursor: pointer;
+}
+.bg-dark {
+  background: #b58863;
+}
+.bg-checkers .bg-sq {
+  background: #f5e6c8;
+}
+.bg-checkers .bg-dark {
+  background: #9a6b47;
+}
+.bg-sel {
+  box-shadow: inset 0 0 0 4px #ffd23f;
+}
+.bg-last {
+  box-shadow: inset 0 0 0 3px rgba(59, 111, 239, 0.7);
+}
+.bg-must {
+  box-shadow: inset 0 0 0 4px #2fae6b;
+}
+.bg-dot {
+  position: absolute;
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  background: rgba(47, 174, 107, 0.75);
+  pointer-events: none;
+}
+.bg-take {
+  position: absolute;
+  inset: 6%;
+  border: 4px solid rgba(229, 72, 77, 0.8);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.bg-reversi {
+  border-color: #164d2f;
+  background: #164d2f;
+  gap: 2px;
+}
+.rv-sq {
+  background: #2e7d4f;
+}
+.rv-disc {
+  width: 80%;
+  height: 80%;
+  border-radius: 50%;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+.rv-d {
+  background: radial-gradient(circle at 35% 30%, #555, #111);
+}
+.rv-l {
+  background: radial-gradient(circle at 35% 30%, #fff, #d9d9d9);
+}
+.rv-flip {
+  animation: rv-flip 0.4s ease-out;
+}
+@keyframes rv-flip {
+  0% {
+    transform: scaleX(0.05);
+  }
+}
+/* Car Park (CarPark.jsx). */
+.cp-wrap {
+  position: relative;
+  width: min(100%, 380px);
+  margin: auto;
+  padding: 10px 22px 10px 10px;
+  border-radius: 18px;
+  background: #5b3a29;
+}
+.cp-board {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: #7b5641;
+  touch-action: none;
+}
+.cp-cell {
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+}
+.cp-exit {
+  position: absolute;
+  right: -20px;
+  width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 6px 6px 0;
+  background: #ffd23f;
+  color: #5b3a29;
+  font: 800 9px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  writing-mode: vertical-rl;
+}
+.cp-car {
+  position: absolute;
+  padding: 3px;
+  border: none;
+  background: none;
+  cursor: grab;
+  transition: left 0.15s, top 0.15s;
+  touch-action: none;
+}
+.cp-drag {
+  transition: none;
+  z-index: 2;
+}
+.cp-body {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  background: var(--cc);
+  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.2), 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+.cp-glass {
+  position: absolute;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.55);
+}
+.cp-h .cp-glass {
+  top: 18%;
+  bottom: 18%;
+  width: 14%;
+  right: 16%;
+}
+.cp-h .cp-glass2 {
+  right: auto;
+  left: 14%;
+  opacity: 0.6;
+}
+.cp-v .cp-glass {
+  left: 18%;
+  right: 18%;
+  height: 14%;
+  top: 14%;
+}
+.cp-v .cp-glass2 {
+  top: auto;
+  bottom: 14%;
+  opacity: 0.6;
+}
+.cp-out {
+  transition: left 0.8s ease-in;
+}
