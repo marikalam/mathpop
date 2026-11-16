@@ -13589,3 +13589,11 @@ body {
   background: #2fae6b;
   color: #fff;
 }
+/* The best score sits at the card's bottom right, clear of the title. */
+.home-game .home-game-best {
+  top: auto;
+  bottom: 10px;
+  right: 10px;
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
