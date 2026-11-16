@@ -13659,3 +13659,16 @@ body {
 .snake-lv {
   white-space: nowrap;
 }
+
+.ops-level .ops-opt {
+  min-height: 64px;
+}
+.ops-stars {
+  color: #f0b400;
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+.ops-level .ops-opt small {
+  font: 700 15px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  color: #173a66;
+}
