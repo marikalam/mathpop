@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Pip from './Pip.jsx';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
-import { PuzzleTop, useLevel } from './puzzleKit.jsx';
+import { PuzzleTop, useSkill } from './puzzleKit.jsx';
+import { HowTo, checkersWhy, chessDanger, chessWhy, howtoSeen, reversiWhy } from './BoardHelp.jsx';
 import ChessSchool, { SCHOOL } from './ChessSchool.jsx';
 
 // Board games against Pip: Chess (start with pawns only, then rooks and
@@ -45,6 +46,11 @@ export function pipMove(b, side, depth, rules, noise) {
   }
   return best;
 }
+
+// How strong Pip plays at each level (from the player's history,
+// useSkill): how many moves ahead it looks, and how much it wobbles.
+const NOISE = [0.06, 0.03, 0.014, 0.007, 0.003, 0.001];
+const wobble = (lv, scale = 1) => NOISE[Math.min(5, lv - 1)] * scale;
 
 // ------------------------------------------------------------------ Chess
 const VARIANTS = [
@@ -196,8 +202,13 @@ export function ChessPiece({ p, size = '86%' }) {
 export const NAMES = { p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king' };
 const VAR_KEY = 'mathpop-chess-variant-v1';
 
-export function Chess({ grade, onEnd, playerId }) {
-  const [level, levelUp] = useLevel(playerId, grade, 'chess');
+export function Chess({ onEnd, playerId }) {
+  const [level, record] = useSkill(playerId, 'chess');
+  // Help: the boards before each of your moves (Take back), a suggested
+  // move (Help me), and How to play.
+  const [past, setPast] = useState([]);
+  const [hint, setHint] = useState(null);
+  const [howto, setHowto] = useState(false);
   const [variant, setVariant] = useState(() => {
     try {
       return localStorage.getItem(VAR_KEY) || 'pawns';
@@ -247,6 +258,9 @@ export function Chess({ grade, onEnd, playerId }) {
     setSel(null);
     setLast(null);
     setNote(null);
+    setPast([]);
+    setHint(null);
+    if (!howtoSeen('chess')) setHowto(true);
     speak(`${VARIANTS.find((x) => x[0] === v)[2]} You're white. Tap a piece to see where it can go.`);
   }
   function finish(board, side) {
@@ -257,40 +271,73 @@ export function Chess({ grade, onEnd, playerId }) {
     setPhase('over');
     if (you > 0) {
       playStickerStick();
-      const lv = levelUp();
-      setResult(`You win! Pip gets smarter: level ${lv}.`);
+      const { lv } = record(1);
+      setResult(`You win! Pip plays a little harder now: level ${lv}.`);
       speak('You win! Great thinking!');
-      later(timers, () => onEnd(3), 2400);
+      later(timers, () => onEnd(3), 2600);
     } else if (you < 0) {
-      setResult('Pip wins this time!');
+      const { lv } = record(-1);
+      setResult(lv < level ? 'Pip wins this time. Pip will go a bit easier next game.' : 'Pip wins this time!');
       speak('Pip wins this time. Want to try again?');
-      later(timers, () => onEnd(0), 2400);
+      later(timers, () => onEnd(0), 2600);
     } else {
+      record(0);
       setResult("It's a draw!");
       speak("It's a draw!");
       later(timers, () => onEnd(1), 2400);
     }
     return true;
   }
-  function pipTurn(board) {
+  function pipTurn(board, wait = 650) {
     setPhase('pip');
     later(timers, () => {
-      const depth = variant === 'full' ? 2 : level >= 3 ? 3 : 2;
-      const m = pipMove(board, 'b', depth, rules, Math.max(0.004, 0.03 - level * 0.006));
+      // Level 1 looks one move ahead; then two; three in the small games from level 4.
+      const depth = level <= 1 ? 1 : variant !== 'full' && level >= 4 ? 3 : 2;
+      const m = pipMove(board, 'b', depth, rules, wobble(level));
       if (!m) return finish(board, 'b');
+      const took = board[m.to];
       const nb = rules.play(board, m);
       playStickerPick();
       setB(nb);
       setLast(m);
       if (finish(nb, 'w')) return undefined;
       if (variant === 'full' && inCheck(nb, 'w')) {
-        setNote('Check! Keep your king safe.');
+        setNote('Check! Your king is attacked: move him to safety, block, or take the attacker.');
         speak('Check! Keep your king safe.');
+      } else if (took) {
+        setNote(`Pip took your ${NAMES[took.t]}. Tap Take back to try a different move.`);
       } else setNote(null);
       setPhase('you');
       return undefined;
-    }, 650);
+    }, wait);
   }
+  function help(auto) {
+    if (phase !== 'you') return;
+    const m = pipMove(b, 'w', 2, rules, 0);
+    if (!m) return;
+    setHint(m);
+    setSel(m.from);
+    const why = chessWhy(b, m, variant);
+    setNote(`${auto ? 'Need a hint? ' : ''}${why}`);
+    speak(`${auto ? 'Need a hint? ' : ''}${why}`);
+  }
+  function takeBack() {
+    if (phase !== 'you' || !past.length) return;
+    playStickerPick();
+    setB(past[past.length - 1]);
+    setPast(past.slice(0, -1));
+    setLast(null);
+    setSel(null);
+    setHint(null);
+    setNote('Taken back! Try another move.');
+    speak('Taken back! Try another move.');
+  }
+  // Beginners (levels 1 and 2) get a hint by itself after 20 seconds stuck.
+  useEffect(() => {
+    if (phase !== 'you' || level > 2 || howto || !b) return undefined;
+    const id = setTimeout(() => help(true), 20000);
+    return () => clearTimeout(id);
+  }, [phase, b, howto]); // eslint-disable-line react-hooks/exhaustive-deps
   const legal = phase === 'you' && b ? rules.gen(b, 'w') : [];
   const targets = sel === null ? [] : legal.filter((m) => m.from === sel).map((m) => m.to);
   function tap(i) {
@@ -301,11 +348,15 @@ export function Chess({ grade, onEnd, playerId }) {
       const nb = rules.play(b, m);
       if (b[i]) playCorrectChime();
       else playStickerPick();
+      setPast((list) => [...list, b]);
       setB(nb);
       setLast(m);
       setSel(null);
-      setNote(null);
-      if (!finish(nb, 'b')) pipTurn(nb);
+      setHint(null);
+      const danger = chessDanger(nb, i);
+      setNote(danger);
+      if (danger) speak(danger);
+      if (!finish(nb, 'b')) pipTurn(nb, danger ? 2200 : 650);
       return;
     }
     if (p && p.c === 'w') {
@@ -396,18 +447,41 @@ export function Chess({ grade, onEnd, playerId }) {
         {b.map((p, i) => {
           const [r, c] = rc(i);
           return (
-            <button key={i} type="button" className={`bg-sq${(r + c) % 2 ? ' bg-dark' : ''}${sel === i ? ' bg-sel' : ''}${last && (last.from === i || last.to === i) ? ' bg-last' : ''}`} onClick={() => tap(i)} aria-label={p ? `${p.c === 'w' ? 'white' : 'black'} ${NAMES[p.t]}` : 'empty'}>
+            <button key={i} type="button" className={`bg-sq${(r + c) % 2 ? ' bg-dark' : ''}${sel === i ? ' bg-sel' : ''}${last && (last.from === i || last.to === i) ? ' bg-last' : ''}${hint && (hint.from === i || hint.to === i) ? ' bg-hint' : ''}`} onClick={() => tap(i)} aria-label={p ? `${p.c === 'w' ? 'white' : 'black'} ${NAMES[p.t]}` : 'empty'}>
               {p && <ChessPiece p={p} />}
               {targets.includes(i) && <i className={b[i] ? 'bg-take' : 'bg-dot'} />}
             </button>
           );
         })}
       </div>
-      <div className="bakery-actions">
+      <HelpBar onHelp={() => help(false)} onBack={takeBack} canBack={phase === 'you' && past.length > 0} canHelp={phase === 'you'} onHowTo={() => setHowto(true)} extra={
         <button type="button" className="bakery-btn" onClick={() => setPhase('pick')} disabled={phase === 'pip'}>
           Change pieces
         </button>
-      </div>
+      } />
+      {howto && <HowTo game="chess" variant={variant} onDone={() => setHowto(false)} />}
+    </div>
+  );
+}
+
+// Help me, Take back and How to play, under each board.
+function HelpBar({ onHelp, onBack, canBack, canHelp, onHowTo, extra }) {
+  return (
+    <div className="bg-helpbar">
+      <button type="button" className="bg-help" onClick={onHelp} disabled={!canHelp}>
+        <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
+          <circle cx="10" cy="8" r="6" fill="currentColor" opacity="0.25" />
+          <path d="M7 15h6M8 18h4M10 2a6 6 0 0 0-3 11h6a6 6 0 0 0-3-11z" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+        </svg>
+        Help me
+      </button>
+      <button type="button" className="bakery-btn" onClick={onBack} disabled={!canBack}>
+        Take back
+      </button>
+      <button type="button" className="bakery-btn" onClick={onHowTo}>
+        How to play
+      </button>
+      {extra}
     </div>
   );
 }
@@ -499,8 +573,11 @@ const Disc = ({ p }) => (
   </svg>
 );
 
-export function Checkers({ grade, onEnd, playerId }) {
-  const [level, levelUp] = useLevel(playerId, grade, 'checkers');
+export function Checkers({ onEnd, playerId }) {
+  const [level, record] = useSkill(playerId, 'checkers');
+  const [past, setPast] = useState([]);
+  const [hint, setHint] = useState(null);
+  const [howto, setHowto] = useState(() => !howtoSeen('checkers'));
   const [b, setB] = useState(checkersSetup);
   const [phase, setPhase] = useState('you');
   const [sel, setSel] = useState(null);
@@ -510,9 +587,36 @@ export function Checkers({ grade, onEnd, playerId }) {
   const timers = useRef([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   useEffect(() => {
-    speak("You're red. Move one step forward on the dark squares. Jump over Pip's pieces to take them!");
+    if (howtoSeen('checkers')) speak("You're red. Move one step forward on the dark squares. Jump over Pip's pieces to take them!");
   }, []);
   const legal = phase === 'you' ? ckGen(b, 'r') : [];
+  function help(auto) {
+    if (phase !== 'you') return;
+    const m = pipMove(b, 'r', 3, ckRules, 0);
+    if (!m) return;
+    setHint(m);
+    setSel(m.from);
+    const crowned = !b[m.from].k && rc(m.to)[0] === 0;
+    const why = checkersWhy(m, crowned);
+    setNote(`${auto ? 'Need a hint? ' : ''}${why}`);
+    speak(`${auto ? 'Need a hint? ' : ''}${why}`);
+  }
+  function takeBack() {
+    if (phase !== 'you' || !past.length) return;
+    playStickerPick();
+    setB(past[past.length - 1]);
+    setPast(past.slice(0, -1));
+    setLast(null);
+    setSel(null);
+    setHint(null);
+    setNote('Taken back! Try another move.');
+    speak('Taken back! Try another move.');
+  }
+  useEffect(() => {
+    if (phase !== 'you' || level > 2 || howto) return undefined;
+    const id = setTimeout(() => help(true), 20000);
+    return () => clearTimeout(id);
+  }, [phase, b, howto]); // eslint-disable-line react-hooks/exhaustive-deps
   const mustJump = legal.some((m) => m.caps.length);
   const targets = sel === null ? [] : legal.filter((m) => m.from === sel).map((m) => m.to);
   const count = (c) => b.filter((p) => p && p.c === c).length;
@@ -521,14 +625,15 @@ export function Checkers({ grade, onEnd, playerId }) {
     setPhase('over');
     if (side === 'b') {
       playStickerStick();
-      const lv = levelUp();
-      setResult(`You win! Pip gets smarter: level ${lv}.`);
+      const { lv } = record(1);
+      setResult(`You win! Pip plays a little harder now: level ${lv}.`);
       speak('You win!');
-      later(timers, () => onEnd(3), 2400);
+      later(timers, () => onEnd(3), 2600);
     } else {
-      setResult('Pip wins this time!');
+      const { lv } = record(-1);
+      setResult(lv < level ? 'Pip wins this time. Pip will go a bit easier next game.' : 'Pip wins this time!');
       speak('Pip wins this time!');
-      later(timers, () => onEnd(0), 2400);
+      later(timers, () => onEnd(0), 2600);
     }
     return true;
   }
@@ -541,21 +646,26 @@ export function Checkers({ grade, onEnd, playerId }) {
         playCorrectChime();
         speak(m.caps.length > 1 ? `Double jump! You took ${m.caps.length}!` : 'Jump! You took one!');
       } else playStickerPick();
+      setPast((list) => [...list, b]);
       setB(nb);
       setLast(m);
       setSel(null);
-      setNote(null);
+      setHint(null);
+      // Can Pip jump the piece you just moved?
+      const risky = ckGen(nb, 'b').some((x) => x.caps.includes(m.to));
+      setNote(risky ? 'Careful! Pip can jump that piece. Tap Take back to try another move.' : null);
+      if (risky) speak('Careful! Pip can jump that piece.');
       if (finish(nb, 'b')) return;
       setPhase('pip');
       later(timers, () => {
-        const mv = pipMove(nb, 'b', Math.min(4, 1 + level), ckRules, Math.max(0.005, 0.05 - level * 0.01));
+        const mv = pipMove(nb, 'b', Math.min(5, level + 1), ckRules, wobble(level, 0.6));
         const nb2 = ckPlay(nb, mv);
         playStickerPick();
         setB(nb2);
         setLast(mv);
-        if (mv.caps.length) setNote(`Pip jumped and took ${mv.caps.length}!`);
+        setNote(mv.caps.length ? `Pip jumped and took ${mv.caps.length}! Tap Take back to try a different move.` : null);
         if (!finish(nb2, 'r')) setPhase('you');
-      }, 700);
+      }, risky ? 2200 : 700);
       return;
     }
     const p = b[i];
@@ -590,13 +700,15 @@ export function Checkers({ grade, onEnd, playerId }) {
         {b.map((p, i) => {
           const can = phase === 'you' && sel === null && mustJump && legal.some((m) => m.from === i);
           return (
-            <button key={i} type="button" className={`bg-sq${dark(i) ? ' bg-dark' : ''}${sel === i ? ' bg-sel' : ''}${last && (last.from === i || last.to === i) ? ' bg-last' : ''}${can ? ' bg-must' : ''}`} onClick={() => tap(i)} aria-label={p ? `${p.c === 'r' ? 'red' : 'black'}${p.k ? ' king' : ''}` : 'empty'}>
+            <button key={i} type="button" className={`bg-sq${dark(i) ? ' bg-dark' : ''}${sel === i ? ' bg-sel' : ''}${last && (last.from === i || last.to === i) ? ' bg-last' : ''}${can ? ' bg-must' : ''}${hint && (hint.from === i || hint.to === i) ? ' bg-hint' : ''}`} onClick={() => tap(i)} aria-label={p ? `${p.c === 'r' ? 'red' : 'black'}${p.k ? ' king' : ''}` : 'empty'}>
               {p && <Disc p={p} />}
               {targets.includes(i) && <i className="bg-dot" />}
             </button>
           );
         })}
       </div>
+      <HelpBar onHelp={() => help(false)} onBack={takeBack} canBack={phase === 'you' && past.length > 0} canHelp={phase === 'you'} onHowTo={() => setHowto(true)} />
+      {howto && <HowTo game="checkers" onDone={() => setHowto(false)} />}
     </div>
   );
 }
@@ -652,8 +764,11 @@ function rvSetup() {
   return b;
 }
 
-export function Reversi({ grade, onEnd, playerId }) {
-  const [level, levelUp] = useLevel(playerId, grade, 'reversi');
+export function Reversi({ onEnd, playerId }) {
+  const [level, record] = useSkill(playerId, 'reversi');
+  const [past, setPast] = useState([]);
+  const [hint, setHint] = useState(null);
+  const [howto, setHowto] = useState(() => !howtoSeen('reversi'));
   const [b, setB] = useState(rvSetup);
   const [phase, setPhase] = useState('you');
   const [last, setLast] = useState(null);
@@ -663,8 +778,33 @@ export function Reversi({ grade, onEnd, playerId }) {
   const timers = useRef([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   useEffect(() => {
-    speak("You're dark. Put a disc where it traps Pip's light discs in a line. They flip to yours!");
+    if (howtoSeen('reversi')) speak("You're dark. Put a disc where it traps Pip's light discs in a line. They flip to yours!");
   }, []);
+  function help(auto) {
+    if (phase !== 'you') return;
+    const m = pipMove(b, 'd', 2, rvRules, 0);
+    if (!m) return;
+    setHint(m.to);
+    const why = reversiWhy(m);
+    setNote(`${auto ? 'Need a hint? ' : ''}${why}`);
+    speak(`${auto ? 'Need a hint? ' : ''}${why}`);
+  }
+  function takeBack() {
+    if (phase !== 'you' || !past.length) return;
+    playStickerPick();
+    setB(past[past.length - 1]);
+    setPast(past.slice(0, -1));
+    setLast(null);
+    setFlipped([]);
+    setHint(null);
+    setNote('Taken back! Try another spot.');
+    speak('Taken back! Try another spot.');
+  }
+  useEffect(() => {
+    if (phase !== 'you' || level > 2 || howto) return undefined;
+    const id = setTimeout(() => help(true), 20000);
+    return () => clearTimeout(id);
+  }, [phase, b, howto]); // eslint-disable-line react-hooks/exhaustive-deps
   const mine = b.filter((x) => x === 'd').length;
   const pips = b.filter((x) => x === 'l').length;
   const legal = phase === 'you' ? rvGen(b, 'd') : [];
@@ -676,15 +816,17 @@ export function Reversi({ grade, onEnd, playerId }) {
     const l = board.filter((x) => x === 'l').length;
     if (r > 0) {
       playStickerStick();
-      const lv = levelUp();
-      setResult(`You win, ${d} to ${l}! Pip gets smarter: level ${lv}.`);
+      const { lv } = record(1);
+      setResult(`You win, ${d} to ${l}! Pip plays a little harder now: level ${lv}.`);
       speak(`You win, ${d} to ${l}!`);
       later(timers, () => onEnd(3), 2600);
     } else if (r < 0) {
-      setResult(`Pip wins, ${l} to ${d}.`);
+      const { lv } = record(-1);
+      setResult(`Pip wins, ${l} to ${d}.${lv < level ? ' Pip will go a bit easier next game.' : ''}`);
       speak(`Pip wins, ${l} to ${d}. Try again!`);
       later(timers, () => onEnd(0), 2600);
     } else {
+      record(0);
       setResult(`A tie, ${d} to ${l}!`);
       later(timers, () => onEnd(1), 2600);
     }
@@ -702,7 +844,7 @@ export function Reversi({ grade, onEnd, playerId }) {
         }
         return;
       }
-      const m = pipMove(board, 'l', Math.min(3, level), rvRules, Math.max(0.02, 0.25 - level * 0.05));
+      const m = pipMove(board, 'l', Math.min(3, level), rvRules, wobble(level, 6));
       const nb = rvPlay(board, m, 'l');
       playStickerPick();
       setB(nb);
@@ -731,6 +873,8 @@ export function Reversi({ grade, onEnd, playerId }) {
     playCorrectChime();
     speak(m.flips.length === 1 ? 'You flipped 1!' : `You flipped ${m.flips.length}!`);
     const nb = rvPlay(b, m, 'd');
+    setPast((list) => [...list, b]);
+    setHint(null);
     setB(nb);
     setLast(i);
     setFlipped(m.flips);
@@ -753,12 +897,14 @@ export function Reversi({ grade, onEnd, playerId }) {
       </p>
       <div className="bg-board bg-reversi">
         {b.map((x, i) => (
-          <button key={i} type="button" className={`bg-sq rv-sq${last === i ? ' bg-last' : ''}`} onClick={() => tap(i)} aria-label={x ? (x === 'd' ? 'dark' : 'light') : 'empty'}>
+          <button key={i} type="button" className={`bg-sq rv-sq${last === i ? ' bg-last' : ''}${hint === i ? ' bg-hint' : ''}`} onClick={() => tap(i)} aria-label={x ? (x === 'd' ? 'dark' : 'light') : 'empty'}>
             {x && <i key={`${x}${flipped.includes(i) ? last : ''}`} className={`rv-disc rv-${x}${flipped.includes(i) ? ' rv-flip' : ''}`} />}
             {!x && legal.some((m) => m.to === i) && <i className="bg-dot" />}
           </button>
         ))}
       </div>
+      <HelpBar onHelp={() => help(false)} onBack={takeBack} canBack={phase === 'you' && past.length > 0} canHelp={phase === 'you'} onHowTo={() => setHowto(true)} />
+      {howto && <HowTo game="reversi" onDone={() => setHowto(false)} />}
     </div>
   );
 }
