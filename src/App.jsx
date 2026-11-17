@@ -2395,7 +2395,8 @@ export default function App() {
               <span>Every game, side by side with Singapore math and Beast Academy</span>
             </button>
             <SgModeCard />
-            <PlayTimeCard players={profiles} gated={withGate} onAdd={addTime} />
+            {/* Play time limits: only the owner account sees this for now. */}
+            {statsViewer && <PlayTimeCard players={profiles} gated={withGate} onAdd={addTime} />}
             <div className="settings-list">
               {draftProfiles.map((p) => (
                 <PlayerSettingsCard
