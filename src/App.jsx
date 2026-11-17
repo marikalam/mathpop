@@ -68,6 +68,8 @@ import SgModeCard from './SgModeCard.jsx';
 import GameGuide from './GameGuide.jsx';
 import GiftsCard from './GiftsCard.jsx';
 import ParentGate from './ParentGate.jsx';
+import { PlayTimeCard, TimesUp } from './PlayTime.jsx';
+import { addMinutes, minutesText, usePlayClock } from './playTime.js';
 import SignupCard from './SignupCard.jsx';
 import { canRemind, hourLabel, reminderState, turnOffReminder, turnOnReminder } from './reminder.js';
 import PlusScreen from './PlusScreen.jsx';
@@ -735,6 +737,27 @@ export default function App() {
   // or leaving the app. `then` runs once it's passed.
   const [gate, setGate] = useState(null);
   const withGate = (then) => setGate(() => then);
+  // Play time (playTime.js): today's minutes left for this player. When they
+  // run out, a game in progress may finish (up to 3 minutes more), then the
+  // Time's up screen closes the app for today; a grown-up can add time.
+  const timeLeft = usePlayClock(currentProfile.id);
+  const [timeZeroAt, setTimeZeroAt] = useState(null);
+  const [gameEndAt, setGameEndAt] = useState(0);
+  const [timeWarn, setTimeWarn] = useState(false);
+  const [, setGraceTick] = useState(0);
+  useEffect(() => {
+    if (timeLeft <= 0 && !timeZeroAt) setTimeZeroAt(Date.now());
+    if (timeLeft > 0 && timeZeroAt) setTimeZeroAt(null);
+    if (timeLeft > 0 && timeLeft <= 120 && timeLeft > 117 && !timeWarn) {
+      setTimeWarn(true);
+      speak(langFor(currentProfile.id) === 'ja' ? 'あと 2ふん だよ！' : 'Two minutes left today!');
+      setTimeout(() => setTimeWarn(false), 6000);
+    }
+    if (timeZeroAt) setGraceTick((n) => n + 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft]);
+  const timeUp = timeLeft <= 0 && (view !== 'game' || gameEndAt > (timeZeroAt || Infinity) || Date.now() - (timeZeroAt || Date.now()) > 180000);
+  const addTime = (id) => withGate(() => addMinutes(id, 15));
   const openOutsideGated = (url) => withGate(() => openOutside(url));
 
   function rateApp() {
@@ -1805,6 +1828,7 @@ export default function App() {
               <p className="home-hero-line">
                 {gradeInfo(level).label}
                 {streakDays(currentProfile.id) >= 2 && ` · ${streakDays(currentProfile.id)} days in a row`}
+                {Number.isFinite(timeLeft) && timeLeft > 0 && ` · ${minutesText(timeLeft)} left today`}
               </p>
               {(plusStatus.why === 'trial' || !plusStatus.plus) && (
                 <button className="home-hero-plus" onClick={() => openPlus('home')}>
@@ -2073,6 +2097,7 @@ export default function App() {
               playerId={currentProfile.id}
               grade={gradeInfo(level).id}
               onDone={(id, score) => {
+                setGameEndAt(Date.now());
                 earnSticker(currentProfile.id);
                 statRoundDone({ grade: gradeInfo(level).id, topic: `game-${id}`, lang: langFor(currentProfile.id) === 'ja' && hasJa(id) ? 'ja' : 'en', correct: score, total: Math.max(1, score) });
               }}
@@ -2370,6 +2395,7 @@ export default function App() {
               <span>Every game, side by side with Singapore math and Beast Academy</span>
             </button>
             <SgModeCard />
+            <PlayTimeCard players={profiles} gated={withGate} onAdd={addTime} />
             <div className="settings-list">
               {draftProfiles.map((p) => (
                 <PlayerSettingsCard
@@ -3065,6 +3091,8 @@ export default function App() {
         </div>
       )}
       <EmailHandoff />
+      {timeWarn && <div className="pt-warn">{langFor(currentProfile.id) === 'ja' ? 'あと 2ふん' : '2 minutes left today'}</div>}
+      {timeUp && <TimesUp name={currentProfile.name} ja={langFor(currentProfile.id) === 'ja'} onAdd={() => addTime(currentProfile.id)} />}
       {gate && (
         <ParentGate
           onPass={() => {
