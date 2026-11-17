@@ -8,6 +8,7 @@ import CarPark from './CarPark.jsx';
 import ShapeFit from './ShapeFit.jsx';
 import MathIsland from './MathIsland.jsx';
 import LavaRun from './LavaRun.jsx';
+import ShipHunt from './ShipHunt.jsx';
 import { useEffect, useRef, useState } from 'react';
 import Pip from './Pip.jsx';
 import Icon from './Icon.jsx';
@@ -74,6 +75,7 @@ export const GAMES = [
   // Board games and a parking puzzle (BoardGames.jsx, CarPark.jsx).
   { id: 'chess', title: 'Chess', sub: 'Pawns only, then more pieces', how: 'Pick your pieces, then beat Pip! Tap a piece to see where it can go.', seconds: 0, color: ['#eedbb8', '#d9bf91'] },
   { id: 'checkers', title: 'Checkers', sub: 'Jump to take Pip’s pieces', how: 'Move forward on the dark squares, and jump over Pip’s pieces to take them!', seconds: 0, color: ['#c0392b', '#962d22'] },
+  { id: 'shipHunt', title: 'Ship Hunt', sub: 'Find Pip’s hidden ships', how: 'Tap a square to call it, like B 4. Find all of Pip’s ships before Pip finds yours!', seconds: 0, color: ['#1d4ed8', '#1e3a8a'] },
   { id: 'lavaRun', title: 'Lava Run', sub: 'Roll, solve, race Pip', how: 'Roll the dice and solve to move. Race Pip to the volcano! Watch out for lava rocks.', seconds: 0, color: ['#c2410c', '#9a3412'] },
   { id: 'mathIsland', title: 'Island Builder', sub: 'Sail, collect shells, build', how: 'Answer to sail from island to island. Spend your shells to build your own island!', seconds: 0, color: ['#0ea5e9', '#0284c7'] },
   { id: 'shapeFit', title: 'Shape Fit', sub: 'Fill the board with pieces', how: 'Drag the pieces in so every square is filled. Tap a piece to turn it!', seconds: 0, color: ['#312e81', '#241f63'] },
@@ -895,6 +897,7 @@ const PLAY = {
   shapeFit: ShapeFit,
   mathIsland: MathIsland,
   lavaRun: LavaRun,
+  shipHunt: ShipHunt,
   reversi: Reversi,
 };
 const SCORE_WORD = {
@@ -941,10 +944,11 @@ const SCORE_WORD = {
   shapeFit: 'stars',
   mathIsland: 'shells',
   lavaRun: 'points',
+  shipHunt: 'ships',
   reversi: 'points',
 };
 // The games that end with Time's up (the others end their own way).
-const NO_COUNTDOWN = ['chess', 'checkers', 'reversi', 'carPark', 'shapeFit', 'mathIsland', 'lavaRun'];
+const NO_COUNTDOWN = ['chess', 'checkers', 'reversi', 'carPark', 'shapeFit', 'mathIsland', 'lavaRun', 'shipHunt'];
 // The games whose questions follow the + − / × ÷ choice (ops.js).
 const OPS_GAMES = ['bubbles', 'snake', 'fruitSlice', 'numberRun', 'gardenGuard', 'hoopHop'];
 const TIMED = ['bubbles', 'make10', 'shapes', 'bondPop', 'makeTen', 'sumGridRush', 'timesTiles'];

@@ -14786,3 +14786,130 @@ body {
   font: 700 16px 'Fredoka', ui-rounded, system-ui, sans-serif;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
+
+/* Ship Hunt (ShipHunt.jsx). */
+.sh-game {
+  gap: 8px;
+}
+.sh-game .mi-note {
+  padding: 8px 12px;
+  font-size: 15px;
+}
+.sh-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-width: min(420px, 37dvh);
+  margin: 0 auto;
+}
+.sh-label {
+  color: #173a66;
+  font: 700 15px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.sh-grid {
+  display: grid;
+  grid-template-columns: 22px repeat(var(--n), minmax(0, 1fr));
+  gap: 3px;
+  padding: 6px;
+  border-radius: 14px;
+  background: #1e3a8a;
+}
+.sh-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #bfdbfe;
+  font: 700 13px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.sh-cell {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: #3b82f6;
+  cursor: pointer;
+}
+.sh-cell:disabled {
+  cursor: default;
+}
+.sh-ship {
+  background: #cbd5e1;
+}
+.sh-sunk {
+  background: #64748b;
+}
+.sh-hit::after {
+  content: '';
+  position: absolute;
+  inset: 18%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fde047 0 30%, #ef4444 34%);
+  animation: sh-boom 0.35s ease-out;
+}
+.sh-miss::after {
+  content: '';
+  position: absolute;
+  inset: 30%;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  animation: sh-boom 0.35s ease-out;
+}
+@keyframes sh-boom {
+  from { transform: scale(0.2); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.sh-hint {
+  box-shadow: inset 0 0 0 4px #ffd23f;
+  animation: tt-hint 0.8s ease-in-out infinite;
+}
+.sh-last {
+  outline: 3px solid #ffd23f;
+  outline-offset: -2px;
+}
+.sh-turn {
+  margin: 0;
+  text-align: center;
+  color: #173a66;
+  font: 700 18px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.sh-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  max-width: min(420px, 37dvh);
+  margin: 0 auto;
+}
+.sh-help {
+  min-height: 44px;
+}
+.sh-mine {
+  width: 62%;
+  max-width: min(280px, 20dvh);
+  margin: 4px auto 0;
+}
+.sh-mine .sh-head {
+  font-size: 10px;
+}
+.sh-mine .sh-grid {
+  grid-template-columns: 16px repeat(var(--n), minmax(0, 1fr));
+  gap: 2px;
+}
+.sh-over {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  color: #173a66;
+  font: 600 16px 'IBM Plex Sans', sans-serif;
+}
+.sh-over p {
+  margin: 0;
+}
+.sh-start {
+  min-width: 140px;
+}

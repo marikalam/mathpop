@@ -448,6 +448,20 @@ const ART = {
       <path d="M65 70 Q80 40 95 43" stroke="#ffd23f" strokeWidth="3" strokeDasharray="4 4" fill="none" />
     </g>
   ),
+  shipHunt: (
+    <g>
+      <rect x="22" y="12" width="116" height="96" rx="8" fill="#1e40af" />
+      {Array.from({ length: 5 }, (_, k) => (
+        <path key={k} d={`M${22 + (k + 1) * 19.3} 12 V108 M22 ${12 + (k + 1) * 16} H138`} stroke="#3b82f6" strokeWidth="1.5" />
+      ))}
+      <rect x="44" y="31" width="54" height="14" rx="7" fill="#cbd5e1" />
+      <rect x="104" y="48" width="14" height="44" rx="7" fill="#cbd5e1" />
+      <circle cx="61" cy="38" r="9" fill="#ef4444" />
+      <path d="M57 34 l8 8 M65 34 l-8 8" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
+      <circle cx="51" cy="86" r="6" fill="none" stroke="#fff" strokeWidth="2.5" />
+      <circle cx="71" cy="70" r="6" fill="none" stroke="#fff" strokeWidth="2.5" />
+    </g>
+  ),
   lavaRun: (
     <g>
       <path d="M50 108 L80 26 h20 L130 108z" fill="#78350f" />
@@ -749,6 +763,7 @@ const INK = {
   shapeFit: '#fff',
   mathIsland: '#fff',
   lavaRun: '#fff',
+  shipHunt: '#fff',
   reversi: '#fff',
 };
 const BG = {
@@ -768,6 +783,7 @@ const BG = {
   shapeFit: '#4338ca',
   mathIsland: '#38bdf8',
   lavaRun: '#fdba74',
+  shipHunt: '#2563eb',
   reversi: '#2e7d4f',
 };
 export const cardColors = (id, fallback) => ({ bg: BG[id] || fallback, ink: INK[id] });
