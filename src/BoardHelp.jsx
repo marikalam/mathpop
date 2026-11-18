@@ -233,3 +233,48 @@ export function reversiWhy(m) {
   if (corner) return `Take the corner! Corners never flip back, and you flip ${m.flips.length}.`;
   return `Put it here: you flip ${m.flips.length} of Pip’s ${m.flips.length === 1 ? 'disc' : 'discs'}!`;
 }
+
+// The top of every board game screen: what kind of game or lesson it is
+// (a real chess rule, a tactic, how a piece moves...) and which side the
+// player is (tap it to hear both).
+export const modeKind = (mode) => (MODE_INFO[mode] || [])[1] || '';
+const MODE_INFO = {
+  pawns: ['Pawn Wars', 'Mini chess game', 'Only pawns. Get a pawn to the other side first!'],
+  rooks: ['Rooks & pawns', 'Mini chess game', 'Rooks and pawns only. Get a pawn across, or take all of Pip’s pieces.'],
+  minor: ['Knights & bishops', 'Mini chess game', 'Knights, bishops and pawns. Get a pawn across, or take all of Pip’s pieces.'],
+  full: ['Full chess', 'Real chess game', 'All the pieces. Checkmate Pip’s king to win.'],
+  check: ['Check!', 'Chess rule', 'Check means the king is being attacked. The king must get safe right away.'],
+  walk: ['Safe King Walk', 'Chess rule', 'A king may never step onto a square where it could be taken.'],
+  rookHunt: ['Rook Hunt', 'How pieces move', 'Rooks go straight, up, down, left and right.'],
+  bishopHunt: ['Bishop Hunt', 'How pieces move', 'Bishops go slanting and stay on their own color.'],
+  knights: ['Knight Feast', 'How pieces move', 'Knights jump in an L, and can jump over pieces.'],
+  queenPawns: ['Queen vs Pawns', 'Practice game', 'A pawn that reaches the other side becomes a queen, so catch them first!'],
+  magic: ['Pawn Magic', 'Chess rule: en passant', 'En passant means in passing: a pawn can take a pawn that just jumped two squares past it.'],
+  skewer: ['Skewer', 'Chess tactic', 'A tactic is a trick. Attack a piece so it has to move, and take the piece behind it.'],
+  ladder: ['Two-Rook Checkmate', 'Checkmate pattern', 'A pattern to win: the two rooks take turns pushing the king to the edge.'],
+  checkers: ['Checkers', 'Real checkers game', 'Jump Pip’s pieces. Reach the end to make a king.'],
+  reversi: ['Reversi', 'Real Reversi game', 'Trap Pip’s discs in a line to flip them. Most discs wins.'],
+};
+const SIDES = {
+  chess: ['White', 'You play White. You move first.'],
+  checkers: ['Red', 'You play Red. You move first.'],
+  reversi: ['Dark', 'You play the dark discs. You go first.'],
+};
+export function ModeHeader({ mode, game = 'chess' }) {
+  const [name, kind, about] = MODE_INFO[mode] || [mode, '', ''];
+  const [side, sayside] = SIDES[game];
+  return (
+    <button type="button" className="bg-mode" onClick={() => speak(`${name}. ${kind}. ${about} ${sayside}`)}>
+      <span className="bg-mode-what">
+        <b>{name}</b>
+        <small>{kind}</small>
+      </span>
+      <span className={`bg-side bg-side-${game}`}>
+        <span className="bg-side-icon" aria-hidden="true">
+          {game === 'chess' ? <ChessPiece p={{ c: 'w', t: 'k' }} size="26px" /> : <i />}
+        </span>
+        You play {side}
+      </span>
+    </button>
+  );
+}
