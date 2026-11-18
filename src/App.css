@@ -14913,3 +14913,52 @@ body {
 .sh-start {
   min-width: 140px;
 }
+
+/* Session timer (PlayTime.jsx). */
+.pt-chip {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  margin: 2px 0 4px;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 999px;
+  background: #173a66;
+  color: #fff;
+  font: 700 14px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.pt-sheet-back {
+  z-index: 950;
+  background: rgba(23, 58, 102, 0.55);
+}
+.pt-sheet {
+  align-items: stretch;
+  text-align: left;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.pt-sheet h2 {
+  text-align: center;
+}
+.pt-sheet h4 {
+  margin: 4px 0 0;
+  font: 700 15px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.pt-now {
+  text-align: center;
+  font-weight: 600;
+}
+.pt-note {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font: 500 16px 'IBM Plex Sans', sans-serif;
+  color: #173a66;
+}
+.pt-go {
+  margin-top: 6px;
+  align-self: center;
+}
