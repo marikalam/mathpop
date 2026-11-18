@@ -48,10 +48,11 @@ import {
   getUser,
   loadCloudProfiles,
   onAuthEvent,
-  canViewStats,
   rememberedAccount,
   saveCloudProfile,
   signInFromLink,
+  ownerStatus,
+  OWNER_DEVICE_KEY,
 } from './cloud.js';
 import { listenForAppLinks } from './appLink.js';
 import { statAppOpened, statRoundDone } from './stats.js';
@@ -730,7 +731,9 @@ export default function App() {
     statAppOpened();
   }, []);
   // The stats page is only for the accounts allowed to see it.
-  const [statsViewer, setStatsViewer] = useState(false);
+  // The owner (cloud.js ownerStatus): remembered on this device, so the
+  // owner-only tools (like the play timer) work offline too.
+  const [statsViewer, setStatsViewer] = useState(() => readJson(OWNER_DEVICE_KEY) === true);
   const [shareNote, setShareNote] = useState('');
 
   // The parental gate (ParentGate.jsx): a grown-up check before buying
@@ -928,8 +931,13 @@ export default function App() {
   const [tapBoard, setTapBoard] = useState('shapes');
   useEffect(() => {
     let live = true;
-    if (cloudUser) canViewStats().then((ok) => live && setStatsViewer(ok));
-    else setStatsViewer(false);
+    if (cloudUser)
+      ownerStatus().then((ok) => {
+        if (!live || ok === null) return;
+        writeJson(OWNER_DEVICE_KEY, ok);
+        setStatsViewer(ok);
+      });
+    else setStatsViewer(readJson(OWNER_DEVICE_KEY) === true);
     return () => {
       live = false;
     };
