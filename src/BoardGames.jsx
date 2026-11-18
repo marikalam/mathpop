@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Pip from './Pip.jsx';
-import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
+import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak, stopSpeaking } from './sound.js';
 import { PuzzleTop, useSkill } from './puzzleKit.jsx';
+import { setBackHandler } from './backButton.js';
 import { HowTo, ModeHeader, modeKind, checkersWhy, chessDanger, chessWhy, howtoSeen, reversiWhy } from './BoardHelp.jsx';
 import ChessSchool, { SCHOOL } from './ChessSchool.jsx';
 
@@ -246,6 +247,21 @@ export function Chess({ onEnd, playerId }) {
   const timers = useRef([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const rules = chessRules(variant);
+  // Back from a game or a lesson goes to the Chess menu first.
+  useEffect(() => {
+    if (phase === 'pick') return undefined;
+    setBackHandler(() => {
+      timers.current.forEach(clearTimeout);
+      timers.current = [];
+      stopSpeaking();
+      setSchool(null);
+      setHowto(false);
+      setPhase('pick');
+      window.scrollTo(0, 0);
+      return true;
+    });
+    return () => setBackHandler(null);
+  }, [phase]);
   function start(v) {
     setVariant(v);
     try {

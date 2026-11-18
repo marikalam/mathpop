@@ -69,6 +69,7 @@ import SgModeCard from './SgModeCard.jsx';
 import GameGuide from './GameGuide.jsx';
 import GiftsCard from './GiftsCard.jsx';
 import ParentGate from './ParentGate.jsx';
+import { handleBack } from './backButton.js';
 import { PlayTimeCard, TimerSheet, TimesUp } from './PlayTime.jsx';
 import { addMinutes, clockText, dailyLeft, minutesText, session, sessionLeft, usePlayClock } from './playTime.js';
 import SignupCard from './SignupCard.jsx';
@@ -2105,7 +2106,8 @@ export default function App() {
 
         {view === 'game' && gameId && (
           <>
-            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
+            {/* Back: a game's own screen (like a chess lesson) goes to its menu first. */}
+            <AppHeader level={level} players={headerPlayers} showBack onBack={() => handleBack() || goHome()} />
             <h2 className="screen-title">{gameTitle(gameId, gradeInfo(level).id, langFor(currentProfile.id))}</h2>
             <Game
               key={`${currentProfile.id}-${level}-${gameId}-${langFor(currentProfile.id)}`}
