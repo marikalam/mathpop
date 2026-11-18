@@ -68,8 +68,8 @@ import SgModeCard from './SgModeCard.jsx';
 import GameGuide from './GameGuide.jsx';
 import GiftsCard from './GiftsCard.jsx';
 import ParentGate from './ParentGate.jsx';
-import { PlayTimeCard, TimesUp } from './PlayTime.jsx';
-import { addMinutes, minutesText, usePlayClock } from './playTime.js';
+import { PlayTimeCard, TimerSheet, TimesUp } from './PlayTime.jsx';
+import { addMinutes, clockText, dailyLeft, minutesText, session, sessionLeft, usePlayClock } from './playTime.js';
 import SignupCard from './SignupCard.jsx';
 import { canRemind, hourLabel, reminderState, turnOffReminder, turnOnReminder } from './reminder.js';
 import PlusScreen from './PlusScreen.jsx';
@@ -750,7 +750,7 @@ export default function App() {
     if (timeLeft > 0 && timeZeroAt) setTimeZeroAt(null);
     if (timeLeft > 0 && timeLeft <= 120 && timeLeft > 117 && !timeWarn) {
       setTimeWarn(true);
-      speak(langFor(currentProfile.id) === 'ja' ? 'あと 2ふん だよ！' : 'Two minutes left today!');
+      speak(langFor(currentProfile.id) === 'ja' ? 'あと 2ふん だよ！' : 'Two minutes left!');
       setTimeout(() => setTimeWarn(false), 6000);
     }
     if (timeZeroAt) setGraceTick((n) => n + 1);
@@ -758,6 +758,8 @@ export default function App() {
   }, [timeLeft]);
   const timeUp = timeLeft <= 0 && (view !== 'game' || gameEndAt > (timeZeroAt || Infinity) || Date.now() - (timeZeroAt || Date.now()) > 180000);
   const addTime = (id) => withGate(() => addMinutes(id, 15));
+  const [timerSheet, setTimerSheet] = useState(false);
+  const openTimer = () => withGate(() => setTimerSheet(true));
   const openOutsideGated = (url) => withGate(() => openOutside(url));
 
   function rateApp() {
@@ -1828,8 +1830,15 @@ export default function App() {
               <p className="home-hero-line">
                 {gradeInfo(level).label}
                 {streakDays(currentProfile.id) >= 2 && ` · ${streakDays(currentProfile.id)} days in a row`}
-                {Number.isFinite(timeLeft) && timeLeft > 0 && ` · ${minutesText(timeLeft)} left today`}
+                {Number.isFinite(dailyLeft(currentProfile.id)) && dailyLeft(currentProfile.id) > 0 && ` · ${minutesText(dailyLeft(currentProfile.id))} left today`}
               </p>
+              {/* The session timer: a countdown while it runs; the owner can
+                  set one from here (behind the parental gate). */}
+              {(session().on && sessionLeft() > 0) || statsViewer ? (
+                <button type="button" className="pt-chip" onClick={statsViewer ? openTimer : undefined}>
+                  {session().on && sessionLeft() > 0 ? `Timer ${clockText(sessionLeft())}` : 'Set a timer'}
+                </button>
+              ) : null}
               {(plusStatus.why === 'trial' || !plusStatus.plus) && (
                 <button className="home-hero-plus" onClick={() => openPlus('home')}>
                   {plusStatus.why === 'trial'
@@ -2396,7 +2405,7 @@ export default function App() {
             </button>
             <SgModeCard />
             {/* Play time limits: only the owner account sees this for now. */}
-            {statsViewer && <PlayTimeCard players={profiles} gated={withGate} onAdd={addTime} />}
+            {statsViewer && <PlayTimeCard players={profiles} gated={withGate} onAdd={addTime} onTimer={openTimer} />}
             <div className="settings-list">
               {draftProfiles.map((p) => (
                 <PlayerSettingsCard
@@ -3092,8 +3101,9 @@ export default function App() {
         </div>
       )}
       <EmailHandoff />
-      {timeWarn && <div className="pt-warn">{langFor(currentProfile.id) === 'ja' ? 'あと 2ふん' : '2 minutes left today'}</div>}
-      {timeUp && <TimesUp name={currentProfile.name} ja={langFor(currentProfile.id) === 'ja'} onAdd={() => addTime(currentProfile.id)} />}
+      {timeWarn && <div className="pt-warn">{langFor(currentProfile.id) === 'ja' ? 'あと 2ふん' : '2 minutes left'}</div>}
+      {timeUp && <TimesUp name={currentProfile.name} ja={langFor(currentProfile.id) === 'ja'} onAdd={() => addTime(currentProfile.id)} onTimer={openTimer} />}
+      {timerSheet && <TimerSheet onClose={() => setTimerSheet(false)} />}
       {gate && (
         <ParentGate
           onPass={() => {
