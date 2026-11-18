@@ -57,6 +57,14 @@ body {
   flex-direction: column;
   gap: 18px;
 }
+/* Room under the last thing on every screen (clear of the home bar). The
+   page's own bottom padding is lost when the content runs past the screen,
+   so the space is part of the content. */
+.app::after {
+  content: '';
+  flex-shrink: 0;
+  height: max(24px, env(safe-area-inset-bottom));
+}
 
 .answer-area {
   flex: 1 1 auto;
@@ -13267,7 +13275,8 @@ body {
    board, the field, the cards) grows to fill it, and boards that keep
    their shape sit in the middle of the space. */
 .game {
-  min-height: calc(100dvh - 196px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  /* Also leaves room for the space under every screen (.app::after). */
+  min-height: calc(100dvh - 201px - 18px - max(24px, env(safe-area-inset-bottom, 0px)) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
 }
 /* Fields and boards that grow. */
 .game .arc-field,
