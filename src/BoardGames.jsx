@@ -409,8 +409,8 @@ export function Chess({ onEnd, playerId }) {
           {VARIANTS.map(([id, name, how]) => (
             <button key={id} type="button" className={`bg-var${picked === id ? ' ops-on' : ''}`} onClick={() => hear(id)} aria-pressed={picked === id}>
               <span className="bg-var-pieces">
-                {(id === 'pawns' ? ['p'] : id === 'rooks' ? ['r', 'p'] : id === 'minor' ? ['n', 'b', 'r', 'p'] : ['k', 'q', 'r', 'b', 'n', 'p']).map((t) => (
-                  <ChessPiece key={t} p={{ c: 'w', t }} size="28px" />
+                {(id === 'pawns' ? ['p'] : id === 'rooks' ? ['r', 'p'] : id === 'minor' ? ['n', 'b', 'r', 'p'] : ['k', 'q', 'r', 'b', 'n', 'p']).map((t, k, all) => (
+                  <ChessPiece key={t} p={{ c: 'w', t }} size={all.length > 4 ? '21px' : '28px'} />
                 ))}
               </span>
               <b>{name}</b>
