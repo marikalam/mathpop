@@ -160,6 +160,11 @@ export async function signUp(email, password) {
 const SESSION_STORAGE_KEY = `sb-${new URL(SUPABASE_URL).hostname.split('.')[0]}-auth-token`;
 
 export async function signOut() {
+  try {
+    localStorage.removeItem(OWNER_DEVICE_KEY);
+  } catch {
+    /* private mode */
+  }
   forgetUser();
   try {
     localStorage.removeItem(SESSION_STORAGE_KEY);
@@ -390,6 +395,20 @@ export async function sendStatEvents(events) {
 
 // Whether the signed-in account may see the stats, and the stats
 // themselves (added up on the server; null if not allowed or offline).
+// The owner check, for the owner-only tools (stats, gifts, play time):
+// true or false, or null when it can't be checked (offline). The answer is
+// kept on the device so the tools still work offline (cleared on sign out).
+export const OWNER_DEVICE_KEY = 'mathpop-owner-device-v1';
+export async function ownerStatus() {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return null;
+  try {
+    const { data, error } = await supabase.rpc('mathpop_can_view_stats');
+    if (error) return null;
+    return data === true;
+  } catch {
+    return null;
+  }
+}
 export async function canViewStats() {
   try {
     const { data, error } = await supabase.rpc('mathpop_can_view_stats');
