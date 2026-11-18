@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Pip from './Pip.jsx';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
 import { PuzzleTop, useSkill } from './puzzleKit.jsx';
-import { HowTo, checkersWhy, chessDanger, chessWhy, howtoSeen, reversiWhy } from './BoardHelp.jsx';
+import { HowTo, ModeHeader, modeKind, checkersWhy, chessDanger, chessWhy, howtoSeen, reversiWhy } from './BoardHelp.jsx';
 import ChessSchool, { SCHOOL } from './ChessSchool.jsx';
 
 // Board games against Pip: Chess (start with pawns only, then rooks and
@@ -411,6 +411,7 @@ export function Chess({ onEnd, playerId }) {
               </span>
               <span>
                 <b>{name}</b>
+                <em className="cs-kind">{modeKind(id)}</em>
                 <small>{how}</small>
               </span>
             </button>
@@ -431,7 +432,8 @@ export function Chess({ onEnd, playerId }) {
   }
   return (
     <div className="game game-pz">
-      <PuzzleTop level={level} score={variant === 'full' ? 'Full' : VARIANTS.find((x) => x[0] === variant)[1]} label="" />
+      <ModeHeader mode={variant} />
+      <PuzzleTop level={level} score="" label="" />
       <p className="game-ask bg-turn">
         {phase === 'over' ? (
           result
@@ -684,6 +686,7 @@ export function Checkers({ onEnd, playerId }) {
   }
   return (
     <div className="game game-pz">
+      <ModeHeader mode="checkers" game="checkers" />
       <PuzzleTop level={level} score={`${count('r')} vs ${count('b')}`} label="pieces" />
       <p className="game-ask bg-turn">
         {phase === 'over' ? (
@@ -883,6 +886,7 @@ export function Reversi({ onEnd, playerId }) {
   }
   return (
     <div className="game game-pz">
+      <ModeHeader mode="reversi" game="reversi" />
       <PuzzleTop level={level} score={`${mine} vs ${pips}`} label="discs" />
       <p className="game-ask bg-turn">
         {phase === 'over' ? (

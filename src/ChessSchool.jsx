@@ -3,6 +3,7 @@ import Pip from './Pip.jsx';
 import { rand, shuffle } from './gameKit.jsx';
 import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
 import { ChessPiece, NAMES, VAL, at, chessPlay, inCheck, later, pipMove, pseudo, rc } from './BoardGames.jsx';
+import { ModeHeader } from './BoardHelp.jsx';
 
 // Chess School: small games and puzzles that practice one idea at a time
 // (the way chess is taught to children), inside Chess.
@@ -295,8 +296,9 @@ function VsPip({ mode, info, onEnd, onBack }) {
   }[mode];
   return (
     <div className="game game-pz">
+      <ModeHeader mode={mode} />
       <div className="mm-top pz-top">
-        <span className="pz-level">{info[1]}</span>
+        <span className="pz-level">Practice</span>
         <span className="mm-right">{mode === 'ladder' ? `${moves} moves` : mode === 'queenPawns' ? `${count(b, 'b')} pawns left` : `${count(b, 'w', (p) => (mode === 'knights' ? true : p.t === 'p'))} vs ${count(b, 'b', (p) => (mode === 'knights' ? true : p.t === 'p'))}`}</span>
       </div>
       <p className="game-ask bg-turn">
@@ -631,9 +633,10 @@ function Puzzles({ mode, info, onEnd, onBack }) {
   }[mode];
   return (
     <div className="game game-pz">
+      <ModeHeader mode={mode} />
       <div className="mm-top pz-top">
         <span className="pz-level">
-          {info[1]} {n + 1} of {N}
+          Puzzle {n + 1} of {N}
         </span>
         <span className="mm-right">{stars} stars</span>
       </div>
