@@ -69,6 +69,7 @@ import SgModeCard from './SgModeCard.jsx';
 import GameGuide from './GameGuide.jsx';
 import GiftsCard from './GiftsCard.jsx';
 import ParentGate from './ParentGate.jsx';
+import { DailyHomeCard, DailyParentCard, DailySheet } from './DailyMath.jsx';
 import { handleBack } from './backButton.js';
 import { PlayTimeCard, TimerSheet, TimesUp } from './PlayTime.jsx';
 import { addMinutes, clockText, dailyLeft, minutesText, session, sessionLeft, usePlayClock } from './playTime.js';
@@ -763,6 +764,8 @@ export default function App() {
   const timeUp = timeLeft <= 0 && (view !== 'game' || gameEndAt > (timeZeroAt || Infinity) || Date.now() - (timeZeroAt || Date.now()) > 180000);
   const addTime = (id) => withGate(() => addMinutes(id, 15));
   const [timerSheet, setTimerSheet] = useState(false);
+  // Daily Math: a new key for each sheet.
+  const [dailyRun, setDailyRun] = useState(0);
   const openTimer = () => withGate(() => setTimerSheet(true));
   const openOutsideGated = (url) => withGate(() => openOutside(url));
 
@@ -1860,6 +1863,17 @@ export default function App() {
               </div>
             </section>
 
+            {/* Daily Math (DailyMath.jsx): 3 short sheets a day on a mastery ladder. */}
+            <DailyHomeCard
+              playerId={currentProfile.id}
+              grade={gradeInfo(level).id}
+              onStart={() => {
+                unlockAudio();
+                setDailyRun((n) => n + 1);
+                setView('daily');
+              }}
+            />
+
             {/* Pip's Closet on top, with the stars to unlock outfits (a red NEW
                 when something's newly unlocked for Pip). */}
             <div className="home-pair">
@@ -2129,6 +2143,27 @@ export default function App() {
                     : `${stickerCount(currentProfile.id)} ${stickerCount(currentProfile.id) === 1 ? 'star' : 'stars'}`}
                 </p>
               }
+            />
+          </>
+        )}
+
+        {view === 'daily' && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
+            <h2 className="screen-title">Daily Math</h2>
+            <DailySheet
+              key={`${currentProfile.id}-${dailyRun}`}
+              playerId={currentProfile.id}
+              grade={gradeInfo(level).id}
+              answerMode={answerFor(currentProfile.id)}
+              onDone={(right, total) => {
+                earnSticker(currentProfile.id);
+                statRoundDone({ grade: gradeInfo(level).id, topic: 'daily-math', lang: 'en', correct: right, total });
+              }}
+              onExit={(to) => {
+                if (to === 'again') setDailyRun((n) => n + 1);
+                else goHome();
+              }}
             />
           </>
         )}
@@ -2414,6 +2449,7 @@ export default function App() {
               <span>Every game, side by side with Singapore math and Beast Academy</span>
             </button>
             <SgModeCard />
+            <DailyParentCard players={profiles} gated={withGate} />
             {/* Play time limits: only the owner account sees this for now. */}
             {statsViewer && <PlayTimeCard players={profiles} gated={withGate} onAdd={addTime} onTimer={openTimer} />}
             <div className="settings-list">
