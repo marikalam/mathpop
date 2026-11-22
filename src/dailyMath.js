@@ -2,9 +2,10 @@ import { rand, pick } from './gameKit.jsx';
 
 // Daily Math: a mastery ladder of small steps (counting → adding →
 // taking away → two and three digits → times tables → dividing → bigger
-// multiplying and dividing). Each day a player does 3 short sheets at their
-// step. Two great sheets in a row (at most one miss, inside the goal time)
-// move them up a step; two rough sheets in a row move them back one. Kept
+// multiplying and dividing), in levels. Each day a player does 3 sheets of
+// 20 at their step. Two great sheets in a row (18 of 20 right the first
+// time, inside the goal time) move them up a step; two rough sheets in a
+// row move them back one. Kept
 // on this device for each player.
 
 const N = (lo, hi) => rand(lo, hi);
@@ -88,7 +89,32 @@ export const STEPS = [
   ['Three digits × one digit', () => mul(N(102, 499), N(2, 9)), 18, 10],
   ['Missing factors', () => { const a = N(2, 9); const b = N(2, 9); return { text: `? × ${b} = ${a * b}`, answer: a }; }, 5, 10],
   ['Two digits ÷ one digit', () => div(N(11, 24), N(3, 6)), 12, 10],
+  ['Two digits × two digits', () => mul(N(12, 49), N(11, 19)), 25, 10],
+  ['Three digits ÷ one digit', () => div(N(21, 99), N(3, 9)), 20, 10],
 ];
+// The steps in levels (first step of each), like chapters of a workbook.
+// Times tables start only after adding and taking away with bigger numbers
+// are mastered.
+export const LEVELS = [
+  [0, 'Counting'],
+  [5, 'Adding'],
+  [15, 'Taking away'],
+  [20, 'Bigger numbers'],
+  [30, 'Times tables'],
+  [40, 'Dividing'],
+  [44, 'Big multiplying and dividing'],
+];
+export const levelOf = (step) => {
+  let k = 0;
+  LEVELS.forEach(([start], i) => {
+    if (step >= start) k = i;
+  });
+  return { n: k + 1, name: LEVELS[k][1], first: LEVELS[k][0], last: (LEVELS[k + 1]?.[0] ?? STEPS.length) - 1 };
+};
+// Every sheet has 20 questions: 18 at the step, and 2 review questions
+// from steps already mastered (from the step before, once past step 5).
+export const SHEET_SIZE = 20;
+const REVIEW = 2;
 export const stepName = (i) => STEPS[Math.min(i, STEPS.length - 1)][0];
 // Where each grade starts: a little below their grade, so the first sheets
 // feel easy.
@@ -127,28 +153,47 @@ export function setStep(id, grade, step) {
   writeAll(all);
 }
 export function makeSheet(step) {
-  const [, make, , count] = STEPS[step];
+  const [, make] = STEPS[step];
+  const review = step >= 5 ? REVIEW : 0;
   const out = [];
-  for (let t = 0; out.length < count && t < 200; t++) {
+  const fresh = (q) => !(out.length && out[out.length - 1].text === q.text) && out.filter((x) => x.text === q.text).length < 2;
+  for (let t = 0; out.length < SHEET_SIZE - review && t < 400; t++) {
     const q = make();
-    // No question twice in a row, and few repeats.
-    if (out.length && out[out.length - 1].text === q.text) continue;
-    if (out.filter((x) => x.text === q.text).length >= 2) continue;
-    out.push(q);
+    if (fresh(q)) out.push(q);
   }
+  // Review: from steps already mastered that take about as long (so the
+  // goal time still fits): earlier steps of this level first, else the
+  // last few steps before it. None fit: no review on this sheet.
+  const lv = levelOf(step);
+  const quick = (x) => STEPS[x][2] <= STEPS[step][2] + 1;
+  let pool = [];
+  for (let x = lv.first; x < step; x++) if (quick(x)) pool.push(x);
+  if (!pool.length) for (let x = Math.max(0, step - 6); x < step; x++) if (quick(x)) pool.push(x);
+  for (let r = 0; r < (pool.length ? review : 0); r++) {
+    const from = pool[Math.floor(Math.random() * pool.length)];
+    for (let t = 0; t < 40; t++) {
+      const q = STEPS[from][1]();
+      if (!out.some((x) => x.text === q.text)) {
+        out.splice(1 + Math.floor(Math.random() * out.length), 0, { ...q, review: true });
+        break;
+      }
+    }
+  }
+  while (out.length < SHEET_SIZE) out.push(make());
   return out;
 }
-export const goalSeconds = (step) => STEPS[step][2] * STEPS[step][3];
+export const goalSeconds = (step) => STEPS[step][2] * SHEET_SIZE;
 
-// Saves a finished sheet and moves the step. Returns what happened:
-// 'up' (mastered: next step), 'great' (one more great sheet to move up),
+// Saves a finished sheet and moves the step. Returns what happened (and
+// newLevel when a step up starts a new level): 'up' (mastered: next step), 'great' (one more great sheet to move up),
 // 'slow' (right, but over the goal time), 'again' (practice this step
 // again) or 'down' (back one step).
 export function finishSheet(id, grade, { right, of, secs }) {
   const all = readAll();
   const d = dailyFor(id, grade);
   const goal = goalSeconds(d.step);
-  const accurate = right >= of - 1;
+  // Great: 90% right the first time (18 of 20), inside the goal time.
+  const accurate = right >= Math.ceil(of * 0.9);
   const fast = secs <= goal;
   let { step, passes, rough } = d;
   let result;
@@ -176,6 +221,6 @@ export function finishSheet(id, grade, { right, of, secs }) {
   const log = [...d.log, { day: today(), step: d.step, right, of, secs, goal }].slice(-30);
   all[id] = { step, passes, rough, day: today(), done: d.done + 1, log };
   writeAll(all);
-  return { result, step, goal };
+  return { result, step, goal, newLevel: result === 'up' && levelOf(step).first === step };
 }
 export const clock = (s) => `${Math.floor(s / 60)}:${String(Math.round(s) % 60).padStart(2, '0')}`;
