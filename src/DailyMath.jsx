@@ -4,7 +4,7 @@ import WritePad from './WritePad.jsx';
 import { NumPad } from './gameKit.jsx';
 import { nearMisses } from './ops.js';
 import { playCorrectChime, playIncorrectBuzz, playStickerStick, speak } from './sound.js';
-import { SHEETS_A_DAY, STEPS, clock, dailyFor, finishSheet, goalSeconds, makeSheet, setStep, stepName } from './dailyMath.js';
+import { LEVELS, SHEETS_A_DAY, STEPS, clock, dailyFor, finishSheet, goalSeconds, levelOf, makeSheet, setStep, stepName } from './dailyMath.js';
 
 // Daily Math (dailyMath.js): the sheet, the home page card and the
 // grown-ups' card.
@@ -43,6 +43,9 @@ export function DailyHomeCard({ playerId, grade, onStart }) {
       <span className="dm-home-top">
         <b>Daily Math</b>
         <Dots done={Math.min(d.done, SHEETS_A_DAY)} />
+      </span>
+      <span className="dm-home-level">
+        Level {levelOf(d.step).n}: {levelOf(d.step).name}
       </span>
       <span className="dm-home-step">
         Step {d.step + 1}: {stepName(d.step)}
@@ -121,7 +124,7 @@ export function DailySheet({ playerId, grade, answerMode, onExit, onDone }) {
     onDone?.(right, qs.length);
     playStickerStick();
     const line = {
-      up: `Step mastered! On to step ${r.step + 1}: ${stepName(r.step)}!`,
+      up: r.newLevel ? `New level! Level ${levelOf(r.step).n}: ${levelOf(r.step).name}! First up: ${stepName(r.step)}.` : `Step mastered! On to step ${r.step + 1}: ${stepName(r.step)}!`,
       great: 'Great sheet! One more great sheet to move up a step.',
       slow: `All right! Next time a little faster to move up. The goal is ${clock(r.goal)}.`,
       again: "Good practice! Let's do this step again.",
@@ -156,7 +159,7 @@ export function DailySheet({ playerId, grade, answerMode, onExit, onDone }) {
   }
 
   if (phase === 'result' && result) {
-    const titles = { up: 'Step mastered!', great: 'Great sheet!', slow: 'All right!', again: 'Good practice!', down: 'Back one step' };
+    const titles = { up: result.newLevel ? `New level: ${levelOf(result.step).name}!` : 'Step mastered!', great: 'Great sheet!', slow: 'All right!', again: 'Good practice!', down: 'Back one step' };
     const done = d.done;
     return (
       <div className="game game-pz dm-sheet">
@@ -168,11 +171,13 @@ export function DailySheet({ playerId, grade, answerMode, onExit, onDone }) {
           </p>
           <p className="dm-why">
             {result.result === 'up'
-              ? `Next: step ${result.step + 1}, ${stepName(result.step)}.`
+              ? result.newLevel
+                ? `You finished level ${levelOf(result.from).n}, ${levelOf(result.from).name}. Level ${levelOf(result.step).n} starts with ${stepName(result.step)}.`
+                : `Next: step ${result.step + 1}, ${stepName(result.step)}.`
               : result.result === 'great'
                 ? 'One more great sheet like this to move up a step.'
                 : result.result === 'slow'
-                  ? 'To move up: at most one miss, inside the goal time, twice in a row.'
+                  ? 'To move up: 18 or more right, inside the goal time, twice in a row.'
                   : result.result === 'down'
                     ? `Step ${result.step + 1}: ${stepName(result.step)}. Easy wins, then up again!`
                     : 'Same step next time. Every sheet makes it easier.'}
@@ -198,7 +203,9 @@ export function DailySheet({ playerId, grade, answerMode, onExit, onDone }) {
   return (
     <div className="game game-pz dm-sheet">
       <div className="dm-top">
-        <span className="pz-level">Step {step + 1}</span>
+        <span className="pz-level">
+          Level {levelOf(step).n} · Step {step + 1}
+        </span>
         <span className="dm-name">{stepName(step)}</span>
       </div>
       <div className="dm-bar">
@@ -210,6 +217,7 @@ export function DailySheet({ playerId, grade, answerMode, onExit, onDone }) {
           {clock(secs)} <small>/ {clock(goal)}</small>
         </span>
       </div>
+      {q.review && !show && <span className="dm-review">Review</span>}
       <button type="button" className={`dm-q${isDots(q.text) ? ' dm-q-dots' : ''}`} onClick={() => speak(sayQ(q))}>
         {show || (isDots(q.text) ? q.text : showQ(q))}
       </button>
@@ -245,8 +253,9 @@ export function DailyParentCard({ players, gated }) {
       <div className="sgm-head">
         <h3 id="dm-title">Daily Math</h3>
         <p>
-          3 short sheets a day on a ladder of {STEPS.length} small steps. Two great sheets in a row (at most one miss, inside the goal time) move up a step;
-          two rough ones move back a step. Missed questions are fixed at the end of each sheet.
+          3 sheets of 20 a day, on {STEPS.length} small steps in {LEVELS.length} levels (counting, adding, taking away, bigger numbers, times tables, dividing,
+          big multiplying and dividing). Two great sheets in a row (18 of 20 right, inside the goal time) move up a step; two rough ones move back a step.
+          Times tables start after adding and taking away with bigger numbers. Each sheet has 2 review questions, and missed questions are fixed at the end.
         </p>
       </div>
       {players.map((p) => {
@@ -256,7 +265,8 @@ export function DailyParentCard({ players, gated }) {
             <div className="pt-who">
               <b>{p.name}</b>
               <small>
-                Step {d.step + 1} of {STEPS.length}: {stepName(d.step)} · {Math.min(d.done, SHEETS_A_DAY)} of {SHEETS_A_DAY} today
+                Level {levelOf(d.step).n} ({levelOf(d.step).name}) · Step {d.step + 1} of {STEPS.length}: {stepName(d.step)} · {Math.min(d.done, SHEETS_A_DAY)} of{' '}
+                {SHEETS_A_DAY} today
               </small>
             </div>
             {d.log.length > 0 && (
@@ -277,10 +287,14 @@ export function DailyParentCard({ players, gated }) {
                   gated(() => setStep(p.id, p.grade, v));
                 }}
               >
-                {STEPS.map((s, k) => (
-                  <option key={k} value={k}>
-                    {k + 1}. {s[0]}
-                  </option>
+                {LEVELS.map(([first, name], li) => (
+                  <optgroup key={name} label={`Level ${li + 1}: ${name}`}>
+                    {STEPS.slice(first, LEVELS[li + 1]?.[0] ?? STEPS.length).map((st, j) => (
+                      <option key={first + j} value={first + j}>
+                        {first + j + 1}. {st[0]}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </label>
