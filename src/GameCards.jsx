@@ -448,6 +448,37 @@ const ART = {
       <path d="M65 70 Q80 40 95 43" stroke="#ffd23f" strokeWidth="3" strokeDasharray="4 4" fill="none" />
     </g>
   ),
+  cubeCoach: (
+    <g>
+      <path d="M80.0 14.0 L94.0 22.0 L80.0 30.0 L66.0 22.0z" fill="#ffffff" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M94.0 22.0 L108.0 30.0 L94.0 38.0 L80.0 30.0z" fill="#ffd500" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M108.0 30.0 L122.0 38.0 L108.0 46.0 L94.0 38.0z" fill="#ffffff" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M66.0 22.0 L80.0 30.0 L66.0 38.0 L52.0 30.0z" fill="#009b48" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M80.0 30.0 L94.0 38.0 L80.0 46.0 L66.0 38.0z" fill="#ffffff" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M94.0 38.0 L108.0 46.0 L94.0 54.0 L80.0 46.0z" fill="#0046ad" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M52.0 30.0 L66.0 38.0 L52.0 46.0 L38.0 38.0z" fill="#ffffff" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M66.0 38.0 L80.0 46.0 L66.0 54.0 L52.0 46.0z" fill="#d10f1f" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M80.0 46.0 L94.0 54.0 L80.0 62.0 L66.0 54.0z" fill="#ffffff" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M38.0 38.0 L52.0 46.0 L52.0 63.0 L38.0 55.0z" fill="#ffd500" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M52.0 46.0 L66.0 54.0 L66.0 71.0 L52.0 63.0z" fill="#009b48" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M66.0 54.0 L80.0 62.0 L80.0 79.0 L66.0 71.0z" fill="#d10f1f" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M38.0 55.0 L52.0 63.0 L52.0 80.0 L38.0 72.0z" fill="#ffffff" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M52.0 63.0 L66.0 71.0 L66.0 88.0 L52.0 80.0z" fill="#0046ad" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M66.0 71.0 L80.0 79.0 L80.0 96.0 L66.0 88.0z" fill="#ffd500" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M38.0 72.0 L52.0 80.0 L52.0 97.0 L38.0 89.0z" fill="#ff6a00" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M52.0 80.0 L66.0 88.0 L66.0 105.0 L52.0 97.0z" fill="#d10f1f" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M66.0 88.0 L80.0 96.0 L80.0 113.0 L66.0 105.0z" fill="#009b48" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M80.0 62.0 L94.0 54.0 L94.0 71.0 L80.0 79.0z" fill="#d10f1f" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M94.0 54.0 L108.0 46.0 L108.0 63.0 L94.0 71.0z" fill="#009b48" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M108.0 46.0 L122.0 38.0 L122.0 55.0 L108.0 63.0z" fill="#ffd500" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M80.0 79.0 L94.0 71.0 L94.0 88.0 L80.0 96.0z" fill="#ffd500" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M94.0 71.0 L108.0 63.0 L108.0 80.0 L94.0 88.0z" fill="#0046ad" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M108.0 63.0 L122.0 55.0 L122.0 72.0 L108.0 80.0z" fill="#ffffff" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M80.0 96.0 L94.0 88.0 L94.0 105.0 L80.0 113.0z" fill="#009b48" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M94.0 88.0 L108.0 80.0 L108.0 97.0 L94.0 105.0z" fill="#d10f1f" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M108.0 80.0 L122.0 72.0 L122.0 89.0 L108.0 97.0z" fill="#ff6a00" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
+    </g>
+  ),
   shipHunt: (
     <g>
       <rect x="22" y="12" width="116" height="96" rx="8" fill="#1e40af" />
@@ -764,6 +795,7 @@ const INK = {
   mathIsland: '#fff',
   lavaRun: '#fff',
   shipHunt: '#fff',
+  cubeCoach: '#fff',
   reversi: '#fff',
 };
 const BG = {
@@ -784,6 +816,7 @@ const BG = {
   mathIsland: '#38bdf8',
   lavaRun: '#fdba74',
   shipHunt: '#2563eb',
+  cubeCoach: '#374151',
   reversi: '#2e7d4f',
 };
 export const cardColors = (id, fallback) => ({ bg: BG[id] || fallback, ink: INK[id] });

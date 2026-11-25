@@ -15263,3 +15263,231 @@ body {
   color: #8a5a00;
   font: 700 12px 'IBM Plex Sans', sans-serif;
 }
+
+/* Cube Coach (CubeCoach.jsx): a 3D cube made of 26 small cubes. */
+.cc-scene {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: calc(var(--s) * 5);
+  perspective: 1100px;
+  margin: 0 auto;
+}
+.cc-cube {
+  position: relative;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(-28deg) rotateY(-38deg);
+  transition: transform 0.5s;
+}
+.cc-cube.cc-view-bottom {
+  transform: rotateX(28deg) rotateY(-38deg);
+}
+.cc-cubie {
+  position: absolute;
+  left: calc(var(--s) / -2);
+  top: calc(var(--s) / -2);
+  width: var(--s);
+  height: var(--s);
+  transform-style: preserve-3d;
+}
+.cc-face {
+  position: absolute;
+  inset: 0;
+  background: #14161c;
+  backface-visibility: hidden;
+}
+.cc-face::after {
+  content: '';
+  position: absolute;
+  inset: 7%;
+  border-radius: 14%;
+  background: var(--c);
+}
+.cc-menu-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #173a66;
+  font: 600 16px/1.4 'IBM Plex Sans', sans-serif;
+}
+.cc-menu-top .cc-scene {
+  width: 150px;
+  flex-shrink: 0;
+}
+.cc-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.cc-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 72px;
+  padding: 10px 12px;
+  border: 3px solid transparent;
+  border-radius: 18px;
+  background: #fff;
+  color: #173a66;
+  text-align: left;
+  font: 700 16px/1.2 'Fredoka', ui-rounded, system-ui, sans-serif;
+  box-shadow: 0 3px 0 rgba(23, 58, 102, 0.1);
+  cursor: pointer;
+}
+.cc-item.cc-done {
+  border-color: #2fae6b;
+}
+.cc-num {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--lc);
+  color: #fff;
+  font: 800 20px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.cc-lesson {
+  gap: 10px;
+}
+.cc-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #173a66;
+}
+.cc-head b {
+  flex: 1;
+  font: 700 20px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.cc-pages {
+  display: flex;
+  gap: 5px;
+}
+.cc-pages i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #cbd5e1;
+}
+.cc-pages i.cc-on {
+  background: var(--lc);
+}
+.cc-moves {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+.cc-moves > span {
+  border-radius: 8px;
+  opacity: 0.55;
+}
+.cc-moves > span.cc-past {
+  opacity: 0.3;
+}
+.cc-moves > span.cc-now {
+  opacity: 1;
+  box-shadow: 0 0 0 3px #2fae6b;
+}
+.cc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.cc-badge-big {
+  padding: 6px 16px 6px 6px;
+  border-radius: 999px;
+  background: #fff7dc;
+  color: #173a66;
+  font: 700 20px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.cc-now-row {
+  display: flex;
+  justify-content: center;
+  min-height: 56px;
+}
+.cc-say {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 18px;
+  background: #fff;
+  color: #173a66;
+  text-align: left;
+  font: 500 16px/1.45 'IBM Plex Sans', sans-serif;
+  cursor: pointer;
+}
+.cc-say svg {
+  flex-shrink: 0;
+  color: #2563eb;
+}
+.cc-controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+.cc-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border: none;
+  border-radius: 22px;
+  background: #fff;
+  color: #173a66;
+  box-shadow: 0 4px 0 rgba(23, 58, 102, 0.15);
+  cursor: pointer;
+}
+.cc-btn small {
+  font: 700 11px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.cc-btn:disabled {
+  opacity: 0.4;
+}
+.cc-play {
+  width: 92px;
+  background: #2fae6b;
+  color: #fff;
+  box-shadow: inset 0 -5px 0 #1f7a4a;
+}
+.cc-step {
+  background: #fff7dc;
+}
+.cc-next {
+  background: #2563eb;
+  color: #fff;
+  box-shadow: inset 0 -5px 0 #1e40af;
+}
+.cc-slow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  color: #4d5b72;
+  font: 600 15px 'IBM Plex Sans', sans-serif;
+}
+.cc-slow input {
+  width: 22px;
+  height: 22px;
+}
+.cc-party {
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  color: #173a66;
+}
+.cc-party h2 {
+  margin: 0;
+  font: 700 30px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
