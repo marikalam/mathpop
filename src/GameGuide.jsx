@@ -58,6 +58,7 @@ const TEACHES = {
   chess: ['', 'Strategy, thinking ahead; Chess School: check, skewers, checkmate'],
   checkers: ['', 'Strategy, thinking ahead'],
   carPark: ['', 'Logic, planning moves'],
+  cubeCoach: ['Spatial sense: turning, faces and positions', 'Patterns, following steps (algorithms), persistence'],
   shipHunt: ['Position: rows and columns, reading a grid', 'Coordinates, logic and strategy'],
   lavaRun: ['Adding and taking away (× for older grades), number lines counting by 5s, 10s and 50s', 'Mental math'],
   mathIsland: ['Facts, number bonds; hints with ten frames, bonds and bar models; spending shells is subtraction in a story', 'Mental math'],
