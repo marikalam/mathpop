@@ -10,11 +10,14 @@ const SIDE_COLORS = { py: 'W', ny: 'Y', pz: 'G', nz: 'B', px: 'R', nx: 'O' };
 const dirKey = (x, y, z) => (x ? (x > 0 ? 'px' : 'nx') : y ? (y > 0 ? 'py' : 'ny') : z > 0 ? 'pz' : 'nz');
 const keyDir = { px: [1, 0, 0], nx: [-1, 0, 0], py: [0, 1, 0], ny: [0, -1, 0], pz: [0, 0, 1], nz: [0, 0, -1] };
 
-export function solved() {
+// n = 3 (26 cubies) or 2 (the 8 corners: a 2 × 2 cube; its pieces sit at
+// ±1, and turns move the same layers).
+export function solved(n = 3) {
   const out = [];
-  for (let x = -1; x <= 1; x++)
-    for (let y = -1; y <= 1; y++)
-      for (let z = -1; z <= 1; z++) {
+  const at = n === 2 ? [-1, 1] : [-1, 0, 1];
+  for (const x of at)
+    for (const y of at)
+      for (const z of at) {
         if (!x && !y && !z) continue;
         const colors = {};
         if (x) colors[dirKey(x, 0, 0)] = SIDE_COLORS[dirKey(x, 0, 0)];
@@ -58,7 +61,7 @@ export function turn(cubies, m) {
   for (let t = 0; t < times; t++) {
     out = out.map((c) => {
       if (!inLayer(c, axis, layer)) return c;
-      const [x, y, z] = rot([c.x, c.y, c.z], axis, q);
+      const [x, y, z] = rot([c.x, c.y, c.z], axis, q).map((v) => v || 0);
       const colors = {};
       for (const [k, v] of Object.entries(c.colors)) colors[dirKey(...rot(keyDir[k], axis, q))] = v;
       return { ...c, x, y, z, colors };
