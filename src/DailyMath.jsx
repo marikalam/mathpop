@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import Pip from './Pip.jsx';
+import { Confetti } from './Celebrate.jsx';
 import WritePad from './WritePad.jsx';
 import { NumPad } from './gameKit.jsx';
 import { nearMisses } from './ops.js';
-import { playCorrectChime, playIncorrectBuzz, playStickerStick, speak } from './sound.js';
+import { playCorrectChime, playIncorrectBuzz, playStickerPick, playStickerStick, speak } from './sound.js';
 import { LEVELS, SHEETS_A_DAY, STEPS, clock, dailyFor, finishSheet, goalSeconds, levelOf, makeSheet, setStep, stepName } from './dailyMath.js';
 
 // Daily Math (dailyMath.js): the sheet, the home page card and the
@@ -123,6 +124,13 @@ export function DailySheet({ playerId, grade, answerMode, onExit, onDone }) {
     setPhase('result');
     onDone?.(right, qs.length);
     playStickerStick();
+    // A passed step gets a fanfare: chimes, then the sticker sound.
+    if (r.result === 'up') {
+      setTimeout(playCorrectChime, 250);
+      setTimeout(playCorrectChime, 550);
+      setTimeout(playStickerPick, 900);
+      setTimeout(playStickerStick, 1200);
+    } else if (r.result === 'great') setTimeout(playCorrectChime, 250);
     const line = {
       up: r.newLevel ? `New level! Level ${levelOf(r.step).n}: ${levelOf(r.step).name}! First up: ${stepName(r.step)}.` : `Step mastered! On to step ${r.step + 1}: ${stepName(r.step)}!`,
       great: 'Great sheet! One more great sheet to move up a step.',
@@ -163,9 +171,41 @@ export function DailySheet({ playerId, grade, answerMode, onExit, onDone }) {
     const done = d.done;
     return (
       <div className="game game-pz dm-sheet">
-        <div className="dm-result">
-          <Pip size={96} mood="wave" />
+        {result.result === 'up' && <Confetti pieces={result.newLevel ? 140 : 90} />}
+        {result.result === 'up' && result.newLevel && <DelayedConfetti />}
+        {result.result === 'great' && <Confetti pieces={30} />}
+        <div className={`dm-result${result.result === 'up' ? ' dm-win' : ''}${result.newLevel ? ' dm-win-level' : ''}`}>
+          {result.result === 'up' ? (
+            <>
+              {result.newLevel ? <Trophy /> : null}
+              <div className="dm-stamp">
+                <b>PASSED!</b>
+                <span>
+                  Step {result.from + 1}: {stepName(result.from)}
+                </span>
+              </div>
+              <div className="dm-stars" aria-hidden="true">
+                {[0, 1, 2].map((k) => (
+                  <Star key={k} delay={0.35 + k * 0.25} />
+                ))}
+              </div>
+              {!result.newLevel && <Pip size={88} mood="cheer" className="dm-pip-dance" />}
+            </>
+          ) : (
+            <Pip size={96} mood="wave" />
+          )}
           <h2>{titles[result.result]}</h2>
+          {result.result === 'great' && (
+            <div className="dm-toward" aria-label="1 of 2 great sheets to pass this step">
+              <span className="dm-toward-on">
+                <StarIcon />
+              </span>
+              <span>
+                <StarIcon />
+              </span>
+              <small>1 of 2 great sheets to pass</small>
+            </div>
+          )}
           <p className="dm-score">
             {result.right} of {result.of} right the first time · {clock(result.secs)} <small>(goal {clock(result.goal)})</small>
           </p>
@@ -199,7 +239,6 @@ export function DailySheet({ playerId, grade, answerMode, onExit, onDone }) {
     );
   }
   if (!q) return null;
-  const over = secs > goal;
   return (
     <div className="game game-pz dm-sheet">
       <div className="dm-top">
@@ -213,10 +252,12 @@ export function DailySheet({ playerId, grade, answerMode, onExit, onDone }) {
         <span className="dm-progress">
           <i style={{ width: `${((phase === 'fix' ? qs.length : i) / qs.length) * 100}%` }} />
         </span>
-        <span className={`dm-clock${over ? ' dm-over' : ''}`}>
-          {clock(secs)} <small>/ {clock(goal)}</small>
-        </span>
       </div>
+      {phase === 'go' ? (
+        <BigTimer secs={secs} goal={goal} />
+      ) : (
+        <p className="dm-fixnote">Fixing time: no clock. Take your time!</p>
+      )}
       {q.review && !show && <span className="dm-review">Review</span>}
       <button type="button" className={`dm-q${isDots(q.text) ? ' dm-q-dots' : ''}`} onClick={() => speak(sayQ(q))}>
         {show || (isDots(q.text) ? q.text : showQ(q))}
@@ -303,4 +344,64 @@ export function DailyParentCard({ players, gated }) {
       })}
     </section>
   );
+}
+
+// The clock on a sheet: big numbers and a bar that fills toward the goal
+// time, green, then yellow, then orange near the goal, red when over.
+function BigTimer({ secs, goal }) {
+  const k = secs / goal;
+  const state = k >= 1 ? 'over' : k >= 0.85 ? 'close' : k >= 0.6 ? 'mid' : 'ok';
+  const left = Math.max(0, goal - secs);
+  return (
+    <div className={`dm-timer dm-t-${state}`} role="timer" aria-label={`Time ${clock(secs)}, goal ${clock(goal)}`}>
+      <svg className="dm-timer-icon" viewBox="0 0 24 24" width="34" height="34" aria-hidden="true">
+        <circle cx="12" cy="13" r="8.5" fill="none" stroke="currentColor" strokeWidth="2.4" />
+        <path d="M12 13V8.5M12 13l3 2" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+        <path d="M9.5 2.5h5M12 2.5v2" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+      </svg>
+      <div className="dm-timer-main">
+        <div className="dm-timer-row">
+          <b>{clock(secs)}</b>
+          <span>{state === 'over' ? 'Over the goal. Keep going!' : `${clock(left)} left to beat ${clock(goal)}`}</span>
+        </div>
+        <div className="dm-timer-bar">
+          <i style={{ width: `${Math.min(100, k * 100)}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+function StarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true">
+      <path d="M12 2.5l2.9 6.2 6.8.7-5.1 4.6 1.4 6.7L12 17.3l-6 3.4 1.4-6.7-5.1-4.6 6.8-.7z" fill="currentColor" />
+    </svg>
+  );
+}
+function Star({ delay }) {
+  return (
+    <span className="dm-star" style={{ animationDelay: `${delay}s` }}>
+      <StarIcon />
+    </span>
+  );
+}
+function Trophy() {
+  return (
+    <svg className="dm-trophy" viewBox="0 0 64 64" width="96" height="96" aria-hidden="true">
+      <path d="M18 8h28v14a14 14 0 0 1-28 0z" fill="#fbbf24" stroke="#b45309" strokeWidth="2.5" />
+      <path d="M18 12H9a9 9 0 0 0 10 12M46 12h9a9 9 0 0 1-10 12" fill="none" stroke="#b45309" strokeWidth="3" />
+      <rect x="28" y="35" width="8" height="10" fill="#f59e0b" />
+      <rect x="20" y="45" width="24" height="7" rx="2" fill="#b45309" />
+      <path d="M26 15l4 3-1 5 3-2 3 2-1-5 4-3h-5l-1-4-1 4z" fill="#fff7dc" />
+    </svg>
+  );
+}
+// A second burst of confetti, a moment later (for a new level).
+function DelayedConfetti() {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setOn(true), 1300);
+    return () => clearTimeout(t);
+  }, []);
+  return on ? <Confetti pieces={110} /> : null;
 }
