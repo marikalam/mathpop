@@ -130,6 +130,60 @@ export const LESSONS = [
   ],
 ];
 
+// The 2 × 2 cube: only corners, no middle squares. Three tricks the 3 × 3
+// lessons use too: the magic four moves, corners home, the twist.
+export const LESSONS_2 = [
+  [
+    'Meet the 2\u00a0×\u00a02',
+    '#3b82f6',
+    [
+      { say: 'This little cube is a two by two. It has only eight corners, and each corner has three colors. Tap the green button to spin it.', play: 'y y y y' },
+      { say: 'There are no middle squares to help, so the corners tell you the colors. White is across from yellow, like on the big cube.', play: 'x2 x2' },
+      { say: 'Our goal: make every side one color. It takes just three tricks!', start: "R U F' R U' F2 R' U2" },
+    ],
+  ],
+  [
+    'The turns',
+    '#8b5cf6',
+    [
+      { say: 'Hold the cube with white on top. Right side UP, then right side DOWN.', play: "R R'" },
+      { say: 'Top turns LEFT, then top turns RIGHT.', play: "U U'" },
+      { say: 'Bottom turns RIGHT, then bottom turns LEFT.', play: "D D'" },
+      { say: 'Left side DOWN, then left side UP. Try them all on your cube!', play: "L L'" },
+    ],
+  ],
+  [
+    'The white side',
+    '#10b981',
+    [
+      { say: 'Hold your cube with white on the BOTTOM. We will make the whole bottom white, with the colors on the sides matching.', start: 'x2', focus: 'whiteLayer' },
+      { say: 'Find a corner on top with white on it. Turn the top until it is right above where it goes. Then do the magic four moves: right side up, top left, right side down, top right. Again and again, until the white is on the bottom!', start: `x2 ${MAGIC} ${MAGIC} ${MAGIC}`, play: `${MAGIC} ${MAGIC} ${MAGIC}`, focus: 'whiteLayer' },
+      { say: 'Each new corner must match its neighbors: the side colors next to each other are the same. Then do the next corner the same way.', start: 'x2', play: 'y y y y', focus: 'whiteLayer' },
+    ],
+  ],
+  [
+    'Corners to their homes',
+    '#ec4899',
+    [
+      { say: 'Now the top. A corner is home when its colors match the sides under it, even if it is twisted. Find one that is home.', start: `x2 ${invert(CORNER_HOMES)}` },
+      { say: 'Hold that corner at the front right, on top. Then do this trick, and repeat until all four corners are home. Watch!', start: `x2 ${invert(CORNER_HOMES)}`, play: CORNER_HOMES },
+    ],
+  ],
+  [
+    'Twist the last corners',
+    '#6366f1',
+    [
+      { say: 'Last step! Hold a twisted corner at the front right, on top. Do: right side down, bottom left, right side up, bottom right. Again and again until yellow is on top. The bottom gets messy. Don’t worry! It fixes itself.', start: `x2 ${invert(TWIST)}`, play: "R' D' R D R' D' R D" },
+      { say: 'Then turn ONLY the top to bring the next twisted corner to the front right, and do it again. Watch the whole thing!', start: `x2 ${invert(TWIST)}`, play: TWIST },
+      { say: 'Turn the top until the sides match. You solved the two by two! Hooray!', start: 'x2', play: 'y y y y' },
+    ],
+  ],
+];
+const SETS = {
+  3: { n: 3, lessons: LESSONS, name: '3 × 3 cube', done: '' },
+  2: { n: 2, lessons: LESSONS_2, name: '2 × 2 cube', done: ':2' },
+};
+
 const DONE_KEY = 'mathpop-cube-done-v1';
 function readDone(id) {
   try {
@@ -158,7 +212,9 @@ const FACE_TF = {
   py: 'rotateX(90deg) translateZ(var(--h))',
   ny: 'rotateX(-90deg) translateZ(var(--h))',
 };
-export function CubeView({ cubies, turning, focus = 'all', view = 'top', speed = 600, size = 54 }) {
+export function CubeView({ cubies, turning, focus = 'all', view = 'top', speed = 600, size = 54, n = 3 }) {
+  // A 2 × 2's pieces sit at ±1: half a piece from the middle.
+  const step = n === 2 ? size / 2 : size;
   const show = FOCUS[focus] || FOCUS.all;
   let anim = null;
   if (turning) {
@@ -167,15 +223,15 @@ export function CubeView({ cubies, turning, focus = 'all', view = 'top', speed =
     anim = { fn, deg: turning.go ? sign * q * 90 * times : 0 };
   }
   return (
-    <div className="cc-scene" style={{ '--s': `${size}px`, '--h': `${size / 2}px` }}>
+    <div className="cc-scene" style={{ '--s': `${size}px`, '--h': `${size / 2}px`, height: n === 2 ? size * 3.6 : undefined }}>
       <div className={`cc-cube cc-view-${view}`}>
         {cubies.map((c) => {
           const [hx, hy, hz] = c.id.match(/-?\d/g).map(Number);
           const home = { x: hx, y: hy, z: hz };
-          const center = Math.abs(hx) + Math.abs(hy) + Math.abs(hz) === 1;
+          const center = n === 3 && Math.abs(hx) + Math.abs(hy) + Math.abs(hz) === 1;
           const lit = center || show(home);
           const turningThis = turning && moving(c, turning.m);
-          const tf = `${turningThis ? `${anim.fn}(${anim.deg}deg) ` : ''}translate3d(${c.x * size}px, ${-c.y * size}px, ${c.z * size}px)`;
+          const tf = `${turningThis ? `${anim.fn}(${anim.deg}deg) ` : ''}translate3d(${c.x * step}px, ${-c.y * step}px, ${c.z * step}px)`;
           return (
             <div
               key={c.id}
@@ -220,11 +276,11 @@ function MoveBadge({ m, big }) {
   );
 }
 
-function Lesson({ k, onDone }) {
-  const [title, color, pages] = LESSONS[k];
+function Lesson({ k, set, onDone }) {
+  const [title, color, pages] = set.lessons[k];
   const [p, setP] = useState(0);
   const page = pages[p];
-  const startState = () => apply(solved(), page.start || '');
+  const startState = () => apply(solved(set.n), page.start || '');
   const [cubies, setCubies] = useState(startState);
   const [turning, setTurning] = useState(null);
   const [at, setAt] = useState(-1); // the turn shown (one at a time)
@@ -308,7 +364,7 @@ function Lesson({ k, onDone }) {
           ))}
         </span>
       </div>
-      <CubeView cubies={cubies} turning={turning} focus={page.focus} view={page.view} speed={speed} />
+      <CubeView cubies={cubies} turning={turning} focus={page.focus} view={page.view} speed={speed} n={set.n} size={set.n === 2 ? 80 : 54} />
       {list.length > 0 && (
         <div className="cc-moves" aria-label="The turns">
           {list.map((m, i) => (
@@ -364,12 +420,22 @@ function Lesson({ k, onDone }) {
 }
 
 export default function CubeCoach({ onEnd, playerId = 'guest' }) {
+  const [size, setSize] = useState(() => {
+    try {
+      return localStorage.getItem('mathpop-cube-size-v1') === '2' ? 2 : 3;
+    } catch {
+      return 3;
+    }
+  });
+  const set = SETS[size];
+  const lessons = set.lessons;
   const [lesson, setLesson] = useState(null);
-  const [done, setDone] = useState(() => readDone(playerId));
+  const [done, setDone] = useState(() => readDone(playerId + set.done));
   const [party, setParty] = useState(false);
+  useEffect(() => setDone(readDone(playerId + set.done)), [size]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (lesson === null) {
-      speak('Cube Coach! Learn to solve your cube, one little step at a time. Tap lesson one to start.');
+      speak('Cube Coach! Pick your cube: the big three by three, or the little two by two. Then tap lesson one to start.');
       return undefined;
     }
     setBackHandler(() => {
@@ -379,12 +445,23 @@ export default function CubeCoach({ onEnd, playerId = 'guest' }) {
     });
     return () => setBackHandler(null);
   }, [lesson]);
+  function pickSize(n) {
+    playStickerPick();
+    setSize(n);
+    setLesson(null);
+    try {
+      localStorage.setItem('mathpop-cube-size-v1', String(n));
+    } catch {
+      /* private mode */
+    }
+    speak(n === 2 ? 'The little two by two cube. Five lessons!' : 'The big three by three cube. Ten lessons!');
+  }
 
   if (party) {
     return (
       <div className="game game-pz cc-party">
-        <Pip size={120} mood="wave" />
-        <h2>You learned the whole cube!</h2>
+        <Pip size={120} mood="cheer" />
+        <h2>You learned the whole {set.name}!</h2>
         <p>Mix it up and solve it again. Every time gets easier!</p>
         <button type="button" className="mi-sail" onClick={() => onEnd(done.length)}>
           Done
@@ -395,20 +472,20 @@ export default function CubeCoach({ onEnd, playerId = 'guest' }) {
   if (lesson !== null) {
     return (
       <Lesson
-        key={lesson}
+        key={`${size}-${lesson}`}
         k={lesson}
+        set={set}
         onDone={() => {
-          markDone(playerId, lesson);
-          const d = readDone(playerId);
-          setDone(d);
+          markDone(playerId + set.done, lesson);
+          setDone(readDone(playerId + set.done));
           playCorrectChime();
-          if (lesson + 1 < LESSONS.length) {
-            speak(`Lesson ${lesson + 1} done! On to lesson ${lesson + 2}: ${LESSONS[lesson + 1][0]}.`);
+          if (lesson + 1 < lessons.length) {
+            speak(`Lesson ${lesson + 1} done! On to lesson ${lesson + 2}: ${lessons[lesson + 1][0]}.`);
             setLesson(lesson + 1);
           } else {
             setLesson(null);
             setParty(true);
-            speak('You learned the whole cube! Hooray!');
+            speak(`You learned the whole ${size === 2 ? 'two by two' : 'three by three'} cube! Hooray!`);
           }
         }}
       />
@@ -416,12 +493,17 @@ export default function CubeCoach({ onEnd, playerId = 'guest' }) {
   }
   return (
     <div className="game game-pz cc-menu">
-      <div className="cc-menu-top">
-        <CubeView cubies={apply(solved(), "R U R' U'")} size={30} />
-        <p>Learn to solve your cube, one little step at a time. Every page talks!</p>
+      <div className="cc-sizes" role="group" aria-label="Which cube">
+        {[3, 2].map((n) => (
+          <button key={n} type="button" className={`cc-size${size === n ? ' cc-size-on' : ''}`} aria-pressed={size === n} onClick={() => pickSize(n)}>
+            <CubeView cubies={apply(solved(n), n === 2 ? "R U'" : "R U R' U'")} size={n === 2 ? 30 : 20} n={n} />
+            <b>{n} × {n}</b>
+            <small>{n === 2 ? 'Little cube · 5 lessons' : 'Big cube · 10 lessons'}</small>
+          </button>
+        ))}
       </div>
       <div className="cc-list">
-        {LESSONS.map(([title, color], k) => (
+        {lessons.map(([title, color], k) => (
           <button
             key={title}
             type="button"

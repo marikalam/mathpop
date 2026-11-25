@@ -15671,3 +15671,37 @@ body {
     animation: none;
   }
 }
+
+/* Cube Coach: pick the 3 × 3 or the 2 × 2. */
+.cc-sizes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.cc-size {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 8px 12px;
+  border: 3px solid #dbe4f0;
+  border-radius: 20px;
+  background: #fff;
+  color: #173a66;
+  cursor: pointer;
+}
+.cc-size .cc-scene {
+  height: 110px;
+}
+.cc-size b {
+  font: 800 22px 'Fredoka', ui-rounded, system-ui, sans-serif;
+}
+.cc-size small {
+  color: #4d5b72;
+  font: 600 13px 'IBM Plex Sans', sans-serif;
+}
+.cc-size.cc-size-on {
+  border-color: #2fae6b;
+  background: #ecfdf3;
+  box-shadow: 0 0 0 3px #2fae6b;
+}
