@@ -16116,3 +16116,49 @@ body {
   font: 800 18px/1 'Fredoka', ui-rounded, system-ui, sans-serif;
   cursor: pointer;
 }
+
+/* Home page: the game tabs, stuck to the top while the games scroll. */
+.home-tabs {
+  position: sticky;
+  /* The page has top padding (the status bar, or 20px): stick at the screen top
+     on the web and just under the status bar on a phone. */
+  top: calc(env(safe-area-inset-top, 0px) - max(20px, env(safe-area-inset-top, 0px)));
+  z-index: 5;
+  display: flex;
+  gap: 8px;
+  margin: 0 -16px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--bg);
+}
+.home-tabs::-webkit-scrollbar {
+  display: none;
+}
+.home-tab {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  min-height: 46px;
+  padding: 0 16px 0 12px;
+  border: 2px solid #dbe4f0;
+  border-radius: 999px;
+  background: #fff;
+  color: #173a66;
+  font: 700 16px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.home-tab-on {
+  border-color: #173a66;
+  background: #173a66;
+  color: #fff;
+}
+/* The home page grows to hold all its games, so the tabs can stay stuck
+   to the top the whole way down. */
+.page-fit .app.home-fit,
+.app.home-fit {
+  height: max-content;
+  min-height: 100%;
+}

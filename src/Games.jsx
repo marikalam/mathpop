@@ -124,6 +124,17 @@ export const hasJa = (id) => Boolean(GAMES.find((g) => g.id === id)?.ja);
 // on Nov 15, 2026): shown first on the home page with a MOST POPULAR!
 // badge. Update this list as the numbers change.
 export const POPULAR = ['snake', 'logicLock', 'make10'];
+// The home page's game tabs: [id, name, the games in it (in order; 'madminute'
+// is Mad Minute), what Pip says]. 'all' shows every game.
+export const GAME_TABS = [
+  ['popular', 'Popular', ['snake', 'logicLock', 'make10', 'madminute', 'chess', 'lavaRun'], 'The most popular games!'],
+  ['speed', 'Speed Math', ['madminute', 'bubbles', 'make10', 'snake', 'fruitSlice', 'numberRun', 'gardenGuard', 'snipDrop', 'pipHop', 'numberKeys', 'sweetTens', 'bondPop', 'makeTen', 'sumGridRush', 'timesTiles', 'shapes'], 'Speed math! Quick math facts.'],
+  ['puzzles', 'Puzzles', ['logicLock', 'valueSort', 'doubleUp', 'takeTen', 'crossSums', 'areaBoxes', 'petSudoku', 'tapMatch', 'shapeFit', 'carPark', 'patternStreak', 'equalDiff', 'goFish'], 'Puzzles! Games to think about.'],
+  ['board', 'Board Games', ['chess', 'checkers', 'reversi', 'fourInRow', 'domino', 'shipHunt', 'lavaRun'], 'Board games! Play against Pip.'],
+  ['life', 'Real Life', ['bakery', 'toyShop', 'clock', 'pizza', 'barModel', 'mathIsland'], 'Real life math! Shops, money, time and stories.'],
+  ['create', 'Learn & Create', ['cubeCoach', 'piMemory', 'artStudio'], 'Learn and create! Cubes, pi and drawing.'],
+  ['all', 'All', null, 'All the games!'],
+];
 
 // The games a grade plays.
 // (A game with hidden: true is kept but not shown: Pop Defense, Hoop Hop, Pip Launch and Shape Dash, for now.)

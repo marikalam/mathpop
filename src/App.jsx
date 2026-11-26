@@ -8,7 +8,7 @@ import TapBoard from './TapBoards.jsx';
 import PipCloset from './PipCloset.jsx';
 import { Confetti, CountUp } from './Celebrate.jsx';
 import MadMinute, { madMinuteBest } from './MadMinute.jsx';
-import GamesMenu, { Game, GameArt, POPULAR, gameBest, gameTitle, gamesFor, hasJa } from './Games.jsx';
+import GamesMenu, { GAME_TABS, Game, GameArt, POPULAR, gameBest, gameTitle, gamesFor, hasJa } from './Games.jsx';
 import { anItem, closetFor, newItems, nextItem, rememberUnlocks, stickerCount } from './pipCloset.js';
 import { COLORING_PACKS, ColoringPage, ColoringPrint } from './ColoringPages.jsx';
 import { SKILL_UNITS, SKILL_META, buildSkillProblem, buildSkillOptions, isSkillConcept } from './skillBuilders.js';
@@ -692,6 +692,19 @@ function ProgressDots({ current, total }) {
   );
 }
 
+// The pictures on the home page's game tabs.
+function TabIcon({ id }) {
+  const p = { width: 22, height: 22, viewBox: '0 0 24 24', 'aria-hidden': true };
+  const c = 'currentColor';
+  if (id === 'popular') return <svg {...p}><path d="M12 2.8l2.8 5.8 6.3.8-4.6 4.4 1.2 6.3L12 17l-5.7 3.1 1.2-6.3-4.6-4.4 6.3-.8z" fill={c} /></svg>;
+  if (id === 'speed') return <svg {...p}><path d="M13 2L5 13h6l-1 9 8-12h-6z" fill={c} /></svg>;
+  if (id === 'puzzles') return <svg {...p}><path d="M4 8h4a2 2 0 1 1 4 0h4v4a2 2 0 1 1 0 4v4H4v-4a2 2 0 1 0 0-4z" fill={c} /></svg>;
+  if (id === 'board') return <svg {...p}><path d="M12 3a3 3 0 0 1 2 5.2l2 5.8h-8l2-5.8A3 3 0 0 1 12 3zM7 15h10l1 3H6zM5 19h14v2H5z" fill={c} /></svg>;
+  if (id === 'life') return <svg {...p}><path d="M3 9l2-5h14l2 5zM4 10h16v10H4zM9 13v7h6v-7z" fill={c} fillRule="evenodd" /></svg>;
+  if (id === 'create') return <svg {...p}><path d="M14.5 3.5l6 6L11 19l-6 1 1-6zM4 21h7" stroke={c} strokeWidth="2.2" fill="none" strokeLinejoin="round" strokeLinecap="round" /></svg>;
+  return <svg {...p}><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill={c} /></svg>;
+}
+
 export default function App() {
   // The website opened with ?coloring (from the iPhone app's "Print in
   // Safari") starts on the coloring pages.
@@ -764,6 +777,28 @@ export default function App() {
   const timeUp = timeLeft <= 0 && (view !== 'game' || gameEndAt > (timeZeroAt || Infinity) || Date.now() - (timeZeroAt || Date.now()) > 180000);
   const addTime = (id) => withGate(() => addMinutes(id, 15));
   const [timerSheet, setTimerSheet] = useState(false);
+  // The home page's game tab (GAME_TABS), remembered on this device.
+  const [homeTab, setHomeTab] = useState(() => {
+    try {
+      const t = localStorage.getItem('mathpop-home-tab-v1');
+      return GAME_TABS.some((x) => x[0] === t) ? t : 'popular';
+    } catch {
+      return 'popular';
+    }
+  });
+  const tabInfo = GAME_TABS.find((x) => x[0] === homeTab) || GAME_TABS[0];
+  const inTab = (id) => !tabInfo[2] || tabInfo[2].includes(id);
+  const tabOrder = (id) => (tabInfo[2] ? tabInfo[2].indexOf(id) : POPULAR.includes(id) ? POPULAR.indexOf(id) - 10 : undefined);
+  function pickTab(t) {
+    setHomeTab(t[0]);
+    playStickerPick();
+    speak(t[3]);
+    try {
+      localStorage.setItem('mathpop-home-tab-v1', t[0]);
+    } catch {
+      /* private mode */
+    }
+  }
   // Daily Math: a new key for each sheet.
   const [dailyRun, setDailyRun] = useState(0);
   const openTimer = () => withGate(() => setTimerSheet(true));
@@ -1898,11 +1933,19 @@ export default function App() {
                 What do they teach?
               </button>
             </div>
+            <div className="home-tabs" role="tablist" aria-label="Game groups">
+              {GAME_TABS.map((t) => (
+                <button key={t[0]} type="button" role="tab" aria-selected={homeTab === t[0]} className={`home-tab${homeTab === t[0] ? ' home-tab-on' : ''}`} onClick={() => pickTab(t)}>
+                  <TabIcon id={t[0]} />
+                  {t[1]}
+                </button>
+              ))}
+            </div>
             <div className="home-games">
-              {gradeInfo(level).id !== 'p' && (
+              {gradeInfo(level).id !== 'p' && inTab('madminute') && (
                 <button
                   className="home-game"
-                  style={{ '--card-from': '#ef5b5b' }}
+                  style={{ '--card-from': '#ef5b5b', order: tabInfo[2] ? tabInfo[2].indexOf('madminute') : undefined }}
                   onClick={() => {
                     unlockAudio();
                     setMadKey((k) => k + 1);
@@ -1916,11 +1959,11 @@ export default function App() {
                   )}
                 </button>
               )}
-              {gamesFor(gradeInfo(level).id).map((g) => (
+              {gamesFor(gradeInfo(level).id).filter((g) => inTab(g.id)).map((g) => (
                 <button
                   key={g.id}
                   className="home-game"
-                  style={{ '--card-from': cardColors(g.id, g.color[0]).bg, '--card-ink': cardColors(g.id, g.color[0]).ink, order: POPULAR.includes(g.id) ? POPULAR.indexOf(g.id) - 10 : undefined }}
+                  style={{ '--card-from': cardColors(g.id, g.color[0]).bg, '--card-ink': cardColors(g.id, g.color[0]).ink, order: tabOrder(g.id) }}
                   onClick={() => {
                     unlockAudio();
                     setGameId(g.id);
