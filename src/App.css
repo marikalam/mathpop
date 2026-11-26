@@ -15923,3 +15923,37 @@ body {
   background: #db2777;
   box-shadow: inset 0 -5px 0 #9d174d;
 }
+
+/* Cube Coach: swipe between steps. */
+.cc-lesson {
+  touch-action: pan-y;
+}
+.cc-in-right {
+  animation: cc-in-right 0.32s ease-out;
+}
+.cc-in-left {
+  animation: cc-in-left 0.32s ease-out;
+}
+@keyframes cc-in-right {
+  from { transform: translateX(60px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes cc-in-left {
+  from { transform: translateX(-60px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.cc-swipe {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  color: #94a3b8;
+  font: 600 14px 'IBM Plex Sans', sans-serif;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cc-in-right,
+  .cc-in-left {
+    animation: none;
+  }
+}
