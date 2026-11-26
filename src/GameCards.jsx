@@ -448,6 +448,17 @@ const ART = {
       <path d="M65 70 Q80 40 95 43" stroke="#ffd23f" strokeWidth="3" strokeDasharray="4 4" fill="none" />
     </g>
   ),
+  piMemory: (
+    <g>
+      <circle cx="56" cy="62" r="38" fill="#fde68a" stroke="#f59e0b" strokeWidth="6" />
+      <path d="M56 62 L56 24 A38 38 0 0 1 89 43 Z" fill="#fbbf24" stroke="#f59e0b" strokeWidth="3" />
+      {[[42, 50], [64, 72], [46, 80], [70, 50]].map(([x, y]) => (
+        <circle key={`${x}${y}`} cx={x} cy={y} r="5" fill="#e5484d" />
+      ))}
+      <text x="124" y="70" textAnchor="middle" fontFamily="Fredoka, sans-serif" fontWeight="800" fontSize="54" fill="#fff">π</text>
+      <text x="124" y="100" textAnchor="middle" fontFamily="Fredoka, sans-serif" fontWeight="700" fontSize="15" fill="#fde68a">3.14159</text>
+    </g>
+  ),
   cubeCoach: (
     <g>
       <path d="M80.0 14.0 L94.0 22.0 L80.0 30.0 L66.0 22.0z" fill="#ffffff" stroke="#111827" strokeWidth="2" strokeLinejoin="round" />
@@ -796,6 +807,7 @@ const INK = {
   lavaRun: '#fff',
   shipHunt: '#fff',
   cubeCoach: '#fff',
+  piMemory: '#fff',
   reversi: '#fff',
 };
 const BG = {
@@ -817,6 +829,7 @@ const BG = {
   lavaRun: '#fdba74',
   shipHunt: '#2563eb',
   cubeCoach: '#374151',
+  piMemory: '#6d28d9',
   reversi: '#2e7d4f',
 };
 export const cardColors = (id, fallback) => ({ bg: BG[id] || fallback, ink: INK[id] });
