@@ -344,17 +344,43 @@ function Lesson({ k, set, onDone }) {
     await doTurn(list[i], id);
     if (run.current === id) setPlaying(false);
   }
+  const [slide, setSlide] = useState('');
   function next() {
     playStickerPick();
-    if (p + 1 < pages.length) setP(p + 1);
-    else {
+    if (p + 1 < pages.length) {
+      setSlide('cc-in-right');
+      setP(p + 1);
+    } else {
       playStickerStick();
       onDone();
     }
   }
+  function back() {
+    if (p === 0) return;
+    playStickerPick();
+    setSlide('cc-in-left');
+    setP(p - 1);
+  }
+  // Swipe left for the next step, right for the step before (a sideways
+  // swipe of 50px or more, at any speed; taps and up-and-down scrolls
+  // don't count).
+  const touch = useRef(null);
+  const onPointerDown = (e) => {
+    touch.current = { x: e.clientX, y: e.clientY };
+  };
+  const onPointerUp = (e) => {
+    const t = touch.current;
+    touch.current = null;
+    if (!t) return;
+    const dx = e.clientX - t.x;
+    const dy = e.clientY - t.y;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (dx < 0) next();
+    else back();
+  };
 
   return (
-    <div className="game game-pz cc-lesson">
+    <div className="game game-pz cc-lesson" onPointerDown={onPointerDown} onPointerUp={onPointerUp} onPointerCancel={() => (touch.current = null)}>
       <div className="cc-head" style={{ '--lc': color }}>
         <span className="cc-num">{k + 1}</span>
         <b>{title}</b>
@@ -364,7 +390,9 @@ function Lesson({ k, set, onDone }) {
           ))}
         </span>
       </div>
-      <CubeView cubies={cubies} turning={turning} focus={page.focus} view={page.view} speed={speed} n={set.n} size={set.n === 2 ? 80 : 54} />
+      <div key={`cube-${p}`} className={slide}>
+        <CubeView cubies={cubies} turning={turning} focus={page.focus} view={page.view} speed={speed} n={set.n} size={set.n === 2 ? 80 : 54} />
+      </div>
       {list.length > 0 && (
         <div className="cc-moves" aria-label="The turns">
           {list.map((m, i) => (
@@ -375,7 +403,7 @@ function Lesson({ k, set, onDone }) {
         </div>
       )}
       <div className="cc-now-row">{at >= 0 && list[at] ? <MoveBadge m={list[at]} big /> : null}</div>
-      <button type="button" className="cc-say" onClick={() => speak(page.say)}>
+      <button key={`say-${p}`} type="button" className={`cc-say ${slide}`} onClick={() => speak(page.say)}>
         <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
           <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" />
           <path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
@@ -383,7 +411,7 @@ function Lesson({ k, set, onDone }) {
         <span>{page.say}</span>
       </button>
       <div className="cc-controls">
-        <button type="button" className="cc-btn" onClick={() => (p > 0 ? setP(p - 1) : null)} disabled={p === 0} aria-label="Back">
+        <button type="button" className="cc-btn" onClick={back} disabled={p === 0} aria-label="Back">
           <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
             <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="3.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -410,6 +438,12 @@ function Lesson({ k, set, onDone }) {
           </svg>
         </button>
       </div>
+      <p className="cc-swipe" aria-hidden="true">
+        <svg viewBox="0 0 48 24" width="44" height="22">
+          <path d="M6 12h36M12 6l-6 6 6 6M36 6l6 6-6 6" stroke="currentColor" strokeWidth="2.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        Swipe to go to the next step
+      </p>
       {list.length > 0 && (
         <label className="cc-slow">
           <input type="checkbox" checked={slow} onChange={(e) => setSlow(e.target.checked)} /> Slow motion
