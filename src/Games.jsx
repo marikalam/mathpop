@@ -65,12 +65,12 @@ export const GAMES = [
   // Arcade games (src/arcade): fun to play, with the math built in.
   // Puzzle and play games (PuzzleGames.jsx, PlayGames.jsx, arcade/HoopHop.jsx),
   // each with levels inside that start at the player's grade.
-  { id: 'valueSort', title: 'Value Sort', sub: 'Put each card in its jar', how: 'Look at the card, and tap the jar with the same value!', seconds: 0, color: ['#5b3f73', '#4a3360'] },
-  { id: 'doubleUp', title: 'Double Up', sub: 'Two the same make double', how: 'Tap two tiles with the same number. They join into the double!', seconds: 0, color: ['#7d4f63', '#663f51'] },
+  { id: 'valueSort', hidden: true, title: 'Value Sort', sub: 'Put each card in its jar', how: 'Look at the card, and tap the jar with the same value!', seconds: 0, color: ['#5b3f73', '#4a3360'] },
+  { id: 'doubleUp', hidden: true, title: 'Double Up', sub: 'Two the same make double', how: 'Tap two tiles with the same number. They join into the double!', seconds: 0, color: ['#7d4f63', '#663f51'] },
   { id: 'takeTen', title: 'Take Ten', sub: 'Clear pairs that make 10', how: 'Tap two that make ten, or two the same, with nothing in between!', seconds: 0, color: ['#0ea5e9', '#0284c7'] },
-  { id: 'crossSums', title: 'Cross Sums', sub: 'Cross out to make the totals', how: 'Cross out numbers so every row and column makes its total!', seconds: 0, color: ['#38bdf8', '#0ea5e9'] },
+  { id: 'crossSums', hidden: true, title: 'Cross Sums', sub: 'Cross out to make the totals', how: 'Cross out numbers so every row and column makes its total!', seconds: 0, color: ['#38bdf8', '#0ea5e9'] },
   { id: 'areaBoxes', title: 'Area Boxes', sub: 'Build a box for each number', how: 'Tap a number, then tap squares next to it to build its box. A 6 gets 6 squares!', seconds: 0, color: ['#fdf2e9', '#f5d9c4'] },
-  { id: 'petSudoku', title: 'Pet Sudoku', sub: 'Each pet once in a row', how: 'Every pet once in each row and column!', seconds: 0, color: ['#fff5ec', '#f5dcc4'] },
+  { id: 'petSudoku', hidden: true, title: 'Pet Sudoku', sub: 'Each pet once in a row', how: 'Every pet once in each row and column!', seconds: 0, color: ['#fff5ec', '#f5dcc4'] },
   { id: 'tapMatch', title: 'Tap Match', sub: 'Three worth the same clear', how: 'Tap tiles into the tray. Three worth the same clear away!', seconds: 0, color: ['#f87171', '#dc2626'] },
   { id: 'hoopHop', hidden: true, title: 'Hoop Hop', sub: 'Fly through the answer', how: 'Tap to fly! Go through the hoop with the answer!', seconds: 0, color: ['#fde3a7', '#f5c26b'] },
   { id: 'fourInRow', title: 'Four in a Row', sub: 'Answer, then drop a piece', how: 'Answer to drop your piece. Get four in a row before Pip!', seconds: 0, color: ['#60a5fa', '#2563eb'] },
@@ -129,7 +129,7 @@ export const POPULAR = ['snake', 'logicLock', 'make10'];
 export const GAME_TABS = [
   ['popular', 'Popular', ['snake', 'logicLock', 'make10', 'madminute', 'chess', 'lavaRun'], 'The most popular games!'],
   ['speed', 'Speed Math', ['madminute', 'bubbles', 'make10', 'snake', 'fruitSlice', 'numberRun', 'gardenGuard', 'snipDrop', 'pipHop', 'numberKeys', 'sweetTens', 'bondPop', 'makeTen', 'sumGridRush', 'timesTiles', 'shapes'], 'Speed math! Quick math facts.'],
-  ['puzzles', 'Puzzles', ['logicLock', 'valueSort', 'doubleUp', 'takeTen', 'crossSums', 'areaBoxes', 'petSudoku', 'tapMatch', 'shapeFit', 'carPark', 'patternStreak', 'equalDiff', 'goFish'], 'Puzzles! Games to think about.'],
+  ['puzzles', 'Puzzles', ['logicLock', 'takeTen', 'areaBoxes', 'tapMatch', 'shapeFit', 'carPark', 'patternStreak', 'equalDiff', 'goFish'], 'Puzzles! Games to think about.'],
   ['board', 'Board Games', ['chess', 'checkers', 'reversi', 'fourInRow', 'domino', 'shipHunt', 'lavaRun'], 'Board games! Play against Pip.'],
   ['life', 'Real Life', ['bakery', 'toyShop', 'clock', 'pizza', 'barModel', 'mathIsland'], 'Real life math! Shops, money, time and stories.'],
   ['create', 'Learn & Create', ['cubeCoach', 'piMemory', 'artStudio'], 'Learn and create! Cubes, pi and drawing.'],
