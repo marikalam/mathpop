@@ -448,6 +448,17 @@ const ART = {
       <path d="M65 70 Q80 40 95 43" stroke="#ffd23f" strokeWidth="3" strokeDasharray="4 4" fill="none" />
     </g>
   ),
+  artStudio: (
+    <g>
+      <path d="M30 70c-6-30 30-52 62-46 34 6 44 34 26 46-10 7-22-2-30 8-6 8 4 18-8 22-20 6-46-6-50-30z" fill="#fff7ed" stroke="#9a3412" strokeWidth="3" />
+      {[[52, 46, '#ef4444'], [72, 38, '#facc15'], [94, 44, '#22c55e'], [104, 62, '#3b82f6'], [46, 70, '#a855f7']].map(([x, y, c]) => (
+        <circle key={c} cx={x} cy={y} r="8" fill={c} />
+      ))}
+      <path d="M112 96l26-40 8 5-24 42z" fill="#facc15" stroke="#7c2d12" strokeWidth="2.5" strokeLinejoin="round" />
+      <path d="M112 96l10 7-12 4z" fill="#111827" />
+      <path d="M20 104q20-14 40 0t40 0" stroke="#ec4899" strokeWidth="5" fill="none" strokeLinecap="round" />
+    </g>
+  ),
   piMemory: (
     <g>
       <circle cx="56" cy="62" r="38" fill="#fde68a" stroke="#f59e0b" strokeWidth="6" />
@@ -808,6 +819,7 @@ const INK = {
   shipHunt: '#fff',
   cubeCoach: '#fff',
   piMemory: '#fff',
+  artStudio: '#fff',
   reversi: '#fff',
 };
 const BG = {
@@ -830,6 +842,7 @@ const BG = {
   shipHunt: '#2563eb',
   cubeCoach: '#374151',
   piMemory: '#6d28d9',
+  artStudio: '#fb7185',
   reversi: '#2e7d4f',
 };
 export const cardColors = (id, fallback) => ({ bg: BG[id] || fallback, ink: INK[id] });

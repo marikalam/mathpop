@@ -58,6 +58,7 @@ const TEACHES = {
   chess: ['', 'Strategy, thinking ahead; Chess School: check, skewers, checkmate'],
   checkers: ['', 'Strategy, thinking ahead'],
   carPark: ['', 'Logic, planning moves'],
+  artStudio: ['Shapes; symmetry with the mirror', 'Symmetry, shapes and patterns'],
   piMemory: ['Circles: the way around and the way across', 'Pi, memory and number patterns'],
   cubeCoach: ['Spatial sense: turning, faces and positions', 'Patterns, following steps (algorithms), persistence'],
   shipHunt: ['Position: rows and columns, reading a grid', 'Coordinates, logic and strategy'],
