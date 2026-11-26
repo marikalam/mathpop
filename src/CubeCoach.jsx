@@ -34,7 +34,7 @@ export const LESSONS = [
     'Meet your cube',
     '#3b82f6',
     [
-      { say: 'This is your cube! It has six sides. Each side has its own color: white, yellow, red, orange, blue and green. Tap the green button to spin it.', play: 'y y y y' },
+      { say: 'This is your cube! It has six sides. Each side has its own color: white, yellow, red, orange, blue and green. Tap the green button to rotate it.', play: 'y y y y' },
       { say: 'Look at the middle square on each side. The middle squares never move! They tell you what color that side will be.', play: "x2 x2" },
       { say: 'White is always across from yellow. Our goal: make every side all one color. Let’s learn how, one little step at a time!', start: "R U F' L D2 B2 U' R2 F" },
     ],
@@ -71,14 +71,14 @@ export const LESSONS = [
       { say: 'Look at a white petal. What is its other color? Turn the top until that color sits right above the middle square that matches.', start: `${DAISY} U`, play: "U'", focus: 'whiteEdges' },
       { say: 'Now turn that side two times! The white piece goes down to the bottom.', start: DAISY, play: 'F2', focus: 'whiteEdges' },
       { say: 'Do the same for every petal: match the color, then turn that side two times.', start: `${DAISY} F2`, play: 'y F2 y F2 y F2', focus: 'whiteEdges' },
-      { say: 'Flip your cube over. A white cross! Each white edge matches the middle next to it.', start: 'x2', play: 'x2', focus: 'whiteEdges' },
+      { say: 'Rotate your cube. A white cross! Each white edge matches the middle next to it.', start: 'x2', play: 'x2', focus: 'whiteEdges' },
     ],
   ],
   [
     'White corners',
     '#10b981',
     [
-      { say: 'Turn your cube so white is on the BOTTOM. Now we put in the white corners. Here is the magic four moves: right side up, top left, right side down, top right.', start: 'x2', play: MAGIC, focus: 'whiteLayer' },
+      { say: 'Rotate your cube so white is on the BOTTOM. Now we put in the white corners. Here is the magic four moves: right side up, top left, right side down, top right.', start: 'x2', play: MAGIC, focus: 'whiteLayer' },
       { say: 'Find a corner on top with white on it. Turn the top until it sits right above its home, between its two colors. Then do the magic four moves again and again, until the corner goes home with white on the bottom!', start: `x2 ${MAGIC} ${MAGIC} ${MAGIC}`, play: `${MAGIC} ${MAGIC} ${MAGIC}`, focus: 'whiteLayer' },
       { say: 'Do this for all four corners. Then the whole white side is done!', start: 'x2', play: 'y y y y', focus: 'whiteLayer' },
     ],
@@ -108,7 +108,7 @@ export const LESSONS = [
     [
       { say: 'Now make each yellow edge match its side. Turn the top until two edges match.', start: `x2 ${invert(YELLOW_EDGES)}` },
       { say: 'Hold the two that don’t match in front and on the left. Then: right up, top left, right down, top left, right up, top left two times, right down, top left. Watch!', start: `x2 ${invert(YELLOW_EDGES)}`, play: YELLOW_EDGES },
-      { say: 'If they still don’t match, turn the cube and try again. All four edges match? Great!', start: 'x2', play: 'y y y y' },
+      { say: 'If they still don’t match, rotate the cube and try again. All four edges match? Great!', start: 'x2', play: 'y y y y' },
     ],
   ],
   [
@@ -137,7 +137,7 @@ export const LESSONS_2 = [
     'Meet the 2\u00a0×\u00a02',
     '#3b82f6',
     [
-      { say: 'This little cube is a two by two. It has only eight corners, and each corner has three colors. Tap the green button to spin it.', play: 'y y y y' },
+      { say: 'This little cube is a two by two. It has only eight corners, and each corner has three colors. Tap the green button to rotate it.', play: 'y y y y' },
       { say: 'There are no middle squares to help, so the corners tell you the colors. White is across from yellow, like on the big cube.', play: 'x2 x2' },
       { say: 'Our goal: make every side one color. It takes just three tricks!', start: "R U F' R U' F2 R' U2" },
     ],

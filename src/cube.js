@@ -102,10 +102,10 @@ export const SAY = {
   "F'": 'Front turns back, the other way',
   F2: 'Front turns two times',
   B2: 'Back turns two times',
-  x2: 'Flip the whole cube over',
-  y: 'Turn the whole cube to the left',
-  "y'": 'Turn the whole cube to the right',
-  y2: 'Turn the whole cube around',
+  x2: 'Rotate the cube',
+  y: 'Rotate the cube',
+  "y'": 'Rotate the cube',
+  y2: 'Rotate the cube',
 };
 // The arrow for each turn's badge: which side moves, and which way.
 export const ARROW = {
@@ -125,8 +125,8 @@ export const ARROW = {
   "F'": ['front', 'ccw'],
   F2: ['front', 'cw'],
   B2: ['front', 'cw'],
-  x2: ['all', 'up'],
-  y: ['all', 'left'],
-  "y'": ['all', 'right'],
-  y2: ['all', 'left'],
+  x2: ['all', 'cw'],
+  y: ['all', 'cw'],
+  "y'": ['all', 'ccw'],
+  y2: ['all', 'cw'],
 };
