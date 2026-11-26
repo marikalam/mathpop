@@ -63,14 +63,29 @@ function Digits({ n, typed, hide = Infinity, mark, wrongAt }) {
   );
 }
 
-function Pad({ onDigit, disabled }) {
+// A phone-style number pad: 1 2 3 / 4 5 6 / 7 8 9 / delete 0 check.
+function Pad({ onDigit, onDelete, onCheck, canDelete, canCheck, disabled }) {
   return (
     <div className="pi-pad">
-      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((d) => (
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
         <button key={d} type="button" className="pi-key" style={{ '--dc': DIGIT_COLORS[d] }} disabled={disabled} onClick={() => onDigit(String(d))}>
           {d}
         </button>
       ))}
+      <button type="button" className="pi-key pi-key-del" disabled={disabled || !canDelete} onClick={onDelete} aria-label="Delete">
+        <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true">
+          <path d="M9 5h11a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H9l-6-7z" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
+          <path d="M12 9l5 6M17 9l-5 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+        </svg>
+      </button>
+      <button type="button" className="pi-key" style={{ '--dc': DIGIT_COLORS[0] }} disabled={disabled} onClick={() => onDigit('0')}>
+        0
+      </button>
+      <button type="button" className="pi-key pi-key-check" disabled={disabled || !canCheck} onClick={onCheck} aria-label="Check">
+        <svg viewBox="0 0 24 24" width="36" height="36" aria-hidden="true">
+          <path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" strokeWidth="3.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
     </div>
   );
 }
@@ -165,35 +180,41 @@ function Climb({ start, onOver }) {
     speak(n === start ? `Remember these! ${sayDigits(n)}. Then tap I remember!` : `One more! ${sayDigits(n)}`);
   }, [phase, n]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Type freely (a wrong digit can be deleted), then check with the ✓.
   function digit(d) {
-    if (phase !== 'type') return;
-    const i = typed.length;
-    if (d === PI[i]) {
-      playStickerPick();
-      const t = typed + d;
-      setTyped(t);
-      if (t.length === n) {
-        best.current = Math.max(best.current, n);
-        playCorrectChime();
-        const got = BADGES.find((b) => b === n);
-        setBadge(got || null);
-        setPhase('good');
-        if (got) {
-          playStickerStick();
-          speak(`Wow! ${n} digits of pi! You earned the ${n} badge!`);
-        } else speak(`Yes! ${n} digits!`);
-        setTimeout(() => {
-          setBadge(null);
-          setTyped('');
-          setN(n + 1);
-          setPhase('watch');
-        }, got ? 2600 : 1300);
-      }
+    if (phase !== 'type' || typed.length >= n) return;
+    playStickerPick();
+    setTyped(typed + d);
+  }
+  function del() {
+    if (phase !== 'type' || !typed) return;
+    playStickerPick();
+    setTyped(typed.slice(0, -1));
+  }
+  function check() {
+    if (phase !== 'type' || typed.length < n) return;
+    const i = [...typed].findIndex((d, k) => d !== PI[k]);
+    if (i < 0) {
+      best.current = Math.max(best.current, n);
+      playCorrectChime();
+      const got = BADGES.find((b) => b === n);
+      setBadge(got || null);
+      setPhase('good');
+      if (got) {
+        playStickerStick();
+        speak(`Wow! ${n} digits of pi! You earned the ${n} badge!`);
+      } else speak(`Yes! ${n} digits!`);
+      setTimeout(() => {
+        setBadge(null);
+        setTyped('');
+        setN(n + 1);
+        setPhase('watch');
+      }, got ? 2600 : 1300);
       return;
     }
     playIncorrectBuzz();
     setWrongAt(i);
-    setTyped(typed + PI[i]);
+    setTyped(typed.slice(0, i) + PI[i]);
     const h = hearts - 1;
     setHearts(h);
     setPhase('wrong');
@@ -238,15 +259,17 @@ function Climb({ start, onOver }) {
             playStickerPick();
             setTyped('');
             setPhase('type');
-            speak('Now type it! Start after the 3.');
+            speak('Now type it! Start after the 3. Then tap the green check.');
           }}
         >
           I remember!
         </button>
       ) : (
         <>
-          <p className="pi-hint">{phase === 'wrong' ? 'Oops! The orange one is the right digit.' : phase === 'good' ? 'Yes!' : 'Type it from memory'}</p>
-          <Pad onDigit={digit} disabled={phase !== 'type'} />
+          <p className="pi-hint">
+            {phase === 'wrong' ? 'Oops! The orange one is the right digit.' : phase === 'good' ? 'Yes!' : typed.length < n ? 'Type it from memory' : 'Tap the green check!'}
+          </p>
+          <Pad onDigit={digit} onDelete={del} onCheck={check} canDelete={typed.length > 0} canCheck={typed.length === n} disabled={phase !== 'type'} />
         </>
       )}
     </div>
@@ -261,18 +284,30 @@ function Test({ onOver }) {
     speak('Pi test! Type all the digits you remember, after the 3. Go as far as you can!');
   }, []);
   function digit(d) {
-    if (wrongAt !== null) return;
-    const i = typed.length;
-    if (d === PI[i]) {
-      playStickerPick();
-      setTyped(typed + d);
-      if (BADGES.includes(i + 1)) playCorrectChime();
+    if (wrongAt !== null || typed.length >= PI.length) return;
+    playStickerPick();
+    setTyped(typed + d);
+  }
+  function del() {
+    if (wrongAt !== null || !typed) return;
+    playStickerPick();
+    setTyped(typed.slice(0, -1));
+  }
+  // Check: count the right digits from the start; show the first wrong one.
+  function check() {
+    if (wrongAt !== null || !typed) return;
+    const i = [...typed].findIndex((d, k) => d !== PI[k]);
+    if (i < 0) {
+      playStickerStick();
+      speak(`All right! You got ${typed.length} digits!`);
+      setWrongAt(-1);
+      setTimeout(() => onOver(typed.length), 1800);
       return;
     }
     playIncorrectBuzz();
     setWrongAt(i);
-    setTyped(typed + PI[i]);
-    speak(`The next one is ${PI[i]}. You got ${i} digits!`);
+    setTyped(typed.slice(0, i) + PI[i]);
+    speak(`That one is ${PI[i]}. You got ${i} digits!`);
     setTimeout(() => onOver(i), 2400);
   }
   return (
@@ -280,17 +315,14 @@ function Test({ onOver }) {
       <div className="pi-top">
         <span className="pi-count">Pi test</span>
         <span className="pi-count">
-          <b>{wrongAt ?? typed.length}</b> digits
+          <b>{wrongAt === null || wrongAt === -1 ? typed.length : wrongAt}</b> digits
         </span>
       </div>
-      <Digits n={Math.max(5, typed.length + (wrongAt === null ? 1 : 0))} typed={typed} wrongAt={wrongAt} />
-      <p className="pi-hint">{wrongAt === null ? 'Type the digits of pi, after the 3' : 'The orange one was next.'}</p>
-      <Pad onDigit={digit} disabled={wrongAt !== null} />
-      {wrongAt === null && typed.length > 0 && (
-        <button type="button" className="bakery-btn pi-stop" onClick={() => onOver(typed.length)}>
-          I’m done
-        </button>
-      )}
+      <Digits n={Math.max(5, typed.length + (wrongAt === null ? 1 : 0))} typed={typed} wrongAt={wrongAt === -1 ? null : wrongAt} />
+      <p className="pi-hint">
+        {wrongAt === null ? 'Type all you remember, then tap the green check' : wrongAt === -1 ? 'All right!' : 'The orange one was the right digit.'}
+      </p>
+      <Pad onDigit={digit} onDelete={del} onCheck={check} canDelete={typed.length > 0} canCheck={typed.length > 0} disabled={wrongAt !== null} />
     </div>
   );
 }
