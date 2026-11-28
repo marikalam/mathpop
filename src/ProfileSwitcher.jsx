@@ -59,7 +59,7 @@ export default function ProfileSwitcher({ profile, profiles, onChange, onOpenSet
                 setOpen(false);
               }}
             >
-              <Icon name="gear" /> <span>Players &amp; grades</span>
+              <Icon name="gear" /> <span>Settings</span>
             </button>
           </div>
         </div>

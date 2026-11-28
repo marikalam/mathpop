@@ -16119,6 +16119,7 @@ body {
 
 /* Home page: the game tabs, stuck to the top while the games scroll. */
 .home-tabs {
+  flex-shrink: 0;
   position: sticky;
   /* The page has top padding (the status bar, or 20px): stick at the screen top
      on the web and just under the status bar on a phone. */

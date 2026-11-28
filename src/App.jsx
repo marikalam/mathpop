@@ -694,6 +694,15 @@ function ProgressDots({ current, total }) {
   );
 }
 
+// The settings page's tabs: [id, name, owner only].
+const SETTINGS_TABS = [
+  ['players', 'Players', false],
+  ['learning', 'Learning', false],
+  ['controls', 'Controls', true],
+  ['family', 'Family', false],
+  ['owner', 'Owner', true],
+];
+
 // The pictures on the home page's game tabs.
 function TabIcon({ id }) {
   const p = { width: 22, height: 22, viewBox: '0 0 24 24', 'aria-hidden': true };
@@ -779,6 +788,25 @@ export default function App() {
   const timeUp = timeLeft <= 0 && (view !== 'game' || gameEndAt > (timeZeroAt || Infinity) || Date.now() - (timeZeroAt || Date.now()) > 180000);
   const addTime = (id) => withGate(() => addMinutes(id, 15));
   const [timerSheet, setTimerSheet] = useState(false);
+  // The settings page's tab, remembered on this device.
+  const [settingsTab, setSettingsTab] = useState(() => {
+    try {
+      const t = localStorage.getItem('mathpop-settings-tab-v1');
+      return SETTINGS_TABS.some((x) => x[0] === t) ? t : 'players';
+    } catch {
+      return 'players';
+    }
+  });
+  // An owner-only tab when this isn't the owner: Players.
+  const activeSettingsTab = SETTINGS_TABS.some(([id, , owner]) => id === settingsTab && (statsViewer || !owner)) ? settingsTab : 'players';
+  function pickSettingsTab(id) {
+    setSettingsTab(id);
+    try {
+      localStorage.setItem('mathpop-settings-tab-v1', id);
+    } catch {
+      /* private mode */
+    }
+  }
   // Game lock (gameLock.js): set by the owner for each player. Locked
   // games show the Daily Math sheets instead.
   useLocks();
@@ -2499,29 +2527,20 @@ export default function App() {
         {view === 'players' && (
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
-            <h2 className="screen-title">Players &amp; grades</h2>
-            <p className="screen-sub">Set each player's grade and how they answer. They play at that grade, following Singapore math.</p>
+            <h2 className="screen-title">Settings</h2>
+            {/* Tabs, so each part is easy to find: Players, Learning,
+                Controls (owner), Family, Owner (owner). */}
+            <div className="home-tabs settings-tabs" role="tablist" aria-label="Settings">
+              {SETTINGS_TABS.filter((t) => statsViewer || !t[2]).map(([id, name]) => (
+                <button key={id} type="button" role="tab" aria-selected={activeSettingsTab === id} className={`home-tab${activeSettingsTab === id ? ' home-tab-on' : ''}`} onClick={() => pickSettingsTab(id)}>
+                  {name}
+                </button>
+              ))}
+            </div>
+            {activeSettingsTab === 'players' && (
+              <>
+                <p className="screen-sub">Set each player's grade and how they answer. They play at that grade, following Singapore math.</p>
             <SyncStatus user={profileOwner === 'account' ? cloudUser : null} onOpenAccount={openAccount} />
-            {/* Only for the accounts that can see MathPop's stats (the owner). */}
-            {statsViewer && <StockChart onOpenStats={() => setView('stats')} />}
-            {statsViewer && <MoneyCard app="mathpop" />}
-            {statsViewer && <GiftsCard />}
-            <button
-              type="button"
-              className="gg-card-link"
-              onClick={() => {
-                setGuideBack('players');
-                setView('guide');
-              }}
-            >
-              <b>What each game teaches</b>
-              <span>Every game, side by side with Singapore math and Beast Academy</span>
-            </button>
-            <SgModeCard />
-            <DailyParentCard players={profiles} gated={withGate} />
-            {/* Play time limits: only the owner account sees this for now. */}
-            {statsViewer && <PlayTimeCard players={profiles} gated={withGate} onAdd={addTime} onTimer={openTimer} />}
-            {statsViewer && <GameLockCard players={profiles} gated={withGate} />}
             <div className="settings-list">
               {draftProfiles.map((p) => (
                 <PlayerSettingsCard
@@ -2542,6 +2561,36 @@ export default function App() {
             <button className="back-link back-link-center" onClick={goHome}>
               Cancel
             </button>
+              </>
+            )}
+            {activeSettingsTab === 'learning' && (
+              <>
+                <p className="screen-sub">How each player learns: Daily Math sheets, think time and picture hints, and what the games teach.</p>
+            <SgModeCard />
+            <DailyParentCard players={profiles} gated={withGate} />
+            <button
+              type="button"
+              className="gg-card-link"
+              onClick={() => {
+                setGuideBack('players');
+                setView('guide');
+              }}
+            >
+              <b>What each game teaches</b>
+              <span>Every game, side by side with Singapore math and Beast Academy</span>
+            </button>
+              </>
+            )}
+            {activeSettingsTab === 'controls' && statsViewer && (
+              <>
+                <p className="screen-sub">Screen time: a session timer, daily play limits, and the game lock. Only you see these.</p>
+            {/* Play time limits: only the owner account sees this for now. */}
+            {statsViewer && <PlayTimeCard players={profiles} gated={withGate} onAdd={addTime} onTimer={openTimer} />}
+            {statsViewer && <GameLockCard players={profiles} gated={withGate} />}
+              </>
+            )}
+            {activeSettingsTab === 'family' && (
+              <>
             {/* For grown-ups: each player's week, and rating MathPop. */}
             <h3 className="section-label"><Icon name="growth" /> This week</h3>
             <div className="week-cards">
@@ -2575,6 +2624,16 @@ export default function App() {
                 <strong>Enjoying MathPop?</strong>A rating on the App Store helps other families find it.
               </span>
             </button>
+              </>
+            )}
+            {activeSettingsTab === 'owner' && statsViewer && (
+              <>
+                <p className="screen-sub">How MathPop is doing. Only you see these.</p>
+            {statsViewer && <StockChart onOpenStats={() => setView('stats')} />}
+            {statsViewer && <MoneyCard app="mathpop" />}
+            {statsViewer && <GiftsCard />}
+              </>
+            )}
           </>
         )}
 
