@@ -332,18 +332,6 @@ function Lesson({ k, set, onDone }) {
     }
     if (run.current === id) setPlaying(false);
   }
-  async function step() {
-    if (playing) return;
-    const i = at + 1 >= list.length ? 0 : at + 1;
-    run.current += 1;
-    const id = run.current;
-    if (i === 0) setCubies(startState());
-    setAt(i);
-    setPlaying(true);
-    await wait(i === 0 ? 150 : 0);
-    await doTurn(list[i], id);
-    if (run.current === id) setPlaying(false);
-  }
   const [slide, setSlide] = useState('');
   function next() {
     playStickerPick();
@@ -410,40 +398,24 @@ function Lesson({ k, set, onDone }) {
         </svg>
         <span>{page.say}</span>
       </button>
-      <div className="cc-controls">
-        <button type="button" className="cc-btn" onClick={back} disabled={p === 0} aria-label="Back">
-          <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
-            <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="3.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Big, labeled buttons: "Show me" plays the turns on the cube; Back
+          and Next step move between pages (swiping works too). */}
+      {list.length > 0 && (
+        <button type="button" className="cc-show" onClick={watch} disabled={playing}>
+          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+            <path d="M8 5v14l11-7z" fill="currentColor" />
           </svg>
+          {playing ? 'Watch the cube…' : at >= 0 ? 'Show me again' : 'Show me'}
         </button>
-        {list.length > 0 && (
-          <>
-            <button type="button" className="cc-btn cc-play" onClick={watch} aria-label="Watch">
-              <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true">
-                <path d="M8 5v14l11-7z" fill="currentColor" />
-              </svg>
-            </button>
-            <button type="button" className="cc-btn cc-step" onClick={step} disabled={playing} aria-label="One turn">
-              <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
-                <path d="M6 5v14l9-7z" fill="currentColor" />
-                <rect x="16" y="5" width="3" height="14" rx="1" fill="currentColor" />
-              </svg>
-              <small>1 turn</small>
-            </button>
-          </>
-        )}
-        <button type="button" className="cc-btn cc-next" onClick={next} aria-label="Next">
-          <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
-            <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="3.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+      )}
+      <div className="cc-controls">
+        <button type="button" className="cc-nav cc-nav-back" onClick={back} disabled={p === 0}>
+          ‹ Back
+        </button>
+        <button type="button" className="cc-nav cc-nav-next" onClick={next}>
+          Next step ›
         </button>
       </div>
-      <p className="cc-swipe" aria-hidden="true">
-        <svg viewBox="0 0 48 24" width="44" height="22">
-          <path d="M6 12h36M12 6l-6 6 6 6M36 6l6 6-6 6" stroke="currentColor" strokeWidth="2.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        Swipe to go to the next step
-      </p>
       {list.length > 0 && (
         <label className="cc-slow">
           <input type="checkbox" checked={slow} onChange={(e) => setSlow(e.target.checked)} /> Slow motion
