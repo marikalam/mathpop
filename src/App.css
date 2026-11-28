@@ -16260,3 +16260,20 @@ body {
     display: none;
   }
 }
+
+/* Pip's Closet as a small pill in the home hero card. */
+.home-closet-sm {
+  position: relative;
+  align-self: flex-start;
+  margin: 2px 0 4px;
+  padding: 5px 12px;
+  font-size: 14px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
+}
+.home-closet-sm .home-closet-stars {
+  font-size: 12px;
+}
+.home-closet-sm .home-pair-new {
+  top: -9px;
+  right: -8px;
+}

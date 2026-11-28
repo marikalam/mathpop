@@ -1938,6 +1938,12 @@ export default function App() {
                 {streakDays(currentProfile.id) >= 2 && ` · ${streakDays(currentProfile.id)} days in a row`}
                 {Number.isFinite(dailyLeft(currentProfile.id)) && dailyLeft(currentProfile.id) > 0 && ` · ${minutesText(dailyLeft(currentProfile.id))} left today`}
               </p>
+              {/* Pip's Closet: a small pill here, so the games stay the
+                  focus (a red NEW when something's newly unlocked). */}
+              <button className="home-closet home-closet-sm" onClick={() => setView('closet')}>
+                {langFor(currentProfile.id) === 'ja' ? 'ピップの クローゼット' : "Pip's Closet"} <span className="home-closet-stars">★ {stickerCount(currentProfile.id)}</span>
+                {newItems(currentProfile.id).length > 0 && <span className="home-pair-new">{langFor(currentProfile.id) === 'ja' ? 'あたらしい' : 'NEW'}</span>}
+              </button>
               {(plusStatus.why === 'trial' || !plusStatus.plus) && (
                 <button className="home-hero-plus" onClick={() => openPlus('home')}>
                   {plusStatus.why === 'trial'
@@ -1960,15 +1966,6 @@ export default function App() {
                 setView('daily');
               }}
             />
-
-            {/* Pip's Closet on top, with the stars to unlock outfits (a red NEW
-                when something's newly unlocked for Pip). */}
-            <div className="home-pair">
-              <button className="home-pair-btn home-pair-closet" onClick={() => setView('closet')}>
-                {langFor(currentProfile.id) === 'ja' ? 'ピップの クローゼット' : "Pip's Closet"} <span className="home-pair-stars">★ {stickerCount(currentProfile.id)}</span>
-                {newItems(currentProfile.id).length > 0 && <span className="home-pair-new">{langFor(currentProfile.id) === 'ja' ? 'あたらしい' : 'NEW'}</span>}
-              </button>
-            </div>
 
             {gamesLocked ? (
               <GamesLocked playerId={currentProfile.id} grade={gradeInfo(level).id} mode={lockMode} onSheet={startSheet} />
