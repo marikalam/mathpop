@@ -631,6 +631,24 @@ function AppHeader({ level, onBack, showBack, players, logoSignal = 0 }) {
               )}
             </span>
           )}
+          {/* The session timer, on every page: the countdown while it runs
+              (everyone sees it), and for the owner a tap opens the timer
+              sheet (behind the parental gate) to start the next player's. */}
+          {players.timer && (
+            <button
+              type="button"
+              className={`hdr-timer${players.timer.left <= 120 ? ' hdr-timer-low' : ''}`}
+              aria-label={Number.isFinite(players.timer.left) ? `Timer: ${clockText(players.timer.left)} left` : 'Set a timer'}
+              onClick={players.timer.onOpen || undefined}
+              disabled={!players.timer.onOpen}
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <circle cx="12" cy="13.5" r="7.5" fill="none" stroke="currentColor" strokeWidth="2.4" />
+                <path d="M12 9.5v4.2l2.6 1.6M9.5 3h5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+              </svg>
+              {Number.isFinite(players.timer.left) ? <span>{clockText(players.timer.left)}</span> : null}
+            </button>
+          )}
           <ProfileSwitcher
             profile={players.profile}
             profiles={players.profiles}
@@ -1318,6 +1336,7 @@ export default function App() {
     onChange: changeProfile,
     onOpenPlayers: openPlayers,
     onOpenAccount: openAccount,
+    timer: statsViewer || (session().on && sessionLeft() > 0) ? { left: session().on && sessionLeft() > 0 ? sessionLeft() : Infinity, onOpen: statsViewer ? openTimer : null } : null,
   };
   // The loading screen shown as the app opens, while the fonts and the
   // handwriting reader get ready. At least OPENING_MIN_MS so it doesn't
@@ -1919,13 +1938,6 @@ export default function App() {
                 {streakDays(currentProfile.id) >= 2 && ` · ${streakDays(currentProfile.id)} days in a row`}
                 {Number.isFinite(dailyLeft(currentProfile.id)) && dailyLeft(currentProfile.id) > 0 && ` · ${minutesText(dailyLeft(currentProfile.id))} left today`}
               </p>
-              {/* The session timer: a countdown while it runs; the owner can
-                  set one from here (behind the parental gate). */}
-              {(session().on && sessionLeft() > 0) || statsViewer ? (
-                <button type="button" className="pt-chip" onClick={statsViewer ? openTimer : undefined}>
-                  {session().on && sessionLeft() > 0 ? `Timer ${clockText(sessionLeft())}` : 'Set a timer'}
-                </button>
-              ) : null}
               {(plusStatus.why === 'trial' || !plusStatus.plus) && (
                 <button className="home-hero-plus" onClick={() => openPlus('home')}>
                   {plusStatus.why === 'trial'
@@ -3278,7 +3290,7 @@ export default function App() {
       <EmailHandoff />
       {timeWarn && <div className="pt-warn">{langFor(currentProfile.id) === 'ja' ? 'あと 2ふん' : '2 minutes left'}</div>}
       {timeUp && <TimesUp name={currentProfile.name} ja={langFor(currentProfile.id) === 'ja'} onAdd={() => addTime(currentProfile.id)} onTimer={openTimer} />}
-      {timerSheet && <TimerSheet onClose={() => setTimerSheet(false)} />}
+      {timerSheet && <TimerSheet players={profiles} current={currentProfile.id} onPick={changeProfile} onClose={() => setTimerSheet(false)} />}
       {gate && (
         <ParentGate
           onPass={() => {
