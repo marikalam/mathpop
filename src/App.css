@@ -16218,3 +16218,45 @@ body {
   background: #2563eb;
   box-shadow: inset 0 -5px 0 #1e40af;
 }
+
+/* The header's session timer (AppHeader). */
+.hdr-timer {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  min-width: 34px;
+  justify-content: center;
+  padding: 0 10px;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(23, 58, 102, 0.12);
+  color: #173a66;
+  font: 700 14px 'Fredoka', ui-rounded, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.hdr-timer:disabled {
+  cursor: default;
+  opacity: 1;
+}
+.hdr-timer span {
+  min-width: 34px;
+}
+.hdr-timer-low {
+  background: #ffe4dc;
+  color: #c2410c;
+}
+@media (max-width: 420px) {
+  .brand-actions {
+    gap: 6px;
+  }
+  .hdr-timer:has(span) {
+    padding: 0 9px;
+  }
+  .hdr-timer:has(span) svg {
+    display: none;
+  }
+}

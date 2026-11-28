@@ -86,8 +86,9 @@ export function TimesUp({ name, ja, onAdd, onTimer }) {
 
 // The grown-up's timer sheet (opened after the parental gate): how long,
 // and what to say when it's up.
-export function TimerSheet({ onClose }) {
+export function TimerSheet({ players = [], current, onPick, onClose }) {
   const s = session();
+  const [who, setWho] = useState(current);
   const [minutes, setMinutes] = useState(s.minutes || 15);
   const [note, setNote] = useState(s.note || SESSION_NOTES[0]);
   const running = s.on && sessionLeft() > 0;
@@ -96,6 +97,18 @@ export function TimerSheet({ onClose }) {
       <div className="pt-up pt-sheet">
         <h2 id="pt-sheet-title">Session timer</h2>
         {running && <p className="pt-now">Running: {clockText(sessionLeft())} left</p>}
+        {players.length > 1 && (
+          <>
+            <h4>Who's playing?</h4>
+            <div className="pt-opts" role="group" aria-label="Who's playing">
+              {players.map((p) => (
+                <button key={p.id} type="button" className={`pt-opt${who === p.id ? ' pt-on' : ''}`} aria-pressed={who === p.id} onClick={() => setWho(p.id)}>
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
         <h4>Play for</h4>
         <div className="pt-opts">
           {SESSION_MINUTES.map((m) => (
@@ -117,11 +130,12 @@ export function TimerSheet({ onClose }) {
           type="button"
           className="mi-sail pt-go"
           onClick={() => {
+            if (onPick && who && who !== current) onPick(who);
             startSession(minutes, note.trim() || SESSION_NOTES[0]);
             onClose();
           }}
         >
-          Start {minutes} minutes
+          {players.length > 1 ? `Start ${minutes} minutes for ${(players.find((p) => p.id === who) || {}).name || 'this player'}` : `Start ${minutes} minutes`}
         </button>
         {s.on && (
           <button
