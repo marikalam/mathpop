@@ -387,27 +387,24 @@ export function AccountScreen({ user, playerCount, onSignedIn, onAccountDeleted,
         )}
 
         <div className="account-section">
-          <div className="account-row">
-            <span className="account-row-label">Sync</span>
-            <span className="account-row-value">On</span>
-          </div>
-          <p className="account-row-help">Players and their grades are saved to your account and load on any device you sign in on. It’s the same account as PitchPop.</p>
-        </div>
-
-        <div className="account-section">
           <button className="account-row account-row-button" onClick={onOpenPlayers}>
             <span className="account-row-label">Players &amp; grades</span>
             <span className="account-row-value">
               {playerCount} {playerCount === 1 ? 'player' : 'players'} ›
             </span>
           </button>
-          {onOpenStats && (
+        </div>
+
+        {/* The owner's own stats, in a card of their own (only the owner sees it). */}
+        {onOpenStats && (
+          <div className="account-section">
+            <p className="account-section-title">Only you see this</p>
             <button className="account-row account-row-button" onClick={onOpenStats}>
               <span className="account-row-label"><Icon name="chart" /> MathPop stats</span>
               <span className="account-row-value">›</span>
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         <button className="account-signout" onClick={handleSignOut}>
           Sign out
