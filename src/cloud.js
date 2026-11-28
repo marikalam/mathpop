@@ -384,12 +384,16 @@ export async function saveCloudCloset(profileId, closet) {
 
 // MathPop's own anonymous usage stats (supabase/mathpop_stats.sql, sent
 // by stats.js). Never throws: stats must not get in the way of playing.
+// 'sent'; 'refused' (the server turned the events away for what's in them,
+// so sending them again won't help); or 'offline' (try again later).
 export async function sendStatEvents(events) {
   try {
     const { error } = await supabase.from('mathpop_events').insert(events);
-    return !error;
+    if (!error) return 'sent';
+    // Postgres data errors (22..., 23...) and PostgREST request errors.
+    return /^(22|23|PGRST1)/.test(error.code || '') ? 'refused' : 'offline';
   } catch {
-    return false;
+    return 'offline';
   }
 }
 
