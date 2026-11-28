@@ -51,6 +51,30 @@ const IS_TEST =
   // (The iPhone app's own page is capacitor://localhost: that one counts.)
   (!Capacitor.isNativePlatform() && typeof location !== 'undefined' && ['localhost', '127.0.0.1'].includes(location.hostname));
 
+// Every event with every field, inside the server's limits. The server's
+// first_today and new_install can't be empty, and a batch is sent in one
+// go: an "open" and a "round" together had empty first_today for the
+// round (the client fills missing fields with nothing), so the whole
+// batch was turned away, every time, from 14 Nov 2026. Filling in all the
+// fields fixes that, and fixes events already waiting in the queue.
+const GRADES = ['p', 'k', '1', '2', '3', '4'];
+const clamp = (n, lo, hi) => (Number.isFinite(Number(n)) ? Math.max(lo, Math.min(hi, Math.round(Number(n)))) : null);
+function full(e) {
+  const round = e.event === 'round';
+  return {
+    event: e.event === 'round' ? 'round' : 'open',
+    day: e.day,
+    platform: ['iphone', 'ipad', 'web'].includes(e.platform) ? e.platform : 'web',
+    first_today: Boolean(e.first_today),
+    new_install: Boolean(e.new_install),
+    grade: round && GRADES.includes(e.grade) ? e.grade : null,
+    topic: round && e.topic ? String(e.topic).slice(0, 40) : null,
+    lang: round ? (e.lang === 'ja' ? 'ja' : 'en') : null,
+    correct: round ? clamp(e.correct ?? 0, 0, 100) : null,
+    total: round ? clamp(e.total ?? 1, 1, 100) : null,
+  };
+}
+
 let sending = false;
 async function send(...events) {
   if (IS_TEST) return;
@@ -62,11 +86,15 @@ async function send(...events) {
   }
   // Old events the server would turn away (more than two days old) are dropped.
   const oldest = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
-  queue = [...queue.filter((e) => e.day >= oldest), ...events.map((event) => ({ ...event, day: today(), platform: platform() }))].slice(-MAX_QUEUED);
+  queue = [...queue.filter((e) => e.day >= oldest), ...events.map((event) => ({ ...event, day: today(), platform: platform() }))]
+    .map(full)
+    .slice(-MAX_QUEUED);
   write(QUEUE_KEY, JSON.stringify(queue));
   if (sending) return;
   sending = true;
-  if (await sendStatEvents(queue)) {
+  // Sent, or turned away for what's in it (which would happen every time):
+  // either way these leave the queue. Offline: they wait for the next send.
+  if ((await sendStatEvents(queue)) !== 'offline') {
     // Keep anything added while these were on their way.
     let now = [];
     try {
