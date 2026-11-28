@@ -69,9 +69,11 @@ import SgModeCard from './SgModeCard.jsx';
 import GameGuide from './GameGuide.jsx';
 import GiftsCard from './GiftsCard.jsx';
 import ParentGate from './ParentGate.jsx';
-import { DailyHomeCard, DailyParentCard, DailySheet } from './DailyMath.jsx';
+import { DailyHomeCard, DailyParentCard, DailySheet, GamesLocked } from './DailyMath.jsx';
+import { dailyFor, SHEETS_A_DAY } from './dailyMath.js';
+import { lockFor, useLocks } from './gameLock.js';
 import { handleBack } from './backButton.js';
-import { PlayTimeCard, TimerSheet, TimesUp } from './PlayTime.jsx';
+import { GameLockCard, PlayTimeCard, TimerSheet, TimesUp } from './PlayTime.jsx';
 import { addMinutes, clockText, dailyLeft, minutesText, session, sessionLeft, usePlayClock } from './playTime.js';
 import SignupCard from './SignupCard.jsx';
 import { canRemind, hourLabel, reminderState, turnOffReminder, turnOnReminder } from './reminder.js';
@@ -777,6 +779,16 @@ export default function App() {
   const timeUp = timeLeft <= 0 && (view !== 'game' || gameEndAt > (timeZeroAt || Infinity) || Date.now() - (timeZeroAt || Date.now()) > 180000);
   const addTime = (id) => withGate(() => addMinutes(id, 15));
   const [timerSheet, setTimerSheet] = useState(false);
+  // Game lock (gameLock.js): set by the owner for each player. Locked
+  // games show the Daily Math sheets instead.
+  useLocks();
+  const lockMode = lockFor(currentProfile.id);
+  const gamesLocked = lockMode === 'locked' || (lockMode === 'sheets' && dailyFor(currentProfile.id, gradeInfo(level).id).done < SHEETS_A_DAY);
+  const startSheet = () => {
+    unlockAudio();
+    setDailyRun((n) => n + 1);
+    setView('daily');
+  };
   // The home page's game tab (GAME_TABS), remembered on this device.
   const [homeTab, setHomeTab] = useState(() => {
     try {
@@ -1918,6 +1930,10 @@ export default function App() {
               </button>
             </div>
 
+            {gamesLocked ? (
+              <GamesLocked playerId={currentProfile.id} grade={gradeInfo(level).id} mode={lockMode} onSheet={startSheet} />
+            ) : (
+              <>
             {/* Games first, right under the greeting: Mad Minute and the games
                 in Games.jsx, all of them showing, three across. */}
             <div className="home-games-head">
@@ -1993,6 +2009,9 @@ export default function App() {
 
             {/* Today's practice: today's "Just for me" rounds (myPath.js),
                 each made from this player's history. Hidden for now. */}
+              </>
+            )}
+
             {SHOW_PRACTICE && (() => {
               const path = pathStatus(currentProfile.id, level, playerProgress);
               const label = (n) => ALL_META[n.topic]?.label || n.topic;
@@ -2119,7 +2138,14 @@ export default function App() {
           </>
         )}
 
-        {view === 'madminute' && (
+        {gamesLocked && ['game', 'games', 'madminute'].includes(view) && (
+          <>
+            <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
+            <GamesLocked playerId={currentProfile.id} grade={gradeInfo(level).id} mode={lockMode} onSheet={startSheet} />
+          </>
+        )}
+
+        {view === 'madminute' && !gamesLocked && (
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
             <h2 className="screen-title">Mad Minute</h2>
@@ -2144,7 +2170,7 @@ export default function App() {
           </>
         )}
 
-        {view === 'games' && (
+        {view === 'games' && !gamesLocked && (
           <>
             <AppHeader level={level} players={headerPlayers} showBack onBack={goHome} />
             <h2 className="screen-title">Games</h2>
@@ -2161,7 +2187,7 @@ export default function App() {
           </>
         )}
 
-        {view === 'game' && gameId && (
+        {view === 'game' && gameId && !gamesLocked && (
           <>
             {/* Back: a game's own screen (like a chess lesson) goes to its menu first. */}
             <AppHeader level={level} players={headerPlayers} showBack onBack={() => handleBack() || goHome()} />
@@ -2495,6 +2521,7 @@ export default function App() {
             <DailyParentCard players={profiles} gated={withGate} />
             {/* Play time limits: only the owner account sees this for now. */}
             {statsViewer && <PlayTimeCard players={profiles} gated={withGate} onAdd={addTime} onTimer={openTimer} />}
+            {statsViewer && <GameLockCard players={profiles} gated={withGate} />}
             <div className="settings-list">
               {draftProfiles.map((p) => (
                 <PlayerSettingsCard
