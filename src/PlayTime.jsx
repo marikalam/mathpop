@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Pip from './Pip.jsx';
 import { speak } from './sound.js';
+import { LOCK_MODES, lockFor, setLock, useLocks } from './gameLock.js';
 import { LIMITS, SESSION_MINUTES, SESSION_NOTES, clockText, dailyLeft, endSession, limitFor, minutesText, session, sessionLeft, setLimit, startSession, usedSeconds, usePlayTimes } from './playTime.js';
 
 // Players & grades: a daily play time limit for each player. Every change
@@ -139,5 +140,37 @@ export function TimerSheet({ onClose }) {
         </button>
       </div>
     </div>
+  );
+}
+
+// Players & grades (the owner only): lock the games for a player, so only
+// Daily Math sheets are open (or the games unlock after today's sheets).
+export function GameLockCard({ players, gated }) {
+  useLocks();
+  return (
+    <section className="sgm-card pt-card" aria-labelledby="gl-title">
+      <div className="sgm-head">
+        <h3 id="gl-title">Game lock</h3>
+        <p>Lock the games so only the Daily Math sheets are open, or open the games once today’s 3 sheets are done. Only a grown-up can change it.</p>
+      </div>
+      {players.map((p) => {
+        const mode = lockFor(p.id);
+        return (
+          <div key={p.id} className="pt-row">
+            <div className="pt-who">
+              <b>{p.name}</b>
+              <small>{LOCK_MODES.find((m) => m[0] === mode)[2]}</small>
+            </div>
+            <div className="pt-opts" role="group" aria-label={`Game lock for ${p.name}`}>
+              {LOCK_MODES.map(([id, name]) => (
+                <button key={id} type="button" className={`pt-opt${mode === id ? ' pt-on' : ''}`} aria-pressed={mode === id} onClick={() => mode !== id && gated(() => setLock(p.id, id))}>
+                  {name}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </section>
   );
 }

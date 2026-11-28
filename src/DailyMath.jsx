@@ -405,3 +405,44 @@ function DelayedConfetti() {
   }, []);
   return on ? <Confetti pieces={110} /> : null;
 }
+
+// Shown in place of the games when they're locked (gameLock.js): what to
+// do, with today's sheets, and a button to the next sheet.
+export function GamesLocked({ playerId, grade, mode, onSheet }) {
+  const d = useDaily(playerId, grade);
+  const done = Math.min(d.done, SHEETS_A_DAY);
+  const left = SHEETS_A_DAY - done;
+  const line =
+    mode === 'sheets'
+      ? `The games are locked. Finish ${left === 1 ? 'one more Daily Math sheet' : `${left} more Daily Math sheets`} today to unlock them!`
+      : 'The games are locked right now. Your Daily Math sheets are ready!';
+  useEffect(() => {
+    speak(line);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <section className="gl-card" aria-label="Games are locked">
+      <svg className="gl-lock" viewBox="0 0 48 48" width="64" height="64" aria-hidden="true">
+        <path d="M15 21v-6a9 9 0 0 1 18 0v6" fill="none" stroke="#94a3b8" strokeWidth="5" strokeLinecap="round" />
+        <rect x="9" y="20" width="30" height="22" rx="6" fill="#fbbf24" stroke="#b45309" strokeWidth="2.5" />
+        <circle cx="24" cy="29" r="3.2" fill="#7c2d12" />
+        <path d="M24 31v5" stroke="#7c2d12" strokeWidth="3" strokeLinecap="round" />
+      </svg>
+      <h3>Games are locked</h3>
+      <button type="button" className="gl-say" onClick={() => speak(line)}>
+        {mode === 'sheets' ? `Finish today’s ${SHEETS_A_DAY} Daily Math sheets to unlock the games!` : 'Daily Math sheets only, for now.'}
+      </button>
+      {mode === 'sheets' && (
+        <div className="gl-progress">
+          <Dots done={done} />
+          <span>
+            {done} of {SHEETS_A_DAY} sheets done
+          </span>
+        </div>
+      )}
+      <button type="button" className="mi-sail gl-go" onClick={onSheet}>
+        {d.done >= SHEETS_A_DAY ? 'Do an extra sheet' : `Do sheet ${done + 1}`}
+      </button>
+    </section>
+  );
+}
