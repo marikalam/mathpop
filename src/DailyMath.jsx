@@ -83,6 +83,15 @@ export function DailySheet({ playerId, grade, answerMode, onExit, onDone }) {
   const q = phase === 'fix' ? missed[fixAt] : qs[i];
   const pickMode = answerMode === 'choice' || isDots(q?.text || '');
   const [choices, setChoices] = useState([]);
+  // What the voice says before the next question: the answer just picked
+  // and whether it was right ("7. Right!"), so a new question's speech
+  // doesn't cut it off.
+  const sayFirst = useRef('');
+  const lead = () => {
+    const t = sayFirst.current;
+    sayFirst.current = '';
+    return t ? `${t} ` : '';
+  };
 
   useEffect(() => {
     if (phase !== 'go') return undefined;
@@ -92,7 +101,8 @@ export function DailySheet({ playerId, grade, answerMode, onExit, onDone }) {
   useEffect(() => {
     if (!q) return;
     setChoices([q.answer, ...nearMisses(q.answer, 3)].sort(() => Math.random() - 0.5));
-    if (little || isDots(q.text)) speak(sayQ(q));
+    // Every question is read out (after what was said about the last answer).
+    speak(`${lead()}${sayQ(q)}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [i, fixAt, phase]);
 
@@ -113,7 +123,7 @@ export function DailySheet({ playerId, grade, answerMode, onExit, onDone }) {
       if (m.length) {
         setPhase('fix');
         setFixAt(0);
-        speak(`Now let's fix the ${m.length === 1 ? 'one' : m.length} you missed.`);
+        speak(`${lead()}Now let's fix the ${m.length === 1 ? 'one' : m.length} you missed.`);
       } else end(took);
     }
   }
@@ -138,12 +148,15 @@ export function DailySheet({ playerId, grade, answerMode, onExit, onDone }) {
       again: "Good practice! Let's do this step again.",
       down: "Let's go back one step and make it easy again.",
     }[r.result];
-    speak(line);
+    speak(`${lead()}${line}`);
   }
+  // The full sentence with the right answer: "3 plus 4 is 7."
+  const sayAnswer = () => isDots(q.text) ? `There are ${q.answer} dots.` : `${sayQ(q).replace(' what', '').replace(/\?$/, '').replace('equals', 'is')} ${q.answer}.`;
   function answer(n) {
     if (show || !q) return;
     if (Number(n) === q.answer) {
       playCorrectChime();
+      sayFirst.current = `${n}. Right!`;
       next();
       return;
     }
@@ -151,19 +164,20 @@ export function DailySheet({ playerId, grade, answerMode, onExit, onDone }) {
     if (phase === 'fix') {
       setValue('');
       setShow(`${showQ(q).replace('?', String(q.answer))}`);
-      speak(`${sayQ(q).replace(' what', '')} ${q.answer}. Try it!`.replace('equals', 'is'));
+      speak(`${n}. Not quite. ${sayAnswer()} Try it!`);
       setTimeout(() => setShow(null), 1800);
       return;
     }
     if (tries === 0) {
       setTries(1);
       setValue('');
-      speak('Try again!');
+      speak(`${n}. Not quite. Try again!`);
       return;
     }
     if (!missedRef.current.includes(q)) setMissed([...missedRef.current, q]);
     setShow(showQ(q).replace('?', String(q.answer)));
-    setTimeout(next, 1800);
+    speak(`${n}. Not quite. ${sayAnswer()}`);
+    setTimeout(next, 3000);
   }
 
   if (phase === 'result' && result) {
